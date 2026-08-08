@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { DisclosureNotice } from "@/components/DisclosureNotice";
@@ -10,8 +11,15 @@ import { MainContainer } from "@/components/layout/MainContainer";
 import { buttonVariants } from "@/components/ui/button";
 import { getFeaturedTopic } from "@/domain/selectors";
 import { fixtureCatalog } from "@/fixtures";
+import { oneSentenceMethod } from "@/lib/process-content";
 import { institutionalProcessSteps } from "@/lib/process-steps";
 import { cn } from "@/lib/utils";
+
+export const metadata: Metadata = {
+  title: "Home",
+  description:
+    "Demonstration homepage for a proposed open-source think tank using synthetic data only.",
+};
 
 export default function Home() {
   const featuredTopic = getFeaturedTopic(fixtureCatalog);
@@ -22,7 +30,7 @@ export default function Home() {
       <PageHeader
         eyebrow="Proposed project · Phase 1 prototype"
         title="Open-Source Think Tank"
-        description="A demonstration of how a nonpartisan, evidence-aware public process could move from open consultation to a published decision record. All people, evidence, votes, and decisions in this prototype are synthetic. This is a demonstration of a proposed project. It does not claim that an organization is incorporated, tax-exempt, legally reviewed, or accepting members."
+        description="A public, nonpartisan process for examining policy questions with open evidence, structured consultation, transparent agenda rules, capacity-limited deliberation, and published decision records."
         actions={
           <>
             <Link
@@ -40,14 +48,30 @@ export default function Home() {
             >
               View the process
             </Link>
+            <Link
+              href="/join"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "lg" }),
+                "min-h-11 px-4",
+              )}
+            >
+              Join preview
+            </Link>
           </>
         }
       />
 
-      <DisclosureNotice title="Synthetic data only" tone="caution">
-        Preference, cross-group agreement, and evidence quality stay separate.
-        Algorithms organize or recommend; humans decide. Membership status remains
-        an unresolved legal question.
+      <p className="max-w-3xl text-base leading-7 text-muted-foreground">
+        <span className="font-medium text-foreground">Method in one sentence: </span>
+        {oneSentenceMethod}
+      </p>
+
+      <DisclosureNotice title="Demonstration of a proposed project" tone="caution">
+        All people, evidence, votes, and decisions in this prototype are synthetic.
+        It does not claim that an organization is incorporated, tax-exempt, legally
+        reviewed, or accepting members. Preference, cross-group agreement, and
+        evidence quality stay separate. Algorithms organize or recommend; humans
+        decide.
       </DisclosureNotice>
 
       <section className="space-y-4">
@@ -75,6 +99,12 @@ export default function Home() {
             }
           />
         </div>
+        <Link
+          href="/topics"
+          className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline-offset-4 hover:underline"
+        >
+          Browse topics (shell route)
+        </Link>
       </section>
 
       <section className="space-y-4">

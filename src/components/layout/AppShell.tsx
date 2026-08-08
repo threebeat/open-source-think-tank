@@ -11,8 +11,10 @@ type AppShellProps = {
 export function AppShell({ children }: AppShellProps) {
   return (
     <div className="flex min-h-screen-safe flex-col">
-      <PrototypeBanner />
-      <SiteHeader />
+      <div className="sticky top-0 z-40 bg-surface/95 pt-[var(--safe-top)] backdrop-blur supports-[backdrop-filter]:bg-surface/90">
+        <PrototypeBanner />
+        <SiteHeader />
+      </div>
       {children}
       <SiteFooter />
     </div>

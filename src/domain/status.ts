@@ -39,6 +39,7 @@ export const PROPOSAL_STATES = [
 export type ProposalState = (typeof PROPOSAL_STATES)[number];
 
 export const DECISION_OUTCOMES = [
+  "recommended",
   "adopted",
   "rejected",
   "returned",

@@ -27,7 +27,7 @@ export function SiteHeader() {
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/90">
+    <header className="border-b border-border bg-transparent">
       <div className="page-x mx-auto flex min-h-14 max-w-6xl items-center justify-between gap-3 py-2">
         <Link
           href="/"
@@ -79,8 +79,9 @@ export function SiteHeader() {
 
       <div
         id={panelId}
+        data-testid="mobile-primary-nav"
         hidden={!open}
-        className="border-t border-border bg-surface page-x safe-bottom lg:hidden"
+        className="max-h-[min(70dvh,calc(100dvh-6rem))] overflow-y-auto overscroll-contain border-t border-border bg-surface page-x safe-bottom lg:hidden"
       >
         <nav aria-label="Primary mobile" className="mx-auto max-w-6xl py-3">
           <ul className="flex flex-col gap-1">

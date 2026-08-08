@@ -107,6 +107,7 @@ export const fixtureCatalog = {
   claims: [
     {
       id: "claim-graduated-surcharge",
+      synthetic: true,
       topicId: "topic-cedar-river-drought-surcharge",
       title: "Graduated surcharge tied to shortage stage",
       summary:
@@ -120,6 +121,7 @@ export const fixtureCatalog = {
     },
     {
       id: "claim-flat-emergency-fee",
+      synthetic: true,
       topicId: "topic-cedar-river-drought-surcharge",
       title: "Flat temporary emergency fee",
       summary:
@@ -133,6 +135,7 @@ export const fixtureCatalog = {
     },
     {
       id: "claim-voluntary-only",
+      synthetic: true,
       topicId: "topic-cedar-river-drought-surcharge",
       title: "Extend voluntary conservation only",
       summary:
@@ -146,6 +149,7 @@ export const fixtureCatalog = {
     },
     {
       id: "claim-northline-later-start",
+      synthetic: true,
       topicId: "topic-northline-start-times",
       title: "Pilot later secondary start times",
       summary:
@@ -156,6 +160,7 @@ export const fixtureCatalog = {
     },
     {
       id: "claim-northline-keep-current",
+      synthetic: true,
       topicId: "topic-northline-start-times",
       title: "Keep current start times pending fuller costing",
       summary:
@@ -168,6 +173,7 @@ export const fixtureCatalog = {
   evidenceSources: [
     {
       id: "evidence-basin-storage-note",
+      synthetic: true,
       topicId: "topic-cedar-river-drought-surcharge",
       title: "Cedar Basin storage outlook (synthetic staff note)",
       organization: "Cedar River Water District Planning Office (fictional)",
@@ -183,6 +189,7 @@ export const fixtureCatalog = {
     },
     {
       id: "evidence-meter-elasticity-study",
+      synthetic: true,
       topicId: "topic-cedar-river-drought-surcharge",
       title: "Residential meter response under staged prices",
       organization: "Clearcurrent Methods Lab (fictional)",
@@ -199,6 +206,7 @@ export const fixtureCatalog = {
     },
     {
       id: "evidence-equity-impact-memo",
+      synthetic: true,
       topicId: "topic-cedar-river-drought-surcharge",
       title: "Household bill impact vignettes",
       organization: "Rivermarch Household Policy Desk (fictional)",
@@ -214,6 +222,7 @@ export const fixtureCatalog = {
     },
     {
       id: "evidence-billing-ops-brief",
+      synthetic: true,
       topicId: "topic-cedar-river-drought-surcharge",
       title: "Billing system change estimate",
       organization: "Cedar River Customer Systems Team (fictional)",
@@ -228,6 +237,7 @@ export const fixtureCatalog = {
     },
     {
       id: "evidence-customer-complaint-digest",
+      synthetic: true,
       topicId: "topic-cedar-river-drought-surcharge",
       title: "Prior flat-fee complaint themes",
       organization: "Lakeside Civic Reporting Cooperative (fictional)",
@@ -243,6 +253,7 @@ export const fixtureCatalog = {
     },
     {
       id: "evidence-outreach-panel",
+      synthetic: true,
       topicId: "topic-cedar-river-drought-surcharge",
       title: "Voluntary conservation panel summary",
       organization: "Basin Neighbors Forum (fictional)",
@@ -257,6 +268,7 @@ export const fixtureCatalog = {
     },
     {
       id: "evidence-prior-season-audit",
+      synthetic: true,
       topicId: "topic-cedar-river-drought-surcharge",
       title: "Prior dry-season conservation audit",
       organization: "Independent Basin Review Office (fictional)",
@@ -271,6 +283,7 @@ export const fixtureCatalog = {
     },
     {
       id: "evidence-vendor-whitepaper",
+      synthetic: true,
       topicId: "topic-cedar-river-drought-surcharge",
       title: "Smart-irrigation controller savings claims",
       organization: "GreenLatch Devices (fictional vendor)",
@@ -285,6 +298,7 @@ export const fixtureCatalog = {
     },
     {
       id: "evidence-northline-sleep-review",
+      synthetic: true,
       topicId: "topic-northline-start-times",
       title: "Adolescent sleep and start-time evidence scan",
       organization: "Northline Instructional Research Cell (fictional)",
@@ -299,6 +313,7 @@ export const fixtureCatalog = {
     },
     {
       id: "evidence-northline-bus-constraint",
+      synthetic: true,
       topicId: "topic-northline-start-times",
       title: "Transportation wave capacity memo",
       organization: "Northline Pupil Transportation (fictional)",
@@ -315,6 +330,7 @@ export const fixtureCatalog = {
   consultationStatements: [
     {
       id: "stmt-publish-thresholds",
+      synthetic: true,
       topicId: "topic-cedar-river-drought-surcharge",
       text: "Shortage stages and surcharge amounts should be published before they take effect.",
       relatedClaimIds: ["claim-graduated-surcharge"],
@@ -326,6 +342,7 @@ export const fixtureCatalog = {
     },
     {
       id: "stmt-protect-indoor-essential",
+      synthetic: true,
       topicId: "topic-cedar-river-drought-surcharge",
       text: "Essential indoor use should face a lower incremental price than discretionary outdoor use.",
       relatedClaimIds: ["claim-graduated-surcharge"],
@@ -337,6 +354,7 @@ export const fixtureCatalog = {
     },
     {
       id: "stmt-flat-fee-simpler",
+      synthetic: true,
       topicId: "topic-cedar-river-drought-surcharge",
       text: "A flat emergency fee is preferable because it is easier to explain on a bill.",
       relatedClaimIds: ["claim-flat-emergency-fee"],
@@ -348,6 +366,7 @@ export const fixtureCatalog = {
     },
     {
       id: "stmt-no-price-tools",
+      synthetic: true,
       topicId: "topic-cedar-river-drought-surcharge",
       text: "The district should avoid any price tool and rely only on voluntary messaging.",
       relatedClaimIds: ["claim-voluntary-only"],
@@ -359,6 +378,7 @@ export const fixtureCatalog = {
     },
     {
       id: "stmt-device-subsidies-popular",
+      synthetic: true,
       topicId: "topic-cedar-river-drought-surcharge",
       text: "Subsidizing smart irrigation controllers would make surcharges unnecessary.",
       relatedClaimIds: ["claim-voluntary-only"],
@@ -370,6 +390,7 @@ export const fixtureCatalog = {
     },
     {
       id: "stmt-audit-before-fee",
+      synthetic: true,
       topicId: "topic-cedar-river-drought-surcharge",
       text: "An independent conservation audit should be published alongside any surcharge decision.",
       relatedClaimIds: ["claim-graduated-surcharge", "claim-voluntary-only"],
@@ -381,6 +402,7 @@ export const fixtureCatalog = {
     },
     {
       id: "stmt-hardship-rebate",
+      synthetic: true,
       topicId: "topic-cedar-river-drought-surcharge",
       text: "Any surcharge package should include a clear hardship rebate path for qualifying households.",
       relatedClaimIds: ["claim-graduated-surcharge", "claim-flat-emergency-fee"],
@@ -392,6 +414,7 @@ export const fixtureCatalog = {
     },
     {
       id: "stmt-sunset-clause",
+      synthetic: true,
       topicId: "topic-cedar-river-drought-surcharge",
       text: "Surcharge authority should sunset unless re-authorized after a scheduled review.",
       relatedClaimIds: ["claim-graduated-surcharge"],
@@ -403,9 +426,9 @@ export const fixtureCatalog = {
     },
   ],
   opinionGroups: [
-    { id: "group-a", label: "Group A" },
-    { id: "group-b", label: "Group B" },
-    { id: "group-c", label: "Group C" },
+    { id: "group-a", synthetic: true, label: "Group A" },
+    { id: "group-b", synthetic: true, label: "Group B" },
+    { id: "group-c", synthetic: true, label: "Group C" },
   ],
   consultationResults: [
     {
@@ -583,6 +606,7 @@ export const fixtureCatalog = {
   proposals: [
     {
       id: "proposal-cedar-v1",
+      synthetic: true,
       topicId: "topic-cedar-river-drought-surcharge",
       version: 1,
       state: "draft",
@@ -592,6 +616,7 @@ export const fixtureCatalog = {
     },
     {
       id: "proposal-cedar-v2",
+      synthetic: true,
       topicId: "topic-cedar-river-drought-surcharge",
       version: 2,
       state: "under_amendment",
@@ -601,18 +626,20 @@ export const fixtureCatalog = {
     },
     {
       id: "proposal-cedar-v3",
+      synthetic: true,
       topicId: "topic-cedar-river-drought-surcharge",
       version: 3,
-      state: "adopted",
+      state: "recommended",
       title:
         "Adopt a three-stage residential drought surcharge with hardship rebate and sunset review",
-      body: "Final text adopts graduated stages, hardship rebate, audit summary at activation, and a mandatory review date. Flat emergency fee and voluntary-only alternatives are not adopted.",
+      body: "Final text recommends graduated stages, hardship rebate, audit summary at activation, and a mandatory review date. Flat emergency fee and voluntary-only alternatives are not recommended. Governing-board authority remains unresolved.",
       createdAt: "2026-04-20",
     },
   ],
   amendments: [
     {
       id: "amend-hardship-rebate",
+      synthetic: true,
       proposalId: "proposal-cedar-v1",
       status: "accepted",
       title: "Add hardship rebate path",
@@ -623,6 +650,7 @@ export const fixtureCatalog = {
     },
     {
       id: "amend-sunset-review",
+      synthetic: true,
       proposalId: "proposal-cedar-v2",
       status: "accepted",
       title: "Add sunset review date",
@@ -635,44 +663,55 @@ export const fixtureCatalog = {
   councilParticipants: [
     {
       id: "council-ada-nguyen",
+      synthetic: true,
       displayName: "Ada Nguyen",
       termStart: "2026-01-01",
       termEnd: "2027-12-31",
       selectionPath: "Synthetic stratified draw from consultation pool A",
+      voting: true,
     },
     {
       id: "council-ben-okonkwo",
+      synthetic: true,
       displayName: "Ben Okonkwo",
       termStart: "2026-01-01",
       termEnd: "2027-12-31",
       selectionPath: "Synthetic stratified draw from consultation pool B",
+      voting: true,
     },
     {
       id: "council-cara-diaz",
+      synthetic: true,
       displayName: "Cara Diaz",
       termStart: "2026-01-01",
       termEnd: "2027-12-31",
       selectionPath: "Synthetic stratified draw from consultation pool C",
+      voting: true,
     },
     {
       id: "council-devon-park",
+      synthetic: true,
       displayName: "Devon Park",
       termStart: "2026-01-01",
       termEnd: "2027-12-31",
       selectionPath:
         "Synthetic facilitation seat — present in deliberation, nonvoting, and omitted from the roll-call tally",
+      voting: false,
     },
     {
       id: "council-elena-frost",
+      synthetic: true,
       displayName: "Elena Frost",
       termStart: "2026-01-01",
       termEnd: "2027-12-31",
       selectionPath: "Synthetic stratified draw from consultation pool A",
+      voting: true,
     },
   ],
   conflictDisclosures: [
     {
       id: "conflict-ben-irrigation",
+      synthetic: true,
       participantId: "council-ben-okonkwo",
       summary:
         "Household holds a minority stake in a fictional irrigation-supply cooperative outside the district.",
@@ -680,6 +719,7 @@ export const fixtureCatalog = {
     },
     {
       id: "conflict-elena-foundation",
+      synthetic: true,
       participantId: "council-elena-frost",
       summary:
         "Serves unpaid on the advisory circle of a fictional watershed education nonprofit.",
@@ -766,9 +806,9 @@ export const fixtureCatalog = {
       deliberationId: "delib-cedar-river-drought-surcharge",
       finalProposalId: "proposal-cedar-v3",
       synthetic: true,
-      outcome: "adopted",
+      outcome: "recommended",
       adoptingBody:
-        "Synthetic Policy Council recommendation recorded for demonstration (governing-board authority pending counsel).",
+        "Synthetic Policy Council — recommendation only (governing-board authority pending counsel; not a final legal adoption).",
       effectiveOn: "2026-05-01",
       reviewOn: "2027-05-01",
       voteFor: 2,
@@ -781,7 +821,7 @@ export const fixtureCatalog = {
         { participantId: "council-elena-frost", vote: "against" },
       ],
       rationale:
-        "The council adopted a graduated surcharge with hardship rebate and sunset review. Cross-group consensus supported publication of thresholds and protection of essential indoor use. Device-subsidy popularity was not treated as proof. The pending billing estimate was answered by an evidence request rather than by deferring indefinitely.",
+        "The Policy Council recommended a graduated surcharge with hardship rebate and sunset review. Cross-group consensus supported publication of thresholds and protection of essential indoor use. Device-subsidy popularity was not treated as proof. The pending billing estimate was answered by an evidence request rather than by deferring indefinitely.",
       minorityReport: {
         title: "Minority report — prefer voluntary-first extension",
         authorParticipantIds: ["council-elena-frost"],
@@ -829,10 +869,10 @@ export const fixtureCatalog = {
       id: "audit-decision-adopted",
       at: "2026-04-22",
       actorRole: "policy-council-clerk (synthetic)",
-      action: "decision.adopted",
+      action: "decision.recommended",
       subjectType: "decision",
       subjectId: "decision-cedar-river-drought-surcharge",
-      summary: "Decision record published with minority report and review date.",
+      summary: "Policy Council recommendation published with minority report and review date; board authority unresolved.",
       synthetic: true,
     },
   ],

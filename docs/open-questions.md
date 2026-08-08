@@ -16,6 +16,8 @@ Do not treat items below as settled. When a choice would invent governance autho
 
 3. **When a crowd or council outcome binds (or does not bind) the board** — Unresolved for product messaging. Phase 1 must show the question, not invent a binding rule. See legal question 5.
 
+3a. **Decision-record outcome labels** — Unresolved. Phase 1 fixtures use `recommended` for Policy Council outputs so the demo does not invent board adoption. Whether a later board action becomes a separate `adopted` record, an overlay status, or another model remains open.
+
 ---
 
 ## Representation and sampling

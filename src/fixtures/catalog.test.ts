@@ -17,15 +17,35 @@ function ids(items: { id: string }[]): Set<string> {
 }
 
 describe("fixture catalog", () => {
-  it("marks the catalog and every top-level entity as synthetic", () => {
+  it("marks the catalog and every independently rendered entity as synthetic", () => {
     expect(fixtureCatalog.synthetic).toBe(true);
     expect(fixtureCatalog.topics.every((topic) => topic.synthetic)).toBe(true);
+    expect(fixtureCatalog.claims.every((item) => item.synthetic)).toBe(true);
+    expect(fixtureCatalog.evidenceSources.every((item) => item.synthetic)).toBe(
+      true,
+    );
+    expect(
+      fixtureCatalog.consultationStatements.every((item) => item.synthetic),
+    ).toBe(true);
+    expect(fixtureCatalog.opinionGroups.every((item) => item.synthetic)).toBe(
+      true,
+    );
     expect(
       fixtureCatalog.consultationResults.every((item) => item.synthetic),
     ).toBe(true);
     expect(fixtureCatalog.agendaItems.every((item) => item.synthetic)).toBe(
       true,
     );
+    expect(fixtureCatalog.proposals.every((item) => item.synthetic)).toBe(true);
+    expect(fixtureCatalog.amendments.every((item) => item.synthetic)).toBe(
+      true,
+    );
+    expect(
+      fixtureCatalog.councilParticipants.every((item) => item.synthetic),
+    ).toBe(true);
+    expect(
+      fixtureCatalog.conflictDisclosures.every((item) => item.synthetic),
+    ).toBe(true);
     expect(fixtureCatalog.deliberations.every((item) => item.synthetic)).toBe(
       true,
     );
@@ -138,7 +158,7 @@ describe("fixture catalog", () => {
     ).toBe("council-ben-okonkwo");
     expect(
       getDecisionBySlug(fixtureCatalog, "cedar-river-drought-surcharge")?.outcome,
-    ).toBe("adopted");
+    ).toBe("recommended");
   });
 
   it("keeps the facilitation seat nonvoting and out of the roll-call tally", () => {

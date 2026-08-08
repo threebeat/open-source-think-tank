@@ -37,6 +37,7 @@ export const topicSchema = z.object({
 
 export const claimSchema = z.object({
   id: z.string().min(1),
+  synthetic: z.literal(true),
   topicId: z.string().min(1),
   title: z.string().min(1),
   summary: z.string().min(1),
@@ -48,6 +49,7 @@ export const claimSchema = z.object({
 
 export const evidenceSourceSchema = z.object({
   id: z.string().min(1),
+  synthetic: z.literal(true),
   topicId: z.string().min(1),
   title: z.string().min(1),
   organization: z.string().min(1),
@@ -62,6 +64,7 @@ export const evidenceSourceSchema = z.object({
 
 export const consultationStatementSchema = z.object({
   id: z.string().min(1),
+  synthetic: z.literal(true),
   topicId: z.string().min(1),
   text: z.string().min(1),
   relatedClaimIds: z.array(z.string().min(1)).default([]),
@@ -74,6 +77,7 @@ export const consultationStatementSchema = z.object({
 
 export const opinionGroupSchema = z.object({
   id: z.string().min(1),
+  synthetic: z.literal(true),
   label: z.string().min(1),
 });
 
@@ -136,6 +140,7 @@ export const agendaItemSchema = z.object({
 
 export const proposalSchema = z.object({
   id: z.string().min(1),
+  synthetic: z.literal(true),
   topicId: z.string().min(1),
   version: z.number().int().positive(),
   state: z.enum(PROPOSAL_STATES),
@@ -146,6 +151,7 @@ export const proposalSchema = z.object({
 
 export const amendmentSchema = z.object({
   id: z.string().min(1),
+  synthetic: z.literal(true),
   proposalId: z.string().min(1),
   status: z.enum(AMENDMENT_STATUSES),
   title: z.string().min(1),
@@ -156,14 +162,17 @@ export const amendmentSchema = z.object({
 
 export const councilParticipantSchema = z.object({
   id: z.string().min(1),
+  synthetic: z.literal(true),
   displayName: z.string().min(1),
   termStart: isoDate,
   termEnd: isoDate,
   selectionPath: z.string().min(1),
+  voting: z.boolean(),
 });
 
 export const conflictDisclosureSchema = z.object({
   id: z.string().min(1),
+  synthetic: z.literal(true),
   participantId: z.string().min(1),
   summary: z.string().min(1),
   disclosedAt: isoDate,
