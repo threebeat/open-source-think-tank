@@ -12,9 +12,10 @@ export default function Home() {
       <p className="max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
         A demonstration of how a nonpartisan, evidence-aware public process could
         move from open consultation to a published decision record. All people,
-        evidence, votes, and decisions in this prototype are synthetic. The
-        organization is not incorporated here, not tax-exempt by virtue of this
-        demo, and not accepting members.
+        evidence, votes, and decisions in this prototype are synthetic. This is a
+        demonstration of a proposed project. It does not claim that an
+        organization is incorporated, tax-exempt, legally reviewed, or accepting
+        members.
       </p>
       <div className="flex flex-wrap gap-3">
         <Button type="button" size="lg" disabled>
