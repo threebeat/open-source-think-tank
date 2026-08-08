@@ -161,6 +161,28 @@ describe("fixture catalog", () => {
     ).toBe("recommended");
   });
 
+  it("publishes recommendations without an effectiveOn adoption date", () => {
+    const decision = getDecisionBySlug(
+      fixtureCatalog,
+      "cedar-river-drought-surcharge",
+    );
+    const topic = getTopicBySlug(
+      fixtureCatalog,
+      "cedar-river-drought-surcharge",
+    );
+
+    expect(decision?.outcome).toBe("recommended");
+    expect(decision?.recommendedOn).toBeTruthy();
+    expect(decision?.publishedOn).toBeTruthy();
+    expect(decision?.effectiveOn).toBeUndefined();
+    expect(topic?.nextStep).toMatch(/governing-board adoption remains unresolved/i);
+    expect(
+      fixtureCatalog.auditEvents.some(
+        (event) => event.id === "audit-decision-recommended",
+      ),
+    ).toBe(true);
+  });
+
   it("keeps the facilitation seat nonvoting and out of the roll-call tally", () => {
     const decision = getDecisionBySlug(
       fixtureCatalog,

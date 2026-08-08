@@ -225,25 +225,56 @@ export const minorityReportSchema = z.object({
   body: z.string().min(1),
 });
 
-export const decisionSchema = z.object({
-  id: z.string().min(1),
-  slug: z.string().min(1),
-  topicId: z.string().min(1),
-  deliberationId: z.string().min(1),
-  finalProposalId: z.string().min(1),
-  synthetic: z.literal(true),
-  outcome: z.enum(DECISION_OUTCOMES),
-  adoptingBody: z.string().min(1),
-  effectiveOn: isoDate,
-  reviewOn: isoDate,
-  voteFor: z.number().int().nonnegative(),
-  voteAgainst: z.number().int().nonnegative(),
-  voteAbstain: z.number().int().nonnegative(),
-  rollCall: z.array(rollCallEntrySchema).min(1),
-  rationale: z.string().min(1),
-  minorityReport: minorityReportSchema,
-  proposalVersionIds: z.array(z.string().min(1)).min(1),
-});
+export const decisionSchema = z
+  .object({
+    id: z.string().min(1),
+    slug: z.string().min(1),
+    topicId: z.string().min(1),
+    deliberationId: z.string().min(1),
+    finalProposalId: z.string().min(1),
+    synthetic: z.literal(true),
+    outcome: z.enum(DECISION_OUTCOMES),
+    adoptingBody: z.string().min(1),
+    /** When the decision record was published. */
+    publishedOn: isoDate,
+    /** Set when the Policy Council (or equivalent) recommends a position. */
+    recommendedOn: isoDate.optional(),
+    /** Reserved for true institutional adoption; omit for recommendations. */
+    effectiveOn: isoDate.optional(),
+    reviewOn: isoDate,
+    voteFor: z.number().int().nonnegative(),
+    voteAgainst: z.number().int().nonnegative(),
+    voteAbstain: z.number().int().nonnegative(),
+    rollCall: z.array(rollCallEntrySchema).min(1),
+    rationale: z.string().min(1),
+    minorityReport: minorityReportSchema,
+    proposalVersionIds: z.array(z.string().min(1)).min(1),
+  })
+  .superRefine((decision, ctx) => {
+    if (decision.outcome === "recommended") {
+      if (!decision.recommendedOn) {
+        ctx.addIssue({
+          code: "custom",
+          message: "recommendedOn is required when outcome is recommended",
+          path: ["recommendedOn"],
+        });
+      }
+      if (decision.effectiveOn) {
+        ctx.addIssue({
+          code: "custom",
+          message: "effectiveOn is reserved for adopted outcomes",
+          path: ["effectiveOn"],
+        });
+      }
+    }
+    if (decision.outcome === "adopted" && !decision.effectiveOn) {
+      ctx.addIssue({
+        code: "custom",
+        message: "effectiveOn is required when outcome is adopted",
+        path: ["effectiveOn"],
+      });
+    }
+  });
 
 export const auditEventSchema = z.object({
   id: z.string().min(1),

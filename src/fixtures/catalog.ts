@@ -45,10 +45,12 @@ export const fixtureCatalog = {
         },
         {
           at: "2026-04-22",
-          summary: "Decision record published with scheduled review date.",
+          summary:
+            "Policy Council recommendation published with scheduled review date.",
         },
       ],
-      nextStep: "Scheduled review of the adopted surcharge schedule.",
+      nextStep:
+        "Scheduled review of the Policy Council recommendation; any governing-board adoption remains unresolved.",
       participationSummary:
         "Synthetic consultation: 1,240 participants; not a representative sample.",
     },
@@ -809,7 +811,8 @@ export const fixtureCatalog = {
       outcome: "recommended",
       adoptingBody:
         "Synthetic Policy Council — recommendation only (governing-board authority pending counsel; not a final legal adoption).",
-      effectiveOn: "2026-05-01",
+      publishedOn: "2026-04-22",
+      recommendedOn: "2026-04-22",
       reviewOn: "2027-05-01",
       voteFor: 2,
       voteAgainst: 1,
@@ -866,7 +869,7 @@ export const fixtureCatalog = {
       synthetic: true,
     },
     {
-      id: "audit-decision-adopted",
+      id: "audit-decision-recommended",
       at: "2026-04-22",
       actorRole: "policy-council-clerk (synthetic)",
       action: "decision.recommended",
