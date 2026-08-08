@@ -1,6 +1,10 @@
+import { getFeaturedTopic } from "@/domain/selectors";
 import { Button } from "@/components/ui/button";
+import { fixtureCatalog } from "@/fixtures";
 
 export default function Home() {
+  const featuredTopic = getFeaturedTopic(fixtureCatalog);
+
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center gap-6 px-6 py-16">
       <p className="text-sm font-medium tracking-wide text-muted-foreground uppercase">
@@ -17,14 +21,30 @@ export default function Home() {
         organization is incorporated, tax-exempt, legally reviewed, or accepting
         members.
       </p>
+      <section className="max-w-2xl space-y-2 border-t border-border pt-6">
+        <h2 className="text-lg font-medium text-foreground">
+          Featured synthetic topic
+        </h2>
+        <p className="text-base leading-7 text-muted-foreground">
+          {featuredTopic.title}. {featuredTopic.question}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Current stage: {featuredTopic.stage}. Data source: validated fixtures
+          only.
+        </p>
+      </section>
       <div className="flex flex-wrap gap-3">
         <Button type="button" size="lg" disabled>
           Explore the demo (coming next)
         </Button>
       </div>
       <p className="text-sm text-muted-foreground">
-        Build contract: see <code className="text-foreground">docs/product-charter.md</code>{" "}
-        and <code className="text-foreground">docs/open-source-think-tank-mvp-plan.md</code>.
+        Build contract: see{" "}
+        <code className="text-foreground">docs/product-charter.md</code> and{" "}
+        <code className="text-foreground">
+          docs/open-source-think-tank-mvp-plan.md
+        </code>
+        .
       </p>
     </main>
   );
