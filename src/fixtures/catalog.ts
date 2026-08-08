@@ -659,7 +659,8 @@ export const fixtureCatalog = {
       displayName: "Devon Park",
       termStart: "2026-01-01",
       termEnd: "2027-12-31",
-      selectionPath: "Synthetic facilitation seat (nonvoting on final tally demo)",
+      selectionPath:
+        "Synthetic facilitation seat — present in deliberation, nonvoting, and omitted from the roll-call tally",
     },
     {
       id: "council-elena-frost",
@@ -747,9 +748,14 @@ export const fixtureCatalog = {
           at: "2026-04-18",
           summary: "Recusal recorded; final vote scheduled.",
         },
+        {
+          at: "2026-04-18",
+          summary:
+            "Facilitation seat (Devon Park) confirmed nonvoting and excluded from the roll-call tally.",
+        },
       ],
       observerNotice:
-        "Public observation of this synthetic deliberation does not confer participation rights. Closed means capacity-limited participation, not secret institutional action.",
+        "Public observation of this synthetic deliberation does not confer participation rights. Closed means capacity-limited participation, not secret institutional action. Facilitation seats may appear in the participant list without casting a counted vote.",
     },
   ],
   decisions: [
@@ -767,12 +773,11 @@ export const fixtureCatalog = {
       reviewOn: "2027-05-01",
       voteFor: 2,
       voteAgainst: 1,
-      voteAbstain: 1,
+      voteAbstain: 0,
       rollCall: [
         { participantId: "council-ada-nguyen", vote: "for" },
         { participantId: "council-ben-okonkwo", vote: "recused" },
         { participantId: "council-cara-diaz", vote: "for" },
-        { participantId: "council-devon-park", vote: "abstain" },
         { participantId: "council-elena-frost", vote: "against" },
       ],
       rationale:

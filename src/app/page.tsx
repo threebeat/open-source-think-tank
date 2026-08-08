@@ -1,51 +1,91 @@
+import Link from "next/link";
+
+import { DisclosureNotice } from "@/components/DisclosureNotice";
+import { MetricWithExplanation } from "@/components/MetricWithExplanation";
+import { PageHeader } from "@/components/PageHeader";
+import { ProcessStepper } from "@/components/ProcessStepper";
+import { StageBadge } from "@/components/StageBadge";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
+import { MainContainer } from "@/components/layout/MainContainer";
+import { buttonVariants } from "@/components/ui/button";
 import { getFeaturedTopic } from "@/domain/selectors";
-import { Button } from "@/components/ui/button";
 import { fixtureCatalog } from "@/fixtures";
+import { institutionalProcessSteps } from "@/lib/process-steps";
+import { cn } from "@/lib/utils";
 
 export default function Home() {
   const featuredTopic = getFeaturedTopic(fixtureCatalog);
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center gap-6 px-6 py-16">
-      <p className="text-sm font-medium tracking-wide text-muted-foreground uppercase">
-        Proposed project · Phase 1 prototype
-      </p>
-      <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-        Open-Source Think Tank
-      </h1>
-      <p className="max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-        A demonstration of how a nonpartisan, evidence-aware public process could
-        move from open consultation to a published decision record. All people,
-        evidence, votes, and decisions in this prototype are synthetic. This is a
-        demonstration of a proposed project. It does not claim that an
-        organization is incorporated, tax-exempt, legally reviewed, or accepting
-        members.
-      </p>
-      <section className="max-w-2xl space-y-2 border-t border-border pt-6">
-        <h2 className="text-lg font-medium text-foreground">
-          Featured synthetic topic
-        </h2>
-        <p className="text-base leading-7 text-muted-foreground">
+    <MainContainer className="space-y-10">
+      <Breadcrumbs items={[{ label: "Home" }]} />
+      <PageHeader
+        eyebrow="Proposed project · Phase 1 prototype"
+        title="Open-Source Think Tank"
+        description="A demonstration of how a nonpartisan, evidence-aware public process could move from open consultation to a published decision record. All people, evidence, votes, and decisions in this prototype are synthetic. This is a demonstration of a proposed project. It does not claim that an organization is incorporated, tax-exempt, legally reviewed, or accepting members."
+        actions={
+          <>
+            <Link
+              href="/demo"
+              className={cn(buttonVariants({ size: "lg" }), "min-h-11 px-4")}
+            >
+              Explore the demo
+            </Link>
+            <Link
+              href="/process"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "lg" }),
+                "min-h-11 px-4",
+              )}
+            >
+              View the process
+            </Link>
+          </>
+        }
+      />
+
+      <DisclosureNotice title="Synthetic data only" tone="caution">
+        Preference, cross-group agreement, and evidence quality stay separate.
+        Algorithms organize or recommend; humans decide. Membership status remains
+        an unresolved legal question.
+      </DisclosureNotice>
+
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="font-heading text-2xl text-foreground">
+            Featured synthetic topic
+          </h2>
+          <StageBadge stage={featuredTopic.stage} />
+        </div>
+        <p className="max-w-3xl text-base leading-7 text-muted-foreground">
           {featuredTopic.title}. {featuredTopic.question}
         </p>
-        <p className="text-sm text-muted-foreground">
-          Current stage: {featuredTopic.stage}. Data source: validated fixtures
-          only.
-        </p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <MetricWithExplanation
+            label="Current stage"
+            value={featuredTopic.stage}
+            explanation="Stage labels describe institutional progress. They are not popularity scores or proof of evidence quality."
+          />
+          <MetricWithExplanation
+            label="Participation note"
+            value="Synthetic cohort"
+            explanation={
+              featuredTopic.participationSummary ??
+              "Participants in this demonstration are fictional."
+            }
+          />
+        </div>
       </section>
-      <div className="flex flex-wrap gap-3">
-        <Button type="button" size="lg" disabled>
-          Explore the demo (coming next)
-        </Button>
-      </div>
-      <p className="text-sm text-muted-foreground">
-        Build contract: see{" "}
-        <code className="text-foreground">docs/product-charter.md</code> and{" "}
-        <code className="text-foreground">
-          docs/open-source-think-tank-mvp-plan.md
-        </code>
-        .
-      </p>
-    </main>
+
+      <section className="space-y-4">
+        <h2 className="font-heading text-2xl text-foreground">
+          Institutional pipeline
+        </h2>
+        <ProcessStepper
+          steps={institutionalProcessSteps}
+          currentStepId="decision"
+        />
+      </section>
+    </MainContainer>
   );
 }

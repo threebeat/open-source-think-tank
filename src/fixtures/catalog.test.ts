@@ -141,6 +141,25 @@ describe("fixture catalog", () => {
     ).toBe("adopted");
   });
 
+  it("keeps the facilitation seat nonvoting and out of the roll-call tally", () => {
+    const decision = getDecisionBySlug(
+      fixtureCatalog,
+      "cedar-river-drought-surcharge",
+    );
+    const deliberation = getDeliberationBySlug(
+      fixtureCatalog,
+      "cedar-river-drought-surcharge",
+    );
+
+    expect(deliberation?.participantIds).toContain("council-devon-park");
+    expect(
+      decision?.rollCall.some(
+        (entry) => entry.participantId === "council-devon-park",
+      ),
+    ).toBe(false);
+    expect(decision?.voteAbstain).toBe(0);
+  });
+
   it("catches broken foreign keys across the catalog", () => {
     const topicIds = ids(fixtureCatalog.topics);
     const claimIds = ids(fixtureCatalog.claims);
