@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { DisclosureNotice } from "@/components/DisclosureNotice";
@@ -6,6 +7,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { StageBadge } from "@/components/StageBadge";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { MainContainer } from "@/components/layout/MainContainer";
+import { buttonVariants } from "@/components/ui/button";
 import { ClaimCard } from "@/features/topics/ClaimCard";
 import { EvidenceReviewExplainer } from "@/features/topics/EvidenceReviewExplainer";
 import { EvidenceSourceCard } from "@/features/topics/EvidenceSourceCard";
@@ -15,6 +17,7 @@ import {
   listTopics,
 } from "@/domain/selectors";
 import { fixtureCatalog } from "@/fixtures";
+import { cn } from "@/lib/utils";
 
 type TopicPageProps = {
   params: Promise<{ slug: string }>;
@@ -66,7 +69,19 @@ export default async function TopicDetailPage({ params }: TopicPageProps) {
         eyebrow="Synthetic topic brief"
         title={topic.title}
         description={topic.question}
-        actions={<StageBadge stage={topic.stage} />}
+        actions={
+          <>
+            <StageBadge stage={topic.stage} />
+            {bundle.consultationResult ? (
+              <Link
+                href={`/topics/${topic.slug}/consult`}
+                className={cn(buttonVariants({ size: "lg" }), "min-h-11 px-4")}
+              >
+                Open consultation simulation
+              </Link>
+            ) : null}
+          </>
+        }
       />
 
       <DisclosureNotice title="Popularity is not evidence quality" tone="caution">

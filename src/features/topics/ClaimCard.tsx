@@ -9,7 +9,10 @@ type ClaimCardProps = {
 
 export function ClaimCard({ claim, supporting, counterevidence }: ClaimCardProps) {
   return (
-    <article className="rounded-md border border-border bg-surface p-5 sm:p-6">
+    <article
+      id={claim.id}
+      className="scroll-mt-28 rounded-md border border-border bg-surface p-5 sm:p-6"
+    >
       <p className="text-xs font-medium tracking-wide text-primary uppercase">
         {claim.approachLabel}
       </p>
