@@ -25,6 +25,7 @@ describe("DecisionRecord", () => {
         proposalHistory={bundle.proposalHistory}
         rollCall={bundle.rollCall}
         minorityAuthors={bundle.minorityAuthors}
+        conflicts={bundle.conflicts}
       />,
     );
 
@@ -39,6 +40,12 @@ describe("DecisionRecord", () => {
     expect(screen.getByText("Farah Quinn")).toBeInTheDocument();
     expect(screen.getByText("Hugo Ren")).toBeInTheDocument();
     expect(screen.getByText("Recused")).toBeInTheDocument();
+    expect(
+      screen.getByText(/grounds the recorded recusal/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/research stipend from a fictional water-efficiency nonprofit/i),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
         name: /Minority report — prefer voluntary-first extension/i,

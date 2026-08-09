@@ -174,6 +174,9 @@ export function getDecisionBundle(catalog: FixtureCatalog, slug: string) {
   const minorityAuthors = decision.minorityReport.authorParticipantIds
     .map((id) => participantsById.get(id))
     .filter((item) => item != null);
+  const conflicts = decision.conflictDisclosureIds
+    .map((id) => catalog.conflictDisclosures.find((item) => item.id === id))
+    .filter((item) => item != null);
 
   if (!topic || !deliberation || !finalProposal) {
     return undefined;
@@ -188,6 +191,7 @@ export function getDecisionBundle(catalog: FixtureCatalog, slug: string) {
     proposalHistory,
     rollCall,
     minorityAuthors,
+    conflicts,
   };
 }
 

@@ -1,6 +1,6 @@
 # Open-Source Think Tank: MVP Build Plan for Cursor
 
-Status: working implementation plan  
+Status: Phase 1 demonstration MVP complete (see `docs/phase-1-handoff.md`)  
 Initial jurisdiction: Tennessee, with intended U.S. expansion  
 Immediate objective: build a working browser-based demonstration using synthetic data
 

@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { withDemoStep } from "@/features/demo/demo-query";
 import { demoSteps } from "@/features/demo/demo-steps";
 import {
   getDemoClientState,
@@ -43,6 +44,9 @@ function syncStepQuery(stepIndex: number) {
 
 export function GuidedDemo() {
   const router = useRouter();
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const skipInitialFocus = useRef(true);
+  const [liveAnnouncement, setLiveAnnouncement] = useState("");
   const state = useSyncExternalStore(
     subscribeDemoState,
     () => getDemoClientState(maxIndex),
@@ -61,6 +65,20 @@ export function GuidedDemo() {
     }
     syncStepQuery(stepIndex);
   }, [stepIndex]);
+
+  useEffect(() => {
+    if (!step) {
+      return;
+    }
+    if (skipInitialFocus.current) {
+      skipInitialFocus.current = false;
+      return;
+    }
+    headingRef.current?.focus();
+    setLiveAnnouncement(
+      `Step ${stepIndex + 1} of ${demoSteps.length}: ${step.title}`,
+    );
+  }, [step, stepIndex]);
 
   function goTo(next: number) {
     const clamped = Math.max(0, Math.min(maxIndex, next));
@@ -85,13 +103,20 @@ export function GuidedDemo() {
     );
   }
 
+  const stageHref = step.href ? withDemoStep(step.href, step.id) : undefined;
+
   return (
     <div className="space-y-8">
       <DisclosureNotice title="Presentation mode — not an operational system" tone="caution">
         Controls below organize a synthetic walkthrough. They do not enroll members,
         send consultation votes, adopt policy, or complete legal review. Direct
-        product URLs continue to work without this mode.
+        product URLs continue to work without this mode. Stage links keep a return
+        bar so you do not need the browser Back button.
       </DisclosureNotice>
+
+      <p className="sr-only" aria-live="polite" aria-atomic="true">
+        {liveAnnouncement}
+      </p>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
@@ -126,16 +151,18 @@ export function GuidedDemo() {
         ) : null}
         <h2
           id="demo-step-heading"
-          className="font-heading text-2xl text-foreground"
+          ref={headingRef}
+          tabIndex={-1}
+          className="font-heading text-2xl text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           {step.title}
         </h2>
         <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
           {step.summary}
         </p>
-        {step.href && step.linkLabel ? (
+        {stageHref && step.linkLabel ? (
           <Link
-            href={step.href}
+            href={stageHref}
             className={cn(buttonVariants({ size: "lg" }), "min-h-11 px-4")}
           >
             {step.linkLabel}

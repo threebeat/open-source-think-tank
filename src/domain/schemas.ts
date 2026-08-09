@@ -278,6 +278,8 @@ export const decisionSchema = z
     adoptingBody: z.string().min(1),
     /** Policy Council roster for this recommendation — not inferred from deliberation. */
     policyCouncilParticipantIds: z.array(z.string().min(1)).min(1),
+    /** Conflict disclosures scoped to this Policy Council recommendation. */
+    conflictDisclosureIds: z.array(z.string().min(1)),
     /** When the decision record was published. */
     publishedOn: isoDate,
     /** Set when the Policy Council (or equivalent) recommends a position. */

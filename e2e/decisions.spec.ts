@@ -20,6 +20,12 @@ test.describe("decision record and transparency", () => {
     await expect(page.getByText("Ada Nguyen")).toBeVisible();
     await expect(page.getByText("Farah Quinn", { exact: true })).toBeVisible();
     await expect(
+      page.getByText(/grounds the recorded recusal/i),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/research stipend from a fictional water-efficiency nonprofit/i),
+    ).toBeVisible();
+    await expect(
       page.getByRole("heading", {
         name: /Minority report — prefer voluntary-first extension/i,
       }),

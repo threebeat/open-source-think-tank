@@ -1027,7 +1027,7 @@ export const fixtureCatalog = {
       synthetic: true,
       participantId: "council-hugo-ren",
       summary:
-        "Employer holds a fictional billing-software contract with another water district; disclosed for Policy Council service. Private contract terms are not published.",
+        "Employer holds a fictional billing-software contract with another water district; disclosed for Policy Council service and grounds the recorded recusal. Private contract terms are not published.",
       disclosedAt: "2026-04-12",
     },
   ],
@@ -1128,6 +1128,12 @@ export const fixtureCatalog = {
         "council-cara-diaz",
         "council-farah-quinn",
         "council-hugo-ren",
+      ],
+      conflictDisclosureIds: [
+        "conflict-ada-dual-seat",
+        "conflict-cara-dual-seat",
+        "conflict-farah-research-stipend",
+        "conflict-hugo-employer-contract",
       ],
       publishedOn: "2026-04-22",
       recommendedOn: "2026-04-22",

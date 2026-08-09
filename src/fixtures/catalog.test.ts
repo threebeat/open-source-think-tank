@@ -135,6 +135,18 @@ describe("fixture catalog", () => {
     );
   });
 
+  it("rejects decision conflict disclosures that do not belong to Policy Council members", () => {
+    const broken = structuredClone(rawFixtureCatalog);
+    broken.decisions[0].conflictDisclosureIds = [
+      "conflict-ben-irrigation",
+      "conflict-hugo-employer-contract",
+    ];
+
+    expect(() => parseAndAssertCatalog(broken)).toThrow(
+      /does not belong to a Policy Council member/,
+    );
+  });
+
   it("rejects decision roll calls that reuse deliberation membership without a Policy Council roster", () => {
     const broken = structuredClone(rawFixtureCatalog);
     broken.decisions[0].policyCouncilParticipantIds = [

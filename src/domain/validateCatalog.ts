@@ -520,6 +520,24 @@ export function collectRelationshipErrors(catalog: FixtureCatalog): string[] {
       }
     }
 
+    assertUniqueIds(
+      `decision ${decision.id} conflictDisclosureIds`,
+      decision.conflictDisclosureIds,
+      errors,
+    );
+    for (const conflictId of decision.conflictDisclosureIds) {
+      const disclosure = conflictsById.get(conflictId);
+      if (!disclosure) {
+        errors.push(`Missing conflictDisclosure id: ${conflictId}`);
+        continue;
+      }
+      if (!policyMemberIds.has(disclosure.participantId)) {
+        errors.push(
+          `Decision ${decision.id} conflict disclosure ${conflictId} does not belong to a Policy Council member`,
+        );
+      }
+    }
+
     const forCount = decision.rollCall.filter((entry) => entry.vote === "for")
       .length;
     const againstCount = decision.rollCall.filter(

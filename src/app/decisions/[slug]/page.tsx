@@ -61,6 +61,7 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
         proposalHistory={bundle.proposalHistory}
         rollCall={bundle.rollCall}
         minorityAuthors={bundle.minorityAuthors}
+        conflicts={bundle.conflicts}
       />
     </MainContainer>
   );

@@ -4,6 +4,7 @@ import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { buttonVariants } from "@/components/ui/button";
 import type {
   AgendaItem,
+  ConflictDisclosure,
   CouncilParticipant,
   Decision,
   Deliberation,
@@ -33,6 +34,7 @@ type DecisionRecordProps = {
   proposalHistory: Proposal[];
   rollCall: RollCallRow[];
   minorityAuthors: CouncilParticipant[];
+  conflicts: ConflictDisclosure[];
 };
 
 export function DecisionRecord({
@@ -44,10 +46,17 @@ export function DecisionRecord({
   proposalHistory,
   rollCall,
   minorityAuthors,
+  conflicts,
 }: DecisionRecordProps) {
   const orderedHistory = [...proposalHistory].sort(
     (a, b) => a.version - b.version,
   );
+  const conflictsByParticipant = new Map<string, ConflictDisclosure[]>();
+  for (const conflict of conflicts) {
+    const existing = conflictsByParticipant.get(conflict.participantId) ?? [];
+    existing.push(conflict);
+    conflictsByParticipant.set(conflict.participantId, existing);
+  }
 
   return (
     <div className="space-y-10">
@@ -134,13 +143,16 @@ export function DecisionRecord({
         <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
           This roster is the Policy Council for the recommendation. It is not the
           Deliberation Council roster. Dual-seat members have separately recorded
-          Policy Council selection paths.
+          Policy Council selection paths. Conflict disclosures below are scoped to
+          this recommendation; private financial detail stays unpublished.
         </p>
         <ul className="space-y-3">
           {rollCall.map((entry) => {
             const policyPath = entry.participant?.roleAssignments.find(
               (assignment) => assignment.role === "policy_council",
             )?.selectionPath;
+            const entryConflicts =
+              conflictsByParticipant.get(entry.participantId) ?? [];
             return (
               <li
                 key={entry.participantId}
@@ -158,6 +170,25 @@ export function DecisionRecord({
                   <p className="mt-2 text-xs text-muted-foreground">
                     Policy Council selection: {policyPath}
                   </p>
+                ) : null}
+                {entryConflicts.length > 0 ? (
+                  <div className="mt-3 space-y-2 border-t border-border pt-3">
+                    <p className="text-xs font-medium text-foreground">
+                      Conflict disclosure
+                      {entryConflicts.length > 1 ? "s" : ""}
+                    </p>
+                    {entryConflicts.map((conflict) => (
+                      <div key={conflict.id}>
+                        <p className="text-muted-foreground">{conflict.summary}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Disclosed {conflict.disclosedAt}
+                          {entry.vote === "recused"
+                            ? " · Public reason accompanying recusal"
+                            : ""}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 ) : null}
               </li>
             );

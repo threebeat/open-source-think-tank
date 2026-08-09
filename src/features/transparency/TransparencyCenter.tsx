@@ -145,7 +145,7 @@ export function TransparencyCenter({ auditEvents }: TransparencyCenterProps) {
           See{" "}
           <Link
             href="/about"
-            className="underline-offset-4 hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+            className="font-medium text-primary underline underline-offset-4 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
           >
             About
           </Link>{" "}
@@ -233,7 +233,7 @@ export function TransparencyCenter({ auditEvents }: TransparencyCenterProps) {
             the in-app{" "}
             <Link
               href="/about"
-              className="text-foreground underline-offset-4 hover:underline"
+              className="font-medium text-primary underline underline-offset-4 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
             >
               About
             </Link>{" "}
