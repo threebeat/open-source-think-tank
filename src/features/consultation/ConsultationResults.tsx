@@ -24,15 +24,20 @@ function StatementListItem({
   claimsById,
   evidenceById,
   metricLabel,
+  anchor = false,
 }: {
   statement: ConsultationStatement;
   topicSlug: string;
   claimsById: Map<string, Claim>;
   evidenceById: Map<string, EvidenceSource>;
   metricLabel?: string;
+  anchor?: boolean;
 }) {
   return (
-    <li className="rounded-md border border-border bg-surface p-4">
+    <li
+      id={anchor ? statement.id : undefined}
+      className="scroll-mt-28 rounded-md border border-border bg-surface p-4"
+    >
       <p className="text-sm leading-6 text-foreground">{statement.text}</p>
       {metricLabel ? (
         <p className="mt-2 text-xs text-muted-foreground">{metricLabel}</p>
@@ -207,6 +212,7 @@ export function ConsultationResults({
               claimsById={claimsById}
               evidenceById={evidenceById}
               metricLabel={metricLabelFor(statement, metricsById, groups)}
+              anchor
             />
           ))}
         </ul>

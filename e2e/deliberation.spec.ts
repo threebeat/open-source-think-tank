@@ -50,15 +50,19 @@ test.describe("deliberation observer", () => {
         name: /Evidence \(limited\): Household bill impact vignettes/i,
       }),
     ).toBeVisible();
+    const sunsetLink = page.getByRole("link", {
+      name: /Consultation statement: .*sunset/i,
+    });
+    await expect(sunsetLink).toHaveAttribute(
+      "href",
+      /\/consult#stmt-sunset-clause$/,
+    );
     await expect(
-      page.getByRole("link", {
-        name: /Consultation statement: .*sunset/i,
-      }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("link", {
-        name: /Evidence \(pending\): Billing system change estimate/i,
-      }),
+      page
+        .getByRole("link", {
+          name: /Evidence \(pending\): Billing system change estimate/i,
+        })
+        .first(),
     ).toHaveAttribute("href", /#evidence-billing-ops-brief$/);
     await expect(
       page.getByText(/would lapse unless renewed by the legally authorized body/i),
@@ -69,5 +73,9 @@ test.describe("deliberation observer", () => {
     await expect(
       page.getByText("Public redaction reason", { exact: true }),
     ).toBeVisible();
+
+    await sunsetLink.click();
+    await expect(page).toHaveURL(/\/consult#stmt-sunset-clause$/);
+    await expect(page.locator("#stmt-sunset-clause")).toBeVisible();
   });
 });

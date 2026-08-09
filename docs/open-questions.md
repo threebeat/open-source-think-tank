@@ -18,6 +18,8 @@ Do not treat items below as settled. When a choice would invent governance autho
 
 3a. **Decision-record outcome labels** — Unresolved. Phase 1 fixtures use `recommended` for Policy Council outputs so the demo does not invent board adoption. Whether a later board action becomes a separate `adopted` record, an overlay status, or another model remains open.
 
+3b. **Overlapping council membership** — Unresolved for production. Phase 1 models Deliberation Council and Policy Council as separate seats. Some synthetic people may hold both roles only when each role has its own selection path and conflicts are recorded for the person; equivalence is never inferred from one roster alone.
+
 ---
 
 ## Representation and sampling

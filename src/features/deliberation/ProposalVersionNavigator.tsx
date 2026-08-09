@@ -7,6 +7,7 @@ import {
   type KeyboardEvent,
   type Ref,
 } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { buttonVariants } from "@/components/ui/button";
 import type { Proposal } from "@/domain/types";
@@ -17,13 +18,38 @@ type ProposalVersionNavigatorProps = {
   proposals: Proposal[];
 };
 
+function resolveInitialId(
+  proposals: Proposal[],
+  proposalParam: string | null,
+  versionParam: string | null,
+): string {
+  const ordered = [...proposals].sort((a, b) => a.version - b.version);
+  return (
+    ordered.find((proposal) => proposal.id === proposalParam)?.id ??
+    ordered.find((proposal) => String(proposal.version) === versionParam)?.id ??
+    ordered[ordered.length - 1]?.id ??
+    ""
+  );
+}
+
+export function ProposalVersionNavigatorKeyed({
+  proposals,
+}: ProposalVersionNavigatorProps) {
+  const searchParams = useSearchParams();
+  const key = `${searchParams.get("version") ?? ""}:${searchParams.get("proposal") ?? ""}`;
+  return <ProposalVersionNavigator key={key} proposals={proposals} />;
+}
+
 export function ProposalVersionNavigator({
   proposals,
 }: ProposalVersionNavigatorProps) {
   const baseId = useId();
+  const searchParams = useSearchParams();
+  const versionParam = searchParams.get("version");
+  const proposalParam = searchParams.get("proposal");
   const ordered = [...proposals].sort((a, b) => a.version - b.version);
-  const [selectedId, setSelectedId] = useState(
-    ordered[ordered.length - 1]?.id ?? "",
+  const [selectedId, setSelectedId] = useState(() =>
+    resolveInitialId(proposals, proposalParam, versionParam),
   );
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const selectedIndex = Math.max(
@@ -73,7 +99,11 @@ export function ProposalVersionNavigator({
   }
 
   return (
-    <section className="space-y-4" aria-labelledby={`${baseId}-heading`}>
+    <section
+      id="proposal-versions"
+      className="space-y-4 scroll-mt-28"
+      aria-labelledby={`${baseId}-heading`}
+    >
       <div>
         <h2
           id={`${baseId}-heading`}

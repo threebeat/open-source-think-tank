@@ -129,22 +129,39 @@ export function DecisionRecord({
 
       <section className="space-y-3" aria-labelledby="roll-call-heading">
         <h2 id="roll-call-heading" className="font-heading text-2xl text-foreground">
-          Roll call
+          Policy Council roll call
         </h2>
+        <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+          This roster is the Policy Council for the recommendation. It is not the
+          Deliberation Council roster. Dual-seat members have separately recorded
+          Policy Council selection paths.
+        </p>
         <ul className="space-y-3">
-          {rollCall.map((entry) => (
-            <li
-              key={entry.participantId}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-surface px-4 py-3 text-sm"
-            >
-              <span className="font-medium text-foreground">
-                {entry.participant?.displayName ?? entry.participantId}
-              </span>
-              <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
-                {voteChoiceLabels[entry.vote]}
-              </span>
-            </li>
-          ))}
+          {rollCall.map((entry) => {
+            const policyPath = entry.participant?.roleAssignments.find(
+              (assignment) => assignment.role === "policy_council",
+            )?.selectionPath;
+            return (
+              <li
+                key={entry.participantId}
+                className="rounded-md border border-border bg-surface px-4 py-3 text-sm"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="font-medium text-foreground">
+                    {entry.participant?.displayName ?? entry.participantId}
+                  </span>
+                  <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+                    {voteChoiceLabels[entry.vote]}
+                  </span>
+                </div>
+                {policyPath ? (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Policy Council selection: {policyPath}
+                  </p>
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
       </section>
 
@@ -185,24 +202,46 @@ export function DecisionRecord({
         <h2 id="history-heading" className="font-heading text-2xl text-foreground">
           Proposal version history
         </h2>
+        <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+          Expand each version for its full text, or open the matching selectable
+          version in the deliberation navigator.
+        </p>
         <ol className="space-y-3">
           {orderedHistory.map((proposal) => (
             <li
               key={proposal.id}
               className="rounded-md border border-border bg-surface p-4 text-sm"
             >
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-medium text-foreground">
-                  Version {proposal.version}
-                </span>
-                <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
-                  {proposalStateLabels[proposal.state]}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {proposal.createdAt}
-                </span>
-              </div>
-              <p className="mt-2 text-muted-foreground">{proposal.title}</p>
+              <details>
+                <summary className="cursor-pointer list-none">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium text-foreground">
+                      Version {proposal.version}
+                    </span>
+                    <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+                      {proposalStateLabels[proposal.state]}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {proposal.createdAt}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-muted-foreground">{proposal.title}</p>
+                  <p className="mt-2 text-xs font-medium text-primary">
+                    Show full proposal text
+                  </p>
+                </summary>
+                <p className="mt-3 leading-6 text-muted-foreground">
+                  {proposal.body}
+                </p>
+                <p className="mt-3">
+                  <Link
+                    href={`/deliberation/${deliberation.slug}?version=${proposal.version}#proposal-versions`}
+                    className="font-medium text-foreground underline-offset-4 hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                  >
+                    Open version {proposal.version} in deliberation navigator
+                  </Link>
+                </p>
+              </details>
             </li>
           ))}
         </ol>

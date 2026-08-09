@@ -336,6 +336,17 @@ export function collectRelationshipErrors(catalog: FixtureCatalog): string[] {
 
     for (const participantId of deliberation.participantIds) {
       assertId("councilParticipant", participantId, participantIds, errors);
+      const participant = participantsById.get(participantId);
+      if (
+        participant &&
+        !participant.roleAssignments.some(
+          (assignment) => assignment.role === "deliberation_council",
+        )
+      ) {
+        errors.push(
+          `Deliberation ${deliberation.id} participant ${participantId} lacks a deliberation_council role assignment`,
+        );
+      }
     }
     for (const conflictId of deliberation.conflictDisclosureIds) {
       const disclosure = conflictsById.get(conflictId);
@@ -437,13 +448,34 @@ export function collectRelationshipErrors(catalog: FixtureCatalog): string[] {
       );
     }
 
-    const memberIds = new Set(deliberation.participantIds);
-    const votingMemberIds = new Set(
-      deliberation.participantIds.filter((participantId) => {
+    assertUniqueIds(
+      `decision ${decision.id} policyCouncilParticipantIds`,
+      decision.policyCouncilParticipantIds,
+      errors,
+    );
+
+    const policyMemberIds = new Set(decision.policyCouncilParticipantIds);
+    const votingPolicyMemberIds = new Set(
+      decision.policyCouncilParticipantIds.filter((participantId) => {
         const participant = participantsById.get(participantId);
         return participant?.voting;
       }),
     );
+
+    for (const participantId of decision.policyCouncilParticipantIds) {
+      assertId("councilParticipant", participantId, participantIds, errors);
+      const participant = participantsById.get(participantId);
+      if (
+        participant &&
+        !participant.roleAssignments.some(
+          (assignment) => assignment.role === "policy_council",
+        )
+      ) {
+        errors.push(
+          `Decision ${decision.id} policy council participant ${participantId} lacks a policy_council role assignment`,
+        );
+      }
+    }
 
     assertId("proposal", decision.finalProposalId, proposalIds, errors);
     for (const proposalId of decision.proposalVersionIds) {
@@ -462,9 +494,9 @@ export function collectRelationshipErrors(catalog: FixtureCatalog): string[] {
     );
 
     for (const entry of decision.rollCall) {
-      if (!memberIds.has(entry.participantId)) {
+      if (!policyMemberIds.has(entry.participantId)) {
         errors.push(
-          `Decision ${decision.id} roll-call participant ${entry.participantId} is not a deliberation member`,
+          `Decision ${decision.id} roll-call participant ${entry.participantId} is not on the Policy Council roster`,
         );
       }
       const participant = participantsById.get(entry.participantId);
@@ -476,14 +508,14 @@ export function collectRelationshipErrors(catalog: FixtureCatalog): string[] {
     }
 
     for (const authorId of decision.minorityReport.authorParticipantIds) {
-      if (!memberIds.has(authorId)) {
+      if (!policyMemberIds.has(authorId)) {
         errors.push(
-          `Decision ${decision.id} minority author ${authorId} is not a deliberation member`,
+          `Decision ${decision.id} minority author ${authorId} is not on the Policy Council roster`,
         );
       }
-      if (!votingMemberIds.has(authorId)) {
+      if (!votingPolicyMemberIds.has(authorId)) {
         errors.push(
-          `Decision ${decision.id} minority author ${authorId} is not a voting member`,
+          `Decision ${decision.id} minority author ${authorId} is not a voting Policy Council member`,
         );
       }
     }

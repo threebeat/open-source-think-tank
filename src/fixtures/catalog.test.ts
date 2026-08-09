@@ -135,6 +135,29 @@ describe("fixture catalog", () => {
     );
   });
 
+  it("rejects decision roll calls that reuse deliberation membership without a Policy Council roster", () => {
+    const broken = structuredClone(rawFixtureCatalog);
+    broken.decisions[0].policyCouncilParticipantIds = [
+      "council-ada-nguyen",
+      "council-ben-okonkwo",
+      "council-cara-diaz",
+      "council-elena-frost",
+    ];
+    broken.decisions[0].rollCall = [
+      { participantId: "council-ada-nguyen", vote: "for" },
+      { participantId: "council-ben-okonkwo", vote: "recused" },
+      { participantId: "council-cara-diaz", vote: "for" },
+      { participantId: "council-elena-frost", vote: "against" },
+    ];
+    broken.decisions[0].minorityReport.authorParticipantIds = [
+      "council-elena-frost",
+    ];
+
+    expect(() => parseAndAssertCatalog(broken)).toThrow(
+      /lacks a policy_council role assignment/,
+    );
+  });
+
   it("rejects agenda items whose state disagrees with humanReview.decision", () => {
     const broken = structuredClone(rawFixtureCatalog);
     broken.agendaItems[0].state = "qualified";

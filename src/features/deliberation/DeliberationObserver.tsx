@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { buttonVariants } from "@/components/ui/button";
-import { ProposalVersionNavigator } from "@/features/deliberation/ProposalVersionNavigator";
+import { ProposalVersionNavigatorKeyed } from "@/features/deliberation/ProposalVersionNavigator";
 import { SourceLinks } from "@/features/deliberation/SourceLinks";
 import type {
   Amendment,
@@ -15,7 +16,7 @@ import type {
   Proposal,
   Topic,
 } from "@/domain/types";
-import { amendmentStatusLabels } from "@/lib/evidence-labels";
+import { amendmentStatusLabels, councilRoleLabels } from "@/lib/evidence-labels";
 import { cn } from "@/lib/utils";
 
 type DeliberationObserverProps = {
@@ -93,10 +94,19 @@ export function DeliberationObserver({
                     {participant.termStart} – {participant.termEnd}
                   </dd>
                 </div>
-                <div>
-                  <dt className="font-medium text-foreground">Selection path</dt>
-                  <dd className="text-muted-foreground">
-                    {participant.selectionPath}
+                <div className="sm:col-span-2">
+                  <dt className="font-medium text-foreground">
+                    Role seats and selection paths
+                  </dt>
+                  <dd className="mt-1 space-y-2 text-muted-foreground">
+                    {participant.roleAssignments.map((assignment) => (
+                      <p key={`${participant.id}-${assignment.role}`}>
+                        <span className="font-medium text-foreground">
+                          {councilRoleLabels[assignment.role]}:{" "}
+                        </span>
+                        {assignment.selectionPath}
+                      </p>
+                    ))}
                   </dd>
                 </div>
               </dl>
@@ -130,7 +140,13 @@ export function DeliberationObserver({
         </ul>
       </section>
 
-      <ProposalVersionNavigator proposals={proposals} />
+      <Suspense
+        fallback={
+          <p className="text-sm text-muted-foreground">Loading proposal versions…</p>
+        }
+      >
+        <ProposalVersionNavigatorKeyed proposals={proposals} />
+      </Suspense>
 
       <section className="space-y-3" aria-labelledby="amendments-heading">
         <h2 id="amendments-heading" className="font-heading text-2xl text-foreground">

@@ -875,7 +875,17 @@ export const fixtureCatalog = {
       displayName: "Ada Nguyen",
       termStart: "2026-01-01",
       termEnd: "2027-12-31",
-      selectionPath: "Synthetic stratified draw from consultation pool A",
+      roleAssignments: [
+        {
+          role: "deliberation_council",
+          selectionPath: "Synthetic stratified draw from consultation pool A",
+        },
+        {
+          role: "policy_council",
+          selectionPath:
+            "Synthetic Policy Council seat via separate alumni draw; dual membership is explicit, not inferred from deliberation roster",
+        },
+      ],
       voting: true,
     },
     {
@@ -884,7 +894,12 @@ export const fixtureCatalog = {
       displayName: "Ben Okonkwo",
       termStart: "2026-01-01",
       termEnd: "2027-12-31",
-      selectionPath: "Synthetic stratified draw from consultation pool B",
+      roleAssignments: [
+        {
+          role: "deliberation_council",
+          selectionPath: "Synthetic stratified draw from consultation pool B",
+        },
+      ],
       voting: true,
     },
     {
@@ -893,7 +908,17 @@ export const fixtureCatalog = {
       displayName: "Cara Diaz",
       termStart: "2026-01-01",
       termEnd: "2027-12-31",
-      selectionPath: "Synthetic stratified draw from consultation pool C",
+      roleAssignments: [
+        {
+          role: "deliberation_council",
+          selectionPath: "Synthetic stratified draw from consultation pool C",
+        },
+        {
+          role: "policy_council",
+          selectionPath:
+            "Synthetic Policy Council seat via separate capacity-limited draw; dual membership recorded with its own path",
+        },
+      ],
       voting: true,
     },
     {
@@ -902,8 +927,13 @@ export const fixtureCatalog = {
       displayName: "Devon Park",
       termStart: "2026-01-01",
       termEnd: "2027-12-31",
-      selectionPath:
-        "Synthetic facilitation seat — present in deliberation, nonvoting, and omitted from the roll-call tally",
+      roleAssignments: [
+        {
+          role: "deliberation_council",
+          selectionPath:
+            "Synthetic facilitation seat — present in deliberation, nonvoting, and omitted from deliberation vote tallies",
+        },
+      ],
       voting: false,
     },
     {
@@ -912,7 +942,42 @@ export const fixtureCatalog = {
       displayName: "Elena Frost",
       termStart: "2026-01-01",
       termEnd: "2027-12-31",
-      selectionPath: "Synthetic stratified draw from consultation pool A",
+      roleAssignments: [
+        {
+          role: "deliberation_council",
+          selectionPath: "Synthetic stratified draw from consultation pool A",
+        },
+      ],
+      voting: true,
+    },
+    {
+      id: "council-farah-quinn",
+      synthetic: true,
+      displayName: "Farah Quinn",
+      termStart: "2026-02-01",
+      termEnd: "2027-12-31",
+      roleAssignments: [
+        {
+          role: "policy_council",
+          selectionPath:
+            "Synthetic Policy Council-only seat from a separate recommendation roster (not a deliberation member)",
+        },
+      ],
+      voting: true,
+    },
+    {
+      id: "council-hugo-ren",
+      synthetic: true,
+      displayName: "Hugo Ren",
+      termStart: "2026-02-01",
+      termEnd: "2027-12-31",
+      roleAssignments: [
+        {
+          role: "policy_council",
+          selectionPath:
+            "Synthetic Policy Council-only seat from a separate recommendation roster (not a deliberation member)",
+        },
+      ],
       voting: true,
     },
   ],
@@ -922,7 +987,7 @@ export const fixtureCatalog = {
       synthetic: true,
       participantId: "council-ben-okonkwo",
       summary:
-        "Household holds a minority stake in a fictional irrigation-supply cooperative outside the district.",
+        "Household holds a minority stake in a fictional irrigation-supply cooperative outside the district. Applies to Deliberation Council service.",
       disclosedAt: "2026-03-20",
     },
     {
@@ -930,8 +995,40 @@ export const fixtureCatalog = {
       synthetic: true,
       participantId: "council-elena-frost",
       summary:
-        "Serves unpaid on the advisory circle of a fictional watershed education nonprofit.",
+        "Serves unpaid on the advisory circle of a fictional watershed education nonprofit. Applies to Deliberation Council service.",
       disclosedAt: "2026-03-21",
+    },
+    {
+      id: "conflict-ada-dual-seat",
+      synthetic: true,
+      participantId: "council-ada-nguyen",
+      summary:
+        "Holds both Deliberation Council and Policy Council seats in this synthetic scenario; each seat has a separately recorded selection path. No additional financial conflict disclosed.",
+      disclosedAt: "2026-03-22",
+    },
+    {
+      id: "conflict-cara-dual-seat",
+      synthetic: true,
+      participantId: "council-cara-diaz",
+      summary:
+        "Holds both Deliberation Council and Policy Council seats in this synthetic scenario; each seat has a separately recorded selection path. No additional financial conflict disclosed.",
+      disclosedAt: "2026-03-22",
+    },
+    {
+      id: "conflict-farah-research-stipend",
+      synthetic: true,
+      participantId: "council-farah-quinn",
+      summary:
+        "Received a modest synthetic research stipend from a fictional water-efficiency nonprofit two years prior; disclosed for Policy Council service.",
+      disclosedAt: "2026-04-10",
+    },
+    {
+      id: "conflict-hugo-employer-contract",
+      synthetic: true,
+      participantId: "council-hugo-ren",
+      summary:
+        "Employer holds a fictional billing-software contract with another water district; disclosed for Policy Council service. Private contract terms are not published.",
+      disclosedAt: "2026-04-12",
     },
   ],
   deliberations: [
@@ -953,6 +1050,8 @@ export const fixtureCatalog = {
       conflictDisclosureIds: [
         "conflict-ben-irrigation",
         "conflict-elena-foundation",
+        "conflict-ada-dual-seat",
+        "conflict-cara-dual-seat",
       ],
       proposalIds: [
         "proposal-cedar-v1",
@@ -973,7 +1072,7 @@ export const fixtureCatalog = {
       recusal: {
         participantId: "council-ben-okonkwo",
         publicReason:
-          "Recused from the final vote because of a disclosed household financial interest in an irrigation-supply cooperative. Private financial details are not published.",
+          "Recused from the Deliberation Council recommendation vote because of a disclosed household financial interest in an irrigation-supply cooperative. Private financial details are not published. This recusal does not place Ben Okonkwo on the Policy Council.",
         recordedAt: "2026-04-18",
       },
       timeline: [
@@ -1024,6 +1123,12 @@ export const fixtureCatalog = {
       outcome: "recommended",
       adoptingBody:
         "Synthetic Policy Council — recommendation only (governing-board authority pending counsel; not a final legal adoption).",
+      policyCouncilParticipantIds: [
+        "council-ada-nguyen",
+        "council-cara-diaz",
+        "council-farah-quinn",
+        "council-hugo-ren",
+      ],
       publishedOn: "2026-04-22",
       recommendedOn: "2026-04-22",
       reviewOn: "2027-05-01",
@@ -1032,15 +1137,15 @@ export const fixtureCatalog = {
       voteAbstain: 0,
       rollCall: [
         { participantId: "council-ada-nguyen", vote: "for" },
-        { participantId: "council-ben-okonkwo", vote: "recused" },
         { participantId: "council-cara-diaz", vote: "for" },
-        { participantId: "council-elena-frost", vote: "against" },
+        { participantId: "council-farah-quinn", vote: "against" },
+        { participantId: "council-hugo-ren", vote: "recused" },
       ],
       rationale:
-        "The Policy Council recommended a graduated surcharge with hardship rebate and sunset review. Cross-group consensus supported publication of thresholds and protection of essential indoor use. Device-subsidy popularity was not treated as proof. The pending billing estimate was answered by an evidence request rather than by deferring indefinitely.",
+        "The Policy Council recommended a graduated surcharge with hardship rebate and sunset review. Cross-group consensus supported publication of thresholds and protection of essential indoor use. Device-subsidy popularity was not treated as proof. The pending billing estimate was answered by an evidence request rather than by deferring indefinitely. This roll call is the Policy Council roster, not the Deliberation Council roster.",
       minorityReport: {
         title: "Minority report — prefer voluntary-first extension",
-        authorParticipantIds: ["council-elena-frost"],
+        authorParticipantIds: ["council-farah-quinn"],
         body: "The minority would have extended voluntary measures for one additional season and required a completed equity incidence study before any surcharge. The minority agrees thresholds should be public if a price tool is used later.",
       },
       proposalVersionIds: [

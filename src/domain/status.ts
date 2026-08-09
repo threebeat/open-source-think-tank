@@ -80,3 +80,9 @@ export type AmendmentStatus = (typeof AMENDMENT_STATUSES)[number];
 
 export const VOTE_CHOICES = ["for", "against", "abstain", "recused"] as const;
 export type VoteChoice = (typeof VOTE_CHOICES)[number];
+
+export const COUNCIL_ROLES = [
+  "deliberation_council",
+  "policy_council",
+] as const;
+export type CouncilRole = (typeof COUNCIL_ROLES)[number];

@@ -32,16 +32,32 @@ describe("DecisionRecord", () => {
     expect(
       screen.getByText(/no adoption date claimed/i),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Policy Council roll call" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Ada Nguyen")).toBeInTheDocument();
+    expect(screen.getByText("Farah Quinn")).toBeInTheDocument();
+    expect(screen.getByText("Hugo Ren")).toBeInTheDocument();
     expect(screen.getByText("Recused")).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
         name: /Minority report — prefer voluntary-first extension/i,
       }),
     ).toBeInTheDocument();
-    expect(screen.getAllByText("Elena Frost").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/Authored by Farah Quinn/i)).toBeInTheDocument();
     expect(screen.getByText("Version 1")).toBeInTheDocument();
     expect(screen.getByText("Version 3")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Draft v1 proposes Stage 1–3 surcharges/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", {
+        name: "Open version 1 in deliberation navigator",
+      }),
+    ).toHaveAttribute(
+      "href",
+      "/deliberation/cedar-river-drought-surcharge?version=1#proposal-versions",
+    );
     expect(
       screen.getByRole("link", { name: "Topic and evidence" }),
     ).toHaveAttribute("href", "/topics/cedar-river-drought-surcharge");

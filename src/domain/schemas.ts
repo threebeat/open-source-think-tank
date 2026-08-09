@@ -8,6 +8,7 @@ import {
   EVIDENCE_REVIEW_STATUSES,
   PROPOSAL_STATES,
   SOURCE_TYPES,
+  COUNCIL_ROLES,
   TOPIC_STAGES,
   TOPIC_STATUSES,
   VOTE_CHOICES,
@@ -176,15 +177,32 @@ export const amendmentSchema = z.object({
   relatedClaimIds: z.array(z.string().min(1)).default([]),
 });
 
-export const councilParticipantSchema = z.object({
-  id: z.string().min(1),
-  synthetic: z.literal(true),
-  displayName: z.string().min(1),
-  termStart: isoDate,
-  termEnd: isoDate,
+export const councilRoleAssignmentSchema = z.object({
+  role: z.enum(COUNCIL_ROLES),
   selectionPath: z.string().min(1),
-  voting: z.boolean(),
 });
+
+export const councilParticipantSchema = z
+  .object({
+    id: z.string().min(1),
+    synthetic: z.literal(true),
+    displayName: z.string().min(1),
+    termStart: isoDate,
+    termEnd: isoDate,
+    /** Explicit role seats — dual membership must list both selection paths. */
+    roleAssignments: z.array(councilRoleAssignmentSchema).min(1),
+    voting: z.boolean(),
+  })
+  .superRefine((participant, ctx) => {
+    const roles = participant.roleAssignments.map((assignment) => assignment.role);
+    if (new Set(roles).size !== roles.length) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Duplicate council role assignments are not allowed",
+        path: ["roleAssignments"],
+      });
+    }
+  });
 
 export const conflictDisclosureSchema = z.object({
   id: z.string().min(1),
@@ -258,6 +276,8 @@ export const decisionSchema = z
     synthetic: z.literal(true),
     outcome: z.enum(DECISION_OUTCOMES),
     adoptingBody: z.string().min(1),
+    /** Policy Council roster for this recommendation — not inferred from deliberation. */
+    policyCouncilParticipantIds: z.array(z.string().min(1)).min(1),
     /** When the decision record was published. */
     publishedOn: isoDate,
     /** Set when the Policy Council (or equivalent) recommends a position. */

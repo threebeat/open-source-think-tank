@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 
 import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { EmptyState } from "@/components/EmptyState";
@@ -57,10 +57,15 @@ export function ConsultationSimulator({
   const [index, setIndex] = useState(0);
   const [showReport, setShowReport] = useState(false);
   const [liveStatus, setLiveStatus] = useState("");
+  const [hashStatementId, setHashStatementId] = useState<string | null>(null);
 
   const responseCount = Object.keys(votes).length;
+  const hashUnlocksReport =
+    hashStatementId != null &&
+    statements.some((statement) => statement.id === hashStatementId);
   const canOpenReport =
-    Boolean(result) && responseCount >= MIN_RESPONSES_TO_OPEN_REPORT;
+    Boolean(result) &&
+    (responseCount >= MIN_RESPONSES_TO_OPEN_REPORT || hashUnlocksReport);
   const safeIndex = Math.min(index, Math.max(statements.length - 1, 0));
   const current = statements[safeIndex];
   const claimsById = useMemo(
@@ -71,6 +76,32 @@ export function ConsultationSimulator({
     () => new Map(evidenceSources.map((source) => [source.id, source])),
     [evidenceSources],
   );
+
+  useEffect(() => {
+    function syncHash() {
+      const id = window.location.hash.replace(/^#/, "");
+      if (id && statements.some((statement) => statement.id === id)) {
+        setHashStatementId(id);
+        setShowReport(true);
+      }
+    }
+    syncHash();
+    window.addEventListener("hashchange", syncHash);
+    return () => window.removeEventListener("hashchange", syncHash);
+  }, [statements]);
+
+  useEffect(() => {
+    if (!showReport || !hashStatementId) {
+      return;
+    }
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(hashStatementId)?.scrollIntoView({
+        block: "start",
+        behavior: "smooth",
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [showReport, hashStatementId]);
 
   function vote(value: ConsultationVote) {
     if (!current) {

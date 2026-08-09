@@ -1,12 +1,16 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { DeliberationObserver } from "@/features/deliberation/DeliberationObserver";
 import { ProposalVersionNavigator } from "@/features/deliberation/ProposalVersionNavigator";
 import { getDeliberationBundle } from "@/domain/selectors";
 import { fixtureCatalog } from "@/fixtures";
 import { amendmentStatusLabels } from "@/lib/evidence-labels";
+
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 afterEach(() => {
   cleanup();
@@ -94,7 +98,10 @@ describe("deliberation observer", () => {
       screen.getByRole("link", {
         name: /Consultation statement: .*sunset/i,
       }),
-    ).toHaveAttribute("href", "/topics/cedar-river-drought-surcharge/consult");
+    ).toHaveAttribute(
+      "href",
+      "/topics/cedar-river-drought-surcharge/consult#stmt-sunset-clause",
+    );
     expect(
       screen.getByRole("link", {
         name: /Evidence \(pending\): Billing system change estimate/i,

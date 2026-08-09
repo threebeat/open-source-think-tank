@@ -2,6 +2,7 @@ import type {
   AgendaState,
   AmendmentStatus,
   AuthorType,
+  CouncilRole,
   DecisionOutcome,
   EvidenceReviewStatus,
   ProposalState,
@@ -102,4 +103,9 @@ export const voteChoiceLabels: Record<VoteChoice, string> = {
   against: "Against",
   abstain: "Abstain",
   recused: "Recused",
+};
+
+export const councilRoleLabels: Record<CouncilRole, string> = {
+  deliberation_council: "Deliberation council",
+  policy_council: "Policy council",
 };
