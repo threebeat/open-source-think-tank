@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 2  
 **Baseline:** Phase 1 demonstration release tag [`phase-1-demonstration`](https://github.com/threebeat/open-source-think-tank/releases/tag/phase-1-demonstration) at commit `33ff0cc`  
-**Current package:** **2.1** (contract only — no auth, database, or vendor installs)
+**Current package:** **2.2 complete** — next **2.3** after approval (Drizzle/PostgreSQL install). Dependency installs begin only in authorizing implementation packages.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [open-questions.md](./open-questions.md), [legal-questions.md](./legal-questions.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [phase-1-handoff.md](./phase-1-handoff.md)
 
@@ -30,7 +30,7 @@ The tagged Phase 1 synthetic demonstration remains separately deployable. Enforc
 
 ### Hard rule for agents and collaborators
 
-**Work Package 2.2 must complete before any authentication provider, database, ORM, email vendor, identity vendor, or similar production dependency is added to the repository.** Package 2.1 is documentation and agent-rule contract only.
+**npm installs for gated infrastructure begin only in the authorizing implementation package** (PostgreSQL/Drizzle in **2.3**, Auth.js in **2.4**, email vendor after addendum). Public-demo builds must not configure those clients. Package **2.2** records ADRs and adapter interfaces only.
 
 ---
 
@@ -72,19 +72,19 @@ Do **not** introduce during Phase 2:
 
 Fable and human collaborators may introduce **only** services marked **approved** below, and only in the work package that authorizes them. Adapter names are reserved until 2.2 ADRs.
 
-| Service class | Vendor / product | Status | Environments allowed | Adapter (planned) | Authorizing package |
+| Service class | Vendor / product | Status | Environments allowed | Adapter | Authorizing package |
 | --- | --- | --- | --- | --- | --- |
-| Authentication / identity | — | **blocked until 2.2 ADR** | — | `AuthAdapter` | 2.2 → 2.4 |
-| Persistence / database | — | **blocked until 2.2 ADR** | — | `PersistenceAdapter` | 2.2 → 2.3 |
-| Transactional email | — | **blocked until 2.2 ADR** | — | `EmailAdapter` | 2.2 → 2.4 / 2.8 |
-| Identity / document verification | — | **blocked until 2.2 ADR** | — | `VerificationAdapter` | 2.2 → 2.7 |
-| Audit publication (if external) | — | **blocked until 2.2 ADR** | — | `AuditPublishAdapter` | 2.2 → 2.9 |
+| Persistence / database | PostgreSQL + Drizzle ORM | **approved (gated only)** | development, test, staging, production — **never public-demo** | `PersistenceAdapter` | ADR 0003; install in **2.3** |
+| Authentication / identity | Auth.js (Auth.js / NextAuth v5) on the app server | **approved (gated only)** | development, test, staging, production — **never public-demo** | `AuthAdapter` | ADR 0004; implement in **2.4** |
+| Transactional email | Provider TBD behind adapter (Resend or SES candidate) | **conditionally approved — adapter only until vendor ADR addendum** | gated envs only; local may use Ethereal/Mailpit | `EmailAdapter` | ADR 0004; wire vendor in **2.4** after addendum |
+| Identity / document verification | None selected | **blocked — no vendor** | — | `VerificationAdapter` (local/manual reviewer workflow first) | 2.7 |
+| Audit publication (if external) | None — first-party DB ledger | **approved (first-party)** | gated envs | `AuditPublishAdapter` (DB + optional public projection) | 2.9 |
 | Consultation / Pol.is | — | **forbidden in Phase 2** | none | `ConsultationParticipationAdapter` (stub only in 2.10) | not before Phase 4 |
 | Payments / donations | — | **forbidden in Phase 2** | none | — | not before later phases |
 | Analytics / advertising | — | **forbidden in Phase 2** | none | — | — |
 | AI APIs | — | **forbidden in Phase 2** | none | — | — |
 
-**As of Work Package 2.1 completion: zero production vendors are approved.**
+**Public-demo builds must not include or configure gated vendor clients.** See [0002-environments-and-demo-isolation.md](./decisions/0002-environments-and-demo-isolation.md).
 
 ---
 
@@ -127,22 +127,34 @@ Production participant data must never be placed in prompts, fixtures, logs, scr
 
 **Nothing below is legal advice.** Status values invent no approvals.
 
-| Gate | Linked questions | Disposition |
-| --- | --- | --- |
-| Statutory membership vs program participation | LQ3, OQ2 | **Blocking — counsel disposition not yet recorded** |
-| Formation or fiscal sponsorship | LQ1–2 | **Blocking — counsel disposition not yet recorded** |
-| Account and council authority | LQ4–5, OQ1, OQ3 | **Blocking — counsel disposition not yet recorded** |
-| Electronic assent | LQ8–9 | **Blocking — counsel disposition not yet recorded** |
-| Eligibility and geography | LQ12–14 | **Blocking — counsel disposition not yet recorded** |
-| Political-opinion and verification-data handling | LQ10–11 | **Blocking — counsel disposition not yet recorded** |
+### Status vocabulary
+
+| Status | Meaning |
+| --- | --- |
+| **blocking** | No counsel disposition recorded; product must not claim the matter is settled |
+| **conditionally cleared** | Counsel (or a linked decision record) cleared a **limited scope** under stated conditions; outside that scope the gate remains blocking |
+| **cleared** | Counsel disposition recorded for the stated scope; not an owner-only decision |
+
+**Project-owner approval** is a separate field. Owner risk acceptance may allow continued *engineering under blocking constraints*; it must **never** be recorded as equivalent to **cleared** or used to rewrite status from blocking to cleared.
+
+### Required provenance when updating a row
+
+Every change to status must fill: status, scope and conditions, recorded date, recorded by, counsel source or decision-record link (or explicit “none — still blocking”), project-owner approval (name/date or “n/a”), and affected packages. Do not silently change product language first.
+
+| Gate | Linked questions | Status | Scope and conditions | Recorded date | Recorded by | Counsel source or decision-record link | Project-owner approval | Affected packages |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Statutory membership vs program participation | LQ3, OQ2 | blocking | Full gate; no product claim of statutory membership | 2026-08-09 | Phase 2.1 contract author | none — still blocking | n/a | 2.1, 2.4, 2.5, 2.8 |
+| Formation or fiscal sponsorship | LQ1–2 | blocking | Full gate; no entity/tax claims | 2026-08-09 | Phase 2.1 contract author | none — still blocking | n/a | 2.1–2.2, 2.12 |
+| Account and council authority | LQ4–5, OQ1, OQ3 | blocking | Full gate; recommendations only; no board-binding claims | 2026-08-09 | Phase 2.1 contract author | none — still blocking | n/a | 2.5, 2.8, 2.9 |
+| Electronic assent | LQ8–9 | blocking | Full gate; no “not legally reviewed” doc may become active assent | 2026-08-09 | Phase 2.1 contract author | none — still blocking | n/a | 2.6, 2.8 |
+| Eligibility and geography | LQ12–14 | blocking | Full gate; no national-mandate or settled residency rule | 2026-08-09 | Phase 2.1 contract author | none — still blocking | n/a | 2.7, 2.8 |
+| Political-opinion and verification-data handling | LQ10–11 | blocking | Full gate; keep identity store separated from opinion/pseudonym maps | 2026-08-09 | Phase 2.1 contract author | none — still blocking | n/a | 2.7, 2.9–2.11 |
 
 ### How gates constrain engineering
 
-- **Blocked for product claims:** Do not ship copy that states statutory membership, board-binding crowd decisions, approved legal terms, or settled retention/deletion rights.
-- **Allowed for foundation design (after 2.2):** Adapters, schemas, and invite-only scaffolding may be built using provisional language (“account holder,” “community participant,” “recommendation only”) while gates remain blocking.
-- **Blocked for public enrollment:** No invitation that activates a real account for a public cohort until the relevant gates are cleared or explicitly waived in writing by the project owner with counsel advice recorded here.
-
-Update this table when counsel responds; do not silently change product language first.
+- **Blocked for product claims:** Do not ship copy that states statutory membership, board-binding crowd decisions, approved legal terms, or settled retention/deletion rights while the relevant gate is **blocking**.
+- **Allowed for foundation design:** Adapters, schemas, and invite-only scaffolding may be built using provisional language (“account holder,” “community participant,” “recommendation only,” `pending_onboarding`) while gates remain blocking.
+- **Blocked for real participant activation:** No real (non-synthetic) participant account may enter **`active`** until applicable assent (2.6), verification (2.7), and onboarding (2.8) gates for that account are complete, and counsel gates that govern those claims are **cleared** or **conditionally cleared** for the relevant scope. Owner risk acceptance alone does not authorize `active` status or “cleared” counsel rows.
 
 ---
 
@@ -176,7 +188,7 @@ Stop Phase 2 implementation and escalate to humans if:
 
 ### Work package 2.1 — Establish the Phase 2 contract
 
-**Status:** Complete (documentation contract). Next: 2.2 after human approval.
+**Status:** Complete (documentation contract).
 
 1. Create `docs/phase-2-plan.md` (this file).
 2. Define Phase 2 as an invite-only foundation—not a public launch or pilot.
@@ -199,6 +211,8 @@ Stop Phase 2 implementation and escalate to humans if:
 
 ### Work package 2.2 — Approve the production architecture
 
+**Status:** Complete (ADRs, secrets/ops policy, adapter interfaces). Next: **2.3** after human approval.
+
 1. Document the public-demo, development, test, staging, and eventual production environments.
 2. Select the database and authentication approach through ADRs.
 3. Define adapter interfaces for authentication, persistence, email delivery, verification, and audit publication.
@@ -208,7 +222,7 @@ Stop Phase 2 implementation and escalate to humans if:
 7. Define backup, restore, migration, and rollback strategies.
 8. Produce a system/data-flow diagram and update the threat model.
 9. Decide how invite-only access is enforced independently of authentication.
-10. Update the permitted-services register when a vendor is approved (status → **approved**, environments, adapter name).
+10. Update the permitted-services register when a vendor is approved for **gated** environments (install still deferred to the authorizing implementation package).
 
 **Acceptance criteria:**
 
@@ -217,7 +231,7 @@ Stop Phase 2 implementation and escalate to humans if:
 - Vendor-specific code stays behind an identified adapter.
 - The architecture does not require joining real identity records to public opinion records.
 
-**Prerequisite:** 2.1 complete. **Gate:** Do not install auth/DB dependencies before this package’s ADRs and register updates land.
+**Prerequisite:** 2.1 complete. **Install gate:** npm dependencies for DB/auth/email land only in 2.3+ packages that the register authorizes—not in public-demo builds.
 
 ---
 
@@ -244,23 +258,31 @@ Stop Phase 2 implementation and escalate to humans if:
 
 ### Work package 2.4 — Implement authentication and account lifecycle
 
+**Account-state sequence (binding):**
+
+1. **2.4** may create authenticated sessions only for accounts in `invited` → `pending_onboarding` (or equivalent). Contact-channel ownership may be verified in 2.4 without granting `active`.
+2. **E2E and local fixtures** use **synthetic** accounts only; they must be unmistakably non-person data.
+3. **No real participant** becomes `active` until applicable **2.6** published documents are assented, **2.7** verification requirements for that account’s intended capabilities are satisfied, and **2.8** onboarding gates complete the transition to `active`.
+4. Production activation logic that flips `pending_onboarding` → `active` is owned by **2.8** (2.4 must not expose a shortcut).
+
 1. Implement invite acceptance, sign-in, sign-out, session renewal, and account recovery.
-2. Require verified contact-channel ownership before account activation.
+2. Require verified contact-channel ownership before leaving `invited` for `pending_onboarding`.
 3. Keep public self-registration disabled.
 4. Add secure, expiring, single-use invitations.
 5. Add session revocation and “sign out everywhere.”
-6. Define account states such as invited, active, suspended, closed, and anonymization-pending.
-7. Implement server-side route protection.
+6. Define account states: `invited`, `pending_onboarding`, `active`, `suspended`, `closed`, `anonymization-pending`. Do **not** set `active` for real participants in this package.
+7. Implement server-side route protection (including denying institutional capabilities to `pending_onboarding`).
 8. Add rate limiting and abuse controls for authentication endpoints.
 9. Audit security-relevant account events without logging credentials or tokens.
-10. Add E2E tests for successful and failed lifecycle paths.
+10. Add E2E tests for successful and failed lifecycle paths using synthetic accounts only.
 
 **Acceptance criteria:**
 
 - Knowing a protected URL is insufficient to access it.
-- Disabled or revoked accounts cannot retain working sessions.
+- Disabled, revoked, or `pending_onboarding` accounts cannot exercise `active`-only capabilities.
 - Authentication logs contain no secrets, recovery tokens, or verification artifacts.
 - Public signup remains impossible.
+- No 2.4 path sets a real participant account to `active`.
 
 ---
 
@@ -332,11 +354,11 @@ Stop Phase 2 implementation and escalate to humans if:
 ### Work package 2.8 — Build invite-only onboarding
 
 1. Replace the join preview only in the gated Phase 2 environment.
-2. Implement invitation, eligibility assertions, document review, assent, account activation, and applicable verification steps.
+2. Implement invitation, eligibility assertions, document review, assent, applicable verification steps, and the **only** production transition from `pending_onboarding` → `active`.
 3. Show progress and explain why each item is requested.
 4. Preserve neutral “community participant” or “account holder” language until counsel settles membership.
 5. Provide save/resume and safe expiration behavior.
-6. Prevent activation until required gates pass.
+6. Prevent `active` until required 2.6 assent and 2.7 verification gates for that account pass.
 7. Provide accessible error, recovery, and declined-assent states.
 8. Add staff views for invitation and onboarding status without exposing unnecessary data.
 9. Keep public recruitment calls to action disabled.
@@ -348,6 +370,7 @@ Stop Phase 2 implementation and escalate to humans if:
 - No step promises statutory membership or institutional voting authority.
 - Required notices and assent versions are traceable.
 - Sensitive information never appears in URLs, analytics, or client logs.
+- Real participants reach `active` only through this package’s gate checks.
 
 ---
 
@@ -449,4 +472,4 @@ When Phase 2 work is active:
 3. Prefer “account holder” / “community participant” language; never invent statutory membership.
 4. After each package: report files changed, commands run, failed checks, and unresolved decisions; stop for approval.
 
-Next package after 2.1 approval: **2.2 — Approve the production architecture**.
+Next package after 2.2 approval: **2.3 — Build the production data foundation** (Drizzle/PostgreSQL install and migrations).

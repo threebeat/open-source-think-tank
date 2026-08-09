@@ -1,8 +1,8 @@
 # Threat model (Phase 1 → pilot)
 
-**Status:** Design threat model for a future production system. Phase 1 is a static synthetic demonstration with no real accounts, identity vendors, Pol.is, payments, or production participant data.
+**Status:** Living design threat model. Phase 1 remains a static synthetic demonstration. Phase 2 architecture (Work Package 2.2) adds a **gated** invite-only plane; see [architecture-phase-2.md](./architecture-phase-2.md) and [phase-2-plan.md](./phase-2-plan.md).
 
-Threats below are intentional planning targets, not claims that the demo currently mitigates them in production.
+Threats below are intentional planning targets, not claims that every control is already implemented in production.
 
 ## Assets
 
@@ -71,9 +71,24 @@ Participants or operators optimize for threshold metrics rather than honest cons
 - **Phase 1:** UI states that thresholds are separate and that there is no combined truth score.
 - **Later:** Shadow-mode algorithms, parameter publication, adversarial review of metrics, human review that can defer without inventing a popularity override.
 
-## Explicit non-goals for Phase 1
+## Phase 2 architecture posture (after 2.2 ADRs)
 
-- Production authentication, CAPTCHA, or bot defense
+Controls below are **designed**; implementation lands in 2.3–2.11.
+
+| Threat | Phase 2 design response |
+| --- | --- |
+| Demo ↔ production data bleed | Separate `APP_MODE`; public-demo adapters refuse DB/auth; gated secrets forbidden on demo deploys ([ADR 0002](./decisions/0002-environments-and-demo-isolation.md)) |
+| Auth without invite | Invitation table + server checks independent of Auth.js ([ADR 0005](./decisions/0005-invite-gate-independent-of-auth.md)) |
+| Auth mistaken for activation | Lifecycle `pending_onboarding` until 2.6–2.8 gates; no real `active` in 2.4 |
+| Identity joined to public opinion | Separate stores; consultation adapter forbidden in Phase 2; future pseudonym map security-restricted |
+| Secret leakage to browser | No `NEXT_PUBLIC_` secrets; adapter boundary; [secrets-and-operations.md](./secrets-and-operations.md) |
+| Audit tampering by ordinary roles | Append-only ledger intent; public projections allowlisted (2.9) |
+| Email / DB vendor abuse | DPA/region/retention checklist before production keys; email vendor conditionally approved pending addendum |
+
+## Explicit non-goals for Phase 1 / Phase 2 public-demo
+
+- Production authentication on the public demo
 - Live Pol.is threat integration
-- Penetration-test certification
+- Penetration-test certification as a Phase 2 exit criterion (review in 2.12)
 - Claiming statistical representation of any population
+- Treating owner risk acceptance as counsel clearance

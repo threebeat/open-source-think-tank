@@ -1,0 +1,58 @@
+import type { AccountLifecycleState, AdapterResult } from "@/lib/adapters/types";
+
+export type AuthSession = {
+  accountId: string;
+  lifecycleState: AccountLifecycleState;
+  /** Synthetic marker for test/demo accounts — real participants must be false. */
+  synthetic: boolean;
+};
+
+export type InviteAcceptanceInput = {
+  inviteToken: string;
+  contactChannel: string;
+};
+
+/**
+ * Authentication boundary (ADR 0004). Must not set real participants to `active`.
+ */
+export interface AuthAdapter {
+  readonly name: "auth";
+  getSession(): Promise<AdapterResult<AuthSession | null>>;
+  acceptInvite(
+    input: InviteAcceptanceInput,
+  ): Promise<AdapterResult<AuthSession>>;
+  signOut(): Promise<AdapterResult<true>>;
+  revokeAllSessions(accountId: string): Promise<AdapterResult<true>>;
+}
+
+export class PublicDemoAuthAdapter implements AuthAdapter {
+  readonly name = "auth" as const;
+
+  async getSession(): Promise<AdapterResult<AuthSession | null>> {
+    return { ok: true, value: null };
+  }
+
+  async acceptInvite(
+    _input: InviteAcceptanceInput,
+  ): Promise<AdapterResult<AuthSession>> {
+    return {
+      ok: false,
+      error: "Authentication is disabled in public-demo mode",
+      code: "PUBLIC_DEMO_NO_AUTH",
+    };
+  }
+
+  async signOut(): Promise<AdapterResult<true>> {
+    return { ok: true, value: true };
+  }
+
+  async revokeAllSessions(
+    _accountId: string,
+  ): Promise<AdapterResult<true>> {
+    return {
+      ok: false,
+      error: "Authentication is disabled in public-demo mode",
+      code: "PUBLIC_DEMO_NO_AUTH",
+    };
+  }
+}

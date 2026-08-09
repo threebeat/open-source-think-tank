@@ -34,8 +34,10 @@ While editing:
 - Keep algorithm output separate from human institutional decisions. Algorithms organize or recommend; humans decide.
 - Do not infer or label participant ideology.
 - Preserve keyboard accessibility and mobile responsiveness.
-- **External services:** introduce only services marked **approved** in `docs/phase-2-plan.md` §4 (or an ADR linked from that register), and only in the work package that authorizes them.
-- **Until Work Package 2.2 completes and the register is updated:** do not add authentication providers, databases/ORMs, email vendors, identity-verification SDKs, payments, analytics, AI APIs, or live Pol.is. Package 2.1 is documentation only.
+- **External services:** introduce only services marked **approved** or **conditionally approved** in `docs/phase-2-plan.md` §4 (or an ADR linked from that register), and only in the work package that authorizes the **install** (e.g. Drizzle in 2.3, Auth.js in 2.4). Public-demo mode must never load gated clients or `DATABASE_URL`.
+- **Still forbidden in Phase 2:** payments, analytics, AI APIs, live Pol.is, identity-verification SDKs until the register explicitly approves them.
+- **Account activation:** do not set real participants to `active` before packages 2.6–2.8 gates; 2.4 may only reach `pending_onboarding` (see phase-2-plan).
+- **Counsel gates:** update provenance fields in phase-2-plan §7; owner risk acceptance is never equivalent to status `cleared`.
 - Production participant data must never be placed in prompts, fixtures, logs, screenshots, or test recordings.
 - No secrets or privileged credentials in the browser bundle or repository.
 

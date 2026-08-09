@@ -41,7 +41,7 @@ See [open-questions.md](./open-questions.md) and [legal-questions.md](./legal-qu
 
 ## Recommended Phase 2 sequence
 
-Active plan: [phase-2-plan.md](./phase-2-plan.md). Package **2.1** establishes the Phase 2 contract, counsel gates, and permitted-services register. **Do not install auth providers or databases until 2.2 is approved.**
+Active plan: [phase-2-plan.md](./phase-2-plan.md). Packages **2.1–2.2** establish the contract and architecture ADRs. **Drizzle/PostgreSQL installs begin in 2.3** (gated environments only; public-demo stays fixture-only).
 
 Summary of later packages in that plan: architecture ADRs and environment separation (2.2); production data model (2.3); authentication lifecycle (2.4); server-enforced roles (2.5); versioned assent (2.6); verification ladder (2.7); invite-only onboarding (2.8); audit ledger (2.9); conversation-scoped pseudonym foundations without live Pol.is (2.10); privacy/ops controls (2.11); closed readiness and handoff tag (2.12).
 

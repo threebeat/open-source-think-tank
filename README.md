@@ -111,6 +111,8 @@ Direct product URLs still work without presentation mode.
 | [`docs/phase-1-handoff.md`](docs/phase-1-handoff.md) | Completed work and Phase 2 sequence |
 | [`docs/phase-1-manual-qa.md`](docs/phase-1-manual-qa.md) | Required Phase 1 QA results |
 | [`docs/phase-2-plan.md`](docs/phase-2-plan.md) | Phase 2 invite-only foundation work packages |
+| [`docs/architecture-phase-2.md`](docs/architecture-phase-2.md) | Phase 2 environments, adapters, data-flow |
+| [`docs/secrets-and-operations.md`](docs/secrets-and-operations.md) | Secrets, backup, vendor ops checklist |
 | [`docs/presentation-backup/`](docs/presentation-backup/) | Static screenshot backup |
 
 ## Status
