@@ -1,0 +1,21 @@
+# Local PostgreSQL for gated foundation work (Work Package 2.3).
+# Not a staging/production host approval — managed vendors remain blocked.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ostt
+      POSTGRES_PASSWORD: ostt
+      POSTGRES_DB: ostt_dev
+    ports:
+      - "54329:5432"
+    volumes:
+      - ostt_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ostt -d ostt_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  ostt_pg_data:

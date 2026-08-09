@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 2  
 **Baseline:** Phase 1 demonstration release tag [`phase-1-demonstration`](https://github.com/threebeat/open-source-think-tank/releases/tag/phase-1-demonstration) at commit `33ff0cc`  
-**Current package:** **2.2 complete** — next **2.3** after approval (Drizzle/PostgreSQL install). Dependency installs begin only in authorizing implementation packages.
+**Current package:** **2.3 complete** — next **2.4** after approval. Managed Postgres host remains blocked pending vendor addendum.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [open-questions.md](./open-questions.md), [legal-questions.md](./legal-questions.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [phase-1-handoff.md](./phase-1-handoff.md)
 
@@ -74,8 +74,9 @@ Fable and human collaborators may introduce **only** services marked **approved*
 
 | Service class | Vendor / product | Status | Environments allowed | Adapter | Authorizing package |
 | --- | --- | --- | --- | --- | --- |
-| Persistence / database | PostgreSQL + Drizzle ORM | **approved (gated only)** | development, test, staging, production — **never public-demo** | `PersistenceAdapter` | ADR 0003; install in **2.3** |
-| Authentication / identity | Auth.js (Auth.js / NextAuth v5) on the app server | **approved (gated only)** | development, test, staging, production — **never public-demo** | `AuthAdapter` | ADR 0004; implement in **2.4** |
+| Persistence technology | PostgreSQL + Drizzle ORM | **approved (technology)** | local development + ephemeral CI/test — **never public-demo** | `PersistenceAdapter` | ADR 0003; install in **2.3** |
+| Managed PostgreSQL host | TBD (Neon, RDS, Cloud SQL, etc.) | **blocked — pending vendor addendum** | staging / production **not authorized** until addendum | `PersistenceAdapter` | Future ADR addendum after DPA/region/SLA review |
+| Authentication / identity | Auth.js (Auth.js / NextAuth v5) on the app server | **approved (gated only)** | development, test — staging/production auth wiring still invite-gated; **never public-demo** | `AuthAdapter` | ADR 0004; implement in **2.4** |
 | Transactional email | Provider TBD behind adapter (Resend or SES candidate) | **conditionally approved — adapter only until vendor ADR addendum** | gated envs only; local may use Ethereal/Mailpit | `EmailAdapter` | ADR 0004; wire vendor in **2.4** after addendum |
 | Identity / document verification | None selected | **blocked — no vendor** | — | `VerificationAdapter` (local/manual reviewer workflow first) | 2.7 |
 | Audit publication (if external) | None — first-party DB ledger | **approved (first-party)** | gated envs | `AuditPublishAdapter` (DB + optional public projection) | 2.9 |
@@ -236,6 +237,8 @@ Stop Phase 2 implementation and escalate to humans if:
 ---
 
 ### Work package 2.3 — Build the production data foundation
+
+**Status:** Complete for local/ephemeral PostgreSQL technology. Managed host for staging/production remains blocked.
 
 1. Add migration tooling and a reproducible local database.
 2. Model accounts, profiles, invitations, role assignments, document versions, assent records, verification cases, verification assertions, and audit events.
@@ -472,4 +475,4 @@ When Phase 2 work is active:
 3. Prefer “account holder” / “community participant” language; never invent statutory membership.
 4. After each package: report files changed, commands run, failed checks, and unresolved decisions; stop for approval.
 
-Next package after 2.2 approval: **2.3 — Build the production data foundation** (Drizzle/PostgreSQL install and migrations).
+Next package after 2.3 approval: **2.4 — Implement authentication and account lifecycle** (`pending_onboarding` only for real participants).

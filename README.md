@@ -52,6 +52,9 @@ Serve that build behind ordinary HTTPS in deployment so phone browsers can open 
 | `npm test` | Unit tests (Vitest) |
 | `npm run test:e2e` | Production build, then Playwright + axe e2e (self-contained; does not reuse a stale server) |
 | `npm run capture:screenshots` | Write presentation-backup PNGs (requires `npm run start` already listening) |
+| `npm run db:up` | Start local Postgres (Docker) on port 54329 — not a managed-host approval |
+| `npm run db:migrate` | Apply Drizzle migrations to `DATABASE_URL` (requires `APP_MODE=gated`) |
+| `npm run db:generate` | Generate SQL migrations from `src/db/schema.ts` |
 
 ## Routes
 

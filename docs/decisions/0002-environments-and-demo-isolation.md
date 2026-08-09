@@ -22,10 +22,12 @@ Phase 2 adds an invite-only foundation while the tagged Phase 1 synthetic demons
 
 ### Isolation rules
 
-1. `APP_MODE=public-demo` (or equivalent) **disables** persistence and auth adapters; routes use fixtures.
-2. Gated modes require explicit `DATABASE_URL` and auth secrets; public-demo builds **fail closed** if those variables are present and `APP_MODE=public-demo` (misconfiguration).
-3. Separate deployment projects / env var sets for public-demo vs gated apps; no shared production database credentials with the demo project.
-4. Invite-only enforcement is independent of authentication success (ADR 0005).
+1. `APP_MODE` is resolved by `src/lib/env/app-mode.ts` (unset defaults to **public-demo**).
+2. `assertEnvironmentSafe()` runs from Next.js `instrumentation.ts` and before any DB client construction; **public-demo fails closed** if gated secrets (`DATABASE_URL`, `AUTH_SECRET`, …) are present.
+3. Gated modes require explicit `DATABASE_URL`; persistence/auth adapters stay disabled in public-demo.
+4. Separate deployment projects / env var sets for public-demo vs gated apps; no shared production database credentials with the demo project.
+5. Invite-only enforcement is independent of authentication success (ADR 0005).
+6. Staging/production **managed database hosts** are not authorized by the PostgreSQL technology choice alone (see ADR 0003 / permitted-services register).
 
 ## Consequences
 

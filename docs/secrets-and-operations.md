@@ -45,7 +45,8 @@ Candidates below are **not** all approved. See permitted-services register in [p
 
 | Vendor class | Data expected | Region preference | Retention / deletion | Export | Breach notification |
 | --- | --- | --- | --- | --- | --- |
-| PostgreSQL host | Account, invite, assent, audit metadata | Prefer US region until counsel advises otherwise | Per environment retention; delete/anonymize on closure jobs (2.11) | Logical dump / SQL export | Host SLA + internal IR plan |
+| PostgreSQL + Drizzle (technology) | Local/ephemeral schema only in 2.3 | Developer machine / CI | Synthetic seeds only | n/a locally | n/a |
+| Managed PostgreSQL host | **Blocked — TBD** until vendor addendum | staging/production not authorized | — | — | Host SLA, region, retention, export, breach terms required before approval |
 | Auth.js | Session tokens, email for magic link | App-server local; email via provider | Sessions revocable; short-lived magic links | Account export (2.11) | Internal IR |
 | Transactional email (TBD) | Email address, invite/magic-link content | Provider region in DPA | Provider logs minimized; no verification artifacts in email body | Provider tools / support export | Provider DPA + IR |
 | Verification vendor | None selected in 2.2 | — | Prefer no raw artifact storage | — | — |

@@ -1,8 +1,15 @@
 export type { AppMode, AccountLifecycleState, AdapterResult } from "@/lib/adapters/types";
-export type { PersistenceAdapter } from "@/lib/adapters/persistence";
-export {
-  PublicDemoPersistenceAdapter,
+export type {
+  PersistenceAdapter,
+  PersistenceHealth,
+  TransactionContext,
 } from "@/lib/adapters/persistence";
+export { PublicDemoPersistenceAdapter } from "@/lib/adapters/persistence";
+export {
+  assertEnvironmentSafe,
+  resolveAppMode,
+  GATED_SECRET_ENV_KEYS,
+} from "@/lib/env/app-mode";
 export type { AuthAdapter, AuthSession } from "@/lib/adapters/auth";
 export { PublicDemoAuthAdapter } from "@/lib/adapters/auth";
 export type { EmailAdapter, EmailMessage } from "@/lib/adapters/email";
