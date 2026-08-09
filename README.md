@@ -110,8 +110,9 @@ Direct product URLs still work without presentation mode.
 | [`docs/threat-model.md`](docs/threat-model.md) | Abuse and privacy threats |
 | [`docs/phase-1-handoff.md`](docs/phase-1-handoff.md) | Completed work and Phase 2 sequence |
 | [`docs/phase-1-manual-qa.md`](docs/phase-1-manual-qa.md) | Required Phase 1 QA results |
+| [`docs/phase-2-plan.md`](docs/phase-2-plan.md) | Phase 2 invite-only foundation work packages |
 | [`docs/presentation-backup/`](docs/presentation-backup/) | Static screenshot backup |
 
 ## Status
 
-Phase 1 demonstration MVP is complete for walkthrough review. Production membership, live Pol.is, payments, and legal formation are explicitly out of scope.
+Phase 1 demonstration MVP is complete (tag `phase-1-demonstration`). Phase 2 work packages live in [`docs/phase-2-plan.md`](docs/phase-2-plan.md); start with package 2.1 before installing auth or databases. Public recruitment, live Pol.is, payments, and legal formation remain out of scope until their gates clear.

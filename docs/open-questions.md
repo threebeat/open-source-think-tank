@@ -6,6 +6,8 @@ Do not treat items below as settled. When a choice would invent governance autho
 
 **Status key:** Unresolved
 
+Phase 2 decision register and counsel gates: [phase-2-plan.md](./phase-2-plan.md) (§6–§7). Do not treat Phase 2 engineering as closing these items.
+
 ---
 
 ## Roles and authority

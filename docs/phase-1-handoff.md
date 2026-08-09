@@ -18,7 +18,7 @@
 - Manual QA record: [phase-1-manual-qa.md](./phase-1-manual-qa.md)
 - Presentation backup screenshots under `docs/presentation-backup/`
 - Planning docs: [data-map.md](./data-map.md), [threat-model.md](./threat-model.md)
-- Git tag `phase-1-demonstration` marks the Phase 1 demonstration release
+- Git tag `phase-1-demonstration` marks the Phase 1 demonstration release (published to `origin` at commit `33ff0cc`)
 
 ## Known limitations
 
@@ -41,12 +41,9 @@ See [open-questions.md](./open-questions.md) and [legal-questions.md](./legal-qu
 
 ## Recommended Phase 2 sequence
 
-1. Resolve formation / fiscal-sponsorship lane with counsel far enough to define account roles without calling everyone a legal “member.”
-2. Add real accounts, RBAC, versioned conduct/privacy assent, and audit events behind adapters.
-3. Implement the verification ladder with minimal data and no public ideology labels.
-4. Replace join/consultation placeholders with non-binding but real assent and conversation-scoped pseudonyms.
-5. Keep algorithm outputs advisory; preserve human review and published overrides.
-6. Do not accept donations or public recruitment until privacy, charity, and terms reviews clear the gate in [legal-questions.md](./legal-questions.md).
+Active plan: [phase-2-plan.md](./phase-2-plan.md). Package **2.1** establishes the Phase 2 contract, counsel gates, and permitted-services register. **Do not install auth providers or databases until 2.2 is approved.**
+
+Summary of later packages in that plan: architecture ADRs and environment separation (2.2); production data model (2.3); authentication lifecycle (2.4); server-enforced roles (2.5); versioned assent (2.6); verification ladder (2.7); invite-only onboarding (2.8); audit ledger (2.9); conversation-scoped pseudonym foundations without live Pol.is (2.10); privacy/ops controls (2.11); closed readiness and handoff tag (2.12).
 
 ## Demo script (5–8 minutes)
 

@@ -4,7 +4,9 @@ This document lists decisions that require professional advice on Tennessee nonp
 
 **Nothing in this repository constitutes legal advice.** Placeholder conduct, privacy, and governance text in the demonstration is **not legally reviewed** and must not be treated as approved terms.
 
-**Related:** [product-charter.md](./product-charter.md), [open-questions.md](./open-questions.md)
+**Related:** [product-charter.md](./product-charter.md), [open-questions.md](./open-questions.md), [phase-2-plan.md](./phase-2-plan.md) (counsel disposition gates)
+
+Phase 2 records disposition (or explicit blocking status) for membership, formation, authority, assent, geography, and political-opinion / verification handling in [phase-2-plan.md](./phase-2-plan.md) §7. Nothing there invents counsel answers.
 
 ---
 

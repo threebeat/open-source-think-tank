@@ -49,6 +49,8 @@ Create a working, mobile-responsive browser application that demonstrates the fu
 
 Add real accounts, role-based permissions, versioned conduct assent, privacy consent, audit events, and an initial verification ladder. Resolve with counsel whether community participants are merely program participants or statutory members. No public recruitment should occur until the core documents and data handling are reviewed.
 
+**Active work packages:** see [`docs/phase-2-plan.md`](./phase-2-plan.md). Phase 2 is an invite-only foundation in a separate gated environment; the tagged Phase 1 synthetic demonstration remains separately deployable.
+
 ### Phase 3 — Topics, claims, and evidence workflow
 
 Build the real system for creating topic briefs, submitting claims, attaching sources, recording counterevidence, reviewing source quality, disclosing conflicts, moderating submissions, and preserving revision history. Keep evidence quality separate from popularity and consensus.
