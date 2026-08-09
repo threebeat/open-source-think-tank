@@ -171,6 +171,9 @@ export const amendmentSchema = z.object({
   rationale: z.string().min(1),
   body: z.string().min(1),
   createdAt: isoDate,
+  relatedEvidenceIds: z.array(z.string().min(1)).default([]),
+  relatedStatementIds: z.array(z.string().min(1)).default([]),
+  relatedClaimIds: z.array(z.string().min(1)).default([]),
 });
 
 export const councilParticipantSchema = z.object({

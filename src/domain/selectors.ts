@@ -108,6 +108,17 @@ export function getDeliberationBundle(
   const relatedEvidence = deliberation.evidenceRequest.relatedEvidenceIds
     .map((id) => catalog.evidenceSources.find((source) => source.id === id))
     .filter((source) => source != null);
+  const claimsById = new Map(
+    getClaimsForTopic(catalog, topic.id).map((claim) => [claim.id, claim]),
+  );
+  const statementsById = new Map(
+    catalog.consultationStatements
+      .filter((statement) => statement.topicId === topic.id)
+      .map((statement) => [statement.id, statement]),
+  );
+  const evidenceById = new Map(
+    getEvidenceForTopic(catalog, topic.id).map((source) => [source.id, source]),
+  );
 
   return {
     deliberation,
@@ -118,6 +129,9 @@ export function getDeliberationBundle(
     proposals,
     amendments,
     relatedEvidence,
+    claimsById,
+    statementsById,
+    evidenceById,
   };
 }
 
@@ -126,6 +140,59 @@ export function getDecisionBySlug(
   slug: string,
 ): Decision | undefined {
   return catalog.decisions.find((item) => item.slug === slug);
+}
+
+export function listDecisions(catalog: FixtureCatalog): Decision[] {
+  return catalog.decisions;
+}
+
+export function getDecisionBundle(catalog: FixtureCatalog, slug: string) {
+  const decision = getDecisionBySlug(catalog, slug);
+  if (!decision) {
+    return undefined;
+  }
+  const topic = getTopicById(catalog, decision.topicId);
+  const deliberation = catalog.deliberations.find(
+    (item) => item.id === decision.deliberationId,
+  );
+  const agendaItem = deliberation
+    ? catalog.agendaItems.find((item) => item.id === deliberation.agendaItemId)
+    : undefined;
+  const finalProposal = catalog.proposals.find(
+    (item) => item.id === decision.finalProposalId,
+  );
+  const proposalHistory = decision.proposalVersionIds
+    .map((id) => catalog.proposals.find((item) => item.id === id))
+    .filter((item) => item != null);
+  const participantsById = new Map(
+    catalog.councilParticipants.map((item) => [item.id, item]),
+  );
+  const rollCall = decision.rollCall.map((entry) => ({
+    ...entry,
+    participant: participantsById.get(entry.participantId),
+  }));
+  const minorityAuthors = decision.minorityReport.authorParticipantIds
+    .map((id) => participantsById.get(id))
+    .filter((item) => item != null);
+
+  if (!topic || !deliberation || !finalProposal) {
+    return undefined;
+  }
+
+  return {
+    decision,
+    topic,
+    deliberation,
+    agendaItem,
+    finalProposal,
+    proposalHistory,
+    rollCall,
+    minorityAuthors,
+  };
+}
+
+export function listAuditEvents(catalog: FixtureCatalog) {
+  return [...catalog.auditEvents].sort((a, b) => a.at.localeCompare(b.at));
 }
 
 export function getConsultationResultForTopic(

@@ -372,6 +372,38 @@ export function collectRelationshipErrors(catalog: FixtureCatalog): string[] {
           `Deliberation ${deliberation.id} amendment ${amendmentId} points outside proposal set`,
         );
       }
+      for (const evidenceId of amendment.relatedEvidenceIds) {
+        const source = evidenceById.get(evidenceId);
+        if (!source) {
+          errors.push(
+            `Amendment ${amendment.id} links missing evidence ${evidenceId}`,
+          );
+        } else if (source.topicId !== deliberation.topicId) {
+          errors.push(
+            `Amendment ${amendment.id} links evidence from another topic`,
+          );
+        }
+      }
+      for (const statementId of amendment.relatedStatementIds) {
+        const statement = statementsById.get(statementId);
+        if (!statement) {
+          errors.push(
+            `Amendment ${amendment.id} links missing statement ${statementId}`,
+          );
+        } else if (statement.topicId !== deliberation.topicId) {
+          errors.push(
+            `Amendment ${amendment.id} links statement from another topic`,
+          );
+        }
+      }
+      for (const claimId of amendment.relatedClaimIds) {
+        const claim = claimsById.get(claimId);
+        if (!claim) {
+          errors.push(`Amendment ${amendment.id} links missing claim ${claimId}`);
+        } else if (claim.topicId !== deliberation.topicId) {
+          errors.push(`Amendment ${amendment.id} links claim from another topic`);
+        }
+      }
     }
     if (!memberIds.has(deliberation.recusal.participantId)) {
       errors.push(

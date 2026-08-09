@@ -2,11 +2,13 @@ import type {
   AgendaState,
   AmendmentStatus,
   AuthorType,
+  DecisionOutcome,
   EvidenceReviewStatus,
   ProposalState,
   SourceType,
   TopicStage,
   TopicStatus,
+  VoteChoice,
 } from "@/domain/status";
 
 export const evidenceReviewLabels: Record<EvidenceReviewStatus, string> = {
@@ -86,4 +88,18 @@ export const amendmentStatusLabels: Record<AmendmentStatus, string> = {
   accepted: "Accepted",
   rejected: "Rejected",
   withdrawn: "Withdrawn",
+};
+
+export const decisionOutcomeLabels: Record<DecisionOutcome, string> = {
+  recommended: "Recommended",
+  adopted: "Adopted",
+  rejected: "Rejected",
+  returned: "Returned",
+};
+
+export const voteChoiceLabels: Record<VoteChoice, string> = {
+  for: "For",
+  against: "Against",
+  abstain: "Abstain",
+  recused: "Recused",
 };

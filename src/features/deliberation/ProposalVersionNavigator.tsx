@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type Ref,
+} from "react";
 
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import type { Proposal } from "@/domain/types";
 import { proposalStateLabels } from "@/lib/evidence-labels";
+import { cn } from "@/lib/utils";
 
 type ProposalVersionNavigatorProps = {
   proposals: Proposal[];
@@ -13,25 +20,63 @@ type ProposalVersionNavigatorProps = {
 export function ProposalVersionNavigator({
   proposals,
 }: ProposalVersionNavigatorProps) {
+  const baseId = useId();
   const ordered = [...proposals].sort((a, b) => a.version - b.version);
   const [selectedId, setSelectedId] = useState(
     ordered[ordered.length - 1]?.id ?? "",
   );
-  const selected =
-    ordered.find((proposal) => proposal.id === selectedId) ?? ordered[0];
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const selectedIndex = Math.max(
+    0,
+    ordered.findIndex((proposal) => proposal.id === selectedId),
+  );
+  const selected = ordered[selectedIndex] ?? ordered[0];
 
   if (!selected) {
     return null;
   }
 
+  function focusTab(index: number) {
+    const next = ordered[index];
+    if (!next) {
+      return;
+    }
+    setSelectedId(next.id);
+    tabRefs.current[index]?.focus();
+  }
+
+  function onTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+    if (ordered.length === 0) {
+      return;
+    }
+    let nextIndex: number | null = null;
+    switch (event.key) {
+      case "ArrowRight":
+      case "ArrowDown":
+        nextIndex = (index + 1) % ordered.length;
+        break;
+      case "ArrowLeft":
+      case "ArrowUp":
+        nextIndex = (index - 1 + ordered.length) % ordered.length;
+        break;
+      case "Home":
+        nextIndex = 0;
+        break;
+      case "End":
+        nextIndex = ordered.length - 1;
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    focusTab(nextIndex);
+  }
+
   return (
-    <section
-      className="space-y-4"
-      aria-labelledby="proposal-versions-heading"
-    >
+    <section className="space-y-4" aria-labelledby={`${baseId}-heading`}>
       <div>
         <h2
-          id="proposal-versions-heading"
+          id={`${baseId}-heading`}
           className="font-heading text-2xl text-foreground"
         >
           Proposal versions
@@ -47,32 +92,45 @@ export function ProposalVersionNavigator({
         className="flex flex-wrap gap-2"
         role="tablist"
         aria-label="Proposal versions"
+        aria-orientation="horizontal"
       >
-        {ordered.map((proposal) => {
+        {ordered.map((proposal, index) => {
           const selectedVersion = proposal.id === selected.id;
+          const tabId = `${baseId}-tab-${proposal.version}`;
+          const ref: Ref<HTMLButtonElement> = (node) => {
+            tabRefs.current[index] = node;
+          };
           return (
-            <Button
+            <button
               key={proposal.id}
+              ref={ref}
               type="button"
               role="tab"
-              id={`proposal-tab-${proposal.version}`}
+              id={tabId}
               aria-selected={selectedVersion}
-              aria-controls="proposal-version-panel"
-              size="lg"
-              variant={selectedVersion ? "default" : "outline"}
+              aria-controls={`${baseId}-panel`}
+              tabIndex={selectedVersion ? 0 : -1}
+              className={cn(
+                buttonVariants({
+                  size: "lg",
+                  variant: selectedVersion ? "default" : "outline",
+                }),
+              )}
               onClick={() => setSelectedId(proposal.id)}
+              onKeyDown={(event) => onTabKeyDown(event, index)}
             >
               Version {proposal.version}
-            </Button>
+            </button>
           );
         })}
       </div>
 
       <article
-        id="proposal-version-panel"
+        id={`${baseId}-panel`}
         role="tabpanel"
-        aria-labelledby={`proposal-tab-${selected.version}`}
+        aria-labelledby={`${baseId}-tab-${selected.version}`}
         className="rounded-md border border-border bg-surface p-5"
+        tabIndex={0}
       >
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-xs font-medium tracking-wide text-primary uppercase">

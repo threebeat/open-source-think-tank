@@ -36,9 +36,11 @@ export type FixtureCatalog = z.infer<typeof fixtureCatalogSchema>;
 
 export type {
   AgendaState,
+  AmendmentStatus,
   DecisionOutcome,
   EvidenceReviewStatus,
   ProposalState,
   TopicStage,
   TopicStatus,
+  VoteChoice,
 } from "@/domain/status";

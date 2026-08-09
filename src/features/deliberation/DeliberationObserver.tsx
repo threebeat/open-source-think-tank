@@ -3,9 +3,12 @@ import Link from "next/link";
 import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { buttonVariants } from "@/components/ui/button";
 import { ProposalVersionNavigator } from "@/features/deliberation/ProposalVersionNavigator";
+import { SourceLinks } from "@/features/deliberation/SourceLinks";
 import type {
   Amendment,
+  Claim,
   ConflictDisclosure,
+  ConsultationStatement,
   CouncilParticipant,
   Deliberation,
   EvidenceSource,
@@ -23,6 +26,9 @@ type DeliberationObserverProps = {
   proposals: Proposal[];
   amendments: Amendment[];
   relatedEvidence: EvidenceSource[];
+  claimsById: Map<string, Claim>;
+  statementsById: Map<string, ConsultationStatement>;
+  evidenceById: Map<string, EvidenceSource>;
   agendaSlug: string;
 };
 
@@ -34,6 +40,9 @@ export function DeliberationObserver({
   proposals,
   amendments,
   relatedEvidence,
+  claimsById,
+  statementsById,
+  evidenceById,
   agendaSlug,
 }: DeliberationObserverProps) {
   const participantsById = new Map(
@@ -128,29 +137,55 @@ export function DeliberationObserver({
           Amendments
         </h2>
         <ul className="space-y-3">
-          {amendments.map((amendment) => (
-            <li
-              key={amendment.id}
-              className="rounded-md border border-border bg-surface p-4"
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="font-medium text-foreground">{amendment.title}</h3>
-                <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
-                  {amendmentStatusLabels[amendment.status]}
-                </span>
-              </div>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                {amendment.body}
-              </p>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                <span className="font-medium text-foreground">Rationale: </span>
-                {amendment.rationale}
-              </p>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Recorded {amendment.createdAt}
-              </p>
-            </li>
-          ))}
+          {amendments.map((amendment) => {
+            const amendmentEvidence = amendment.relatedEvidenceIds
+              .map((id) => evidenceById.get(id))
+              .filter((source): source is EvidenceSource => source != null);
+            const amendmentStatements = amendment.relatedStatementIds
+              .map((id) => statementsById.get(id))
+              .filter(
+                (statement): statement is ConsultationStatement =>
+                  statement != null,
+              );
+            const amendmentClaims = amendment.relatedClaimIds
+              .map((id) => claimsById.get(id))
+              .filter((claim): claim is Claim => claim != null);
+
+            return (
+              <li
+                key={amendment.id}
+                className="rounded-md border border-border bg-surface p-4"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-medium text-foreground">{amendment.title}</h3>
+                  <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+                    {amendmentStatusLabels[amendment.status]}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  {amendment.body}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  <span className="font-medium text-foreground">Rationale: </span>
+                  {amendment.rationale}
+                </p>
+                <div className="mt-3 space-y-2">
+                  <p className="text-xs font-medium text-foreground">
+                    Targeted sources for this amendment
+                  </p>
+                  <SourceLinks
+                    topicSlug={topic.slug}
+                    evidence={amendmentEvidence}
+                    statements={amendmentStatements}
+                    claims={amendmentClaims}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Recorded {amendment.createdAt}
+                </p>
+              </li>
+            );
+          })}
         </ul>
       </section>
 
@@ -176,28 +211,13 @@ export function DeliberationObserver({
           </p>
           <div className="mt-4 space-y-2">
             <p className="text-xs font-medium text-foreground">
-              Material claims linked to the evidence record
+              Source for the billing-hours claim
             </p>
-            <ul className="flex flex-wrap gap-2 text-xs">
-              {relatedEvidence.map((source) => (
-                <li key={source.id}>
-                  <Link
-                    href={`/topics/${topic.slug}#${source.id}`}
-                    className="inline-flex min-h-11 items-center rounded-md bg-muted px-2 text-foreground underline-offset-4 hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-                  >
-                    Evidence ({source.reviewStatus}): {source.title}
-                  </Link>
-                </li>
-              ))}
-              <li>
-                <Link
-                  href={`/topics/${topic.slug}`}
-                  className="inline-flex min-h-11 items-center rounded-md bg-muted px-2 text-foreground underline-offset-4 hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-                >
-                  Full topic evidence inventory
-                </Link>
-              </li>
-            </ul>
+            <SourceLinks
+              topicSlug={topic.slug}
+              evidence={relatedEvidence}
+              emptyLabel="No billing evidence linked."
+            />
           </div>
         </div>
       </section>
@@ -274,6 +294,15 @@ export function DeliberationObserver({
           )}
         >
           Open consultation path
+        </Link>
+        <Link
+          href={`/decisions/${topic.slug}`}
+          className={cn(
+            buttonVariants({ variant: "outline", size: "lg" }),
+            "min-h-11 px-4",
+          )}
+        >
+          Open decision record
         </Link>
       </section>
     </div>

@@ -66,6 +66,9 @@ export default async function DeliberationPage({
         proposals={bundle.proposals}
         amendments={bundle.amendments}
         relatedEvidence={bundle.relatedEvidence}
+        claimsById={bundle.claimsById}
+        statementsById={bundle.statementsById}
+        evidenceById={bundle.evidenceById}
         agendaSlug={bundle.agendaItem.slug}
       />
     </MainContainer>

@@ -849,6 +849,9 @@ export const fixtureCatalog = {
         "Responds to equity vignettes without treating them as a full incidence study.",
       body: "Insert a published hardship rebate application path for qualifying residential accounts.",
       createdAt: "2026-04-02",
+      relatedEvidenceIds: ["evidence-equity-impact-memo"],
+      relatedStatementIds: ["stmt-hardship-rebate"],
+      relatedClaimIds: ["claim-graduated-surcharge"],
     },
     {
       id: "amend-sunset-review",
@@ -857,9 +860,12 @@ export const fixtureCatalog = {
       status: "accepted",
       title: "Add sunset review date",
       rationale:
-        "Matches consultation interest in re-authorization and keeps the surcharge temporary unless renewed.",
-      body: "Require public review on or before the stated review date; surcharge authority lapses without re-adoption.",
+        "Matches consultation interest in re-authorization and keeps the proposed surcharge temporary unless renewed by the legally authorized body.",
+      body: "Require public review on or before the stated review date. The proposed surcharge would lapse unless renewed by the legally authorized body; governing-board authority remains unresolved.",
       createdAt: "2026-04-12",
+      relatedEvidenceIds: [],
+      relatedStatementIds: ["stmt-sunset-clause"],
+      relatedClaimIds: ["claim-graduated-surcharge"],
     },
   ],
   councilParticipants: [
@@ -962,11 +968,7 @@ export const fixtureCatalog = {
           "Synthetic staff response: stage table requires about 120 additional configuration hours versus a flat fee; still lower than a full tariff redesign.",
         requestedAt: "2026-04-03",
         respondedAt: "2026-04-07",
-        relatedEvidenceIds: [
-          "evidence-billing-ops-brief",
-          "evidence-basin-storage-note",
-          "evidence-equity-impact-memo",
-        ],
+        relatedEvidenceIds: ["evidence-billing-ops-brief"],
       },
       recusal: {
         participantId: "council-ben-okonkwo",
