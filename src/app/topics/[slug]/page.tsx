@@ -143,23 +143,33 @@ export default async function TopicDetailPage({ params }: TopicPageProps) {
         )}
       </section>
 
-      {evidenceSources.length > 0 ? (
-        <section className="space-y-4">
-          <h2 className="font-heading text-2xl text-foreground">
-            Evidence inventory
-          </h2>
-          <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-            All sources attached to this topic, including pending, limited,
-            disputed, and rejected states. Source quality is shown independently
-            from any consultation popularity.
+      <section className="space-y-4" aria-labelledby="evidence-inventory-heading">
+        <h2
+          id="evidence-inventory-heading"
+          className="font-heading text-2xl text-foreground"
+        >
+          Evidence inventory
+        </h2>
+        {evidenceSources.length > 0 ? (
+          <>
+            <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+              All sources attached to this topic, including pending, limited,
+              disputed, and rejected states. Source quality is shown independently
+              from any consultation popularity.
+            </p>
+            <div className="grid gap-4 lg:grid-cols-2">
+              {evidenceSources.map((source) => (
+                <EvidenceSourceCard key={source.id} source={source} />
+              ))}
+            </div>
+          </>
+        ) : (
+          <p className="rounded-md border border-dashed border-border bg-surface p-5 text-sm text-muted-foreground">
+            No evidence sources are attached yet for this synthetic topic. Missing
+            evidence is an intentional brief-stage state, not a hidden section.
           </p>
-          <div className="grid gap-4 lg:grid-cols-2">
-            {evidenceSources.map((source) => (
-              <EvidenceSourceCard key={source.id} source={source} />
-            ))}
-          </div>
-        </section>
-      ) : null}
+        )}
+      </section>
 
       <EvidenceReviewExplainer />
 

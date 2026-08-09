@@ -48,6 +48,25 @@ export function getAgendaItemBySlug(
   return catalog.agendaItems.find((item) => item.slug === slug);
 }
 
+export function getAgendaItemsForTopic(
+  catalog: FixtureCatalog,
+  topicId: string,
+): AgendaItem[] {
+  return catalog.agendaItems.filter((item) => item.topicId === topicId);
+}
+
+export function getPrimaryAgendaItemForTopic(
+  catalog: FixtureCatalog,
+  topicId: string,
+): AgendaItem | undefined {
+  const items = getAgendaItemsForTopic(catalog, topicId);
+  return (
+    items.find((item) => item.state === "qualified") ??
+    items.find((item) => item.state === "deferred") ??
+    items[0]
+  );
+}
+
 export function getDeliberationBySlug(
   catalog: FixtureCatalog,
   slug: string,
@@ -91,7 +110,8 @@ export function getScenarioBundle(catalog: FixtureCatalog, topicSlug: string) {
     consultationStatements: catalog.consultationStatements.filter(
       (statement) => statement.topicId === topic.id,
     ),
-    agendaItem: catalog.agendaItems.find((item) => item.topicId === topic.id),
+    agendaItem: getPrimaryAgendaItemForTopic(catalog, topic.id),
+    agendaItems: getAgendaItemsForTopic(catalog, topic.id),
     deliberation: catalog.deliberations.find((item) => item.topicId === topic.id),
     decision: catalog.decisions.find((item) => item.topicId === topic.id),
   };

@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { StageBadge } from "@/components/StageBadge";
 import type { Topic } from "@/domain/types";
+import { topicStatusLabels } from "@/lib/evidence-labels";
 
 type TopicCardProps = {
   topic: Topic;
@@ -12,7 +13,10 @@ export function TopicCard({ topic }: TopicCardProps) {
     <article className="flex h-full flex-col rounded-md border border-border bg-surface p-5">
       <div className="flex flex-wrap items-center gap-2">
         <StageBadge stage={topic.stage} />
-        <ul className="flex flex-wrap gap-2" aria-label="Subjects">
+        <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+          Status: {topicStatusLabels[topic.status]}
+        </span>
+        <ul className="flex flex-wrap gap-2" aria-label="Topic subject tags">
           {topic.subjectTags.map((tag) => (
             <li
               key={tag}
@@ -26,7 +30,7 @@ export function TopicCard({ topic }: TopicCardProps) {
       <h2 className="mt-3 font-heading text-xl text-foreground">
         <Link
           href={`/topics/${topic.slug}`}
-          className="rounded-sm underline-offset-4 hover:underline focus-visible:outline-none"
+          className="rounded-sm underline-offset-4 hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
         >
           {topic.title}
         </Link>

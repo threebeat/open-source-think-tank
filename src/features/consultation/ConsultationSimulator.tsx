@@ -6,6 +6,7 @@ import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { ConsultationResults } from "@/features/consultation/ConsultationResults";
+import { StatementRelationships } from "@/features/consultation/StatementRelationships";
 import { MIN_RESPONSES_TO_OPEN_REPORT } from "@/features/consultation/consultation-storage";
 import { useConsultationVotes } from "@/features/consultation/useConsultationVotes";
 import type {
@@ -28,6 +29,19 @@ type ConsultationSimulatorProps = {
   evidenceSources: EvidenceSource[];
 };
 
+function buildAnnouncement(
+  statements: ConsultationStatement[],
+  nextIndex: number,
+  responseCount: number,
+  vote: ConsultationVote,
+): string {
+  const next = statements[nextIndex];
+  if (!next) {
+    return `Recorded ${vote}. Progress: ${responseCount} of ${statements.length} answered locally.`;
+  }
+  return `Recorded ${vote}. Now viewing statement ${nextIndex + 1} of ${statements.length}. ${next.text} Progress: ${responseCount} of ${statements.length} answered locally.`;
+}
+
 export function ConsultationSimulator({
   topicId,
   topicSlug,
@@ -42,6 +56,7 @@ export function ConsultationSimulator({
   const { votes, persist, reset: resetVotes } = useConsultationVotes(topicId);
   const [index, setIndex] = useState(0);
   const [showReport, setShowReport] = useState(false);
+  const [liveStatus, setLiveStatus] = useState("");
 
   const responseCount = Object.keys(votes).length;
   const canOpenReport =
@@ -61,10 +76,19 @@ export function ConsultationSimulator({
     if (!current) {
       return;
     }
-    const next = { ...votes, [current.id]: value };
-    persist(next);
+    const nextVotes = { ...votes, [current.id]: value };
+    persist(nextVotes);
+    const nextCount = Object.keys(nextVotes).length;
     if (safeIndex < statements.length - 1) {
-      setIndex(safeIndex + 1);
+      const nextIndex = safeIndex + 1;
+      setIndex(nextIndex);
+      setLiveStatus(
+        buildAnnouncement(statements, nextIndex, nextCount, value),
+      );
+    } else {
+      setLiveStatus(
+        `Recorded ${value}. Progress: ${nextCount} of ${statements.length} answered locally. End of statement list.`,
+      );
     }
   }
 
@@ -72,6 +96,9 @@ export function ConsultationSimulator({
     resetVotes();
     setIndex(0);
     setShowReport(false);
+    setLiveStatus(
+      "Local responses cleared. Progress: 0 answered. Showing the first statement again.",
+    );
   }
 
   if (!result || statements.length === 0) {
@@ -118,6 +145,16 @@ export function ConsultationSimulator({
         </p>
       )}
 
+      <p
+        className="sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        aria-label="Consultation practice updates"
+      >
+        {liveStatus}
+      </p>
+
       {!showReport ? (
         <section
           className="rounded-md border border-border bg-surface p-5 sm:p-6"
@@ -156,10 +193,24 @@ export function ConsultationSimulator({
             {current?.text}
           </h2>
           {current && votes[current.id] ? (
-            <p className="mt-2 text-sm text-muted-foreground" role="status">
+            <p className="mt-2 text-sm text-muted-foreground">
               Your local response: {votes[current.id]}. Choosing again will
               overwrite it in session storage only.
             </p>
+          ) : null}
+
+          {current ? (
+            <div className="mt-4 space-y-2">
+              <p className="text-xs font-medium text-foreground">
+                Related claims and evidence
+              </p>
+              <StatementRelationships
+                statement={current}
+                topicSlug={topicSlug}
+                claimsById={claimsById}
+                evidenceById={evidenceById}
+              />
+            </div>
           ) : null}
 
           <div

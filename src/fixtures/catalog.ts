@@ -20,6 +20,7 @@ export const fixtureCatalog = {
       scope:
         "Residential meter accounts inside the district boundary during declared shortage stages only. Commercial and industrial tariffs, wholesale contracts, and permanent rate redesign are out of scope for this demonstration topic.",
       stage: "decision",
+      status: "closed",
       subjectTags: ["water", "pricing", "conservation", "local-services"],
       claimIds: [
         "claim-graduated-surcharge",
@@ -66,6 +67,7 @@ export const fixtureCatalog = {
       scope:
         "Monthly aggregated response-time statistics by service zone. Individual incident records, patient information, and staff identities are out of scope.",
       stage: "brief",
+      status: "open",
       subjectTags: ["public-safety", "open-data", "privacy"],
       claimIds: [],
       changelog: [
@@ -88,6 +90,7 @@ export const fixtureCatalog = {
       scope:
         "A one-year pilot at two secondary campuses. Elementary schedules and permanent district-wide adoption are out of scope until pilot evaluation.",
       stage: "evidence",
+      status: "paused",
       subjectTags: ["education", "health", "transportation"],
       claimIds: [
         "claim-northline-later-start",
@@ -602,6 +605,203 @@ export const fixtureCatalog = {
         conflicts: "None disclosed in the synthetic record.",
         rationale:
           "Qualified despite a pending billing-ops estimate because rejected vendor claims were excluded and an evidence request can be issued in deliberation. Popularity of device subsidies was not treated as evidence quality.",
+      },
+    },
+    {
+      id: "agenda-cedar-river-hardship-rebate-scope",
+      slug: "cedar-river-hardship-rebate-scope",
+      topicId: "topic-cedar-river-drought-surcharge",
+      consultationResultId: "consult-cedar-river-2026-03",
+      synthetic: true,
+      state: "proposed",
+      title: "Propose hardship-rebate scope as a separate agenda item",
+      thresholds: [
+        {
+          id: "th-hardship-participation",
+          label: "Participation coverage",
+          required: "≥ 60% statement response coverage",
+          actual: "72%",
+          met: true,
+        },
+        {
+          id: "th-hardship-cross-group",
+          label: "Cross-group support on procedural statements",
+          required: "≥ 2 consensus statements across Groups A–C",
+          actual: "2 consensus statements",
+          met: true,
+        },
+        {
+          id: "th-hardship-disagreement",
+          label: "Disagreement / salience present",
+          required: "≥ 1 high-disagreement statement retained for deliberation",
+          actual: "Hardship rebate is mid-support, not high disagreement",
+          met: false,
+        },
+        {
+          id: "th-hardship-evidence",
+          label: "Evidence readiness",
+          required: "≥ 3 accepted or limited sources; no reliance on rejected sources",
+          actual: "Equity memo accepted; billing ops estimate still pending",
+          met: false,
+        },
+      ],
+      participationCoverage: "72% average statement response coverage (synthetic).",
+      crossGroupSupport:
+        "Consultation snapshot shows procedural consensus elsewhere; hardship rebate itself is not a consensus statement.",
+      disagreementSalience:
+        "Hardship rebate is moderately popular but is not one of the high-disagreement anchors.",
+      evidenceReadiness:
+        "Equity impact memo is accepted; operational cost estimate remains pending.",
+      representationWarning:
+        "Synthetic cohort is not a population sample; representation diagnostics are illustrative only.",
+      methodVersion: "agenda-threshold-trace@0.1.0",
+      calculationTrace: [
+        "Loaded consultation snapshot consult-cedar-river-2026-03.",
+        "Scoped question: whether hardship-rebate design should be a separate agenda item.",
+        "Salience gate failed: statement is not in the high-disagreement set.",
+        "Evidence readiness incomplete while billing-ops estimate is pending.",
+        "Default recommendation: remain proposed pending human review.",
+      ],
+      sensitivityNote:
+        "If the salience gate accepted mid-support statements, this item could move to human review for qualification instead of staying proposed.",
+      humanReview: {
+        reviewerRole: "Agenda steward (synthetic)",
+        decision: "proposed",
+        decidedAt: "2026-03-17",
+        conflicts: "None disclosed in the synthetic record.",
+        rationale:
+          "Left in proposed state. Popularity of the hardship-rebate statement is noted but does not by itself open a separate agenda lane while salience and evidence-readiness gates remain unmet.",
+      },
+    },
+    {
+      id: "agenda-cedar-river-billing-ops-gap",
+      slug: "cedar-river-billing-ops-gap",
+      topicId: "topic-cedar-river-drought-surcharge",
+      consultationResultId: "consult-cedar-river-2026-03",
+      synthetic: true,
+      state: "deferred",
+      title: "Defer billing-operations readiness as a blocking evidence concern",
+      thresholds: [
+        {
+          id: "th-billing-participation",
+          label: "Participation coverage",
+          required: "≥ 60% statement response coverage",
+          actual: "72%",
+          met: true,
+        },
+        {
+          id: "th-billing-cross-group",
+          label: "Cross-group support on procedural statements",
+          required: "≥ 2 consensus statements across Groups A–C",
+          actual: "2 consensus statements",
+          met: true,
+        },
+        {
+          id: "th-billing-disagreement",
+          label: "Disagreement / salience present",
+          required: "≥ 1 high-disagreement statement retained for deliberation",
+          actual: "2 high-disagreement statements",
+          met: true,
+        },
+        {
+          id: "th-billing-evidence",
+          label: "Evidence readiness",
+          required: "Accepted estimate of billing-system change cost before qualification",
+          actual: "Billing ops estimate still pending",
+          met: false,
+        },
+      ],
+      participationCoverage: "72% average statement response coverage (synthetic).",
+      crossGroupSupport:
+        "Procedural consensus exists, but this lane is about evidence readiness, not preference.",
+      disagreementSalience:
+        "Policy disagreement remains; deferral is about missing operations evidence.",
+      evidenceReadiness:
+        "Billing-system change-cost estimate is pending; readiness gate fails for this scoped item.",
+      representationWarning:
+        "Synthetic cohort is not a population sample; representation diagnostics are illustrative only.",
+      methodVersion: "agenda-threshold-trace@0.1.0",
+      calculationTrace: [
+        "Loaded consultation snapshot consult-cedar-river-2026-03.",
+        "Preference and salience gates met for the broader surcharge question.",
+        "Scoped evidence gate failed: required billing-ops estimate is pending.",
+        "Default recommendation: defer rather than qualify this scoped readiness item.",
+      ],
+      sensitivityNote:
+        "If the pending billing-ops estimate were accepted with limitations, the default recommendation would flip to qualify under the same preference inputs.",
+      humanReview: {
+        reviewerRole: "Agenda steward (synthetic)",
+        decision: "deferred",
+        decidedAt: "2026-03-18",
+        conflicts: "None disclosed in the synthetic record.",
+        rationale:
+          "Deferred. The reviewer did not override the failed evidence-readiness gate. Preference support is visible but is not treated as a substitute for the missing billing-ops estimate.",
+      },
+    },
+    {
+      id: "agenda-cedar-river-device-subsidy-framing",
+      slug: "cedar-river-device-subsidy-framing",
+      topicId: "topic-cedar-river-drought-surcharge",
+      consultationResultId: "consult-cedar-river-2026-03",
+      synthetic: true,
+      state: "rejected",
+      title: "Reject device-subsidy framing that relies on rejected evidence",
+      thresholds: [
+        {
+          id: "th-device-participation",
+          label: "Participation coverage",
+          required: "≥ 60% statement response coverage",
+          actual: "72%",
+          met: true,
+        },
+        {
+          id: "th-device-cross-group",
+          label: "Cross-group support on procedural statements",
+          required: "≥ 2 consensus statements across Groups A–C",
+          actual: "Device-subsidy statement is popular but not a consensus statement",
+          met: false,
+        },
+        {
+          id: "th-device-disagreement",
+          label: "Disagreement / salience present",
+          required: "≥ 1 high-disagreement statement retained for deliberation",
+          actual: "Device-subsidy statement is not in the high-disagreement set",
+          met: false,
+        },
+        {
+          id: "th-device-evidence",
+          label: "Evidence readiness",
+          required: "≥ 3 accepted or limited sources; no reliance on rejected sources",
+          actual: "Primary linked source is a rejected vendor whitepaper",
+          met: false,
+        },
+      ],
+      participationCoverage: "72% average statement response coverage (synthetic).",
+      crossGroupSupport:
+        "High local popularity on the device-subsidy statement is not cross-group consensus.",
+      disagreementSalience:
+        "The statement is popular/weak-evidence, not a high-disagreement deliberation anchor.",
+      evidenceReadiness:
+        "Linked vendor whitepaper is rejected; readiness fails when that source would be required.",
+      representationWarning:
+        "Synthetic cohort is not a population sample; representation diagnostics are illustrative only.",
+      methodVersion: "agenda-threshold-trace@0.1.0",
+      calculationTrace: [
+        "Loaded consultation snapshot consult-cedar-river-2026-03.",
+        "Measured agree share on device-subsidy statement: high popularity.",
+        "Cross-group consensus gate failed for this framing.",
+        "Evidence readiness failed because the linked vendor whitepaper is rejected.",
+        "Default recommendation: reject agenda qualification for this framing.",
+      ],
+      sensitivityNote:
+        "Raising the popularity weight would still not qualify this item while the evidence gate excludes rejected sources.",
+      humanReview: {
+        reviewerRole: "Agenda steward (synthetic)",
+        decision: "rejected",
+        decidedAt: "2026-03-18",
+        conflicts: "None disclosed in the synthetic record.",
+        rationale:
+          "Rejected. Popularity alone does not place the device-subsidy framing on the agenda when consensus and evidence-readiness gates fail and the linked source is rejected.",
       },
     },
   ],

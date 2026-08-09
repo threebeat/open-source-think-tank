@@ -1,7 +1,6 @@
-import Link from "next/link";
-
 import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { MetricWithExplanation } from "@/components/MetricWithExplanation";
+import { StatementRelationships } from "@/features/consultation/StatementRelationships";
 import type {
   Claim,
   ConsultationResult,
@@ -46,42 +45,39 @@ function StatementListItem({
             : "Less popular in the synthetic report, but linked evidence is stronger."}
         </p>
       )}
-      <ul className="mt-3 flex flex-wrap gap-2 text-xs">
-        {statement.relatedClaimIds.map((claimId) => {
-          const claim = claimsById.get(claimId);
-          if (!claim) {
-            return null;
-          }
-          return (
-            <li key={claimId}>
-              <Link
-                href={`/topics/${topicSlug}#${claim.id}`}
-                className="inline-flex min-h-11 items-center rounded-md bg-muted px-2 text-foreground underline-offset-4 hover:underline"
-              >
-                Claim: {claim.title}
-              </Link>
-            </li>
-          );
-        })}
-        {statement.relatedEvidenceIds.map((evidenceId) => {
-          const evidence = evidenceById.get(evidenceId);
-          if (!evidence) {
-            return null;
-          }
-          return (
-            <li key={evidenceId}>
-              <Link
-                href={`/topics/${topicSlug}`}
-                className="inline-flex min-h-11 items-center rounded-md bg-muted px-2 text-foreground underline-offset-4 hover:underline"
-              >
-                Evidence ({evidence.reviewStatus}): {evidence.title}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+      <div className="mt-3">
+        <StatementRelationships
+          statement={statement}
+          topicSlug={topicSlug}
+          claimsById={claimsById}
+          evidenceById={evidenceById}
+        />
+      </div>
     </li>
   );
+}
+
+function metricLabelFor(
+  statement: ConsultationStatement,
+  metricsById: Map<string, ConsultationResult["statementMetrics"][number]>,
+  groups: OpinionGroup[],
+): string | undefined {
+  const metric = metricsById.get(statement.id);
+  if (!metric) {
+    return undefined;
+  }
+  if (statement.isHighDisagreement) {
+    return groups
+      .map((group) => {
+        const share = metric.groupAgreeShares[group.id];
+        return share == null
+          ? null
+          : `${group.label} ${Math.round(share * 100)}%`;
+      })
+      .filter((part): part is string => part != null)
+      .join(" · ");
+  }
+  return `Synthetic agree share: ${Math.round(metric.agreeShare * 100)}%`;
 }
 
 export function ConsultationResults({
@@ -159,23 +155,16 @@ export function ConsultationResults({
           Cross-group consensus statements
         </h3>
         <ul className="space-y-3">
-          {consensus.map((statement) => {
-            const metric = metricsById.get(statement.id);
-            return (
-              <StatementListItem
-                key={statement.id}
-                statement={statement}
-                topicSlug={topicSlug}
-                claimsById={claimsById}
-                evidenceById={evidenceById}
-                metricLabel={
-                  metric
-                    ? `Synthetic agree share: ${Math.round(metric.agreeShare * 100)}%`
-                    : undefined
-                }
-              />
-            );
-          })}
+          {consensus.map((statement) => (
+            <StatementListItem
+              key={statement.id}
+              statement={statement}
+              topicSlug={topicSlug}
+              claimsById={claimsById}
+              evidenceById={evidenceById}
+              metricLabel={metricLabelFor(statement, metricsById, groups)}
+            />
+          ))}
         </ul>
       </section>
 
@@ -184,30 +173,42 @@ export function ConsultationResults({
           High-disagreement statements
         </h3>
         <ul className="space-y-3">
-          {disagreement.map((statement) => {
-            const metric = metricsById.get(statement.id);
-            const groupParts = metric
-              ? groups
-                  .map((group) => {
-                    const share = metric.groupAgreeShares[group.id];
-                    return share == null
-                      ? null
-                      : `${group.label} ${Math.round(share * 100)}%`;
-                  })
-                  .filter((part): part is string => part != null)
-                  .join(" · ")
-              : undefined;
-            return (
-              <StatementListItem
-                key={statement.id}
-                statement={statement}
-                topicSlug={topicSlug}
-                claimsById={claimsById}
-                evidenceById={evidenceById}
-                metricLabel={groupParts}
-              />
-            );
-          })}
+          {disagreement.map((statement) => (
+            <StatementListItem
+              key={statement.id}
+              statement={statement}
+              topicSlug={topicSlug}
+              claimsById={claimsById}
+              evidenceById={evidenceById}
+              metricLabel={metricLabelFor(statement, metricsById, groups)}
+            />
+          ))}
+        </ul>
+      </section>
+
+      <section className="space-y-3" aria-labelledby="all-statements-heading">
+        <h3
+          id="all-statements-heading"
+          className="font-heading text-xl text-foreground"
+        >
+          All statements and evidence links
+        </h3>
+        <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+          Every statement in the sealed snapshot, including popular/weak-evidence
+          and less-popular/strong-evidence examples. Consensus highlights above do
+          not hide the rest of the record.
+        </p>
+        <ul className="space-y-3">
+          {statements.map((statement) => (
+            <StatementListItem
+              key={statement.id}
+              statement={statement}
+              topicSlug={topicSlug}
+              claimsById={claimsById}
+              evidenceById={evidenceById}
+              metricLabel={metricLabelFor(statement, metricsById, groups)}
+            />
+          ))}
         </ul>
       </section>
     </section>

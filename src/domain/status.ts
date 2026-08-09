@@ -11,6 +11,10 @@ export const TOPIC_STAGES = [
 ] as const;
 export type TopicStage = (typeof TOPIC_STAGES)[number];
 
+/** Publication availability of the topic brief — independent of institutional stage. */
+export const TOPIC_STATUSES = ["open", "paused", "closed"] as const;
+export type TopicStatus = (typeof TOPIC_STATUSES)[number];
+
 export const EVIDENCE_REVIEW_STATUSES = [
   "pending",
   "accepted",

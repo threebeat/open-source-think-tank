@@ -9,6 +9,7 @@ import {
   PROPOSAL_STATES,
   SOURCE_TYPES,
   TOPIC_STAGES,
+  TOPIC_STATUSES,
   VOTE_CHOICES,
 } from "@/domain/status";
 
@@ -28,6 +29,7 @@ export const topicSchema = z.object({
   background: z.string().min(1),
   scope: z.string().min(1),
   stage: z.enum(TOPIC_STAGES),
+  status: z.enum(TOPIC_STATUSES),
   subjectTags: z.array(z.string().min(1)).min(1),
   claimIds: z.array(z.string().min(1)),
   changelog: z.array(topicChangelogEntrySchema),

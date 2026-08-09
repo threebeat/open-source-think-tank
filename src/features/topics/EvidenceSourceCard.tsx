@@ -10,16 +10,20 @@ import { cn } from "@/lib/utils";
 type EvidenceSourceCardProps = {
   source: EvidenceSource;
   relationLabel?: "Supporting" | "Counterevidence";
+  /** Set false when the same source is also rendered in the topic inventory. */
+  anchor?: boolean;
 };
 
 export function EvidenceSourceCard({
   source,
   relationLabel,
+  anchor = true,
 }: EvidenceSourceCardProps) {
   return (
     <article
+      id={anchor ? source.id : undefined}
       className={cn(
-        "rounded-md border border-border bg-surface-muted p-4",
+        "scroll-mt-28 rounded-md border border-border bg-surface-muted p-4",
         source.reviewStatus === "rejected" && "opacity-90",
       )}
     >

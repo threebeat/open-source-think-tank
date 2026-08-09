@@ -40,4 +40,5 @@ export type {
   EvidenceReviewStatus,
   ProposalState,
   TopicStage,
+  TopicStatus,
 } from "@/domain/status";

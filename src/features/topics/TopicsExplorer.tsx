@@ -4,20 +4,12 @@ import { useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
 import { TopicCard } from "@/features/topics/TopicCard";
-import type { Topic, TopicStage } from "@/domain/types";
-import { TOPIC_STAGES } from "@/domain/status";
-import { topicStageLabels } from "@/lib/evidence-labels";
+import type { Topic, TopicStage, TopicStatus } from "@/domain/types";
+import { TOPIC_STAGES, TOPIC_STATUSES } from "@/domain/status";
+import { topicStageLabels, topicStatusLabels } from "@/lib/evidence-labels";
 
 type TopicsExplorerProps = {
   topics: Topic[];
-};
-
-type StatusBucket = "all" | "early" | "mid" | "late";
-
-const statusBuckets: Record<Exclude<StatusBucket, "all">, TopicStage[]> = {
-  early: ["brief", "evidence"],
-  mid: ["consultation", "agenda"],
-  late: ["deliberation", "decision", "closed"],
 };
 
 function matchesQuery(topic: Topic, query: string): boolean {
@@ -37,7 +29,7 @@ export function TopicsExplorer({ topics }: TopicsExplorerProps) {
   const [query, setQuery] = useState("");
   const [stage, setStage] = useState<"all" | TopicStage>("all");
   const [subject, setSubject] = useState("all");
-  const [status, setStatus] = useState<StatusBucket>("all");
+  const [status, setStatus] = useState<"all" | TopicStatus>("all");
 
   const subjects = useMemo(() => {
     return Array.from(
@@ -51,10 +43,7 @@ export function TopicsExplorer({ topics }: TopicsExplorerProps) {
       if (stage !== "all" && topic.stage !== stage) {
         return false;
       }
-      if (
-        status !== "all" &&
-        !statusBuckets[status].includes(topic.stage)
-      ) {
+      if (status !== "all" && topic.status !== status) {
         return false;
       }
       if (subject !== "all" && !topic.subjectTags.includes(subject)) {
@@ -83,9 +72,10 @@ export function TopicsExplorer({ topics }: TopicsExplorerProps) {
             className="min-h-11 w-full rounded-md border border-input bg-background px-3 text-base text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
           />
         </label>
-        <label className="block space-y-2 text-sm">
+        <label className="block space-y-2 text-sm" htmlFor="topic-stage-filter">
           <span className="font-medium text-foreground">Stage</span>
           <select
+            id="topic-stage-filter"
             value={stage}
             onChange={(event) =>
               setStage(event.target.value as "all" | TopicStage)
@@ -100,9 +90,10 @@ export function TopicsExplorer({ topics }: TopicsExplorerProps) {
             ))}
           </select>
         </label>
-        <label className="block space-y-2 text-sm">
+        <label className="block space-y-2 text-sm" htmlFor="topic-subject-filter">
           <span className="font-medium text-foreground">Subject</span>
           <select
+            id="topic-subject-filter"
             value={subject}
             onChange={(event) => setSubject(event.target.value)}
             className="min-h-11 w-full rounded-md border border-input bg-background px-3 text-base text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
@@ -115,24 +106,28 @@ export function TopicsExplorer({ topics }: TopicsExplorerProps) {
             ))}
           </select>
         </label>
-        <label className="block space-y-2 text-sm">
+        <label className="block space-y-2 text-sm" htmlFor="topic-status-filter">
           <span className="font-medium text-foreground">Status</span>
           <select
+            id="topic-status-filter"
             value={status}
             onChange={(event) =>
-              setStatus(event.target.value as StatusBucket)
+              setStatus(event.target.value as "all" | TopicStatus)
             }
             className="min-h-11 w-full rounded-md border border-input bg-background px-3 text-base text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
           >
-            <option value="all">All pipeline statuses</option>
-            <option value="early">Early (brief / evidence)</option>
-            <option value="mid">Mid (consultation / agenda)</option>
-            <option value="late">Later (deliberation / decision)</option>
+            <option value="all">All statuses</option>
+            {TOPIC_STATUSES.map((value) => (
+              <option key={value} value={value}>
+                {topicStatusLabels[value]}
+              </option>
+            ))}
           </select>
         </label>
         <p className="text-xs text-muted-foreground sm:col-span-3">
-          Filters apply only to local synthetic fixtures. No search query is sent
-          to a server.
+          Stage is the institutional pipeline position. Status is brief
+          availability (open, paused, or closed) and is filtered independently.
+          Filters apply only to local synthetic fixtures.
         </p>
       </form>
 
@@ -145,7 +140,7 @@ export function TopicsExplorer({ topics }: TopicsExplorerProps) {
       ) : (
         <EmptyState
           title="No topics match these filters"
-          description="Clear the search box or choose All stages / All subjects to see the synthetic demonstration topics again."
+          description="Clear the search box or choose All stages / All subjects / All statuses to see the synthetic demonstration topics again."
         />
       )}
     </div>

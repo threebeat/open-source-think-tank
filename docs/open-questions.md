@@ -42,6 +42,8 @@ Do not treat items below as settled. When a choice would invent governance autho
 
 9. **Evidence-review rubric depth in Phase 1** — Unresolved. How much of a future review checklist is shown as explanatory UI versus deferred to Phase 3?
 
+9a. **Topic `status` vs institutional `stage`** — Unresolved for production meaning. Phase 1 treats `status` (`open` / `paused` / `closed`) as brief-publication availability independent of pipeline `stage`. Whether production uses the same pair, merges them, or derives availability from permissions remains open.
+
 10. **Redaction placeholders** — Unresolved. What examples of “permitted narrow redaction + public reason” are appropriate in the deliberation observer view without teaching harmful disclosure patterns?
 
 ---

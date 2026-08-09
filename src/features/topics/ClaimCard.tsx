@@ -34,6 +34,7 @@ export function ClaimCard({ claim, supporting, counterevidence }: ClaimCardProps
                   key={source.id}
                   source={source}
                   relationLabel="Supporting"
+                  anchor={false}
                 />
               ))
             ) : (
@@ -57,6 +58,7 @@ export function ClaimCard({ claim, supporting, counterevidence }: ClaimCardProps
                   key={source.id}
                   source={source}
                   relationLabel="Counterevidence"
+                  anchor={false}
                 />
               ))
             ) : (

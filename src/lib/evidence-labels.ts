@@ -1,8 +1,10 @@
 import type {
+  AgendaState,
   AuthorType,
   EvidenceReviewStatus,
   SourceType,
   TopicStage,
+  TopicStatus,
 } from "@/domain/status";
 
 export const evidenceReviewLabels: Record<EvidenceReviewStatus, string> = {
@@ -47,4 +49,23 @@ export const topicStageLabels: Record<TopicStage, string> = {
   deliberation: "Deliberation",
   decision: "Decision",
   closed: "Closed",
+};
+
+export const topicStatusLabels: Record<TopicStatus, string> = {
+  open: "Open",
+  paused: "Paused",
+  closed: "Closed",
+};
+
+export const topicStatusExplanations: Record<TopicStatus, string> = {
+  open: "The synthetic brief accepts work at its current institutional stage.",
+  paused: "Progress is paused; the stage has not advanced and contribution is on hold.",
+  closed: "Public contribution on this synthetic topic has closed for the demonstration.",
+};
+
+export const agendaStateLabels: Record<AgendaState, string> = {
+  proposed: "Proposed",
+  qualified: "Qualified",
+  deferred: "Deferred",
+  rejected: "Rejected",
 };

@@ -22,7 +22,7 @@ describe("ConsultationSimulator", () => {
     window.sessionStorage.clear();
   });
 
-  it("supports keyboard-operated Agree/Disagree/Pass and keeps votes local", async () => {
+  it("supports keyboard Agree, Disagree, and Pass and announces statement changes", async () => {
     const user = userEvent.setup();
     if (!bundle?.consultationResult) {
       throw new Error("Expected Cedar River consultation fixture");
@@ -45,21 +45,43 @@ describe("ConsultationSimulator", () => {
       screen.getByText(/not a live Pol\.is conversation/i),
     ).toBeInTheDocument();
 
-    const agree = screen.getByRole("button", { name: "Agree" });
+    const liveRegion = screen.getByRole("status", {
+      name: "Consultation practice updates",
+    });
+    const voteGroup = screen.getByRole("group", {
+      name: "Respond to this statement",
+    });
+
+    const agree = within(voteGroup).getByRole("button", { name: "Agree" });
     agree.focus();
     expect(agree).toHaveFocus();
     await user.keyboard("{Enter}");
-
+    expect(liveRegion).toHaveTextContent(/Recorded agree/i);
+    expect(liveRegion).toHaveTextContent(/Now viewing statement 2/i);
     expect(screen.getByRole("progressbar")).toHaveAttribute(
       "aria-valuenow",
       "1",
     );
+
+    const disagree = within(voteGroup).getByRole("button", {
+      name: "Disagree",
+    });
+    disagree.focus();
+    expect(disagree).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(liveRegion).toHaveTextContent(/Recorded disagree/i);
+    expect(liveRegion).toHaveTextContent(/Now viewing statement 3/i);
+
+    const pass = within(voteGroup).getByRole("button", { name: "Pass" });
+    pass.focus();
+    expect(pass).toHaveFocus();
+    await user.keyboard(" ");
+    expect(liveRegion).toHaveTextContent(/Recorded pass/i);
+    expect(liveRegion).toHaveTextContent(/Now viewing statement 4/i);
+
     expect(
       window.sessionStorage.getItem(storageKeyForTopic(bundle.topic.id)),
-    ).toContain("agree");
-
-    await user.click(screen.getByRole("button", { name: "Disagree" }));
-    await user.click(screen.getByRole("button", { name: "Pass" }));
+    ).toMatch(/agree|disagree|pass/);
 
     const openReport = screen.getByRole("button", {
       name: "Open synthetic report",
@@ -75,9 +97,28 @@ describe("ConsultationSimulator", () => {
     ).toBeInTheDocument();
     expect(within(report).getByText("Consensus is not proof")).toBeInTheDocument();
     expect(within(report).getByText("Group A, Group B, Group C")).toBeInTheDocument();
+    const allStatements = within(report).getByRole("heading", {
+      name: "All statements and evidence links",
+    }).parentElement;
+    if (!allStatements) {
+      throw new Error("Expected all-statements section");
+    }
     expect(
-      within(report).getByText(/Neutral labels only/i),
+      within(allStatements).getByText(
+        /Popular in the synthetic report, but linked evidence is weak or rejected/i,
+      ),
     ).toBeInTheDocument();
+    expect(
+      within(allStatements).getByText(
+        /Less popular in the synthetic report, but linked evidence is stronger/i,
+      ),
+    ).toBeInTheDocument();
+    const rejectedEvidence = within(allStatements).getByRole("link", {
+      name: /Evidence \(rejected\):/i,
+    });
+    expect(rejectedEvidence.getAttribute("href")).toMatch(
+      /\/topics\/cedar-river-drought-surcharge#evidence-/,
+    );
   });
 
   it("resets local responses without altering fixture report content", async () => {
@@ -114,5 +155,8 @@ describe("ConsultationSimulator", () => {
       "aria-valuenow",
       "0",
     );
+    expect(
+      screen.getByRole("status", { name: "Consultation practice updates" }),
+    ).toHaveTextContent(/Local responses cleared/i);
   });
 });
