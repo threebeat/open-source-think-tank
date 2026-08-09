@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/PageHeader";
@@ -62,6 +63,18 @@ export default async function AgendaDetailPage({
         description={`Topic: ${topic.title}. This page shows separate thresholds, a fixed calculation trace, and the human review record.`}
       />
       <AgendaDetail item={item} topic={topic} />
+      {item.state === "qualified" ? (
+        <p className="text-sm text-muted-foreground">
+          Continue to the{" "}
+          <Link
+            href={`/deliberation/${item.slug}`}
+            className="font-medium text-foreground underline-offset-4 hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+          >
+            public-observer deliberation record
+          </Link>
+          .
+        </p>
+      ) : null}
     </MainContainer>
   );
 }

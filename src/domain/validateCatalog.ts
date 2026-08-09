@@ -281,6 +281,11 @@ export function collectRelationshipErrors(catalog: FixtureCatalog): string[] {
 
   for (const item of catalog.agendaItems) {
     assertId("topic", item.topicId, topicIds, errors);
+    if (item.state !== item.humanReview.decision) {
+      errors.push(
+        `Agenda item ${item.id} state (${item.state}) disagrees with humanReview.decision (${item.humanReview.decision})`,
+      );
+    }
     const consultation = consultationsById.get(item.consultationResultId);
     if (!consultation) {
       errors.push(`Missing consultationResult id: ${item.consultationResultId}`);
@@ -372,6 +377,18 @@ export function collectRelationshipErrors(catalog: FixtureCatalog): string[] {
       errors.push(
         `Deliberation ${deliberation.id} recusal participant is not a member`,
       );
+    }
+    for (const evidenceId of deliberation.evidenceRequest.relatedEvidenceIds) {
+      const source = evidenceById.get(evidenceId);
+      if (!source) {
+        errors.push(
+          `Deliberation ${deliberation.id} evidence request links missing evidence ${evidenceId}`,
+        );
+      } else if (source.topicId !== deliberation.topicId) {
+        errors.push(
+          `Deliberation ${deliberation.id} evidence request links evidence from another topic`,
+        );
+      }
     }
   }
 

@@ -135,6 +135,19 @@ describe("fixture catalog", () => {
     );
   });
 
+  it("rejects agenda items whose state disagrees with humanReview.decision", () => {
+    const broken = structuredClone(rawFixtureCatalog);
+    broken.agendaItems[0].state = "qualified";
+    broken.agendaItems[0].humanReview.decision = "deferred";
+
+    expect(() => fixtureCatalogSchema.parse(broken)).toThrow(
+      /state must equal humanReview\.decision/i,
+    );
+    expect(() => parseAndAssertCatalog(broken)).toThrow(
+      /state must equal humanReview\.decision/i,
+    );
+  });
+
   it("rejects catalogs that drop the synthetic marker", () => {
     const broken = structuredClone(rawFixtureCatalog) as {
       synthetic: boolean;

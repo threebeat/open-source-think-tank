@@ -32,7 +32,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm run lint` | ESLint |
 | `npm run typecheck` | TypeScript (`tsc --noEmit`) |
 | `npm test` | Unit tests (Vitest) |
-| `npm run test:e2e` | End-to-end smoke tests (Playwright + axe) |
+| `npm run test:e2e` | Production build, then Playwright + axe e2e (self-contained; does not reuse a stale server) |
 
 ## Architecture (Phase 1)
 

@@ -962,6 +962,11 @@ export const fixtureCatalog = {
           "Synthetic staff response: stage table requires about 120 additional configuration hours versus a flat fee; still lower than a full tariff redesign.",
         requestedAt: "2026-04-03",
         respondedAt: "2026-04-07",
+        relatedEvidenceIds: [
+          "evidence-billing-ops-brief",
+          "evidence-basin-storage-note",
+          "evidence-equity-impact-memo",
+        ],
       },
       recusal: {
         participantId: "council-ben-okonkwo",
@@ -998,6 +1003,12 @@ export const fixtureCatalog = {
       ],
       observerNotice:
         "Public observation of this synthetic deliberation does not confer participation rights. Closed means capacity-limited participation, not secret institutional action. Facilitation seats may appear in the participant list without casting a counted vote.",
+      publicRedaction: {
+        scope:
+          "A facilitation scheduling note that originally included a private contact channel",
+        publicReason:
+          "Personal contact details are omitted. Public observation needs the scheduling step itself, not private contact information. Broader redaction policy remains unresolved; see open questions.",
+      },
     },
   ],
   decisions: [

@@ -120,25 +120,36 @@ export const humanReviewSchema = z.object({
   rationale: z.string().min(1),
 });
 
-export const agendaItemSchema = z.object({
-  id: z.string().min(1),
-  slug: z.string().min(1),
-  topicId: z.string().min(1),
-  consultationResultId: z.string().min(1),
-  synthetic: z.literal(true),
-  state: z.enum(AGENDA_STATES),
-  title: z.string().min(1),
-  thresholds: z.array(agendaThresholdSchema).min(1),
-  participationCoverage: z.string().min(1),
-  crossGroupSupport: z.string().min(1),
-  disagreementSalience: z.string().min(1),
-  evidenceReadiness: z.string().min(1),
-  representationWarning: z.string().min(1),
-  methodVersion: z.string().min(1),
-  calculationTrace: z.array(z.string().min(1)).min(1),
-  sensitivityNote: z.string().min(1),
-  humanReview: humanReviewSchema,
-});
+export const agendaItemSchema = z
+  .object({
+    id: z.string().min(1),
+    slug: z.string().min(1),
+    topicId: z.string().min(1),
+    consultationResultId: z.string().min(1),
+    synthetic: z.literal(true),
+    state: z.enum(AGENDA_STATES),
+    title: z.string().min(1),
+    thresholds: z.array(agendaThresholdSchema).min(1),
+    participationCoverage: z.string().min(1),
+    crossGroupSupport: z.string().min(1),
+    disagreementSalience: z.string().min(1),
+    evidenceReadiness: z.string().min(1),
+    representationWarning: z.string().min(1),
+    methodVersion: z.string().min(1),
+    calculationTrace: z.array(z.string().min(1)).min(1),
+    sensitivityNote: z.string().min(1),
+    humanReview: humanReviewSchema,
+  })
+  .superRefine((item, ctx) => {
+    if (item.state !== item.humanReview.decision) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "Agenda item state must equal humanReview.decision so list and review outcomes cannot contradict",
+        path: ["humanReview", "decision"],
+      });
+    }
+  });
 
 export const proposalSchema = z.object({
   id: z.string().min(1),
@@ -186,6 +197,7 @@ export const evidenceRequestSchema = z.object({
   response: z.string().min(1),
   requestedAt: isoDate,
   respondedAt: isoDate,
+  relatedEvidenceIds: z.array(z.string().min(1)).min(1),
 });
 
 export const recusalSchema = z.object({
@@ -197,6 +209,11 @@ export const recusalSchema = z.object({
 export const deliberationTimelineEntrySchema = z.object({
   at: isoDate,
   summary: z.string().min(1),
+});
+
+export const publicRedactionSchema = z.object({
+  scope: z.string().min(1),
+  publicReason: z.string().min(1),
 });
 
 export const deliberationSchema = z.object({
@@ -214,6 +231,7 @@ export const deliberationSchema = z.object({
   recusal: recusalSchema,
   timeline: z.array(deliberationTimelineEntrySchema).min(1),
   observerNotice: z.string().min(1),
+  publicRedaction: publicRedactionSchema,
 });
 
 export const rollCallEntrySchema = z.object({

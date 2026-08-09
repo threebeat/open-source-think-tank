@@ -1,7 +1,9 @@
 import type {
   AgendaState,
+  AmendmentStatus,
   AuthorType,
   EvidenceReviewStatus,
+  ProposalState,
   SourceType,
   TopicStage,
   TopicStatus,
@@ -68,4 +70,20 @@ export const agendaStateLabels: Record<AgendaState, string> = {
   qualified: "Qualified",
   deferred: "Deferred",
   rejected: "Rejected",
+};
+
+export const proposalStateLabels: Record<ProposalState, string> = {
+  draft: "Draft",
+  under_amendment: "Under amendment",
+  recommended: "Recommended",
+  adopted: "Adopted",
+  returned: "Returned",
+  rejected: "Rejected",
+};
+
+export const amendmentStatusLabels: Record<AmendmentStatus, string> = {
+  proposed: "Proposed",
+  accepted: "Accepted",
+  rejected: "Rejected",
+  withdrawn: "Withdrawn",
 };

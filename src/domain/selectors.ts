@@ -74,6 +74,53 @@ export function getDeliberationBySlug(
   return catalog.deliberations.find((item) => item.slug === slug);
 }
 
+export function listDeliberations(catalog: FixtureCatalog): Deliberation[] {
+  return catalog.deliberations;
+}
+
+export function getDeliberationBundle(
+  catalog: FixtureCatalog,
+  slug: string,
+) {
+  const deliberation = getDeliberationBySlug(catalog, slug);
+  if (!deliberation) {
+    return undefined;
+  }
+  const topic = getTopicById(catalog, deliberation.topicId);
+  if (!topic) {
+    return undefined;
+  }
+  const agendaItem = catalog.agendaItems.find(
+    (item) => item.id === deliberation.agendaItemId,
+  );
+  const participants = deliberation.participantIds
+    .map((id) => catalog.councilParticipants.find((item) => item.id === id))
+    .filter((item) => item != null);
+  const conflicts = deliberation.conflictDisclosureIds
+    .map((id) => catalog.conflictDisclosures.find((item) => item.id === id))
+    .filter((item) => item != null);
+  const proposals = deliberation.proposalIds
+    .map((id) => catalog.proposals.find((item) => item.id === id))
+    .filter((item) => item != null);
+  const amendments = deliberation.amendmentIds
+    .map((id) => catalog.amendments.find((item) => item.id === id))
+    .filter((item) => item != null);
+  const relatedEvidence = deliberation.evidenceRequest.relatedEvidenceIds
+    .map((id) => catalog.evidenceSources.find((source) => source.id === id))
+    .filter((source) => source != null);
+
+  return {
+    deliberation,
+    topic,
+    agendaItem,
+    participants,
+    conflicts,
+    proposals,
+    amendments,
+    relatedEvidence,
+  };
+}
+
 export function getDecisionBySlug(
   catalog: FixtureCatalog,
   slug: string,

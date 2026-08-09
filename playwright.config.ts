@@ -10,9 +10,11 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   webServer: {
+    // Fresh production server after `npm run test:e2e` builds; do not reuse a
+    // stale process that could serve an older `.next` output.
     command: "npm run start",
     url: "http://127.0.0.1:3000",
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 120_000,
   },
   projects: [
