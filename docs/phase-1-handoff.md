@@ -13,16 +13,19 @@
 - Deliberation observer: proposal versions, amendments with targeted citations, evidence request, recusal, redaction placeholder
 - Decision record: recommendation-only outcome, Policy Council roll call with scoped conflict disclosures, minority report, full proposal history with deliberation deep links
 - Guided demo at `/demo` with presentation return/continue bar (`demoStep`), step restore, presenter notes, audience stops
-- Automated lint, typecheck, unit tests, Playwright e2e (including axe on principal routes and phone-width smoke)
+- `/about` project framing (mission, commitments, limitations, contact placeholder)
+- Automated lint, typecheck, unit tests, Playwright e2e (Desktop Chrome suite; full guided demo also on Mobile Safari/WebKit and Mobile Chrome/Android emulation; axe on principal routes; manual-QA automation for zoom, reduced motion, text resize, sticky controls, orientation, keyboard)
+- Manual QA record: [phase-1-manual-qa.md](./phase-1-manual-qa.md)
 - Presentation backup screenshots under `docs/presentation-backup/`
 - Planning docs: [data-map.md](./data-map.md), [threat-model.md](./threat-model.md)
+- Git tag `phase-1-demonstration` marks the Phase 1 demonstration release
 
 ## Known limitations
 
 - No real accounts, database, Pol.is, payments, identity verification, analytics, or AI APIs
 - Consultation “groups” and agenda metrics are authored fixtures, not live computation
 - Governing-board adoption authority is intentionally unresolved; decisions use `recommended`, not invented adoption
-- Manual real-device Safari/Chrome checks and full reduced-motion / zoom pass remain presenter/QA responsibilities on physical phones
+- Physical iPhone Safari / Android Chrome hardware walkthroughs remain conditional on device availability (emulated Mobile Safari and Mobile Chrome guided-demo runs are required and recorded)
 - Screenshot backup must be regenerated after major UI changes (`npm run capture:screenshots`)
 
 ## Deferred decisions (do not invent)

@@ -22,5 +22,15 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
+    {
+      name: "Mobile Safari",
+      use: { ...devices["iPhone 13"] },
+      testMatch: /demo\.spec\.ts/,
+    },
+    {
+      name: "Mobile Chrome",
+      use: { ...devices["Pixel 5"] },
+      testMatch: /demo\.spec\.ts/,
+    },
   ],
 });

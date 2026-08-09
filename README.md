@@ -58,7 +58,7 @@ Serve that build behind ordinary HTTPS in deployment so phone browsers can open 
 | Path | Purpose |
 | --- | --- |
 | `/` | Home and entry points |
-| `/about` | Project framing |
+| `/about` | Project framing (mission, commitments, limitations, contact placeholder) |
 | `/process` | Institutional stage map |
 | `/join` | Nonfunctional join / assent preview |
 | `/topics` | Topic list |
@@ -109,6 +109,7 @@ Direct product URLs still work without presentation mode.
 | [`docs/data-map.md`](docs/data-map.md) | Future collection categories |
 | [`docs/threat-model.md`](docs/threat-model.md) | Abuse and privacy threats |
 | [`docs/phase-1-handoff.md`](docs/phase-1-handoff.md) | Completed work and Phase 2 sequence |
+| [`docs/phase-1-manual-qa.md`](docs/phase-1-manual-qa.md) | Required Phase 1 QA results |
 | [`docs/presentation-backup/`](docs/presentation-backup/) | Static screenshot backup |
 
 ## Status
