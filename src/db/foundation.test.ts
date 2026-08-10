@@ -234,10 +234,14 @@ describe("foundation schema (ephemeral PGlite)", () => {
         .where(eq(assentRecords.id, "assent-ostt-synth-ada-privacy-v1")),
     ).rejects.toThrow();
 
+    const [seedAudit] = await db
+      .select({ id: auditEvents.id })
+      .from(auditEvents)
+      .where(eq(auditEvents.action, "foundation.seeded"))
+      .limit(1);
+    expect(seedAudit?.id).toBeTruthy();
     await expect(
-      db
-        .delete(auditEvents)
-        .where(eq(auditEvents.id, "audit-ostt-synth-seed")),
+      db.delete(auditEvents).where(eq(auditEvents.id, seedAudit!.id)),
     ).rejects.toThrow();
 
     const assent = await db

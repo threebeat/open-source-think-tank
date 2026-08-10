@@ -2,10 +2,14 @@ import type { AdapterResult } from "@/lib/adapters/types";
 
 /**
  * Conversation-scoped pseudonym foundation (package 2.10).
- * No live Pol.is in Phase 2.
+ * No live Pol.is in Phase 2. Reverse mapping is intentionally absent.
  */
 export interface ConsultationParticipationAdapter {
   readonly name: "consultation-participation";
+  /**
+   * Issue (or reuse active) opaque pseudonym for an account in a conversation.
+   * Providers receive only `{ pseudonym }` — never account identifiers.
+   */
   issuePseudonym(
     accountId: string,
     conversationId: string,

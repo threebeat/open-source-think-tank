@@ -190,6 +190,7 @@ describe("authorization capability matrix", () => {
       "verification.review_case",
       "moderation.act",
       "audit.read_restricted",
+      "pseudonym.privileged_lookup",
       "roles.grant_platform",
       "roles.revoke_platform",
       "roles.grant_council",
@@ -224,6 +225,7 @@ describe("authorization capability matrix", () => {
           "verification.review_case",
           "moderation.act",
           "audit.read_restricted",
+          "pseudonym.privileged_lookup",
           "roles.grant_platform",
           "roles.revoke_platform",
           "documents.publish",
@@ -240,6 +242,7 @@ describe("authorization capability matrix", () => {
           "roles.grant_platform",
           "institutional.vote",
           "documents.publish",
+          "pseudonym.privileged_lookup",
         ],
       },
       {
@@ -248,12 +251,13 @@ describe("authorization capability matrix", () => {
         deny: [
           "verification.review_case",
           "audit.read_restricted",
+          "pseudonym.privileged_lookup",
           "documents.publish",
         ],
       },
       {
         accountId: "account-ostt-synth-auditor",
-        allow: ["audit.read_restricted"],
+        allow: ["audit.read_restricted", "pseudonym.privileged_lookup"],
         deny: [
           "moderation.act",
           "roles.grant_council",
@@ -272,6 +276,7 @@ describe("authorization capability matrix", () => {
           "onboarding.staff_read",
           "moderation.act",
           "audit.read_restricted",
+          "pseudonym.privileged_lookup",
           "documents.publish",
         ],
         deny: [

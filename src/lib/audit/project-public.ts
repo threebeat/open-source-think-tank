@@ -1,8 +1,6 @@
 import type { auditEvents } from "@/db/schema";
-import {
-  AUDIT_EVENT_REGISTRY,
-  PROHIBITED_PUBLIC_PAYLOAD_KEYS,
-} from "@/lib/audit/registry";
+import { getAuditActionDefinition } from "@/lib/audit/registry";
+import { assertNoSensitivePublicContent } from "@/lib/audit/sensitive";
 
 type AuditRow = typeof auditEvents.$inferSelect;
 
@@ -16,67 +14,52 @@ export type PublicAuditSummary = {
   continuityHash: string;
 };
 
-function containsProhibited(value: unknown): boolean {
-  if (value == null) {
-    return false;
-  }
-  if (typeof value === "string") {
-    return PROHIBITED_PUBLIC_PAYLOAD_KEYS.some((key) =>
-      value.toLowerCase().includes(key.toLowerCase()),
-    );
-  }
-  if (typeof value === "object") {
-    for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
-      if (
-        PROHIBITED_PUBLIC_PAYLOAD_KEYS.includes(
-          key as (typeof PROHIBITED_PUBLIC_PAYLOAD_KEYS)[number],
-        )
-      ) {
-        return true;
-      }
-      if (containsProhibited(nested)) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-/** Redact a ledger row into a public summary, or null if not projectable. */
+/**
+ * Project a ledger row to the public feed using a registry-owned template only.
+ * Never republishes the private/caller-authored summary or privatePayload.
+ */
 export function projectAuditEventPublic(
   row: AuditRow,
   continuity: { prevHash: string | null; hash: string },
 ): PublicAuditSummary | null {
-  const schema = AUDIT_EVENT_REGISTRY[row.action];
-  if (!schema?.publicProjectionAllowed) {
-    return null;
-  }
-  if (row.privatePayload && containsProhibited(row.privatePayload)) {
-    // Fail closed for public projection — never emit a contradictory public row.
-    return null;
-  }
-  if (containsProhibited(row.summary) || containsProhibited(row.subjectId)) {
+  const definition = getAuditActionDefinition(row.action);
+  if (!definition?.publicProject) {
     return null;
   }
 
-  return {
+  const payload =
+    row.privatePayload && typeof row.privatePayload === "object"
+      ? (row.privatePayload as Record<string, unknown>)
+      : {};
+
+  let summary: string;
+  try {
+    summary = definition.publicProject(payload);
+  } catch {
+    return null;
+  }
+
+  const projection: PublicAuditSummary = {
     id: row.id,
     at: row.at.toISOString(),
     action: row.action,
     subjectType: row.subjectType,
-    summary: row.summary,
+    summary,
     continuityPrevHash: continuity.prevHash,
     continuityHash: continuity.hash,
   };
+
+  try {
+    assertNoSensitivePublicContent(projection);
+  } catch {
+    return null;
+  }
+
+  return projection;
 }
 
 export function assertNoProhibitedPublicFields(
   projection: PublicAuditSummary,
 ): void {
-  const blob = JSON.stringify(projection);
-  for (const key of PROHIBITED_PUBLIC_PAYLOAD_KEYS) {
-    if (blob.includes(`"${key}"`)) {
-      throw new Error(`Public audit projection contains prohibited field ${key}`);
-    }
-  }
+  assertNoSensitivePublicContent(projection);
 }

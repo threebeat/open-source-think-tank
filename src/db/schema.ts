@@ -572,6 +572,53 @@ export const auditEvents = pgTable(
   ],
 );
 
+/** Singleton row locking the audit continuity head (serialize appends). */
+export const auditLedgerHead = pgTable("audit_ledger_head", {
+  id: text("id").primaryKey(),
+  headEventId: text("head_event_id"),
+  headHash: text("head_hash"),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+/**
+ * Security-restricted account↔conversation pseudonym map (WP 2.10).
+ * Never join into public consultation projections; no reverse public APIs.
+ */
+export const conversationPseudonyms = pgTable(
+  "conversation_pseudonyms",
+  {
+    id: text("id").primaryKey(),
+    conversationId: text("conversation_id").notNull(),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    /** Opaque random token — never derived from email/account id. */
+    pseudonym: text("pseudonym").notNull(),
+    purpose: text("purpose").notNull(),
+    issuedAt: timestamp("issued_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    rotatedAt: timestamp("rotated_at", { withTimezone: true }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    supersededById: text("superseded_by_id"),
+    synthetic: boolean("synthetic").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("conversation_pseudonyms_pseudonym_uidx").on(table.pseudonym),
+    uniqueIndex("conversation_pseudonyms_active_pair_uidx")
+      .on(table.conversationId, table.accountId)
+      .where(sql`${table.deletedAt} IS NULL AND ${table.rotatedAt} IS NULL`),
+    index("conversation_pseudonyms_account_idx").on(table.accountId),
+    index("conversation_pseudonyms_conversation_idx").on(table.conversationId),
+  ],
+);
+
 export const authChallengePurposeEnum = pgEnum("auth_challenge_purpose", [
   "contact_verification",
   "sign_in",
@@ -651,6 +698,8 @@ export const foundationTables = {
   verificationArtifactHolds,
   verificationArtifactPayloads,
   auditEvents,
+  auditLedgerHead,
+  conversationPseudonyms,
   authSessions,
   authChallenges,
   schemaMeta,

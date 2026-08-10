@@ -5,9 +5,17 @@ export type AuditEventInput = {
   action: string;
   subjectType: string;
   subjectId: string;
+  /** Private institutional summary — never used as a public projection. */
   summary: string;
   /** Private payload — never projected to the public feed. */
   privatePayload?: Record<string, unknown>;
+  actorAccountId?: string | null;
+  reason?: string;
+  requestCorrelationId?: string | null;
+  /**
+   * Required. Must match the account/event classification; never hardcoded by adapters.
+   */
+  synthetic: boolean;
 };
 
 export type PublicAuditProjection = {

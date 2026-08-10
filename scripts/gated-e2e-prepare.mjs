@@ -30,6 +30,7 @@ await client`
   TRUNCATE TABLE
     auth_challenges,
     auth_sessions,
+    conversation_pseudonyms,
     audit_events,
     verification_artifact_payloads,
     verification_artifact_holds,
@@ -47,6 +48,12 @@ await client`
     persons,
     schema_meta
   CASCADE
+`;
+
+await client`
+  UPDATE audit_ledger_head
+  SET head_event_id = NULL, head_hash = NULL, updated_at = now()
+  WHERE id = 'default'
 `;
 
 await client.end({ timeout: 5 });

@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 2  
 **Baseline:** Phase 1 demonstration release tag [`phase-1-demonstration`](https://github.com/threebeat/open-source-think-tank/releases/tag/phase-1-demonstration) at commit `33ff0cc`  
-**Current package:** **2.9 complete** — next **2.10** after approval. Managed Postgres host and production email vendor remain blocked pending addenda.
+**Current package:** **2.10 complete** — next **2.11** after approval. Managed Postgres host and production email vendor remain blocked pending addenda.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [open-questions.md](./open-questions.md), [legal-questions.md](./legal-questions.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [phase-1-handoff.md](./phase-1-handoff.md)
 
@@ -389,7 +389,7 @@ Stop Phase 2 implementation and escalate to humans if:
 
 ### Work package 2.9 — Build the audit ledger
 
-**Status:** Complete for event registry, private vs public projection redaction, continuity hash chain, restricted auditor search (`/api/audit/search`), allowlisted public feed (`/api/audit/public` + gated transparency), fail-closed high-impact append errors, and tests that prohibited fields never reach the public feed. Ordinary roles still cannot update/delete audit rows (DB immutability triggers).
+**Status:** Complete (including hardening). Discriminated event registry with runtime payload validation and rejection of unregistered actions; registry-owned public templates (never republish caller summaries); value-level sensitive-content scanners; locked ledger-head serialization for appends; continuity verification recomputes digests, detects forks, and paginates the full range; gated adapter carries actor/reason/correlation/synthetic; concurrent-append and field-tampering tests. Ordinary roles still cannot update/delete audit rows (DB immutability triggers).
 
 1. Define a registry of auditable events and their schemas.
 2. Separate private event payloads from publishable summaries.
@@ -412,6 +412,8 @@ Stop Phase 2 implementation and escalate to humans if:
 ---
 
 ### Work package 2.10 — Add conversation-scoped pseudonym foundations
+
+**Status:** Complete for gated opaque issuance (`conversation_pseudonyms`), `ConsultationParticipationAdapter` / `GatedConsultationParticipationAdapter` (no live Pol.is), purpose-limited TTL, rotation/deletion/export/incident rules, `pseudonym.privileged_lookup` (auditor/administrator + L3; moderators denied), audited issuance/lookup/rotation/deletion, synthetic closed-test conversation ids only, and re-identification / cross-conversation correlation tests. No public reverse-lookup routes.
 
 1. Define a consultation-participation adapter without integrating live Pol.is.
 2. Generate random identifiers per account and conversation.
@@ -487,4 +489,4 @@ When Phase 2 work is active:
 3. Prefer “account holder” / “community participant” language; never invent statutory membership.
 4. After each package: report files changed, commands run, failed checks, and unresolved decisions; stop for approval.
 
-Next package after 2.9 approval: **2.10 — Add conversation-scoped pseudonym foundations**.
+Next package after 2.10 approval: **2.11 — Add privacy and operational controls**.

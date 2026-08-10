@@ -26,6 +26,7 @@ export type {
 export {
   ForbiddenConsultationParticipationAdapter,
 } from "@/lib/adapters/consultation-participation";
+export { GatedConsultationParticipationAdapter } from "@/lib/pseudonym/gated-adapter";
 
 import { PublicDemoAuthAdapter } from "@/lib/adapters/auth";
 import { InMemoryDeniedAuditAdapter } from "@/lib/adapters/audit-publish";

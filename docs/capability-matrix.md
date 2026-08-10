@@ -29,6 +29,7 @@ Default decision: **deny**.
 | `onboarding.staff_read` | active | reviewer or administrator | — | Redacted invitation/onboarding queues only (2.8) |
 | `moderation.act` | active | moderator or administrator | — | Placeholder action surface for 2.5 tests |
 | `audit.read_restricted` | active | auditor or administrator | — | Staff-restricted ledger read |
+| `pseudonym.privileged_lookup` | active | auditor or administrator | — | Exceptional reverse map; reason + audit required; **not** moderators (2.10) |
 | `documents.publish` | active | administrator | — | Draft → counsel_reviewed → published only; synthetic derived from actor |
 | `institutional.vote` | **active only** | **participant only** | — | Administrator does **not** imply participant/voting rights |
 | `institutional.council_deliberation` | **active only** | — | deliberation_council | Does **not** imply policy council |

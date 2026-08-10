@@ -113,6 +113,7 @@ describe("authorizeCapability assurance gate", () => {
       "onboarding.staff_read": "account-ostt-synth-ac-reviewer",
       "moderation.act": "account-ostt-synth-ac-moderator",
       "audit.read_restricted": "account-ostt-synth-ac-auditor",
+      "pseudonym.privileged_lookup": "account-ostt-synth-ac-auditor",
       "account.read_own": "account-ostt-synth-ac-participant",
       "account.sign_out": "account-ostt-synth-ac-participant",
       "account.revoke_all_sessions": "account-ostt-synth-ac-participant",
@@ -138,7 +139,7 @@ describe("authorizeCapability assurance gate", () => {
     await seedApprovedAssertions(db, "account-ostt-synth-ac-reviewer", L2_KINDS);
     await seedApprovedAssertions(db, "account-ostt-synth-ac-moderator", L3_KINDS);
     await seedApprovedAssertions(db, "account-ostt-synth-ac-admin", L3_KINDS);
-    await seedApprovedAssertions(db, "account-ostt-synth-ac-auditor", L2_KINDS);
+    await seedApprovedAssertions(db, "account-ostt-synth-ac-auditor", L3_KINDS);
     await seedApprovedAssertions(db, "account-ostt-synth-ac-delib", L4_KINDS);
     await seedApprovedAssertions(db, "account-ostt-synth-ac-policy", L4_KINDS);
 
@@ -170,6 +171,14 @@ describe("authorizeCapability assurance gate", () => {
       {
         accountId: "account-ostt-synth-ac-auditor",
         capability: "audit.read_restricted",
+      },
+      {
+        accountId: "account-ostt-synth-ac-auditor",
+        capability: "pseudonym.privileged_lookup",
+      },
+      {
+        accountId: "account-ostt-synth-ac-admin",
+        capability: "pseudonym.privileged_lookup",
       },
       {
         accountId: "account-ostt-synth-ac-delib",

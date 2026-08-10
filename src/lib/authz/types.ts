@@ -29,6 +29,7 @@ export const CAPABILITIES = [
   "onboarding.staff_read",
   "moderation.act",
   "audit.read_restricted",
+  "pseudonym.privileged_lookup",
   "documents.publish",
   "institutional.vote",
   "institutional.council_deliberation",

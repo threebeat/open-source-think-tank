@@ -5,7 +5,6 @@ import { eq } from "drizzle-orm";
 import {
   accounts,
   assentRecords,
-  auditEvents,
   councilAppointments,
   documentVersions,
   invitations,
@@ -17,6 +16,7 @@ import {
   verificationCases,
 } from "../schema";
 import type { FoundationDb } from "../types";
+import { appendAuthAudit } from "@/lib/auth/audit-log";
 
 function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
@@ -93,6 +93,24 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
       id: "invite-ostt-synth-cory-pending",
       tokenHash: hashToken("ostt-synth-invite-token-cory"),
       intendedContactChannel: "cory@ostt.synth.test",
+      status: "pending",
+      synthetic: true,
+      expiresAt: new Date("2027-01-01T00:00:00.000Z"),
+      issuedByLabel: "ostt-synth-seeder",
+    },
+    {
+      id: "invite-ostt-synth-dana-pending",
+      tokenHash: hashToken("ostt-synth-invite-token-dana"),
+      intendedContactChannel: "dana@ostt.synth.test",
+      status: "pending",
+      synthetic: true,
+      expiresAt: new Date("2027-01-01T00:00:00.000Z"),
+      issuedByLabel: "ostt-synth-seeder",
+    },
+    {
+      id: "invite-ostt-synth-eliot-pending",
+      tokenHash: hashToken("ostt-synth-invite-token-eliot"),
+      intendedContactChannel: "eliot@ostt.synth.test",
       status: "pending",
       synthetic: true,
       expiresAt: new Date("2027-01-01T00:00:00.000Z"),
@@ -190,8 +208,7 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
     assertionSummary: "Synthetic contact continuity assertion (no raw artifact).",
   });
 
-  await db.insert(auditEvents).values({
-    id: "audit-ostt-synth-seed",
+  await appendAuthAudit(db, {
     actorRole: "ostt-synth-seeder",
     action: "foundation.seeded",
     subjectType: "schema",
@@ -201,7 +218,12 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
   });
 }
 
-/** Raw invite token for synthetic pending invitation — tests/E2E only. */
+/** Raw invite tokens for synthetic pending invitations — tests/E2E only. */
 export const SYNTHETIC_PENDING_INVITE_TOKEN = "ostt-synth-invite-token-cory";
 export const SYNTHETIC_PENDING_INVITE_CONTACT = "cory@ostt.synth.test";
+export const SYNTHETIC_PENDING_INVITE_TOKEN_DANA = "ostt-synth-invite-token-dana";
+export const SYNTHETIC_PENDING_INVITE_CONTACT_DANA = "dana@ostt.synth.test";
+export const SYNTHETIC_PENDING_INVITE_TOKEN_ELIOT =
+  "ostt-synth-invite-token-eliot";
+export const SYNTHETIC_PENDING_INVITE_CONTACT_ELIOT = "eliot@ostt.synth.test";
 

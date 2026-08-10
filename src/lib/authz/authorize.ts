@@ -9,6 +9,7 @@ const ACTIVE_ONLY = new Set<Capability>([
   "onboarding.staff_read",
   "moderation.act",
   "audit.read_restricted",
+  "pseudonym.privileged_lookup",
   "documents.publish",
   "institutional.vote",
   "institutional.council_deliberation",
@@ -110,6 +111,13 @@ export function authorize(
       return { ok: true, principal };
 
     case "audit.read_restricted":
+      if (!hasPlatform(principal, ["auditor", "administrator"])) {
+        return deny(capability);
+      }
+      return { ok: true, principal };
+
+    case "pseudonym.privileged_lookup":
+      // Moderators explicitly excluded — reverse maps are incident/admin only.
       if (!hasPlatform(principal, ["auditor", "administrator"])) {
         return deny(capability);
       }

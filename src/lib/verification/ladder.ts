@@ -143,6 +143,7 @@ export const CAPABILITY_ASSURANCE: Partial<
   "onboarding.staff_read": "L2_contact_continuity",
   "moderation.act": "L3_uniqueness",
   "audit.read_restricted": "L2_contact_continuity",
+  "pseudonym.privileged_lookup": "L3_uniqueness",
 };
 
 export function assuranceForCapability(

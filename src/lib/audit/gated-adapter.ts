@@ -18,14 +18,24 @@ export class GatedAuditPublishAdapter implements AuditPublishAdapter {
     event: AuditEventInput,
   ): Promise<AdapterResult<{ id: string }>> {
     try {
+      if (typeof event.synthetic !== "boolean") {
+        return {
+          ok: false,
+          error: "Audit append requires an explicit synthetic boolean",
+          code: "AUDIT_SYNTHETIC_REQUIRED",
+        };
+      }
       const result = await appendAuthAudit(this.db, {
         actorRole: event.actorRole,
+        actorAccountId: event.actorAccountId,
         action: event.action,
         subjectType: event.subjectType,
         subjectId: event.subjectId,
         summary: event.summary,
+        reason: event.reason,
         privatePayload: event.privatePayload,
-        synthetic: true,
+        requestCorrelationId: event.requestCorrelationId,
+        synthetic: event.synthetic,
       });
       return { ok: true, value: { id: result.id } };
     } catch (error) {

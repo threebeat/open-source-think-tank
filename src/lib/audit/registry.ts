@@ -1,142 +1,320 @@
+import { z } from "zod";
+
 /**
- * Registry of auditable events and whether they may project publicly (2.9).
- * Private payloads never appear on the public feed.
+ * Discriminated auditable-event registry (WP 2.9 hardening).
+ * Unregistered actions are rejected. Public summaries come only from templates.
  */
 
-export type AuditEventSchema = {
+const looseObject = z.record(z.string(), z.unknown());
+
+export type PublicProjector = (payload: Record<string, unknown>) => string;
+
+export type AuditActionDefinition = {
   action: string;
   description: string;
-  /** If true, a redacted public summary may be projected. */
-  publicProjectionAllowed: boolean;
-  /** Fields forbidden from public summaries and client logs. */
-  prohibitedPublicFields: string[];
   highImpact: boolean;
+  /** Zod schema for privatePayload (required object; may be empty). */
+  payloadSchema: z.ZodType<Record<string, unknown>>;
+  /** When set, a registry-owned public summary is emitted (never caller summary). */
+  publicProject?: PublicProjector;
+  requireActorAccount?: boolean;
+  requireReason?: boolean;
 };
 
-export const AUDIT_EVENT_REGISTRY: Record<string, AuditEventSchema> = {
-  "auth.invite_accepted": {
-    action: "auth.invite_accepted",
-    description: "Invitation accepted",
-    publicProjectionAllowed: false,
-    prohibitedPublicFields: ["contactChannel", "token", "accountId"],
-    highImpact: true,
-  },
-  "auth.challenge_completed": {
-    action: "auth.challenge_completed",
-    description: "Auth challenge completed",
-    publicProjectionAllowed: false,
-    prohibitedPublicFields: ["token", "contactChannel"],
-    highImpact: true,
-  },
-  "authz.platform_role_granted": {
-    action: "authz.platform_role_granted",
-    description: "Platform role granted",
-    publicProjectionAllowed: true,
-    prohibitedPublicFields: [
-      "accountId",
-      "actorAccountId",
-      "subjectAccountId",
-      "contactChannel",
-    ],
-    highImpact: true,
-  },
-  "authz.platform_role_revoked": {
-    action: "authz.platform_role_revoked",
-    description: "Platform role revoked",
-    publicProjectionAllowed: true,
-    prohibitedPublicFields: [
-      "accountId",
-      "actorAccountId",
-      "subjectAccountId",
-    ],
-    highImpact: true,
-  },
-  "authz.council_seat_granted": {
-    action: "authz.council_seat_granted",
-    description: "Council seat granted",
-    publicProjectionAllowed: true,
-    prohibitedPublicFields: ["accountId", "actorAccountId", "subjectAccountId"],
-    highImpact: true,
-  },
-  "authz.council_seat_revoked": {
-    action: "authz.council_seat_revoked",
-    description: "Council seat revoked",
-    publicProjectionAllowed: true,
-    prohibitedPublicFields: ["accountId", "actorAccountId", "subjectAccountId"],
-    highImpact: true,
-  },
-  "assent.recorded": {
-    action: "assent.recorded",
-    description: "Document assent recorded",
-    publicProjectionAllowed: false,
-    prohibitedPublicFields: ["accountId", "contentHash", "noticesAcknowledged"],
-    highImpact: true,
-  },
-  "assent.withdrawn": {
-    action: "assent.withdrawn",
-    description: "Assent withdrawn",
-    publicProjectionAllowed: false,
-    prohibitedPublicFields: ["accountId", "priorAssentId"],
-    highImpact: true,
-  },
-  "assent.document_published": {
-    action: "assent.document_published",
-    description: "Document version published",
-    publicProjectionAllowed: true,
-    prohibitedPublicFields: ["accountId", "actorAccountId"],
-    highImpact: true,
-  },
-  "verification.case_approved": {
-    action: "verification.case_approved",
-    description: "Verification case approved",
-    publicProjectionAllowed: false,
-    prohibitedPublicFields: [
-      "accountId",
-      "evidencePointer",
-      "subjectAccountId",
-    ],
-    highImpact: true,
-  },
-  "verification.case_denied": {
-    action: "verification.case_denied",
-    description: "Verification case denied",
-    publicProjectionAllowed: false,
-    prohibitedPublicFields: ["accountId", "subjectAccountId"],
-    highImpact: true,
-  },
-  "onboarding.activated": {
-    action: "onboarding.activated",
-    description: "Account activated after onboarding gates",
-    publicProjectionAllowed: false,
-    prohibitedPublicFields: ["accountId", "approvedKinds"],
-    highImpact: true,
-  },
-  "foundation.seeded": {
-    action: "foundation.seeded",
-    description: "Synthetic foundation seed",
-    publicProjectionAllowed: true,
-    prohibitedPublicFields: ["accountId"],
+function def(
+  action: string,
+  description: string,
+  options: {
+    highImpact?: boolean;
+    payloadSchema?: z.ZodType<Record<string, unknown>>;
+    publicProject?: PublicProjector;
+    requireActorAccount?: boolean;
+    requireReason?: boolean;
+  } = {},
+): AuditActionDefinition {
+  return {
+    action,
+    description,
+    highImpact: options.highImpact ?? true,
+    payloadSchema: options.payloadSchema ?? looseObject,
+    publicProject: options.publicProject,
+    requireActorAccount: options.requireActorAccount,
+    requireReason: options.requireReason,
+  };
+}
+
+const kindPayload = z
+  .object({ kind: z.string().optional() })
+  .passthrough() as z.ZodType<Record<string, unknown>>;
+
+export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
+  // Auth
+  "auth.invite_accepted": def(
+    "auth.invite_accepted",
+    "Invitation accepted",
+    { requireActorAccount: true },
+  ),
+  "auth.invite_accept_rejected": def(
+    "auth.invite_accept_rejected",
+    "Invitation accept rejected",
+  ),
+  "auth.sign_in_requested": def(
+    "auth.sign_in_requested",
+    "Sign-in requested",
+  ),
+  "auth.session_established": def(
+    "auth.session_established",
+    "Session established",
+    { requireActorAccount: true },
+  ),
+  "auth.sign_out": def("auth.sign_out", "Sign-out", {
+    requireActorAccount: true,
+  }),
+  "auth.revoke_all_sessions": def(
+    "auth.revoke_all_sessions",
+    "All sessions revoked",
+    { requireActorAccount: true },
+  ),
+  "auth.challenge_issued": def(
+    "auth.challenge_issued",
+    "Auth challenge issued",
+  ),
+  "auth.challenge_rejected": def(
+    "auth.challenge_rejected",
+    "Auth challenge rejected",
+  ),
+  "auth.challenge_email_sent": def(
+    "auth.challenge_email_sent",
+    "Challenge email sent",
+  ),
+  "auth.challenge_email_failed": def(
+    "auth.challenge_email_failed",
+    "Challenge email failed",
+  ),
+  "auth.test_synthetic_marker": def(
+    "auth.test_synthetic_marker",
+    "Test-only synthetic marker",
+    { highImpact: false },
+  ),
+
+  // Authz
+  "authz.platform_role_granted": def(
+    "authz.platform_role_granted",
+    "Platform role granted",
+    {
+      requireActorAccount: true,
+      requireReason: true,
+      payloadSchema: z
+        .object({ role: z.string() })
+        .passthrough() as z.ZodType<Record<string, unknown>>,
+      publicProject: (p) =>
+        `A platform role (${String(p.role ?? "role")}) was granted.`,
+    },
+  ),
+  "authz.platform_role_revoked": def(
+    "authz.platform_role_revoked",
+    "Platform role revoked",
+    {
+      requireActorAccount: true,
+      requireReason: true,
+      payloadSchema: z
+        .object({ role: z.string() })
+        .passthrough() as z.ZodType<Record<string, unknown>>,
+      publicProject: (p) =>
+        `A platform role (${String(p.role ?? "role")}) was revoked.`,
+    },
+  ),
+  "authz.council_seat_granted": def(
+    "authz.council_seat_granted",
+    "Council seat granted",
+    {
+      requireActorAccount: true,
+      requireReason: true,
+      payloadSchema: z
+        .object({ councilRole: z.string() })
+        .passthrough() as z.ZodType<Record<string, unknown>>,
+      publicProject: (p) =>
+        `A council seat (${String(p.councilRole ?? "seat")}) was granted.`,
+    },
+  ),
+  "authz.council_seat_revoked": def(
+    "authz.council_seat_revoked",
+    "Council seat revoked",
+    {
+      requireActorAccount: true,
+      requireReason: true,
+      payloadSchema: z
+        .object({ councilRole: z.string() })
+        .passthrough() as z.ZodType<Record<string, unknown>>,
+      publicProject: (p) =>
+        `A council seat (${String(p.councilRole ?? "seat")}) was revoked.`,
+    },
+  ),
+
+  // Assent / documents
+  "assent.document_draft_created": def(
+    "assent.document_draft_created",
+    "Document draft created",
+    {
+      requireActorAccount: true,
+      payloadSchema: kindPayload,
+      publicProject: (p) =>
+        `A draft document was created for kind ${String(p.kind ?? "document")}.`,
+    },
+  ),
+  "assent.document_counsel_reviewed": def(
+    "assent.document_counsel_reviewed",
+    "Document marked counsel_reviewed",
+    { requireActorAccount: true },
+  ),
+  "assent.document_published": def(
+    "assent.document_published",
+    "Document published",
+    {
+      requireActorAccount: true,
+      payloadSchema: kindPayload,
+      publicProject: (p) =>
+        `A document version was published for kind ${String(p.kind ?? "document")}.`,
+    },
+  ),
+  "assent.document_presented": def(
+    "assent.document_presented",
+    "Document presented for assent",
+    { requireActorAccount: true },
+  ),
+  "assent.recorded": def("assent.recorded", "Assent recorded", {
+    requireActorAccount: true,
+  }),
+  "assent.declined": def("assent.declined", "Document declined", {
+    requireActorAccount: true,
+  }),
+  "assent.withdrawn": def("assent.withdrawn", "Assent withdrawn", {
+    requireActorAccount: true,
+  }),
+
+  // Verification
+  "verification.case_opened": def(
+    "verification.case_opened",
+    "Verification case opened",
+    { requireActorAccount: true, payloadSchema: kindPayload },
+  ),
+  "verification.reviewer_assigned": def(
+    "verification.reviewer_assigned",
+    "Verification reviewer assigned",
+    { requireActorAccount: true },
+  ),
+  "verification.reviewer_reassigned": def(
+    "verification.reviewer_reassigned",
+    "Verification reviewer reassigned",
+    { requireActorAccount: true, requireReason: true },
+  ),
+  "verification.case_approved": def(
+    "verification.case_approved",
+    "Verification case approved",
+    { requireActorAccount: true, requireReason: true, payloadSchema: kindPayload },
+  ),
+  "verification.case_denied": def(
+    "verification.case_denied",
+    "Verification case denied",
+    { requireActorAccount: true, requireReason: true, payloadSchema: kindPayload },
+  ),
+  "verification.case_revoked": def(
+    "verification.case_revoked",
+    "Verification case revoked",
+    { requireActorAccount: true, requireReason: true, payloadSchema: kindPayload },
+  ),
+  "verification.case_appealed": def(
+    "verification.case_appealed",
+    "Verification case appealed",
+    { requireActorAccount: true, requireReason: true },
+  ),
+  "verification.case_expired": def(
+    "verification.case_expired",
+    "Verification case expired",
+    { highImpact: false, payloadSchema: kindPayload },
+  ),
+  "verification.artifact_purged": def(
+    "verification.artifact_purged",
+    "Verification artifact purged",
+    { highImpact: false },
+  ),
+
+  // Onboarding
+  "onboarding.activated": def(
+    "onboarding.activated",
+    "Account activated after onboarding gates",
+    { requireActorAccount: true },
+  ),
+
+  // Pseudonyms (2.10)
+  "pseudonym.issued": def("pseudonym.issued", "Conversation pseudonym issued", {
+    requireActorAccount: true,
+    publicProject: () =>
+      "A conversation-scoped consultation pseudonym was issued.",
+  }),
+  "pseudonym.privileged_lookup": def(
+    "pseudonym.privileged_lookup",
+    "Privileged pseudonym mapping lookup",
+    { requireActorAccount: true, requireReason: true },
+  ),
+  "pseudonym.rotated": def("pseudonym.rotated", "Conversation pseudonym rotated", {
+    requireActorAccount: true,
+    requireReason: true,
+  }),
+  "pseudonym.deleted": def("pseudonym.deleted", "Conversation pseudonym deleted", {
+    requireActorAccount: true,
+    requireReason: true,
+  }),
+
+  // Foundation
+  "foundation.seeded": def("foundation.seeded", "Synthetic foundation seed", {
     highImpact: false,
-  },
+    publicProject: () => "Synthetic foundation seed applied.",
+  }),
 };
 
-export const PROHIBITED_PUBLIC_PAYLOAD_KEYS = [
-  "accountId",
-  "actorAccountId",
-  "subjectAccountId",
-  "contactChannel",
-  "email",
-  "token",
-  "inviteToken",
-  "sessionToken",
-  "evidencePointer",
-  "verificationArtifacts",
-  "privatePayload",
-  "opinion",
-  "politicalOpinion",
-  "password",
-] as const;
+export type RegisteredAuditAction = keyof typeof AUDIT_EVENT_REGISTRY;
+
+export function getAuditActionDefinition(
+  action: string,
+): AuditActionDefinition | null {
+  return AUDIT_EVENT_REGISTRY[action] ?? null;
+}
 
 export function isHighImpactAction(action: string): boolean {
-  return AUDIT_EVENT_REGISTRY[action]?.highImpact ?? true;
+  return getAuditActionDefinition(action)?.highImpact ?? true;
+}
+
+export function isRegisteredAuditAction(action: string): boolean {
+  return Boolean(AUDIT_EVENT_REGISTRY[action]);
+}
+
+export type ValidatedAuditAppend = {
+  definition: AuditActionDefinition;
+  privatePayload: Record<string, unknown>;
+};
+
+export function validateAuditAppend(input: {
+  action: string;
+  actorAccountId?: string | null;
+  reason?: string | null;
+  privatePayload?: Record<string, unknown> | null;
+}): ValidatedAuditAppend {
+  const definition = getAuditActionDefinition(input.action);
+  if (!definition) {
+    throw new Error(`AUDIT_UNREGISTERED_ACTION:${input.action}`);
+  }
+  if (definition.requireActorAccount && !input.actorAccountId) {
+    throw new Error(`AUDIT_ACTOR_REQUIRED:${input.action}`);
+  }
+  if (definition.requireReason && !input.reason?.trim()) {
+    throw new Error(`AUDIT_REASON_REQUIRED:${input.action}`);
+  }
+  const parsed = definition.payloadSchema.safeParse(input.privatePayload ?? {});
+  if (!parsed.success) {
+    throw new Error(
+      `AUDIT_PAYLOAD_INVALID:${input.action}:${parsed.error.message}`,
+    );
+  }
+  return { definition, privatePayload: parsed.data };
 }

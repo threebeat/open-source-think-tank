@@ -4,6 +4,7 @@ import { expect, test, devices } from "@playwright/test";
 /**
  * Gated onboarding E2E — synthetic fixtures only.
  * Requires playwright.gated.config.ts + prepared DB.
+ * Each enrollment test uses an independent pending invite fixture.
  */
 test.describe("gated onboarding flows (synthetic)", () => {
   test("expired invite link cannot begin enrollment", async ({ page }) => {
@@ -51,9 +52,33 @@ test.describe("gated onboarding flows (synthetic)", () => {
     await page.goForward();
     await expect(page.getByRole("heading", { name: /onboarding progress/i })).toBeVisible();
 
-    // Keyboard: tab to Continue / Activate controls without trap
-    await page.keyboard.press("Tab");
-    await page.keyboard.press("Tab");
+    // Keyboard: assert focus actually advances across interactive controls
+    await page.locator("body").focus();
+    const focusSequence: string[] = [];
+    for (let i = 0; i < 6; i += 1) {
+      await page.keyboard.press("Tab");
+      const descriptor = await page.evaluate(() => {
+        const el = document.activeElement;
+        if (!el || el === document.body) {
+          return "body";
+        }
+        const tag = el.tagName.toLowerCase();
+        const role = el.getAttribute("role") ?? "";
+        const name =
+          el.getAttribute("aria-label") ||
+          (el as HTMLElement).innerText?.trim().slice(0, 40) ||
+          el.getAttribute("href") ||
+          el.id ||
+          "";
+        return `${tag}|${role}|${name}`;
+      });
+      focusSequence.push(descriptor);
+    }
+    const uniqueFocused = new Set(focusSequence.filter((item) => item !== "body"));
+    expect(
+      uniqueFocused.size,
+      `expected focus to advance across controls; got ${focusSequence.join(" -> ")}`,
+    ).toBeGreaterThanOrEqual(2);
 
     const onboardingAxe = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa"])
@@ -85,20 +110,13 @@ test.describe("gated onboarding flows (synthetic)", () => {
   });
 
   test("declined assent leaves activation blocked", async ({ page }) => {
-    // Uses the same invite as the keyboard test when run in isolation after prepare.
-    // When the invite was already consumed, fall back to asserting the activate control
-    // stays disabled for a signed-out→sign-in redirect path.
     const accept = await page.request.post("/api/auth/accept-invite", {
       data: {
-        inviteToken: "ostt-synth-invite-token-cory",
-        contactChannel: "cory@ostt.synth.test",
+        inviteToken: "ostt-synth-invite-token-dana",
+        contactChannel: "dana@ostt.synth.test",
       },
     });
-    if (!accept.ok()) {
-      await page.goto("/account/onboarding");
-      await expect(page).toHaveURL(/\/auth\/sign-in|\/account\/onboarding/);
-      return;
-    }
+    expect(accept.ok()).toBeTruthy();
 
     const capture = await page.request.get("/api/test/last-email");
     const mail = (await capture.json()) as { textBody?: string };
