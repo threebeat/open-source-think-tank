@@ -19,6 +19,7 @@ export { StubVerificationAdapter } from "@/lib/adapters/verification";
 export { LocalManualVerificationAdapter } from "@/lib/verification/adapter";
 export type { AuditPublishAdapter } from "@/lib/adapters/audit-publish";
 export { InMemoryDeniedAuditAdapter } from "@/lib/adapters/audit-publish";
+export { GatedAuditPublishAdapter } from "@/lib/audit/gated-adapter";
 export type {
   ConsultationParticipationAdapter,
 } from "@/lib/adapters/consultation-participation";

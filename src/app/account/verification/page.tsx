@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { VerificationActionsClient } from "@/components/verification/VerificationActionsClient";
 import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { PageHeader } from "@/components/PageHeader";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
@@ -9,9 +10,9 @@ import { resolveAppMode } from "@/lib/env/app-mode";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Verification status",
+  title: "Verification",
   description:
-    "Account-private verification status (not ideology, credibility, or expertise).",
+    "Open and track verification cases (not ideology, credibility, or expertise).",
 };
 
 export default async function AccountVerificationPage() {
@@ -45,19 +46,21 @@ export default async function AccountVerificationPage() {
       />
       <PageHeader
         eyebrow="Account-private"
-        title="Verification status"
-        description="Status only. This ladder is not proof of ideology, credibility, or policy expertise, and does not assume government ID."
+        title="Verification"
+        description="Open cases for your account, track status, and appeal denials. This ladder is not proof of ideology, credibility, or policy expertise."
       />
       <DisclosureNotice title="Counsel gates" tone="caution">
         Eligibility, residency, and legal-identity production claims remain
-        counsel-blocked. Artifact bytes are not stored on this page.
+        counsel-blocked for real accounts. Reviewers approve cases; opening a
+        case alone does not activate your account.
       </DisclosureNotice>
 
       <section className="space-y-3">
         <h2 className="font-serif text-lg">Your cases</h2>
         {statuses.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No verification cases yet.
+            No verification cases yet. Open the cases required for onboarding
+            below.
           </p>
         ) : (
           <ul className="space-y-3 text-sm">
@@ -72,6 +75,8 @@ export default async function AccountVerificationPage() {
           </ul>
         )}
       </section>
+
+      <VerificationActionsClient cases={statuses} />
 
       <section className="space-y-3">
         <h2 className="font-serif text-lg">Assurance ladder (engineering)</h2>

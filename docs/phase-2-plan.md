@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 2  
 **Baseline:** Phase 1 demonstration release tag [`phase-1-demonstration`](https://github.com/threebeat/open-source-think-tank/releases/tag/phase-1-demonstration) at commit `33ff0cc`  
-**Current package:** **2.8 complete** — next **2.9** after approval. Managed Postgres host and production email vendor remain blocked pending addenda.
+**Current package:** **2.9 complete** — next **2.10** after approval. Managed Postgres host and production email vendor remain blocked pending addenda.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [open-questions.md](./open-questions.md), [legal-questions.md](./legal-questions.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [phase-1-handoff.md](./phase-1-handoff.md)
 
@@ -155,7 +155,7 @@ Every change to status must fill: status, scope and conditions, recorded date, r
 
 - **Blocked for product claims:** Do not ship copy that states statutory membership, board-binding crowd decisions, approved legal terms, or settled retention/deletion rights while the relevant gate is **blocking**.
 - **Allowed for foundation design:** Adapters, schemas, and invite-only scaffolding may be built using provisional language (“account holder,” “community participant,” “recommendation only,” `pending_onboarding`) while gates remain blocking.
-- **Blocked for real participant activation:** No real (non-synthetic) participant account may enter **`active`** until applicable assent (2.6), verification (2.7), and onboarding (2.8) gates for that account are complete, and counsel gates that govern those claims are **cleared** or **conditionally cleared** for the relevant scope. Owner risk acceptance alone does not authorize `active` status or “cleared” counsel rows.
+- **Blocked for real participant activation:** No real (non-synthetic) participant account may enter **`active`** until applicable assent (2.6), verification (2.7), and onboarding (2.8) gates for that account are complete, and counsel gates that govern those claims are **cleared** or **conditionally cleared** for the relevant scope. Owner risk acceptance alone does not authorize `active` status or “cleared” counsel rows. Server-readable disposition rows live in `src/lib/counsel/dispositions.ts` and are enforced by `activateAccount` (`ONBOARD_COUNSEL_GATE_BLOCKED`).
 
 ---
 
@@ -364,7 +364,7 @@ Stop Phase 2 implementation and escalate to humans if:
 
 ### Work package 2.8 — Build invite-only onboarding
 
-**Status:** Complete for gated invite-only `/join`, onboarding progress UI, sole `pending_onboarding` → `active` path (`activateAccount`) gated on published-document assent + L3 uniqueness + eligibility assertions, declined/incomplete blocking reasons, and staff-redacted invitation/onboarding queues (`onboarding.staff_read`). Counsel gates on assent/eligibility/membership remain blocking. Public-demo `/join` preview unchanged; public recruitment CTA remains disabled.
+**Status:** Complete for gated invite-only `/join`, onboarding progress UI, transactional `activateAccount` (gates re-checked under row locks), synthetic-only activation while counsel dispositions remain blocking (`ONBOARD_COUNSEL_GATE_BLOCKED` for real accounts; dispositions in `src/lib/counsel/dispositions.ts`), account-scoped verification open/appeal APIs + UI, concurrency tests, and staff-redacted queues. Gated E2E specs added under `e2e/*.gated.spec.ts` (require Docker Postgres). Public-demo `/join` preview unchanged.
 
 1. Replace the join preview only in the gated Phase 2 environment.
 2. Implement invitation, eligibility assertions, document review, assent, applicable verification steps, and the **only** production transition from `pending_onboarding` → `active`.
@@ -388,6 +388,8 @@ Stop Phase 2 implementation and escalate to humans if:
 ---
 
 ### Work package 2.9 — Build the audit ledger
+
+**Status:** Complete for event registry, private vs public projection redaction, continuity hash chain, restricted auditor search (`/api/audit/search`), allowlisted public feed (`/api/audit/public` + gated transparency), fail-closed high-impact append errors, and tests that prohibited fields never reach the public feed. Ordinary roles still cannot update/delete audit rows (DB immutability triggers).
 
 1. Define a registry of auditable events and their schemas.
 2. Separate private event payloads from publishable summaries.
@@ -485,4 +487,4 @@ When Phase 2 work is active:
 3. Prefer “account holder” / “community participant” language; never invent statutory membership.
 4. After each package: report files changed, commands run, failed checks, and unresolved decisions; stop for approval.
 
-Next package after 2.8 approval: **2.9 — Build the audit ledger**.
+Next package after 2.9 approval: **2.10 — Add conversation-scoped pseudonym foundations**.

@@ -13,7 +13,7 @@ const gatedEnv = {
 
 export default defineConfig({
   testDir: "./e2e",
-  testMatch: /auth-lifecycle\.gated\.spec\.ts/,
+  testMatch: /\.gated\.spec\.ts$/,
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: 0,

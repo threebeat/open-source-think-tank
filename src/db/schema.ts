@@ -557,12 +557,19 @@ export const auditEvents = pgTable(
     requestCorrelationId: text("request_correlation_id"),
     reason: text("reason"),
     privatePayload: jsonb("private_payload").$type<Record<string, unknown>>(),
+    /** Hash chain for continuity / tamper-detection (not absolute tamper-proof). */
+    continuityPrevHash: text("continuity_prev_hash"),
+    continuityHash: text("continuity_hash"),
     synthetic: boolean("synthetic").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
-  (table) => [index("audit_events_at_idx").on(table.at)],
+  (table) => [
+    index("audit_events_at_idx").on(table.at),
+    index("audit_events_action_idx").on(table.action),
+    index("audit_events_actor_idx").on(table.actorAccountId),
+  ],
 );
 
 export const authChallengePurposeEnum = pgEnum("auth_challenge_purpose", [

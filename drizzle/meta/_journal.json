@@ -50,6 +50,13 @@
       "when": 1786391000000,
       "tag": "0006_verification_assurance_artifacts",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1786392000000,
+      "tag": "0007_audit_continuity",
+      "breakpoints": true
     }
   ]
 }
