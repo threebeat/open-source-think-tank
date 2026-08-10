@@ -73,17 +73,20 @@ Participants or operators optimize for threshold metrics rather than honest cons
 
 ## Phase 2 architecture posture (after 2.2 ADRs)
 
-Controls below are **designed**; implementation lands in 2.3–2.11.
+Controls below are **implemented** through 2.11 unless noted as still blocked.
 
 | Threat | Phase 2 design response |
 | --- | --- |
 | Demo ↔ production data bleed | Separate `APP_MODE`; public-demo adapters refuse DB/auth; gated secrets forbidden on demo deploys ([ADR 0002](./decisions/0002-environments-and-demo-isolation.md)) |
 | Auth without invite | Invitation table + server checks independent of Auth.js ([ADR 0005](./decisions/0005-invite-gate-independent-of-auth.md)) |
 | Auth mistaken for activation | Lifecycle `pending_onboarding` until 2.6–2.8 gates; no real `active` in 2.4 |
-| Identity joined to public opinion | Separate stores; consultation adapter forbidden in Phase 2; future pseudonym map security-restricted |
-| Secret leakage to browser | No `NEXT_PUBLIC_` secrets; adapter boundary; [secrets-and-operations.md](./secrets-and-operations.md) |
-| Audit tampering by ordinary roles | Append-only ledger intent; public projections allowlisted (2.9) |
-| Email / DB vendor abuse | DPA/region/retention checklist before production keys; email vendor conditionally approved pending addendum |
+| Identity joined to public opinion | Separate stores; consultation adapter forbidden in Phase 2; closed-test pseudonym map security-restricted (2.10) |
+| Secret leakage to browser | No `NEXT_PUBLIC_` secrets; adapter boundary; security headers + CSRF middleware; [secrets-and-operations.md](./secrets-and-operations.md) |
+| Audit tampering by ordinary roles | Append-only ledger; continuity digests over institutional fields; public projections allowlisted (2.9) |
+| Cross-account export leakage | Own-account export aborts if another `account-*` id appears (2.11) |
+| Silent destruction on closure | Closure retains assent/audit; legal holds block closure/purge (2.11) |
+| Single-admin high-impact mistakes | Dual-control request/approve for selected ops; self-approve denied ([incident-response.md](./incident-response.md)) |
+| Email / DB vendor abuse | DPA/region/retention checklist before production keys; managed DB host still blocked pending addendum |
 
 ## Explicit non-goals for Phase 1 / Phase 2 public-demo
 

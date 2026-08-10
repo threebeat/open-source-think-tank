@@ -66,6 +66,10 @@ export default async function AccountPage() {
         <a className="underline" href="/account/verification">
           View verification status
         </a>
+        {" · "}
+        <a className="underline" href="/account/privacy">
+          Privacy controls
+        </a>
       </p>
     </MainContainer>
   );

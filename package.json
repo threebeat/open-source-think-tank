@@ -17,7 +17,9 @@
     "db:down": "docker compose down",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "security:check": "node scripts/security-checks.mjs",
+    "backup:smoke": "tsx scripts/backup-restore-smoke.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

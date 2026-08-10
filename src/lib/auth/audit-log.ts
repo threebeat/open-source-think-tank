@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 
 import { auditEvents, auditLedgerHead } from "@/db/schema";
 import type { DrizzleTx } from "@/db/transaction-context";
@@ -35,6 +35,8 @@ export type AuthAuditInput = {
    * to true (real events must not enter the ledger as synthetic).
    */
   synthetic: boolean;
+  /** Optional explicit timestamp; assigned before hashing when omitted. */
+  at?: Date;
 };
 
 const LEDGER_HEAD_ID = "default";
@@ -69,7 +71,7 @@ export async function appendAuthAudit(db: AuthAuditDb, input: AuthAuditInput) {
   if (input.reason) {
     assertNoSecretsInText(input.reason, secrets);
   }
-  const privatePayload = redactSensitiveFields(validatedPayload);
+  const privatePayload = redactSensitiveFields(validatedPayload) ?? null;
   if (privatePayload) {
     assertNoSecretsInText(JSON.stringify(privatePayload), secrets);
   }
@@ -95,22 +97,38 @@ export async function appendAuthAudit(db: AuthAuditDb, input: AuthAuditInput) {
         throw new Error("AUDIT_LEDGER_HEAD_MISSING");
       }
 
+      // Keep (at, id) order aligned with the hash chain under concurrency.
+      const [latest] = await tx
+        .select({ at: auditEvents.at })
+        .from(auditEvents)
+        .orderBy(desc(auditEvents.at), desc(auditEvents.id))
+        .limit(1);
+      let at = input.at ?? new Date();
+      if (latest && at.getTime() <= latest.at.getTime()) {
+        at = new Date(latest.at.getTime() + 1);
+      }
+      const atIso = at.toISOString();
+
       const continuityPrevHash = head.headHash ?? null;
       const continuityHash = computeContinuityDigest({
         id,
         prevHash: continuityPrevHash,
+        at: atIso,
+        actorRole: input.actorRole,
+        actorAccountId,
         action: input.action,
         subjectType: input.subjectType,
         subjectId: input.subjectId,
         summary: input.summary,
-        actorAccountId,
         reason,
         requestCorrelationId,
+        privatePayload,
         synthetic: input.synthetic,
       });
 
       await tx.insert(auditEvents).values({
         id,
+        at,
         actorRole: input.actorRole,
         actorAccountId,
         action: input.action,
@@ -118,7 +136,7 @@ export async function appendAuthAudit(db: AuthAuditDb, input: AuthAuditInput) {
         subjectId: input.subjectId,
         summary: input.summary,
         reason: reason ?? undefined,
-        privatePayload,
+        privatePayload: privatePayload ?? undefined,
         requestCorrelationId,
         continuityPrevHash,
         continuityHash,
@@ -134,7 +152,7 @@ export async function appendAuthAudit(db: AuthAuditDb, input: AuthAuditInput) {
         })
         .where(eq(auditLedgerHead.id, LEDGER_HEAD_ID));
 
-      return { id, continuityHash, continuityPrevHash };
+      return { id, continuityHash, continuityPrevHash, at };
     });
   } catch (error) {
     if (

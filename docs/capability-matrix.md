@@ -30,6 +30,12 @@ Default decision: **deny**.
 | `moderation.act` | active | moderator or administrator | — | Placeholder action surface for 2.5 tests |
 | `audit.read_restricted` | active | auditor or administrator | — | Staff-restricted ledger read |
 | `pseudonym.privileged_lookup` | active | auditor or administrator | — | Exceptional reverse map; reason + audit required; **not** moderators (2.10) |
+| `account.export_own` | invited, pending_onboarding, active | any / none | — | Own-account export only (2.11) |
+| `account.request_closure` | invited, pending_onboarding, active | any / none | — | Self closure/deletion request (2.11) |
+| `privacy.manage_legal_hold` | active | administrator | — | Staff-restricted holds; never public (2.11) |
+| `privacy.execute_closure` | active | administrator | — | Closure retains assent/audit (2.11) |
+| `privacy.dual_control_request` | active | administrator | — | Request second-admin approval (2.11) |
+| `privacy.dual_control_approve` | active | administrator | — | Approver ≠ requester (2.11) |
 | `documents.publish` | active | administrator | — | Draft → counsel_reviewed → published only; synthetic derived from actor |
 | `institutional.vote` | **active only** | **participant only** | — | Administrator does **not** imply participant/voting rights |
 | `institutional.council_deliberation` | **active only** | — | deliberation_council | Does **not** imply policy council |

@@ -22,6 +22,7 @@ export type ContinuityVerifyResult = {
 type ContinuityRow = {
   id: string;
   at: Date;
+  actorRole: string;
   action: string;
   subjectType: string;
   subjectId: string;
@@ -29,6 +30,7 @@ type ContinuityRow = {
   actorAccountId: string | null;
   reason: string | null;
   requestCorrelationId: string | null;
+  privatePayload: Record<string, unknown> | null;
   synthetic: boolean;
   continuityPrevHash: string | null;
   continuityHash: string | null;
@@ -57,6 +59,7 @@ export async function verifyAuditContinuity(
       .select({
         id: auditEvents.id,
         at: auditEvents.at,
+        actorRole: auditEvents.actorRole,
         action: auditEvents.action,
         subjectType: auditEvents.subjectType,
         subjectId: auditEvents.subjectId,
@@ -64,6 +67,7 @@ export async function verifyAuditContinuity(
         actorAccountId: auditEvents.actorAccountId,
         reason: auditEvents.reason,
         requestCorrelationId: auditEvents.requestCorrelationId,
+        privatePayload: auditEvents.privatePayload,
         synthetic: auditEvents.synthetic,
         continuityPrevHash: auditEvents.continuityPrevHash,
         continuityHash: auditEvents.continuityHash,
@@ -71,7 +75,7 @@ export async function verifyAuditContinuity(
       .from(auditEvents)
       .where(
         cursorAt && cursorId
-          ? sql`(${auditEvents.at}, ${auditEvents.id}) > (${cursorAt}, ${cursorId})`
+          ? sql`(${auditEvents.at}, ${auditEvents.id}) > (${cursorAt.toISOString()}::timestamptz, ${cursorId})`
           : sql`true`,
       )
       .orderBy(asc(auditEvents.at), asc(auditEvents.id))
@@ -137,13 +141,16 @@ function checkContinuityRow(
   const expected = computeContinuityDigest({
     id: row.id,
     prevHash: row.continuityPrevHash,
+    at: row.at.toISOString(),
+    actorRole: row.actorRole,
+    actorAccountId: row.actorAccountId,
     action: row.action,
     subjectType: row.subjectType,
     subjectId: row.subjectId,
     summary: row.summary,
-    actorAccountId: row.actorAccountId,
     reason: row.reason,
     requestCorrelationId: row.requestCorrelationId,
+    privatePayload: row.privatePayload ?? null,
     synthetic: row.synthetic,
   });
 

@@ -220,12 +220,19 @@ describe("authorization capability matrix", () => {
     }> = [
       {
         accountId: "account-ostt-synth-participant",
-        allow: ["institutional.vote", "account.read_own"],
+        allow: [
+          "institutional.vote",
+          "account.read_own",
+          "account.export_own",
+          "account.request_closure",
+        ],
         deny: [
           "verification.review_case",
           "moderation.act",
           "audit.read_restricted",
           "pseudonym.privileged_lookup",
+          "privacy.manage_legal_hold",
+          "privacy.execute_closure",
           "roles.grant_platform",
           "roles.revoke_platform",
           "documents.publish",
@@ -252,6 +259,7 @@ describe("authorization capability matrix", () => {
           "verification.review_case",
           "audit.read_restricted",
           "pseudonym.privileged_lookup",
+          "privacy.manage_legal_hold",
           "documents.publish",
         ],
       },
@@ -263,6 +271,7 @@ describe("authorization capability matrix", () => {
           "roles.grant_council",
           "roles.revoke_council",
           "documents.publish",
+          "privacy.execute_closure",
         ],
       },
       {
@@ -277,7 +286,13 @@ describe("authorization capability matrix", () => {
           "moderation.act",
           "audit.read_restricted",
           "pseudonym.privileged_lookup",
+          "privacy.manage_legal_hold",
+          "privacy.execute_closure",
+          "privacy.dual_control_request",
+          "privacy.dual_control_approve",
           "documents.publish",
+          "account.export_own",
+          "account.request_closure",
         ],
         deny: [
           "institutional.vote",

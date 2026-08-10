@@ -195,35 +195,69 @@ describe("audit ledger (2.9)", () => {
     expect(continuity.ok).toBe(true);
   });
 
-  it("detects field tampering via digest recomputation", async () => {
+  async function expectTamperDetected(
+    id: string,
+    patch: Partial<typeof auditEvents.$inferInsert>,
+  ) {
+    const [before] = await db
+      .select()
+      .from(auditEvents)
+      .where(eq(auditEvents.id, id))
+      .limit(1);
+    expect(before).toBeTruthy();
+
+    await db.execute(sql`ALTER TABLE audit_events DISABLE TRIGGER audit_events_immutable`);
+    await db.update(auditEvents).set(patch).where(eq(auditEvents.id, id));
+    await db.execute(sql`ALTER TABLE audit_events ENABLE TRIGGER audit_events_immutable`);
+
+    const continuity = await verifyAuditContinuity(db);
+    expect(continuity.ok).toBe(false);
+    expect(continuity.breakAtId).toBe(id);
+    expect(continuity.reason).toBe("digest_mismatch");
+
+    await db.execute(sql`ALTER TABLE audit_events DISABLE TRIGGER audit_events_immutable`);
+    await db
+      .update(auditEvents)
+      .set({
+        actorRole: before!.actorRole,
+        at: before!.at,
+        summary: before!.summary,
+        privatePayload: before!.privatePayload,
+        synthetic: before!.synthetic,
+      })
+      .where(eq(auditEvents.id, id));
+    await db.execute(sql`ALTER TABLE audit_events ENABLE TRIGGER audit_events_immutable`);
+  }
+
+  it("detects summary, actor-role, timestamp, payload, and classification tampering", async () => {
     const appended = await appendAuthAudit(db, {
       actorRole: "system",
       action: "auth.test_synthetic_marker",
       subjectType: "test",
       subjectId: "tamper-target",
       summary: "Untampered summary",
+      privatePayload: { marker: "untampered-payload" },
       synthetic: true,
     });
 
-    await db.execute(sql`ALTER TABLE audit_events DISABLE TRIGGER audit_events_immutable`);
-    await db
-      .update(auditEvents)
-      .set({ summary: "Tampered summary value" })
-      .where(eq(auditEvents.id, appended.id));
-    await db.execute(sql`ALTER TABLE audit_events ENABLE TRIGGER audit_events_immutable`);
+    await expectTamperDetected(appended.id, {
+      summary: "Tampered summary value",
+    });
+    await expectTamperDetected(appended.id, {
+      actorRole: "administrator",
+    });
+    await expectTamperDetected(appended.id, {
+      at: new Date("2099-01-01T00:00:00.000Z"),
+    });
+    await expectTamperDetected(appended.id, {
+      privatePayload: { marker: "tampered-payload" },
+    });
+    await expectTamperDetected(appended.id, {
+      synthetic: false,
+    });
 
-    const continuity = await verifyAuditContinuity(db);
-    expect(continuity.ok).toBe(false);
-    expect(continuity.breakAtId).toBe(appended.id);
-    expect(continuity.reason).toBe("digest_mismatch");
-
-    // Restore so later continuity cases share a healthy ledger.
-    await db.execute(sql`ALTER TABLE audit_events DISABLE TRIGGER audit_events_immutable`);
-    await db
-      .update(auditEvents)
-      .set({ summary: "Untampered summary" })
-      .where(eq(auditEvents.id, appended.id));
-    await db.execute(sql`ALTER TABLE audit_events ENABLE TRIGGER audit_events_immutable`);
+    const healthy = await verifyAuditContinuity(db);
+    expect(healthy.ok).toBe(true);
   });
 
   it("detects continuity forks", async () => {

@@ -10,6 +10,10 @@ const ACTIVE_ONLY = new Set<Capability>([
   "moderation.act",
   "audit.read_restricted",
   "pseudonym.privileged_lookup",
+  "privacy.manage_legal_hold",
+  "privacy.execute_closure",
+  "privacy.dual_control_request",
+  "privacy.dual_control_approve",
   "documents.publish",
   "institutional.vote",
   "institutional.council_deliberation",
@@ -81,6 +85,8 @@ export function authorize(
     case "account.read_own":
     case "account.sign_out":
     case "account.revoke_all_sessions":
+    case "account.export_own":
+    case "account.request_closure":
       return { ok: true, principal };
 
     case "roles.grant_platform":
@@ -119,6 +125,15 @@ export function authorize(
     case "pseudonym.privileged_lookup":
       // Moderators explicitly excluded — reverse maps are incident/admin only.
       if (!hasPlatform(principal, ["auditor", "administrator"])) {
+        return deny(capability);
+      }
+      return { ok: true, principal };
+
+    case "privacy.manage_legal_hold":
+    case "privacy.execute_closure":
+    case "privacy.dual_control_request":
+    case "privacy.dual_control_approve":
+      if (!hasPlatform(principal, ["administrator"])) {
         return deny(capability);
       }
       return { ok: true, principal };

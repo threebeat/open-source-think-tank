@@ -144,6 +144,10 @@ export const CAPABILITY_ASSURANCE: Partial<
   "moderation.act": "L3_uniqueness",
   "audit.read_restricted": "L2_contact_continuity",
   "pseudonym.privileged_lookup": "L3_uniqueness",
+  "privacy.manage_legal_hold": "L3_uniqueness",
+  "privacy.execute_closure": "L3_uniqueness",
+  "privacy.dual_control_request": "L3_uniqueness",
+  "privacy.dual_control_approve": "L3_uniqueness",
 };
 
 export function assuranceForCapability(

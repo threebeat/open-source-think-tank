@@ -114,9 +114,15 @@ describe("authorizeCapability assurance gate", () => {
       "moderation.act": "account-ostt-synth-ac-moderator",
       "audit.read_restricted": "account-ostt-synth-ac-auditor",
       "pseudonym.privileged_lookup": "account-ostt-synth-ac-auditor",
+      "privacy.manage_legal_hold": "account-ostt-synth-ac-admin",
+      "privacy.execute_closure": "account-ostt-synth-ac-admin",
+      "privacy.dual_control_request": "account-ostt-synth-ac-admin",
+      "privacy.dual_control_approve": "account-ostt-synth-ac-admin",
       "account.read_own": "account-ostt-synth-ac-participant",
       "account.sign_out": "account-ostt-synth-ac-participant",
       "account.revoke_all_sessions": "account-ostt-synth-ac-participant",
+      "account.export_own": "account-ostt-synth-ac-participant",
+      "account.request_closure": "account-ostt-synth-ac-participant",
     };
 
     for (const capability of MAPPED) {
@@ -179,6 +185,14 @@ describe("authorizeCapability assurance gate", () => {
       {
         accountId: "account-ostt-synth-ac-admin",
         capability: "pseudonym.privileged_lookup",
+      },
+      {
+        accountId: "account-ostt-synth-ac-admin",
+        capability: "privacy.manage_legal_hold",
+      },
+      {
+        accountId: "account-ostt-synth-ac-admin",
+        capability: "privacy.dual_control_approve",
       },
       {
         accountId: "account-ostt-synth-ac-delib",

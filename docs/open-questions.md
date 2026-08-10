@@ -70,6 +70,8 @@ Phase 2 decision register and counsel gates: [phase-2-plan.md](./phase-2-plan.md
 
 14. **Distributed auth rate limiting** — Unresolved for staging/production. Work Package 2.4 ships an in-process limiter suitable for local/ephemeral use. Multi-instance deployments need a shared limiter before real enrollment.
 
+15. **Retention and deletion rights** — Unresolved. WP 2.11 ships provisional engineering retention settings and closure that retains assent/audit; counsel must still clear LQ10–11 before treating schedules or anonymization of real accounts as settled.
+
 ---
 
 ## How to add questions

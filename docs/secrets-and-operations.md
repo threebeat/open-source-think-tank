@@ -36,7 +36,7 @@ Rules:
 | Migrations | Drizzle Kit forward migrations in git; apply in deploy pipeline before app start |
 | Rollback | Prefer forward-fix migration; for catastrophic failure restore DB from backup to a documented PITR/snapshot |
 | Backups | Staging nightly; production continuous or frequent PITR (host-specific)—documented per environment in ops runbook during 2.11 |
-| Restore test | Required in 2.11; restore to isolated instance and run smoke tests |
+| Restore test | `npx tsx scripts/backup-restore-smoke.ts` (ephemeral migrate+seed shape check); host PITR still required before managed production DB |
 | Audit / assent immutability | Application roles cannot UPDATE/DELETE; backups retain history for legal-hold (counsel-gated) |
 
 ## Vendor processing considerations (for counsel / ops review)

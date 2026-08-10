@@ -5,7 +5,9 @@ import { eq } from "drizzle-orm";
 import {
   accounts,
   assentRecords,
+  closedTestConversations,
   councilAppointments,
+  retentionPolicySettings,
   documentVersions,
   invitations,
   persons,
@@ -17,6 +19,15 @@ import {
 } from "../schema";
 import type { FoundationDb } from "../types";
 import { appendAuthAudit } from "@/lib/auth/audit-log";
+
+const CLOSED_TEST_CONVERSATION_SEEDS = [
+  "alpha",
+  "beta",
+  "gamma",
+  "delta",
+  "epsilon",
+  "zeta",
+] as const;
 
 function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
@@ -31,6 +42,43 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
     key: "migration_label",
     value: "2.4-auth-foundation",
   });
+
+  await db
+    .insert(closedTestConversations)
+    .values(
+      CLOSED_TEST_CONVERSATION_SEEDS.map((suffix) => ({
+        id: `ostt-synth-conversation-${suffix}`,
+        label: `Synthetic closed conversation ${suffix}`,
+        purpose: "closed_test_consultation" as const,
+        status: "open" as const,
+        synthetic: true,
+      })),
+    )
+    .onConflictDoNothing();
+
+  await db
+    .insert(retentionPolicySettings)
+    .values([
+      {
+        key: "verification_artifact_ttl_ms",
+        valueJson: 604_800_000,
+        provisional: true,
+        updatedByLabel: "ostt-synth-seeder",
+      },
+      {
+        key: "pseudonym_expire_job_enabled",
+        valueJson: true,
+        provisional: true,
+        updatedByLabel: "ostt-synth-seeder",
+      },
+      {
+        key: "auth_challenge_ttl_ms",
+        valueJson: 3_600_000,
+        provisional: true,
+        updatedByLabel: "ostt-synth-seeder",
+      },
+    ])
+    .onConflictDoNothing();
 
   await db.insert(persons).values([
     {

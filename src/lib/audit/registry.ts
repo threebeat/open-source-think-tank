@@ -266,6 +266,48 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
     requireReason: true,
   }),
 
+  // Privacy / ops (2.11)
+  "privacy.export_generated": def(
+    "privacy.export_generated",
+    "Account holder data export generated",
+    { requireActorAccount: true, highImpact: false },
+  ),
+  "privacy.closure_requested": def(
+    "privacy.closure_requested",
+    "Account closure/deletion requested",
+    { requireActorAccount: true, requireReason: true },
+  ),
+  "privacy.account_closed": def(
+    "privacy.account_closed",
+    "Account moved to closed without destroying audit/assent",
+    { requireActorAccount: true, requireReason: true },
+  ),
+  "privacy.legal_hold_placed": def(
+    "privacy.legal_hold_placed",
+    "Legal hold placed",
+    { requireActorAccount: true, requireReason: true },
+  ),
+  "privacy.legal_hold_released": def(
+    "privacy.legal_hold_released",
+    "Legal hold released",
+    { requireActorAccount: true, requireReason: true },
+  ),
+  "privacy.dual_control_requested": def(
+    "privacy.dual_control_requested",
+    "Dual-control approval requested",
+    { requireActorAccount: true, requireReason: true },
+  ),
+  "privacy.dual_control_resolved": def(
+    "privacy.dual_control_resolved",
+    "Dual-control approval resolved",
+    { requireActorAccount: true, requireReason: true },
+  ),
+  "privacy.retention_job_ran": def(
+    "privacy.retention_job_ran",
+    "Configurable retention/expiration job ran",
+    { highImpact: false },
+  ),
+
   // Foundation
   "foundation.seeded": def("foundation.seeded", "Synthetic foundation seed", {
     highImpact: false,

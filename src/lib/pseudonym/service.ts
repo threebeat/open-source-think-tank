@@ -1,6 +1,7 @@
 import { and, eq, isNull } from "drizzle-orm";
 
 import { accounts, conversationPseudonyms } from "@/db/schema";
+import type { DrizzleTx } from "@/db/transaction-context";
 import type { FoundationDb } from "@/db/types";
 import type { AdapterResult } from "@/lib/adapters/types";
 import { appendAuthAudit } from "@/lib/auth/audit-log";
@@ -11,9 +12,10 @@ import {
   generateConversationPseudonym,
 } from "@/lib/pseudonym/generate";
 import {
-  CLOSED_TEST_CONVERSATION_PURPOSE,
-  resolvePseudonymExpiry,
-} from "@/lib/pseudonym/rules";
+  assertConversationPurposeMatch,
+  lockRegisteredClosedConversation,
+} from "@/lib/pseudonym/registry";
+import { resolvePseudonymExpiry } from "@/lib/pseudonym/rules";
 
 export type IssuedPseudonym = {
   id: string;
@@ -23,7 +25,7 @@ export type IssuedPseudonym = {
 };
 
 async function loadAccountSynthetic(
-  db: FoundationDb,
+  db: FoundationDb | DrizzleTx,
   accountId: string,
 ): Promise<{ synthetic: boolean } | null> {
   const [row] = await db
@@ -35,7 +37,7 @@ async function loadAccountSynthetic(
 }
 
 async function mintUniquePseudonym(
-  db: FoundationDb,
+  db: FoundationDb | DrizzleTx,
   forbidden: Array<string | null | undefined>,
 ): Promise<string> {
   let pseudonym = generateConversationPseudonym();
@@ -52,9 +54,20 @@ async function mintUniquePseudonym(
   return pseudonym;
 }
 
+function gatedOrDeny(): AdapterResult<never> | null {
+  if (assertEnvironmentSafe() !== "gated") {
+    return {
+      ok: false,
+      error: "Conversation pseudonyms are unavailable in public-demo mode",
+      code: "PUBLIC_DEMO_NO_PSEUDONYMS",
+    };
+  }
+  return null;
+}
+
 /**
  * Issue (or return existing active) conversation-scoped pseudonym.
- * Closed/synthetic test conversations only in Phase 2.
+ * Mapping mutation and audit append share one transaction.
  */
 export async function issueConversationPseudonym(
   db: FoundationDb,
@@ -67,12 +80,9 @@ export async function issueConversationPseudonym(
     requestCorrelationId?: string | null;
   },
 ): Promise<AdapterResult<IssuedPseudonym>> {
-  if (assertEnvironmentSafe() !== "gated") {
-    return {
-      ok: false,
-      error: "Conversation pseudonyms are unavailable in public-demo mode",
-      code: "PUBLIC_DEMO_NO_PSEUDONYMS",
-    };
+  const denied = gatedOrDeny();
+  if (denied) {
+    return denied;
   }
 
   if (input.actorAccountId !== input.accountId) {
@@ -83,100 +93,130 @@ export async function issueConversationPseudonym(
     };
   }
 
-  const conversationId = input.conversationId.trim();
-  if (!conversationId.startsWith("ostt-synth-conversation-")) {
+  try {
+    return await db.transaction(async (tx) => {
+      const registered = await lockRegisteredClosedConversation(
+        tx,
+        input.conversationId,
+      );
+      if (!registered.ok) {
+        return {
+          ok: false as const,
+          error: registered.error,
+          code: registered.code,
+        };
+      }
+
+      const purposeCheck = await assertConversationPurposeMatch(
+        registered.conversation.purpose,
+        input.purpose,
+      );
+      if (!purposeCheck.ok) {
+        return {
+          ok: false as const,
+          error: purposeCheck.error,
+          code: purposeCheck.code,
+        };
+      }
+
+      const account = await loadAccountSynthetic(tx, input.accountId);
+      if (!account) {
+        return {
+          ok: false as const,
+          error: "Account not found",
+          code: "PSEUDONYM_ACCOUNT_NOT_FOUND",
+        };
+      }
+
+      const conversationId = registered.conversation.id;
+      const [existing] = await tx
+        .select()
+        .from(conversationPseudonyms)
+        .where(
+          and(
+            eq(conversationPseudonyms.conversationId, conversationId),
+            eq(conversationPseudonyms.accountId, input.accountId),
+            isNull(conversationPseudonyms.deletedAt),
+            isNull(conversationPseudonyms.rotatedAt),
+          ),
+        )
+        .limit(1);
+
+      if (existing && existing.expiresAt.getTime() > Date.now()) {
+        return {
+          ok: true as const,
+          value: {
+            id: existing.id,
+            pseudonym: existing.pseudonym,
+            conversationId: existing.conversationId,
+            expiresAt: existing.expiresAt.toISOString(),
+          },
+        };
+      }
+
+      if (existing) {
+        await tx
+          .update(conversationPseudonyms)
+          .set({ deletedAt: new Date() })
+          .where(eq(conversationPseudonyms.id, existing.id));
+      }
+
+      const issuedAt = new Date();
+      const expiresAt = resolvePseudonymExpiry(issuedAt, input.ttlMs);
+      const id = newEntityId("cpsp");
+      const pseudonym = await mintUniquePseudonym(tx, [
+        input.accountId,
+        conversationId,
+      ]);
+
+      await tx.insert(conversationPseudonyms).values({
+        id,
+        conversationId,
+        accountId: input.accountId,
+        pseudonym,
+        purpose: purposeCheck.purpose,
+        issuedAt,
+        expiresAt,
+        synthetic: account.synthetic,
+      });
+
+      await appendAuthAudit(tx, {
+        actorRole: "account_holder",
+        actorAccountId: input.actorAccountId,
+        action: "pseudonym.issued",
+        subjectType: "conversation_pseudonym",
+        subjectId: id,
+        summary: "Conversation-scoped consultation pseudonym issued.",
+        privatePayload: {
+          conversationId,
+          purpose: purposeCheck.purpose,
+          expiresAt: expiresAt.toISOString(),
+        },
+        requestCorrelationId: input.requestCorrelationId,
+        synthetic: account.synthetic,
+        at: issuedAt,
+      });
+
+      return {
+        ok: true as const,
+        value: {
+          id,
+          pseudonym,
+          conversationId,
+          expiresAt: expiresAt.toISOString(),
+        },
+      };
+    });
+  } catch (error) {
     return {
       ok: false,
       error:
-        "Phase 2 allows only closed synthetic test conversation ids (ostt-synth-conversation-*)",
-      code: "PSEUDONYM_CONVERSATION_NOT_CLOSED_TEST",
+        error instanceof Error
+          ? error.message
+          : "Pseudonym issuance failed and was rolled back",
+      code: "PSEUDONYM_TX_FAILED",
     };
   }
-
-  const account = await loadAccountSynthetic(db, input.accountId);
-  if (!account) {
-    return {
-      ok: false,
-      error: "Account not found",
-      code: "PSEUDONYM_ACCOUNT_NOT_FOUND",
-    };
-  }
-
-  const [existing] = await db
-    .select()
-    .from(conversationPseudonyms)
-    .where(
-      and(
-        eq(conversationPseudonyms.conversationId, conversationId),
-        eq(conversationPseudonyms.accountId, input.accountId),
-        isNull(conversationPseudonyms.deletedAt),
-        isNull(conversationPseudonyms.rotatedAt),
-      ),
-    )
-    .limit(1);
-
-  if (existing && existing.expiresAt.getTime() > Date.now()) {
-    return {
-      ok: true,
-      value: {
-        id: existing.id,
-        pseudonym: existing.pseudonym,
-        conversationId: existing.conversationId,
-        expiresAt: existing.expiresAt.toISOString(),
-      },
-    };
-  }
-
-  if (existing) {
-    await db
-      .update(conversationPseudonyms)
-      .set({ deletedAt: new Date() })
-      .where(eq(conversationPseudonyms.id, existing.id));
-  }
-
-  const purpose = input.purpose?.trim() || CLOSED_TEST_CONVERSATION_PURPOSE;
-  const expiresAt = resolvePseudonymExpiry(input.ttlMs);
-  const id = newEntityId("cpsp");
-  const pseudonym = await mintUniquePseudonym(db, [
-    input.accountId,
-    conversationId,
-  ]);
-
-  await db.insert(conversationPseudonyms).values({
-    id,
-    conversationId,
-    accountId: input.accountId,
-    pseudonym,
-    purpose,
-    expiresAt,
-    synthetic: account.synthetic,
-  });
-
-  await appendAuthAudit(db, {
-    actorRole: "account_holder",
-    actorAccountId: input.actorAccountId,
-    action: "pseudonym.issued",
-    subjectType: "conversation_pseudonym",
-    subjectId: id,
-    summary: "Conversation-scoped consultation pseudonym issued.",
-    privatePayload: {
-      conversationId,
-      purpose,
-      expiresAt: expiresAt.toISOString(),
-    },
-    requestCorrelationId: input.requestCorrelationId,
-    synthetic: account.synthetic,
-  });
-
-  return {
-    ok: true,
-    value: {
-      id,
-      pseudonym,
-      conversationId,
-      expiresAt: expiresAt.toISOString(),
-    },
-  };
 }
 
 export async function rotateConversationPseudonym(
@@ -189,12 +229,9 @@ export async function rotateConversationPseudonym(
     requestCorrelationId?: string | null;
   },
 ): Promise<AdapterResult<IssuedPseudonym>> {
-  if (assertEnvironmentSafe() !== "gated") {
-    return {
-      ok: false,
-      error: "Conversation pseudonyms are unavailable in public-demo mode",
-      code: "PUBLIC_DEMO_NO_PSEUDONYMS",
-    };
+  const denied = gatedOrDeny();
+  if (denied) {
+    return denied;
   }
   if (input.actorAccountId !== input.accountId) {
     return {
@@ -211,77 +248,109 @@ export async function rotateConversationPseudonym(
     };
   }
 
-  const [existing] = await db
-    .select()
-    .from(conversationPseudonyms)
-    .where(
-      and(
-        eq(conversationPseudonyms.conversationId, input.conversationId),
-        eq(conversationPseudonyms.accountId, input.accountId),
-        isNull(conversationPseudonyms.deletedAt),
-        isNull(conversationPseudonyms.rotatedAt),
-      ),
-    )
-    .limit(1);
-  if (!existing) {
+  try {
+    return await db.transaction(async (tx) => {
+      const registered = await lockRegisteredClosedConversation(
+        tx,
+        input.conversationId,
+      );
+      if (!registered.ok) {
+        return {
+          ok: false as const,
+          error: registered.error,
+          code: registered.code,
+        };
+      }
+
+      const [existing] = await tx
+        .select()
+        .from(conversationPseudonyms)
+        .where(
+          and(
+            eq(
+              conversationPseudonyms.conversationId,
+              registered.conversation.id,
+            ),
+            eq(conversationPseudonyms.accountId, input.accountId),
+            isNull(conversationPseudonyms.deletedAt),
+            isNull(conversationPseudonyms.rotatedAt),
+          ),
+        )
+        .limit(1);
+      if (!existing) {
+        return {
+          ok: false as const,
+          error: "No active pseudonym to rotate",
+          code: "PSEUDONYM_NOT_FOUND",
+        };
+      }
+
+      const newId = newEntityId("cpsp");
+      const pseudonym = await mintUniquePseudonym(tx, [
+        input.accountId,
+        registered.conversation.id,
+      ]);
+      const issuedAt = new Date();
+      const expiresAt = resolvePseudonymExpiry(issuedAt);
+
+      // Free the active unique pair before inserting the replacement.
+      // superseded_by_id FK is DEFERRABLE so the new row can be inserted next.
+      await tx
+        .update(conversationPseudonyms)
+        .set({
+          rotatedAt: issuedAt,
+          supersededById: newId,
+        })
+        .where(eq(conversationPseudonyms.id, existing.id));
+
+      await tx.insert(conversationPseudonyms).values({
+        id: newId,
+        conversationId: existing.conversationId,
+        accountId: existing.accountId,
+        pseudonym,
+        purpose: existing.purpose,
+        issuedAt,
+        expiresAt,
+        synthetic: existing.synthetic,
+      });
+
+      await appendAuthAudit(tx, {
+        actorRole: "account_holder",
+        actorAccountId: input.actorAccountId,
+        action: "pseudonym.rotated",
+        subjectType: "conversation_pseudonym",
+        subjectId: newId,
+        summary: "Conversation-scoped consultation pseudonym rotated.",
+        reason: input.reason.trim(),
+        privatePayload: {
+          priorId: existing.id,
+          conversationId: existing.conversationId,
+        },
+        requestCorrelationId: input.requestCorrelationId,
+        synthetic: existing.synthetic,
+        at: issuedAt,
+      });
+
+      return {
+        ok: true as const,
+        value: {
+          id: newId,
+          pseudonym,
+          conversationId: existing.conversationId,
+          expiresAt: expiresAt.toISOString(),
+        },
+      };
+    });
+  } catch (error) {
     return {
       ok: false,
-      error: "No active pseudonym to rotate",
-      code: "PSEUDONYM_NOT_FOUND",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Pseudonym rotation failed and was rolled back",
+      code: "PSEUDONYM_TX_FAILED",
     };
   }
-
-  const newId = newEntityId("cpsp");
-  const pseudonym = await mintUniquePseudonym(db, [
-    input.accountId,
-    input.conversationId,
-  ]);
-  const expiresAt = resolvePseudonymExpiry();
-  const now = new Date();
-
-  await db
-    .update(conversationPseudonyms)
-    .set({
-      rotatedAt: now,
-      supersededById: newId,
-    })
-    .where(eq(conversationPseudonyms.id, existing.id));
-
-  await db.insert(conversationPseudonyms).values({
-    id: newId,
-    conversationId: existing.conversationId,
-    accountId: existing.accountId,
-    pseudonym,
-    purpose: existing.purpose,
-    expiresAt,
-    synthetic: existing.synthetic,
-  });
-
-  await appendAuthAudit(db, {
-    actorRole: "account_holder",
-    actorAccountId: input.actorAccountId,
-    action: "pseudonym.rotated",
-    subjectType: "conversation_pseudonym",
-    subjectId: newId,
-    summary: "Conversation-scoped consultation pseudonym rotated.",
-    reason: input.reason.trim(),
-    privatePayload: {
-      priorId: existing.id,
-      conversationId: existing.conversationId,
-    },
-    requestCorrelationId: input.requestCorrelationId,
-    synthetic: existing.synthetic,
-  });
-
-  return {
-    ok: true,
-    value: {
-      id: newId,
-      pseudonym,
-      conversationId: existing.conversationId,
-      expiresAt: expiresAt.toISOString(),
-    },
-  };
 }
 
 export async function deleteConversationPseudonym(
@@ -294,12 +363,9 @@ export async function deleteConversationPseudonym(
     requestCorrelationId?: string | null;
   },
 ): Promise<AdapterResult<{ id: string }>> {
-  if (assertEnvironmentSafe() !== "gated") {
-    return {
-      ok: false,
-      error: "Conversation pseudonyms are unavailable in public-demo mode",
-      code: "PUBLIC_DEMO_NO_PSEUDONYMS",
-    };
+  const denied = gatedOrDeny();
+  if (denied) {
+    return denied;
   }
   if (input.actorAccountId !== input.accountId) {
     return {
@@ -316,43 +382,73 @@ export async function deleteConversationPseudonym(
     };
   }
 
-  const [existing] = await db
-    .select()
-    .from(conversationPseudonyms)
-    .where(
-      and(
-        eq(conversationPseudonyms.conversationId, input.conversationId),
-        eq(conversationPseudonyms.accountId, input.accountId),
-        isNull(conversationPseudonyms.deletedAt),
-        isNull(conversationPseudonyms.rotatedAt),
-      ),
-    )
-    .limit(1);
-  if (!existing) {
+  try {
+    return await db.transaction(async (tx) => {
+      const registered = await lockRegisteredClosedConversation(
+        tx,
+        input.conversationId,
+      );
+      if (!registered.ok) {
+        return {
+          ok: false as const,
+          error: registered.error,
+          code: registered.code,
+        };
+      }
+
+      const [existing] = await tx
+        .select()
+        .from(conversationPseudonyms)
+        .where(
+          and(
+            eq(
+              conversationPseudonyms.conversationId,
+              registered.conversation.id,
+            ),
+            eq(conversationPseudonyms.accountId, input.accountId),
+            isNull(conversationPseudonyms.deletedAt),
+            isNull(conversationPseudonyms.rotatedAt),
+          ),
+        )
+        .limit(1);
+      if (!existing) {
+        return {
+          ok: false as const,
+          error: "No active pseudonym to delete",
+          code: "PSEUDONYM_NOT_FOUND",
+        };
+      }
+
+      const deletedAt = new Date();
+      await tx
+        .update(conversationPseudonyms)
+        .set({ deletedAt })
+        .where(eq(conversationPseudonyms.id, existing.id));
+
+      await appendAuthAudit(tx, {
+        actorRole: "account_holder",
+        actorAccountId: input.actorAccountId,
+        action: "pseudonym.deleted",
+        subjectType: "conversation_pseudonym",
+        subjectId: existing.id,
+        summary: "Conversation-scoped consultation pseudonym deleted.",
+        reason: input.reason.trim(),
+        privatePayload: { conversationId: existing.conversationId },
+        requestCorrelationId: input.requestCorrelationId,
+        synthetic: existing.synthetic,
+        at: deletedAt,
+      });
+
+      return { ok: true as const, value: { id: existing.id } };
+    });
+  } catch (error) {
     return {
       ok: false,
-      error: "No active pseudonym to delete",
-      code: "PSEUDONYM_NOT_FOUND",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Pseudonym deletion failed and was rolled back",
+      code: "PSEUDONYM_TX_FAILED",
     };
   }
-
-  await db
-    .update(conversationPseudonyms)
-    .set({ deletedAt: new Date() })
-    .where(eq(conversationPseudonyms.id, existing.id));
-
-  await appendAuthAudit(db, {
-    actorRole: "account_holder",
-    actorAccountId: input.actorAccountId,
-    action: "pseudonym.deleted",
-    subjectType: "conversation_pseudonym",
-    subjectId: existing.id,
-    summary: "Conversation-scoped consultation pseudonym deleted.",
-    reason: input.reason.trim(),
-    privatePayload: { conversationId: existing.conversationId },
-    requestCorrelationId: input.requestCorrelationId,
-    synthetic: existing.synthetic,
-  });
-
-  return { ok: true, value: { id: existing.id } };
 }

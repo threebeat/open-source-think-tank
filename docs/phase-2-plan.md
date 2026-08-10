@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 2  
 **Baseline:** Phase 1 demonstration release tag [`phase-1-demonstration`](https://github.com/threebeat/open-source-think-tank/releases/tag/phase-1-demonstration) at commit `33ff0cc`  
-**Current package:** **2.10 complete** — next **2.11** after approval. Managed Postgres host and production email vendor remain blocked pending addenda.
+**Current package:** **2.11 complete** — next **2.12** after approval. Managed Postgres host and production email vendor remain blocked pending addenda.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [open-questions.md](./open-questions.md), [legal-questions.md](./legal-questions.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [phase-1-handoff.md](./phase-1-handoff.md)
 
@@ -413,7 +413,7 @@ Stop Phase 2 implementation and escalate to humans if:
 
 ### Work package 2.10 — Add conversation-scoped pseudonym foundations
 
-**Status:** Complete for gated opaque issuance (`conversation_pseudonyms`), `ConsultationParticipationAdapter` / `GatedConsultationParticipationAdapter` (no live Pol.is), purpose-limited TTL, rotation/deletion/export/incident rules, `pseudonym.privileged_lookup` (auditor/administrator + L3; moderators denied), audited issuance/lookup/rotation/deletion, synthetic closed-test conversation ids only, and re-identification / cross-conversation correlation tests. No public reverse-lookup routes.
+**Status:** Complete (including pre-2.11 hardening). Gated opaque issuance with atomic mutation+audit transactions; server-maintained `closed_test_conversations` registry; purpose enum + DB lifecycle constraints; privileged lookup explicitly allows expired/rotated and withholds deleted; `ConsultationParticipationAdapter` / gated adapter (no live Pol.is); re-identification / cross-conversation / rollback / concurrency tests. No public reverse-lookup routes.
 
 1. Define a consultation-participation adapter without integrating live Pol.is.
 2. Generate random identifiers per account and conversation.
@@ -436,6 +436,8 @@ Stop Phase 2 implementation and escalate to humans if:
 ---
 
 ### Work package 2.11 — Add privacy and operational controls
+
+**Status:** Complete for provisional (counsel-gated) privacy ops: own-account export, closure/deletion-request workflow that retains assent/audit, configurable retention job settings, staff-restricted legal holds, structured `securityLog` redaction, CSRF + security headers middleware, `scripts/security-checks.mjs` (headers/CSRF wiring, secret patterns, `npm audit`), PGlite backup/restore smoke, incident/privileged-access procedures, dual-control request/approve for high-impact ops, and updated data-map/threat-model. Destructive anonymization of real accounts remains blocked while LQ10–11 are blocking.
 
 1. Implement account data viewing and export.
 2. Implement closure and deletion-request workflows using counsel-approved retention rules.
@@ -489,4 +491,4 @@ When Phase 2 work is active:
 3. Prefer “account holder” / “community participant” language; never invent statutory membership.
 4. After each package: report files changed, commands run, failed checks, and unresolved decisions; stop for approval.
 
-Next package after 2.10 approval: **2.11 — Add privacy and operational controls**.
+Next package after 2.11 approval: **2.12 — Closed readiness review and handoff**.

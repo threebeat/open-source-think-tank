@@ -582,6 +582,37 @@ export const auditLedgerHead = pgTable("audit_ledger_head", {
     .defaultNow(),
 });
 
+export const conversationPseudonymPurposeEnum = pgEnum(
+  "conversation_pseudonym_purpose",
+  ["closed_test_consultation"],
+);
+
+export const closedTestConversationStatusEnum = pgEnum(
+  "closed_test_conversation_status",
+  ["open", "closed", "archived"],
+);
+
+/**
+ * Server-maintained allowlist of closed/synthetic test conversations (WP 2.10/2.11).
+ * Issuance requires an open registry row — prefix matching alone is insufficient.
+ */
+export const closedTestConversations = pgTable(
+  "closed_test_conversations",
+  {
+    id: text("id").primaryKey(),
+    label: text("label").notNull(),
+    purpose: conversationPseudonymPurposeEnum("purpose").notNull(),
+    status: closedTestConversationStatusEnum("status").notNull().default("open"),
+    synthetic: boolean("synthetic").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check("closed_test_conversations_synthetic_only", sql`${table.synthetic} = true`),
+  ],
+);
+
 /**
  * Security-restricted account↔conversation pseudonym map (WP 2.10).
  * Never join into public consultation projections; no reverse public APIs.
@@ -590,13 +621,15 @@ export const conversationPseudonyms = pgTable(
   "conversation_pseudonyms",
   {
     id: text("id").primaryKey(),
-    conversationId: text("conversation_id").notNull(),
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => closedTestConversations.id, { onDelete: "restrict" }),
     accountId: text("account_id")
       .notNull()
       .references(() => accounts.id, { onDelete: "cascade" }),
     /** Opaque random token — never derived from email/account id. */
     pseudonym: text("pseudonym").notNull(),
-    purpose: text("purpose").notNull(),
+    purpose: conversationPseudonymPurposeEnum("purpose").notNull(),
     issuedAt: timestamp("issued_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -616,6 +649,148 @@ export const conversationPseudonyms = pgTable(
       .where(sql`${table.deletedAt} IS NULL AND ${table.rotatedAt} IS NULL`),
     index("conversation_pseudonyms_account_idx").on(table.accountId),
     index("conversation_pseudonyms_conversation_idx").on(table.conversationId),
+    foreignKey({
+      columns: [table.supersededById],
+      foreignColumns: [table.id],
+      name: "conversation_pseudonyms_superseded_by_id_fk",
+    }),
+    check(
+      "conversation_pseudonyms_expires_after_issued",
+      sql`${table.expiresAt} > ${table.issuedAt}`,
+    ),
+    check(
+      "conversation_pseudonyms_rotation_pair",
+      sql`(
+        (${table.rotatedAt} IS NULL AND ${table.supersededById} IS NULL)
+        OR (${table.rotatedAt} IS NOT NULL AND ${table.supersededById} IS NOT NULL)
+      )`,
+    ),
+    check(
+      "conversation_pseudonyms_not_rotated_and_deleted",
+      sql`NOT (${table.rotatedAt} IS NOT NULL AND ${table.deletedAt} IS NOT NULL)`,
+    ),
+  ],
+);
+
+export const deletionRequestStatusEnum = pgEnum("deletion_request_status", [
+  "pending",
+  "approved_pending_hold",
+  "closed",
+  "cancelled",
+  "blocked_by_hold",
+]);
+
+export const dualControlStatusEnum = pgEnum("dual_control_status", [
+  "pending",
+  "approved",
+  "rejected",
+  "expired",
+  "executed",
+]);
+
+/** Provisional retention knobs — not counsel-approved legal retention schedules. */
+export const retentionPolicySettings = pgTable("retention_policy_settings", {
+  key: text("key").primaryKey(),
+  valueJson: jsonb("value_json").$type<unknown>().notNull(),
+  provisional: boolean("provisional").notNull().default(true),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedByLabel: text("updated_by_label").notNull(),
+});
+
+export const accountDeletionRequests = pgTable(
+  "account_deletion_requests",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    status: deletionRequestStatusEnum("status").notNull().default("pending"),
+    reason: text("reason").notNull(),
+    requestedAt: timestamp("requested_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    synthetic: boolean("synthetic").notNull().default(true),
+  },
+  (table) => [
+    uniqueIndex("account_deletion_requests_one_open_uidx")
+      .on(table.accountId)
+      .where(
+        sql`${table.status} IN ('pending', 'approved_pending_hold', 'blocked_by_hold')`,
+      ),
+    check(
+      "account_deletion_requests_reason_nonempty",
+      sql`length(btrim(${table.reason})) > 0`,
+    ),
+  ],
+);
+
+/** Staff-restricted legal holds — never projected to public feeds. */
+export const legalHolds = pgTable(
+  "legal_holds",
+  {
+    id: text("id").primaryKey(),
+    subjectType: text("subject_type").notNull(),
+    subjectId: text("subject_id").notNull(),
+    reason: text("reason").notNull(),
+    placedByAccountId: text("placed_by_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    placedAt: timestamp("placed_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    releasedAt: timestamp("released_at", { withTimezone: true }),
+    releasedByAccountId: text("released_by_account_id").references(
+      () => accounts.id,
+      { onDelete: "restrict" },
+    ),
+    synthetic: boolean("synthetic").notNull().default(true),
+  },
+  (table) => [
+    uniqueIndex("legal_holds_active_subject_uidx")
+      .on(table.subjectType, table.subjectId)
+      .where(sql`${table.releasedAt} IS NULL`),
+    check(
+      "legal_holds_reason_nonempty",
+      sql`length(btrim(${table.reason})) > 0`,
+    ),
+  ],
+);
+
+/** Two-administrator approval for selected high-impact operations. */
+export const dualControlRequests = pgTable(
+  "dual_control_requests",
+  {
+    id: text("id").primaryKey(),
+    action: text("action").notNull(),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+    status: dualControlStatusEnum("status").notNull().default("pending"),
+    requestedByAccountId: text("requested_by_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    approvedByAccountId: text("approved_by_account_id").references(
+      () => accounts.id,
+      { onDelete: "restrict" },
+    ),
+    reason: text("reason").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    synthetic: boolean("synthetic").notNull().default(true),
+  },
+  (table) => [
+    check(
+      "dual_control_requests_reason_nonempty",
+      sql`length(btrim(${table.reason})) > 0`,
+    ),
+    check(
+      "dual_control_requests_distinct_actors",
+      sql`${table.approvedByAccountId} IS NULL OR ${table.approvedByAccountId} <> ${table.requestedByAccountId}`,
+    ),
   ],
 );
 
@@ -699,7 +874,12 @@ export const foundationTables = {
   verificationArtifactPayloads,
   auditEvents,
   auditLedgerHead,
+  closedTestConversations,
   conversationPseudonyms,
+  retentionPolicySettings,
+  accountDeletionRequests,
+  legalHolds,
+  dualControlRequests,
   authSessions,
   authChallenges,
   schemaMeta,
