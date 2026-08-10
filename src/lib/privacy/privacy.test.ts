@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 
 import { createTestDatabase } from "@/db/pglite";
 import {
+  accountDeletionRequests,
   accounts,
   assentRecords,
   dualControlRequests,
@@ -17,6 +18,7 @@ import {
   executeAccountClosure,
   requestAccountClosure,
 } from "@/lib/privacy/closure";
+import * as securityLogModule from "@/lib/security/log";
 import {
   approveDualControl,
   requestDualControl,
@@ -142,6 +144,7 @@ describe("privacy and operational controls (2.11/2.12 hardening)", () => {
       actorAccountId: "account-ostt-synth-privacy-admin-a",
       reason: "Bypass without dual control.",
       dualControlRequestId: "",
+      workflow: "account_request",
       deletionRequestId: requested.value.requestId,
     });
     expect(bypass.ok).toBe(false);
@@ -153,6 +156,7 @@ describe("privacy and operational controls (2.11/2.12 hardening)", () => {
       actorAccountId: "account-ostt-synth-privacy-admin-a",
       action: "privacy.execute_closure",
       payload: {
+        workflow: "account_request",
         accountId,
         deletionRequestId: requested.value.requestId,
       },
@@ -179,6 +183,7 @@ describe("privacy and operational controls (2.11/2.12 hardening)", () => {
       actorAccountId: "account-ostt-synth-privacy-admin-a",
       reason: "Synthetic closure execution drill.",
       dualControlRequestId: dual.value.id,
+      workflow: "account_request",
       deletionRequestId: requested.value.requestId,
     });
     expect(closed.ok).toBe(true);
@@ -188,6 +193,7 @@ describe("privacy and operational controls (2.11/2.12 hardening)", () => {
       actorAccountId: "account-ostt-synth-privacy-admin-a",
       reason: "Replay must fail.",
       dualControlRequestId: dual.value.id,
+      workflow: "account_request",
       deletionRequestId: requested.value.requestId,
     });
     expect(replay.ok).toBe(false);
@@ -223,7 +229,10 @@ describe("privacy and operational controls (2.11/2.12 hardening)", () => {
     const closureDual = await requestDualControl(db, {
       actorAccountId: "account-ostt-synth-privacy-admin-a",
       action: "privacy.execute_closure",
-      payload: { accountId: "account-ostt-synth-ben" },
+      payload: {
+        workflow: "administrator_initiated",
+        accountId: "account-ostt-synth-ben",
+      },
       reason: "Closure while hold active.",
     });
     expect(closureDual.ok).toBe(true);
@@ -242,6 +251,7 @@ describe("privacy and operational controls (2.11/2.12 hardening)", () => {
       actorAccountId: "account-ostt-synth-privacy-admin-a",
       reason: "Should be blocked by hold.",
       dualControlRequestId: closureDual.value.id,
+      workflow: "administrator_initiated",
     });
     expect(blocked.ok).toBe(false);
     if (!blocked.ok) {
@@ -394,6 +404,7 @@ describe("privacy and operational controls (2.11/2.12 hardening)", () => {
       actorAccountId: "account-ostt-synth-privacy-admin-a",
       action: "privacy.execute_closure",
       payload: {
+        workflow: "account_request",
         accountId,
         deletionRequestId: requested.value.requestId,
       },
@@ -421,6 +432,7 @@ describe("privacy and operational controls (2.11/2.12 hardening)", () => {
         actorAccountId: "account-ostt-synth-privacy-admin-b",
         reason: "Concurrent closure vs hold.",
         dualControlRequestId: dual.value.id,
+        workflow: "account_request",
         deletionRequestId: requested.value.requestId,
       }),
     ]);
@@ -446,6 +458,228 @@ describe("privacy and operational controls (2.11/2.12 hardening)", () => {
       expect(held).toBe(true);
       expect(account?.lifecycleState).not.toBe("closed");
     }
+  });
+
+  it("rejects deletion requests that do not belong to the target account", async () => {
+    const personA = newEntityId("person");
+    const personB = newEntityId("person");
+    const accountA = "account-ostt-synth-privacy-close-a";
+    const accountB = "account-ostt-synth-privacy-close-b";
+    await db.insert(persons).values([
+      { id: personA, synthetic: true, displayLabel: "ostt-synth close-a" },
+      { id: personB, synthetic: true, displayLabel: "ostt-synth close-b" },
+    ]);
+    await db.insert(accounts).values([
+      {
+        id: accountA,
+        personId: personA,
+        contactChannel: "close-a@ostt.synth.test",
+        lifecycleState: "active",
+        synthetic: true,
+        contactVerifiedAt: new Date("2026-08-01T00:00:00.000Z"),
+        activatedAt: new Date("2026-08-02T00:00:00.000Z"),
+      },
+      {
+        id: accountB,
+        personId: personB,
+        contactChannel: "close-b@ostt.synth.test",
+        lifecycleState: "active",
+        synthetic: true,
+        contactVerifiedAt: new Date("2026-08-01T00:00:00.000Z"),
+        activatedAt: new Date("2026-08-02T00:00:00.000Z"),
+      },
+    ]);
+
+    const reqA = await requestAccountClosure(db, {
+      accountId: accountA,
+      actorAccountId: accountA,
+      reason: "A requests closure.",
+    });
+    const reqB = await requestAccountClosure(db, {
+      accountId: accountB,
+      actorAccountId: accountB,
+      reason: "B requests closure.",
+    });
+    expect(reqA.ok && reqB.ok).toBe(true);
+    if (!reqA.ok || !reqB.ok) {
+      return;
+    }
+
+    const dual = await requestDualControl(db, {
+      actorAccountId: "account-ostt-synth-privacy-admin-a",
+      action: "privacy.execute_closure",
+      payload: {
+        workflow: "account_request",
+        accountId: accountA,
+        deletionRequestId: reqB.value.requestId,
+      },
+      reason: "Malformed cross-account payload.",
+    });
+    expect(dual.ok).toBe(true);
+    if (!dual.ok) {
+      return;
+    }
+    await approveDualControl(db, {
+      actorAccountId: "account-ostt-synth-privacy-admin-b",
+      requestId: dual.value.id,
+      reason: "Approve malformed payload for negative test.",
+    });
+
+    const mismatched = await executeAccountClosure(db, {
+      accountId: accountA,
+      actorAccountId: "account-ostt-synth-privacy-admin-a",
+      reason: "Must not close A using B’s request.",
+      dualControlRequestId: dual.value.id,
+      workflow: "account_request",
+      deletionRequestId: reqB.value.requestId,
+    });
+    expect(mismatched.ok).toBe(false);
+    if (!mismatched.ok) {
+      expect(mismatched.code).toBe("CLOSURE_REQUEST_MISMATCH");
+    }
+
+    const [stillA, stillB] = await Promise.all([
+      db.select().from(accounts).where(eq(accounts.id, accountA)).then((r) => r[0]),
+      db.select().from(accounts).where(eq(accounts.id, accountB)).then((r) => r[0]),
+    ]);
+    expect(stillA?.lifecycleState).toBe("active");
+    expect(stillB?.lifecycleState).toBe("active");
+
+    const [reqBRow] = await db
+      .select()
+      .from(accountDeletionRequests)
+      .where(eq(accountDeletionRequests.id, reqB.value.requestId));
+    expect(reqBRow?.status).toBe("pending");
+  });
+
+  it("supports distinct administrator_initiated closure without a deletion request", async () => {
+    const personId = newEntityId("person");
+    const accountId = "account-ostt-synth-privacy-admin-close";
+    await db.insert(persons).values({
+      id: personId,
+      synthetic: true,
+      displayLabel: "ostt-synth admin-close",
+    });
+    await db.insert(accounts).values({
+      id: accountId,
+      personId,
+      contactChannel: "admin-close@ostt.synth.test",
+      lifecycleState: "active",
+      synthetic: true,
+      contactVerifiedAt: new Date("2026-08-01T00:00:00.000Z"),
+      activatedAt: new Date("2026-08-02T00:00:00.000Z"),
+    });
+
+    const withRequestId = await executeAccountClosure(db, {
+      accountId,
+      actorAccountId: "account-ostt-synth-privacy-admin-a",
+      reason: "Admin workflow cannot carry a deletion request id.",
+      dualControlRequestId: "dual_unused",
+      workflow: "administrator_initiated",
+      deletionRequestId: "delreq_should_be_rejected",
+    });
+    expect(withRequestId.ok).toBe(false);
+    if (!withRequestId.ok) {
+      expect(withRequestId.code).toBe("CLOSURE_WORKFLOW_INVALID");
+    }
+
+    const dual = await requestDualControl(db, {
+      actorAccountId: "account-ostt-synth-privacy-admin-a",
+      action: "privacy.execute_closure",
+      payload: { workflow: "administrator_initiated", accountId },
+      reason: "Administrator-initiated closure.",
+    });
+    expect(dual.ok).toBe(true);
+    if (!dual.ok) {
+      return;
+    }
+    await approveDualControl(db, {
+      actorAccountId: "account-ostt-synth-privacy-admin-b",
+      requestId: dual.value.id,
+      reason: "Approve admin-initiated closure.",
+    });
+
+    const logSpy = vi.spyOn(securityLogModule, "securityLog");
+    const closed = await executeAccountClosure(db, {
+      accountId,
+      actorAccountId: "account-ostt-synth-privacy-admin-a",
+      reason: "Administrator-initiated closure drill.",
+      dualControlRequestId: dual.value.id,
+      workflow: "administrator_initiated",
+    });
+    expect(closed.ok).toBe(true);
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: "privacy.account_closed",
+        subjectRef: expect.stringMatching(/^subj_/),
+      }),
+    );
+    const logged = JSON.stringify(logSpy.mock.calls);
+    expect(logged).not.toContain(accountId);
+    logSpy.mockRestore();
+  });
+
+  it("does not emit a success security log when closure rolls back", async () => {
+    const personId = newEntityId("person");
+    const accountId = "account-ostt-synth-privacy-log-rollback";
+    await db.insert(persons).values({
+      id: personId,
+      synthetic: true,
+      displayLabel: "ostt-synth log-rollback",
+    });
+    await db.insert(accounts).values({
+      id: accountId,
+      personId,
+      contactChannel: "log-rollback@ostt.synth.test",
+      lifecycleState: "active",
+      synthetic: true,
+      contactVerifiedAt: new Date("2026-08-01T00:00:00.000Z"),
+      activatedAt: new Date("2026-08-02T00:00:00.000Z"),
+    });
+
+    const dual = await requestDualControl(db, {
+      actorAccountId: "account-ostt-synth-privacy-admin-a",
+      action: "privacy.execute_closure",
+      payload: { workflow: "administrator_initiated", accountId },
+      reason: "Rollback log drill.",
+    });
+    expect(dual.ok).toBe(true);
+    if (!dual.ok) {
+      return;
+    }
+    await approveDualControl(db, {
+      actorAccountId: "account-ostt-synth-privacy-admin-b",
+      requestId: dual.value.id,
+      reason: "Approve for rollback log drill.",
+    });
+
+    const auditSpy = vi
+      .spyOn(auditLog, "appendAuthAudit")
+      .mockRejectedValue(new Error("forced audit failure"));
+    const logSpy = vi.spyOn(securityLogModule, "securityLog");
+
+    const failed = await executeAccountClosure(db, {
+      accountId,
+      actorAccountId: "account-ostt-synth-privacy-admin-a",
+      reason: "Should roll back before security log.",
+      dualControlRequestId: dual.value.id,
+      workflow: "administrator_initiated",
+    });
+    expect(failed.ok).toBe(false);
+    expect(
+      logSpy.mock.calls.some(
+        (call) => call[0]?.event === "privacy.account_closed",
+      ),
+    ).toBe(false);
+
+    const [account] = await db
+      .select()
+      .from(accounts)
+      .where(eq(accounts.id, accountId));
+    expect(account?.lifecycleState).toBe("active");
+
+    auditSpy.mockRestore();
+    logSpy.mockRestore();
   });
 
   it("runs provisional retention job and keeps security headers/csrf helpers", async () => {

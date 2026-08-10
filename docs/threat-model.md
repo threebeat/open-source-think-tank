@@ -83,6 +83,7 @@ Controls below are **implemented** through 2.11 unless noted as still blocked.
 | Auth mistaken for activation | Lifecycle `pending_onboarding` until 2.6–2.8 gates; no real `active` in 2.4 |
 | Identity joined to public opinion | Separate stores; consultation adapter forbidden in Phase 2; closed-test pseudonym map security-restricted (2.10) |
 | Secret leakage to browser | No `NEXT_PUBLIC_` secrets; adapter boundary; security headers + CSRF middleware; [secrets-and-operations.md](./secrets-and-operations.md) |
+| Raw account ids in ops logs | `securityLog` uses keyed `subjectRef` / recursive identifier redaction; closure success logged only after commit |
 | Audit tampering by ordinary roles | Append-only ledger; continuity digests over institutional fields; public projections allowlisted (2.9) |
 | Cross-account export leakage | Own-account export aborts if another `account-*` id appears (2.11) |
 | Silent destruction on closure | Closure retains assent/audit; legal holds block closure/purge (2.11) |

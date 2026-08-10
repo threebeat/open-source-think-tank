@@ -25,7 +25,10 @@
 Highest-impact operations that **require** a claimed dual-control request (not advisory):
 
 - Legal-hold release — payload must match `{ holdId }`; claim + release + audit in one transaction
-- Account closure execution — payload must match `{ accountId }` (and `deletionRequestId` when supplied); claim + hold check + close + audit in one transaction
+- Account closure execution — payload must match workflow + account binding:
+  - `account_request`: `{ workflow, accountId, deletionRequestId }` with request owned by that account and executable status
+  - `administrator_initiated`: `{ workflow, accountId }` with no deletion request id
+  Claim + hold check + close + audit in one transaction; security success log only after commit (opaque subject refs)
 
 Bypass (missing request id), replay (already `executed`), and payload substitution are rejected. Concurrent approvers: exactly one wins.
 

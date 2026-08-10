@@ -19,6 +19,10 @@ import {
 } from "../schema";
 import type { FoundationDb } from "../types";
 import { appendAuthAudit } from "@/lib/auth/audit-log";
+import {
+  L3_KINDS,
+  seedApprovedAssertions,
+} from "@/lib/verification/seed-assurance";
 
 const CLOSED_TEST_CONVERSATION_SEEDS = [
   "alpha",
@@ -256,6 +260,35 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
     assertionSummary: "Synthetic contact continuity assertion (no raw artifact).",
   });
 
+  // Synthetic staff administrator for gated staff UI / readiness a11y only.
+  await db.insert(persons).values({
+    id: "person-ostt-synth-staff-admin",
+    synthetic: true,
+    displayLabel: "ostt-synth Staff Admin (seed)",
+    notes: "Synthetic staff fixture — not a real individual.",
+  });
+  await db.insert(accounts).values({
+    id: "account-ostt-synth-staff-admin",
+    personId: "person-ostt-synth-staff-admin",
+    contactChannel: "staff-admin@ostt.synth.test",
+    lifecycleState: "active",
+    synthetic: true,
+    contactVerifiedAt: new Date("2026-08-01T00:00:00.000Z"),
+    activatedAt: new Date("2026-08-02T00:00:00.000Z"),
+  });
+  await db.insert(roleAssignments).values({
+    id: "role-ostt-synth-staff-admin",
+    accountId: "account-ostt-synth-staff-admin",
+    role: "administrator",
+    grantedByLabel: "ostt-synth-seeder",
+    reason: "Synthetic staff administrator for gated UI and a11y drills.",
+  });
+  await seedApprovedAssertions(
+    db,
+    "account-ostt-synth-staff-admin",
+    L3_KINDS,
+  );
+
   await appendAuthAudit(db, {
     actorRole: "ostt-synth-seeder",
     action: "foundation.seeded",
@@ -274,4 +307,7 @@ export const SYNTHETIC_PENDING_INVITE_CONTACT_DANA = "dana@ostt.synth.test";
 export const SYNTHETIC_PENDING_INVITE_TOKEN_ELIOT =
   "ostt-synth-invite-token-eliot";
 export const SYNTHETIC_PENDING_INVITE_CONTACT_ELIOT = "eliot@ostt.synth.test";
+export const SYNTHETIC_STAFF_ADMIN_CONTACT = "staff-admin@ostt.synth.test";
+export const SYNTHETIC_STAFF_ADMIN_ACCOUNT_ID =
+  "account-ostt-synth-staff-admin";
 

@@ -33,12 +33,19 @@ describe("foundation schema (ephemeral PGlite)", () => {
     await client.close();
   });
 
-  it("seeds only synthetic pending_onboarding accounts", async () => {
+  it("seeds only synthetic accounts with expected lifecycle states", async () => {
     const rows = await db.select().from(accounts);
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.every((row) => row.synthetic)).toBe(true);
-    expect(rows.every((row) => row.lifecycleState === "pending_onboarding")).toBe(
-      true,
+    const byId = Object.fromEntries(rows.map((row) => [row.id, row]));
+    expect(byId["account-ostt-synth-ada"]?.lifecycleState).toBe(
+      "pending_onboarding",
+    );
+    expect(byId["account-ostt-synth-ben"]?.lifecycleState).toBe(
+      "pending_onboarding",
+    );
+    expect(byId["account-ostt-synth-staff-admin"]?.lifecycleState).toBe(
+      "active",
     );
   });
 

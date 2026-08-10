@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 2  
 **Baseline:** Phase 1 demonstration release tag [`phase-1-demonstration`](https://github.com/threebeat/open-source-think-tank/releases/tag/phase-1-demonstration) at commit `33ff0cc`  
-**Current package:** **2.12 complete** — closed readiness review and [phase-2-handoff.md](./phase-2-handoff.md) written. **Stop for human approval before tagging** a foundation release. Managed Postgres host and production email vendor remain blocked pending addenda; gated E2E not re-run here (Docker unavailable).
+**Current package:** **2.12 — implementation complete; readiness blocked.** See [phase-2-handoff.md](./phase-2-handoff.md). Do **not** declare 2.12 complete or tag a foundation release until gated E2E (including account/staff axe) is green **and** the documented counsel review of data maps/active documents is recorded in §7. Managed Postgres host and production email vendor remain blocked pending addenda.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [open-questions.md](./open-questions.md), [legal-questions.md](./legal-questions.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [phase-1-handoff.md](./phase-1-handoff.md), [phase-2-handoff.md](./phase-2-handoff.md)
 
@@ -461,12 +461,19 @@ Stop Phase 2 implementation and escalate to humans if:
 
 ### Work package 2.12 — Closed readiness review and handoff
 
+**Package status vocabulary**
+
+| Status | Meaning |
+| --- | --- |
+| implementation complete; readiness blocked | Engineering + handoff draft done; gated E2E/a11y and/or counsel review still open |
+| complete | All items below satisfied; tag allowed only after human approval |
+
 1. Run formatting, lint, typecheck, unit, integration, authorization, migration, E2E, and production-build checks.
-2. Run accessibility testing across all new account and staff flows.
+2. Run accessibility testing across all new account and staff flows (**gated** Playwright axe required — see `e2e/a11y.gated.spec.ts` and onboarding gated specs).
 3. Test every role and denied-action path.
 4. Test invitation expiration, session revocation, document replacement, re-assent, verification expiration, and audit publication.
 5. Conduct a threat-model review against the implemented system.
-6. Review data maps and active documents with counsel.
+6. Review data maps and active documents with counsel (**documented** in §7; owner risk acceptance ≠ cleared).
 7. Verify the public demo still operates without production services.
 8. Verify no public signup, recruitment, donation, or live consultation path exists.
 9. Create `docs/phase-2-handoff.md`.
@@ -479,6 +486,8 @@ Stop Phase 2 implementation and escalate to humans if:
 - Production permissions are server-enforced and regression-tested.
 - The public synthetic demonstration and gated account environment are isolated.
 - Phase 2 can be demonstrated privately without being mistaken for a public launch.
+- Gated E2E including account/staff axe coverage is green.
+- Counsel review of data maps and active documents is recorded (not merely noted as outstanding).
 
 ---
 
@@ -491,4 +500,4 @@ When Phase 2 work is active:
 3. Prefer “account holder” / “community participant” language; never invent statutory membership.
 4. After each package: report files changed, commands run, failed checks, and unresolved decisions; stop for approval.
 
-Phase 2 engineering packages **2.1–2.12** are complete pending human approval of [phase-2-handoff.md](./phase-2-handoff.md). Do not start Phase 3 work or tag a foundation release without that approval.
+Phase 2 implementation through 2.12 is **readiness-blocked** per [phase-2-handoff.md](./phase-2-handoff.md). Do not start Phase 3 work, declare Phase 2 complete, or tag a foundation release until 2.12 readiness blockers clear and a human approves.

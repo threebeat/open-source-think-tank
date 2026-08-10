@@ -15,7 +15,7 @@ import { appendAuthAudit } from "@/lib/auth/audit-log";
 import { authorizeCapability } from "@/lib/authz/authorize-capability";
 import { loadPrincipal } from "@/lib/authz/load-principal";
 import { assertEnvironmentSafe } from "@/lib/env/app-mode";
-import { securityLog } from "@/lib/security/log";
+import { operationalSubjectRef, securityLog } from "@/lib/security/log";
 
 export type AccountExportBundle = {
   exportedAt: string;
@@ -203,8 +203,8 @@ export async function exportOwnAccountData(
       securityLog({
         level: "error",
         event: "privacy.export_foreign_account_leak_blocked",
-        accountId: actorAccountId,
-        details: { otherAccountId: id },
+        subjectRef: operationalSubjectRef(actorAccountId),
+        details: { foreignSubjectRef: operationalSubjectRef(id) },
       });
       return {
         ok: false,
@@ -227,7 +227,7 @@ export async function exportOwnAccountData(
   securityLog({
     level: "info",
     event: "privacy.export_generated",
-    accountId: actorAccountId,
+    subjectRef: operationalSubjectRef(actorAccountId),
   });
 
   return { ok: true, value: bundle };

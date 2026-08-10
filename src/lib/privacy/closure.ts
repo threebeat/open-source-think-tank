@@ -8,6 +8,7 @@ import {
   authSessions,
   legalHolds,
 } from "@/db/schema";
+import type { DrizzleTx } from "@/db/transaction-context";
 import type { FoundationDb } from "@/db/types";
 import type { AdapterResult } from "@/lib/adapters/types";
 import { appendAuthAudit } from "@/lib/auth/audit-log";
@@ -21,7 +22,29 @@ import {
 } from "@/lib/privacy/dual-control";
 import { RETENTION_RULES } from "@/lib/privacy/retention-rules";
 import { lockPrivacySubject } from "@/lib/privacy/subject-lock";
-import { securityLog } from "@/lib/security/log";
+import { operationalSubjectRef, securityLog } from "@/lib/security/log";
+
+export const CLOSURE_WORKFLOWS = [
+  "account_request",
+  "administrator_initiated",
+] as const;
+
+export type ClosureWorkflow = (typeof CLOSURE_WORKFLOWS)[number];
+
+const EXECUTABLE_DELETION_STATUSES = [
+  "pending",
+  "approved_pending_hold",
+  "blocked_by_hold",
+] as const;
+
+type ExecutableDeletionStatus = (typeof EXECUTABLE_DELETION_STATUSES)[number];
+
+function isClosureWorkflow(value: unknown): value is ClosureWorkflow {
+  return (
+    typeof value === "string" &&
+    (CLOSURE_WORKFLOWS as readonly string[]).includes(value)
+  );
+}
 
 /**
  * Account holder requests closure/deletion. Does not destroy audit or assent.
@@ -137,9 +160,54 @@ export async function requestAccountClosure(
   }
 }
 
+async function loadExecutableDeletionRequest(
+  tx: DrizzleTx,
+  accountId: string,
+  deletionRequestId: string,
+): Promise<
+  AdapterResult<{ id: string; status: ExecutableDeletionStatus }>
+> {
+  const [row] = await tx
+    .select({
+      id: accountDeletionRequests.id,
+      accountId: accountDeletionRequests.accountId,
+      status: accountDeletionRequests.status,
+    })
+    .from(accountDeletionRequests)
+    .where(
+      and(
+        eq(accountDeletionRequests.id, deletionRequestId),
+        eq(accountDeletionRequests.accountId, accountId),
+        inArray(accountDeletionRequests.status, [...EXECUTABLE_DELETION_STATUSES]),
+      ),
+    )
+    .limit(1);
+
+  if (!row) {
+    return {
+      ok: false,
+      error:
+        "Deletion request not found for this account, or not in an executable status",
+      code: "CLOSURE_REQUEST_MISMATCH",
+    };
+  }
+
+  return {
+    ok: true,
+    value: {
+      id: row.id,
+      status: row.status as ExecutableDeletionStatus,
+    },
+  };
+}
+
 /**
- * Execute closure under dual control. Hold check runs inside the same
- * transaction after locking the account subject (serialized vs hold placement).
+ * Execute closure under dual control.
+ *
+ * - `account_request`: requires `deletionRequestId` bound to `accountId` in an
+ *   executable status; dual-control payload must include workflow + both ids.
+ * - `administrator_initiated`: distinct workflow with no deletion request id;
+ *   does not mutate another account’s deletion rows.
  */
 export async function executeAccountClosure(
   db: FoundationDb,
@@ -148,9 +216,10 @@ export async function executeAccountClosure(
     actorAccountId: string;
     reason: string;
     dualControlRequestId: string;
+    workflow: ClosureWorkflow;
     deletionRequestId?: string;
   },
-): Promise<AdapterResult<{ accountId: string }>> {
+): Promise<AdapterResult<{ accountId: string; workflow: ClosureWorkflow }>> {
   if (assertEnvironmentSafe() !== "gated") {
     return {
       ok: false,
@@ -165,6 +234,30 @@ export async function executeAccountClosure(
       code: "CLOSURE_REASON_REQUIRED",
     };
   }
+  if (!isClosureWorkflow(input.workflow)) {
+    return {
+      ok: false,
+      error: "Closure workflow must be account_request or administrator_initiated",
+      code: "CLOSURE_WORKFLOW_REQUIRED",
+    };
+  }
+
+  if (input.workflow === "account_request") {
+    if (!input.deletionRequestId?.trim()) {
+      return {
+        ok: false,
+        error: "account_request closure requires deletionRequestId",
+        code: "CLOSURE_REQUEST_REQUIRED",
+      };
+    }
+  } else if (input.deletionRequestId) {
+    return {
+      ok: false,
+      error:
+        "administrator_initiated closure must not include deletionRequestId — use account_request workflow",
+      code: "CLOSURE_WORKFLOW_INVALID",
+    };
+  }
 
   const principal = await loadPrincipal(db, input.actorAccountId);
   const decision = await authorizeCapability(
@@ -176,15 +269,16 @@ export async function executeAccountClosure(
     return { ok: false, error: decision.error, code: decision.code };
   }
 
-  try {
-    return await db.transaction(async (tx) => {
-      const expectedPayload: Record<string, unknown> = {
-        accountId: input.accountId,
-      };
-      if (input.deletionRequestId) {
-        expectedPayload.deletionRequestId = input.deletionRequestId;
-      }
+  const expectedPayload: Record<string, unknown> = {
+    workflow: input.workflow,
+    accountId: input.accountId,
+  };
+  if (input.workflow === "account_request") {
+    expectedPayload.deletionRequestId = input.deletionRequestId!.trim();
+  }
 
+  try {
+    const result = await db.transaction(async (tx) => {
       // Dual-control first so replay surfaces ALREADY_EXECUTED before other errors.
       const locked = await lockApprovedDualControl(tx, {
         dualControlRequestId: input.dualControlRequestId,
@@ -196,6 +290,19 @@ export async function executeAccountClosure(
       }
 
       await lockPrivacySubject(tx, "account", input.accountId);
+
+      let deletionRequest: { id: string } | null = null;
+      if (input.workflow === "account_request") {
+        const loaded = await loadExecutableDeletionRequest(
+          tx,
+          input.accountId,
+          input.deletionRequestId!.trim(),
+        );
+        if (!loaded.ok) {
+          return loaded;
+        }
+        deletionRequest = { id: loaded.value.id };
+      }
 
       const [activeHold] = await tx
         .select({ id: legalHolds.id })
@@ -209,11 +316,19 @@ export async function executeAccountClosure(
         )
         .limit(1);
       if (activeHold) {
-        if (input.deletionRequestId) {
+        if (deletionRequest) {
           await tx
             .update(accountDeletionRequests)
             .set({ status: "blocked_by_hold" })
-            .where(eq(accountDeletionRequests.id, input.deletionRequestId));
+            .where(
+              and(
+                eq(accountDeletionRequests.id, deletionRequest.id),
+                eq(accountDeletionRequests.accountId, input.accountId),
+                inArray(accountDeletionRequests.status, [
+                  ...EXECUTABLE_DELETION_STATUSES,
+                ]),
+              ),
+            );
         }
         return {
           ok: false as const,
@@ -279,25 +394,23 @@ export async function executeAccountClosure(
         })
         .where(eq(accounts.id, input.accountId));
 
-      if (input.deletionRequestId) {
-        await tx
-          .update(accountDeletionRequests)
-          .set({ status: "closed", resolvedAt: now })
-          .where(eq(accountDeletionRequests.id, input.deletionRequestId));
-      } else {
-        await tx
+      if (deletionRequest) {
+        const [closedRequest] = await tx
           .update(accountDeletionRequests)
           .set({ status: "closed", resolvedAt: now })
           .where(
             and(
+              eq(accountDeletionRequests.id, deletionRequest.id),
               eq(accountDeletionRequests.accountId, input.accountId),
               inArray(accountDeletionRequests.status, [
-                "pending",
-                "approved_pending_hold",
-                "blocked_by_hold",
+                ...EXECUTABLE_DELETION_STATUSES,
               ]),
             ),
-          );
+          )
+          .returning();
+        if (!closedRequest) {
+          throw new Error("CLOSURE_REQUEST_UPDATE_FAILED");
+        }
       }
 
       await appendAuthAudit(tx, {
@@ -313,17 +426,11 @@ export async function executeAccountClosure(
           retainedAssentRows: assentCount.length,
           retainedActorAuditRows: auditCount.length,
           dualControlRequestId: claim.value.id,
+          workflow: input.workflow,
           rule: RETENTION_RULES.closure,
         },
         synthetic: decision.principal.synthetic && account.synthetic,
         at: now,
-      });
-
-      securityLog({
-        level: "info",
-        event: "privacy.account_closed",
-        accountId: input.accountId,
-        details: { actorAccountId: input.actorAccountId },
       });
 
       const assentAfter = await tx
@@ -334,8 +441,25 @@ export async function executeAccountClosure(
         throw new Error("CLOSURE_DESTROYED_ASSENT");
       }
 
-      return { ok: true as const, value: { accountId: input.accountId } };
+      return {
+        ok: true as const,
+        value: { accountId: input.accountId, workflow: input.workflow },
+      };
     });
+
+    if (result.ok) {
+      securityLog({
+        level: "info",
+        event: "privacy.account_closed",
+        subjectRef: operationalSubjectRef(input.accountId),
+        details: {
+          actorRef: operationalSubjectRef(input.actorAccountId),
+          workflow: input.workflow,
+        },
+      });
+    }
+
+    return result;
   } catch (error) {
     return {
       ok: false,
