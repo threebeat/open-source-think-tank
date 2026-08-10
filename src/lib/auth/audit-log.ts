@@ -1,10 +1,14 @@
 import { auditEvents } from "@/db/schema";
+import type { DrizzleTx } from "@/db/transaction-context";
 import type { FoundationDb } from "@/db/types";
 import {
   assertNoSecretsInText,
   redactSensitiveFields,
 } from "@/lib/auth/redact";
 import { newEntityId } from "@/lib/auth/tokens";
+
+/** Outer DB or in-transaction executor. */
+export type AuthAuditDb = FoundationDb | DrizzleTx;
 
 export type AuthAuditInput = {
   actorRole: string;
@@ -17,10 +21,18 @@ export type AuthAuditInput = {
   privatePayload?: Record<string, unknown>;
   /** Raw secrets that must not appear in summary or payload. */
   forbidSecrets?: string[];
-  synthetic?: boolean;
+  /**
+   * Required. Must match the account when an account is involved; never defaulted
+   * to true (real events must not enter the ledger as synthetic).
+   */
+  synthetic: boolean;
 };
 
-export async function appendAuthAudit(db: FoundationDb, input: AuthAuditInput) {
+export async function appendAuthAudit(db: AuthAuditDb, input: AuthAuditInput) {
+  if (typeof input.synthetic !== "boolean") {
+    throw new Error("appendAuthAudit requires an explicit synthetic boolean");
+  }
+
   const secrets = input.forbidSecrets ?? [];
   assertNoSecretsInText(input.summary, secrets);
   if (input.reason) {
@@ -41,6 +53,6 @@ export async function appendAuthAudit(db: FoundationDb, input: AuthAuditInput) {
     summary: input.summary,
     reason: input.reason,
     privatePayload,
-    synthetic: input.synthetic ?? true,
+    synthetic: input.synthetic,
   });
 }

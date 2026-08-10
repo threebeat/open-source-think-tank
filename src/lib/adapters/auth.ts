@@ -14,7 +14,8 @@ export type InviteAcceptanceInput = {
 };
 
 export type ChallengeSent = {
-  status: "challenge_sent";
+  /** `challenge_pending_delivery` means the challenge exists; caller may resend. */
+  status: "challenge_sent" | "challenge_pending_delivery";
   contactChannel: string;
 };
 
@@ -30,6 +31,7 @@ export interface AuthAdapter {
   completeChallenge(token: string): Promise<AdapterResult<AuthSession>>;
   requestSignIn(contactChannel: string): Promise<AdapterResult<ChallengeSent>>;
   requestRecovery(contactChannel: string): Promise<AdapterResult<ChallengeSent>>;
+  resendChallenge(contactChannel: string): Promise<AdapterResult<ChallengeSent>>;
   signOut(): Promise<AdapterResult<true>>;
   revokeAllSessions(accountId: string): Promise<AdapterResult<true>>;
 }
@@ -72,6 +74,16 @@ export class PublicDemoAuthAdapter implements AuthAdapter {
   }
 
   async requestRecovery(
+    _contactChannel: string,
+  ): Promise<AdapterResult<ChallengeSent>> {
+    return {
+      ok: false,
+      error: "Authentication is disabled in public-demo mode",
+      code: "PUBLIC_DEMO_NO_AUTH",
+    };
+  }
+
+  async resendChallenge(
     _contactChannel: string,
   ): Promise<AdapterResult<ChallengeSent>> {
     return {

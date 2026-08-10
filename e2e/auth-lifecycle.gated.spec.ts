@@ -7,10 +7,15 @@ import { expect, test } from "@playwright/test";
 test.describe("gated auth lifecycle (synthetic)", () => {
   test("invite accept → contact verify → account page; active capability denied", async ({
     page,
-    request,
   }) => {
+    // Unauthenticated capability probe (isolated from browser cookies).
+    const unauthenticated = await page.request.post(
+      "/api/account/active-capability",
+    );
+    expect(unauthenticated.status()).toBe(401);
+
     // Prepare script reseeds before the server starts (single-use invite).
-    const accept = await request.post("/api/auth/accept-invite", {
+    const accept = await page.request.post("/api/auth/accept-invite", {
       data: {
         inviteToken: "ostt-synth-invite-token-cory",
         contactChannel: "cory@ostt.synth.test",
@@ -18,7 +23,7 @@ test.describe("gated auth lifecycle (synthetic)", () => {
     });
     expect(accept.ok()).toBeTruthy();
 
-    const capture = await request.get("/api/test/last-email");
+    const capture = await page.request.get("/api/test/last-email");
     expect(capture.ok()).toBeTruthy();
     const mail = (await capture.json()) as { textBody?: string };
     expect(mail.textBody).toBeTruthy();
@@ -30,8 +35,11 @@ test.describe("gated auth lifecycle (synthetic)", () => {
     await expect(page).toHaveURL(/\/account$/);
     await expect(page.getByText("pending_onboarding")).toBeVisible();
 
-    const capability = await request.post("/api/account/active-capability");
-    expect(capability.status()).toBe(403);
+    // Authenticated pending_onboarding must use the page cookie jar.
+    const pendingCapability = await page.request.post(
+      "/api/account/active-capability",
+    );
+    expect(pendingCapability.status()).toBe(403);
   });
 
   test("unauthenticated account URL is insufficient", async ({ page }) => {

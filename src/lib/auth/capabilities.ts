@@ -1,6 +1,9 @@
 import type { AccountLifecycleState } from "@/lib/adapters/types";
 
-/** Capabilities gated behind institutional `active` (owned by 2.5/2.8 matrix). */
+/**
+ * Legacy active-only helpers. Prefer docs/capability-matrix.md and
+ * `authorize()` in `@/lib/authz/authorize`.
+ */
 export const ACTIVE_ONLY_CAPABILITIES = [
   "institutional.vote",
   "institutional.council_action",

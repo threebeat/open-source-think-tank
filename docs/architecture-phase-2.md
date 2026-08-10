@@ -45,3 +45,7 @@ Public opinion records must not require joins to legal identity. Pseudonym mappi
 ## Adapter boundary
 
 Application features depend on TypeScript interfaces in `src/lib/adapters/`. Vendor SDKs are imported only inside adapter implementations introduced in later packages.
+
+## Authorization
+
+Server-enforced capabilities are defined in [capability-matrix.md](./capability-matrix.md). Account lifecycle, platform roles, and council seats are evaluated independently; Deliberation Council never implies Policy Council. Default deny. UI hiding is never the only control.

@@ -8,12 +8,12 @@ export async function POST() {
     return NextResponse.json({ error: "Not Found" }, { status: 404 });
   }
 
-  const { requireActiveCapability } = await import("@/lib/auth/guard");
-  const gated = await requireActiveCapability("institutional.vote");
-  if (!gated.ok) {
+  const { requireCapability } = await import("@/lib/authz/server");
+  const decision = await requireCapability("institutional.vote");
+  if (!decision.ok) {
     return NextResponse.json(
-      { error: gated.error, code: gated.code },
-      { status: gated.status },
+      { error: decision.error, code: decision.code },
+      { status: decision.status },
     );
   }
 

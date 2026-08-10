@@ -1,10 +1,7 @@
 import { auth } from "@/lib/auth/next-auth";
-import {
-  canExerciseActiveCapability,
-  type ActiveOnlyCapability,
-} from "@/lib/auth/capabilities";
 import type { AuthSession } from "@/lib/adapters/auth";
 import { resolveAppMode } from "@/lib/env/app-mode";
+import type { Capability } from "@/lib/authz/types";
 
 export type GuardFailure =
   | { ok: false; status: 401 | 403 | 404; code: string; error: string }
@@ -30,11 +27,7 @@ export async function requireGatedSession(): Promise<GuardFailure> {
       }
     | undefined;
 
-  if (
-    !user?.accountId ||
-    !user.sessionId ||
-    !user.lifecycleState
-  ) {
+  if (!user?.accountId || !user.sessionId || !user.lifecycleState) {
     return {
       ok: false,
       status: 401,
@@ -54,20 +47,33 @@ export async function requireGatedSession(): Promise<GuardFailure> {
   };
 }
 
+/** @deprecated Prefer requireCapability from @/lib/authz/server */
 export async function requireActiveCapability(
-  capability: ActiveOnlyCapability,
+  capability: Extract<
+    Capability,
+    | "institutional.vote"
+    | "institutional.council_deliberation"
+    | "institutional.council_policy"
+    | "institutional.publish_decision"
+  >,
 ): Promise<GuardFailure> {
-  const gated = await requireGatedSession();
-  if (!gated.ok) {
-    return gated;
-  }
-  if (!canExerciseActiveCapability(gated.session.lifecycleState)) {
+  const { requireCapability } = await import("@/lib/authz/server");
+  const decision = await requireCapability(capability);
+  if (!decision.ok) {
     return {
       ok: false,
-      status: 403,
-      code: "ACTIVE_CAPABILITY_REQUIRED",
-      error: `Capability ${capability} requires an active account`,
+      status: decision.status,
+      code: decision.code,
+      error: decision.error,
     };
   }
-  return gated;
+  return {
+    ok: true,
+    session: {
+      accountId: decision.principal.accountId,
+      sessionId: "",
+      lifecycleState: decision.principal.lifecycleState,
+      synthetic: decision.principal.synthetic,
+    },
+  };
 }

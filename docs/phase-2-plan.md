@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 2  
 **Baseline:** Phase 1 demonstration release tag [`phase-1-demonstration`](https://github.com/threebeat/open-source-think-tank/releases/tag/phase-1-demonstration) at commit `33ff0cc`  
-**Current package:** **2.4 complete** — next **2.5** after approval. Managed Postgres host and production email vendor remain blocked pending addenda.
+**Current package:** **2.5 complete** — next **2.6** after approval. Managed Postgres host and production email vendor remain blocked pending addenda.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [open-questions.md](./open-questions.md), [legal-questions.md](./legal-questions.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [phase-1-handoff.md](./phase-1-handoff.md)
 
@@ -261,7 +261,7 @@ Stop Phase 2 implementation and escalate to humans if:
 
 ### Work package 2.4 — Implement authentication and account lifecycle
 
-**Status:** Complete for local/ephemeral gated auth (Auth.js + invite gate + synthetic E2E). Production email vendor still requires ADR addendum.
+**Status:** Complete for local/ephemeral gated auth (Auth.js + invite gate + synthetic E2E), including transactional invite/challenge claims and explicit audit `synthetic` classification. Production email vendor still requires ADR addendum.
 
 **Account-state sequence (binding):**
 
@@ -292,6 +292,8 @@ Stop Phase 2 implementation and escalate to humans if:
 ---
 
 ### Work package 2.5 — Implement authorization and institutional roles
+
+**Status:** Complete for server-enforced capability matrix (`docs/capability-matrix.md`). Counsel gates on authority claims remain blocking.
 
 1. Create a written capability matrix before writing authorization code.
 2. Distinguish account status, platform permissions, and institutional authority.
@@ -477,4 +479,4 @@ When Phase 2 work is active:
 3. Prefer “account holder” / “community participant” language; never invent statutory membership.
 4. After each package: report files changed, commands run, failed checks, and unresolved decisions; stop for approval.
 
-Next package after 2.4 approval: **2.5 — Implement authorization and institutional roles**.
+Next package after 2.5 approval: **2.6 — Add versioned documents and assent**.
