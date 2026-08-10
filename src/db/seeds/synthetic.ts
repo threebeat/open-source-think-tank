@@ -13,8 +13,8 @@ import {
   schemaMeta,
   verificationAssertions,
   verificationCases,
-} from "@/db/schema";
-import type { FoundationDb } from "@/db/types";
+} from "../schema";
+import type { FoundationDb } from "../types";
 
 function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
@@ -27,7 +27,7 @@ function hashToken(token: string): string {
 export async function seedSyntheticFoundation(db: FoundationDb) {
   await db.insert(schemaMeta).values({
     key: "migration_label",
-    value: "2.3-foundation",
+    value: "2.4-auth-foundation",
   });
 
   await db.insert(persons).values([
@@ -75,17 +75,28 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
     },
   ]);
 
-  await db.insert(invitations).values({
-    id: "invite-ostt-synth-ada",
-    tokenHash: hashToken("ostt-synth-invite-token-ada"),
-    intendedContactChannel: "ada@ostt.synth.test",
-    status: "accepted",
-    synthetic: true,
-    expiresAt: new Date("2027-01-01T00:00:00.000Z"),
-    acceptedAt: new Date("2026-08-01T00:00:00.000Z"),
-    acceptedAccountId: "account-ostt-synth-ada",
-    issuedByLabel: "ostt-synth-seeder",
-  });
+  await db.insert(invitations).values([
+    {
+      id: "invite-ostt-synth-ada",
+      tokenHash: hashToken("ostt-synth-invite-token-ada"),
+      intendedContactChannel: "ada@ostt.synth.test",
+      status: "accepted",
+      synthetic: true,
+      expiresAt: new Date("2027-01-01T00:00:00.000Z"),
+      acceptedAt: new Date("2026-08-01T00:00:00.000Z"),
+      acceptedAccountId: "account-ostt-synth-ada",
+      issuedByLabel: "ostt-synth-seeder",
+    },
+    {
+      id: "invite-ostt-synth-cory-pending",
+      tokenHash: hashToken("ostt-synth-invite-token-cory"),
+      intendedContactChannel: "cory@ostt.synth.test",
+      status: "pending",
+      synthetic: true,
+      expiresAt: new Date("2027-01-01T00:00:00.000Z"),
+      issuedByLabel: "ostt-synth-seeder",
+    },
+  ]);
 
   await db.insert(roleAssignments).values({
     id: "role-ostt-synth-ada-participant",
@@ -158,8 +169,13 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
     actorRole: "ostt-synth-seeder",
     action: "foundation.seeded",
     subjectType: "schema",
-    subjectId: "2.3-foundation",
+    subjectId: "2.4-auth-foundation",
     summary: "Synthetic foundation seed applied.",
     synthetic: true,
   });
 }
+
+/** Raw invite token for synthetic pending invitation — tests/E2E only. */
+export const SYNTHETIC_PENDING_INVITE_TOKEN = "ostt-synth-invite-token-cory";
+export const SYNTHETIC_PENDING_INVITE_CONTACT = "cory@ostt.synth.test";
+

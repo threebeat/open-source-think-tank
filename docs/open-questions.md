@@ -66,6 +66,12 @@ Phase 2 decision register and counsel gates: [phase-2-plan.md](./phase-2-plan.md
 
 ---
 
+## Phase 2 operations
+
+14. **Distributed auth rate limiting** — Unresolved for staging/production. Work Package 2.4 ships an in-process limiter suitable for local/ephemeral use. Multi-instance deployments need a shared limiter before real enrollment.
+
+---
+
 ## How to add questions
 
 When a design choice affects legal authority, privacy, verification, representation, moderation, or public data:

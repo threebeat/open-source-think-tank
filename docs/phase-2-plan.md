@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 2  
 **Baseline:** Phase 1 demonstration release tag [`phase-1-demonstration`](https://github.com/threebeat/open-source-think-tank/releases/tag/phase-1-demonstration) at commit `33ff0cc`  
-**Current package:** **2.3 complete** — next **2.4** after approval. Managed Postgres host remains blocked pending vendor addendum.
+**Current package:** **2.4 complete** — next **2.5** after approval. Managed Postgres host and production email vendor remain blocked pending addenda.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [open-questions.md](./open-questions.md), [legal-questions.md](./legal-questions.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [phase-1-handoff.md](./phase-1-handoff.md)
 
@@ -238,7 +238,7 @@ Stop Phase 2 implementation and escalate to humans if:
 
 ### Work package 2.3 — Build the production data foundation
 
-**Status:** Complete for local/ephemeral PostgreSQL technology. Managed host for staging/production remains blocked.
+**Status:** Complete for local/ephemeral PostgreSQL technology (including migration-tracked immutability/relationship constraints). Managed host for staging/production remains blocked.
 
 1. Add migration tooling and a reproducible local database.
 2. Model accounts, profiles, invitations, role assignments, document versions, assent records, verification cases, verification assertions, and audit events.
@@ -260,6 +260,8 @@ Stop Phase 2 implementation and escalate to humans if:
 ---
 
 ### Work package 2.4 — Implement authentication and account lifecycle
+
+**Status:** Complete for local/ephemeral gated auth (Auth.js + invite gate + synthetic E2E). Production email vendor still requires ADR addendum.
 
 **Account-state sequence (binding):**
 
@@ -475,4 +477,4 @@ When Phase 2 work is active:
 3. Prefer “account holder” / “community participant” language; never invent statutory membership.
 4. After each package: report files changed, commands run, failed checks, and unresolved decisions; stop for approval.
 
-Next package after 2.3 approval: **2.4 — Implement authentication and account lifecycle** (`pending_onboarding` only for real participants).
+Next package after 2.4 approval: **2.5 — Implement authorization and institutional roles**.

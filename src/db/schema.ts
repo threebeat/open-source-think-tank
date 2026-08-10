@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  foreignKey,
   index,
   jsonb,
   pgEnum,
@@ -83,7 +84,7 @@ const timestamps = {
     .defaultNow(),
 };
 
-/** Human identity distinct from platform account (synthetic-only in 2.3 seeds). */
+/** Human identity distinct from platform account (synthetic-only in seeds). */
 export const persons = pgTable("persons", {
   id: text("id").primaryKey(),
   synthetic: boolean("synthetic").notNull().default(true),
@@ -112,8 +113,15 @@ export const accounts = pgTable(
   (table) => [
     uniqueIndex("accounts_contact_channel_uidx").on(table.contactChannel),
     check(
-      "accounts_active_requires_activation_timestamp",
-      sql`(${table.lifecycleState} <> 'active') OR (${table.activatedAt} IS NOT NULL)`,
+      "accounts_lifecycle_timestamps_consistent",
+      sql`(
+        (${table.lifecycleState} = 'invited' AND ${table.contactVerifiedAt} IS NULL AND ${table.activatedAt} IS NULL AND ${table.suspendedAt} IS NULL AND ${table.closedAt} IS NULL)
+        OR (${table.lifecycleState} = 'pending_onboarding' AND ${table.contactVerifiedAt} IS NOT NULL AND ${table.activatedAt} IS NULL AND ${table.suspendedAt} IS NULL AND ${table.closedAt} IS NULL)
+        OR (${table.lifecycleState} = 'active' AND ${table.contactVerifiedAt} IS NOT NULL AND ${table.activatedAt} IS NOT NULL AND ${table.suspendedAt} IS NULL AND ${table.closedAt} IS NULL)
+        OR (${table.lifecycleState} = 'suspended' AND ${table.contactVerifiedAt} IS NOT NULL AND ${table.activatedAt} IS NOT NULL AND ${table.suspendedAt} IS NOT NULL AND ${table.closedAt} IS NULL)
+        OR (${table.lifecycleState} = 'closed' AND ${table.closedAt} IS NOT NULL)
+        OR (${table.lifecycleState} = 'anonymization-pending' AND ${table.closedAt} IS NOT NULL)
+      )`,
     ),
   ],
 );
@@ -145,6 +153,26 @@ export const invitations = pgTable(
   },
   (table) => [
     uniqueIndex("invitations_token_hash_uidx").on(table.tokenHash),
+    check(
+      "invitations_accepted_requires_account_and_timestamp",
+      sql`(
+        (${table.status} <> 'accepted')
+        OR (
+          ${table.acceptedAt} IS NOT NULL
+          AND ${table.acceptedAccountId} IS NOT NULL
+        )
+      )`,
+    ),
+    check(
+      "invitations_pending_has_no_acceptance",
+      sql`(
+        (${table.status} <> 'pending')
+        OR (
+          ${table.acceptedAt} IS NULL
+          AND ${table.acceptedAccountId} IS NULL
+        )
+      )`,
+    ),
   ],
 );
 
@@ -215,6 +243,7 @@ export const documentVersions = pgTable(
       table.kind,
       table.versionLabel,
     ),
+    uniqueIndex("document_versions_id_hash_uidx").on(table.id, table.contentHash),
     check(
       "document_versions_published_needs_timestamp",
       sql`(${table.state} <> 'published') OR (${table.publishedAt} IS NOT NULL)`,
@@ -222,7 +251,7 @@ export const documentVersions = pgTable(
   ],
 );
 
-/** Immutable assent records — UPDATEs/DELETEs blocked by DB trigger. */
+/** Immutable assent records — UPDATEs/DELETEs blocked by migration trigger. */
 export const assentRecords = pgTable(
   "assent_records",
   {
@@ -230,9 +259,7 @@ export const assentRecords = pgTable(
     accountId: text("account_id")
       .notNull()
       .references(() => accounts.id, { onDelete: "restrict" }),
-    documentVersionId: text("document_version_id")
-      .notNull()
-      .references(() => documentVersions.id, { onDelete: "restrict" }),
+    documentVersionId: text("document_version_id").notNull(),
     contentHash: text("content_hash").notNull(),
     method: text("method").notNull(),
     assentedAt: timestamp("assented_at", { withTimezone: true })
@@ -249,6 +276,11 @@ export const assentRecords = pgTable(
   },
   (table) => [
     index("assent_records_account_idx").on(table.accountId),
+    foreignKey({
+      name: "assent_records_document_hash_fk",
+      columns: [table.documentVersionId, table.contentHash],
+      foreignColumns: [documentVersions.id, documentVersions.contentHash],
+    }).onDelete("restrict"),
   ],
 );
 
@@ -269,6 +301,7 @@ export const verificationCases = pgTable(
     ...timestamps,
   },
   (table) => [
+    uniqueIndex("verification_cases_id_kind_uidx").on(table.id, table.kind),
     check(
       "verification_cases_no_self_review",
       sql`${table.reviewerAccountId} IS NULL OR ${table.reviewerAccountId} <> ${table.accountId}`,
@@ -280,9 +313,7 @@ export const verificationAssertions = pgTable(
   "verification_assertions",
   {
     id: text("id").primaryKey(),
-    caseId: text("case_id")
-      .notNull()
-      .references(() => verificationCases.id, { onDelete: "cascade" }),
+    caseId: text("case_id").notNull(),
     kind: verificationKindEnum("kind").notNull(),
     assertionSummary: text("assertion_summary").notNull(),
     /** Status only — raw artifacts must not be stored in this table. */
@@ -299,10 +330,15 @@ export const verificationAssertions = pgTable(
       table.caseId,
       table.kind,
     ),
+    foreignKey({
+      name: "verification_assertions_case_kind_fk",
+      columns: [table.caseId, table.kind],
+      foreignColumns: [verificationCases.id, verificationCases.kind],
+    }).onDelete("cascade"),
   ],
 );
 
-/** Immutable audit events — UPDATEs/DELETEs blocked by DB trigger. */
+/** Immutable audit events — UPDATEs/DELETEs blocked by migration trigger. */
 export const auditEvents = pgTable(
   "audit_events",
   {
@@ -327,6 +363,60 @@ export const auditEvents = pgTable(
   (table) => [index("audit_events_at_idx").on(table.at)],
 );
 
+export const authChallengePurposeEnum = pgEnum("auth_challenge_purpose", [
+  "contact_verification",
+  "sign_in",
+  "recovery",
+]);
+
+/**
+ * Server-side session rows for Auth.js JWT validation and revoke-all.
+ * Raw session secrets are never stored — only hashes.
+ */
+export const authSessions = pgTable(
+  "auth_sessions",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    sessionTokenHash: text("session_token_hash").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("auth_sessions_token_hash_uidx").on(table.sessionTokenHash),
+    index("auth_sessions_account_idx").on(table.accountId),
+  ],
+);
+
+/** Single-use hashed challenges for contact verification, sign-in, and recovery. */
+export const authChallenges = pgTable(
+  "auth_challenges",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("account_id").references(() => accounts.id, {
+      onDelete: "cascade",
+    }),
+    contactChannel: text("contact_channel").notNull(),
+    purpose: authChallengePurposeEnum("purpose").notNull(),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("auth_challenges_token_hash_uidx").on(table.tokenHash),
+    index("auth_challenges_contact_idx").on(table.contactChannel),
+  ],
+);
+
 /** Schema migration journal helper for health checks (optional row). */
 export const schemaMeta = pgTable("schema_meta", {
   key: text("key").primaryKey(),
@@ -348,5 +438,7 @@ export const foundationTables = {
   verificationCases,
   verificationAssertions,
   auditEvents,
+  authSessions,
+  authChallenges,
   schemaMeta,
 };

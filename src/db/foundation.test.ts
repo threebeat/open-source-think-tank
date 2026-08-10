@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
@@ -8,6 +10,9 @@ import {
   assentRecords,
   auditEvents,
   councilAppointments,
+  documentVersions,
+  invitations,
+  verificationAssertions,
   verificationCases,
 } from "@/db/schema";
 import { seedSyntheticFoundation } from "@/db/seeds/synthetic";
@@ -55,6 +60,117 @@ describe("foundation schema (ephemeral PGlite)", () => {
         lifecycleState: "active",
         synthetic: true,
         activatedAt: null,
+      }),
+    ).rejects.toThrow();
+  });
+
+  it("rejects pending_onboarding without contactVerifiedAt", async () => {
+    await expect(
+      db.insert(accounts).values({
+        id: "account-ostt-synth-bad-pending",
+        personId: "person-ostt-synth-ada",
+        contactChannel: "bad-pending@ostt.synth.test",
+        lifecycleState: "pending_onboarding",
+        synthetic: true,
+        contactVerifiedAt: null,
+      }),
+    ).rejects.toThrow();
+  });
+
+  it("rejects accepted invitations without account and timestamp", async () => {
+    await expect(
+      db.insert(invitations).values({
+        id: "invite-ostt-synth-bad-accepted",
+        tokenHash: createHash("sha256")
+          .update("ostt-synth-bad-accepted")
+          .digest("hex"),
+        intendedContactChannel: "bad-accepted@ostt.synth.test",
+        status: "accepted",
+        synthetic: true,
+        expiresAt: new Date("2027-01-01T00:00:00.000Z"),
+        acceptedAt: null,
+        acceptedAccountId: null,
+        issuedByLabel: "ostt-synth-seeder",
+      }),
+    ).rejects.toThrow();
+  });
+
+  it("rejects assent to a draft document", async () => {
+    const body = "Synthetic draft document body.";
+    const contentHash = createHash("sha256").update(body).digest("hex");
+    await db.insert(documentVersions).values({
+      id: "doc-ostt-synth-draft-v1",
+      kind: "conduct",
+      versionLabel: "v1-draft-synth",
+      contentHash,
+      title: "Synthetic draft conduct",
+      body,
+      state: "draft",
+    });
+
+    await expect(
+      db.insert(assentRecords).values({
+        id: "assent-ostt-synth-draft",
+        accountId: "account-ostt-synth-ada",
+        documentVersionId: "doc-ostt-synth-draft-v1",
+        contentHash,
+        method: "synthetic-negative",
+        noticesAcknowledged: [],
+        synthetic: true,
+      }),
+    ).rejects.toThrow();
+  });
+
+  it("rejects assent to a withdrawn document", async () => {
+    const body = "Synthetic withdrawn document body.";
+    const contentHash = createHash("sha256").update(body).digest("hex");
+    await db.insert(documentVersions).values({
+      id: "doc-ostt-synth-withdrawn-v1",
+      kind: "participation",
+      versionLabel: "v1-withdrawn-synth",
+      contentHash,
+      title: "Synthetic withdrawn participation",
+      body,
+      state: "withdrawn",
+      publishedAt: new Date("2026-07-01T00:00:00.000Z"),
+    });
+
+    await expect(
+      db.insert(assentRecords).values({
+        id: "assent-ostt-synth-withdrawn",
+        accountId: "account-ostt-synth-ada",
+        documentVersionId: "doc-ostt-synth-withdrawn-v1",
+        contentHash,
+        method: "synthetic-negative",
+        noticesAcknowledged: [],
+        synthetic: true,
+      }),
+    ).rejects.toThrow();
+  });
+
+  it("rejects assent when contentHash does not match the document", async () => {
+    await expect(
+      db.insert(assentRecords).values({
+        id: "assent-ostt-synth-hash-mismatch",
+        accountId: "account-ostt-synth-ada",
+        documentVersionId: "doc-ostt-synth-privacy-v1",
+        contentHash: createHash("sha256")
+          .update("not-the-document-body")
+          .digest("hex"),
+        method: "synthetic-negative",
+        noticesAcknowledged: [],
+        synthetic: true,
+      }),
+    ).rejects.toThrow();
+  });
+
+  it("rejects verification assertions whose kind differs from the case", async () => {
+    await expect(
+      db.insert(verificationAssertions).values({
+        id: "vassert-ostt-synth-kind-mismatch",
+        caseId: "vcase-ostt-synth-ada-contact",
+        kind: "eligibility",
+        assertionSummary: "Synthetic kind mismatch must fail.",
       }),
     ).rejects.toThrow();
   });

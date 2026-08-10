@@ -33,7 +33,7 @@ import { PublicDemoPersistenceAdapter } from "@/lib/adapters/persistence";
 import { StubVerificationAdapter } from "@/lib/adapters/verification";
 import type { AppMode } from "@/lib/adapters/types";
 
-/** Resolve safe public-demo adapters. Gated implementations arrive in 2.3–2.4. */
+/** Resolve safe public-demo adapters. Gated auth uses AuthService + Auth.js in 2.4. */
 export function createPublicDemoAdapters() {
   return {
     mode: "public-demo" as AppMode,

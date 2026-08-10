@@ -5,10 +5,16 @@ export type AuthSession = {
   lifecycleState: AccountLifecycleState;
   /** Synthetic marker for test/demo accounts — real participants must be false. */
   synthetic: boolean;
+  sessionId: string;
 };
 
 export type InviteAcceptanceInput = {
   inviteToken: string;
+  contactChannel: string;
+};
+
+export type ChallengeSent = {
+  status: "challenge_sent";
   contactChannel: string;
 };
 
@@ -20,7 +26,10 @@ export interface AuthAdapter {
   getSession(): Promise<AdapterResult<AuthSession | null>>;
   acceptInvite(
     input: InviteAcceptanceInput,
-  ): Promise<AdapterResult<AuthSession>>;
+  ): Promise<AdapterResult<ChallengeSent>>;
+  completeChallenge(token: string): Promise<AdapterResult<AuthSession>>;
+  requestSignIn(contactChannel: string): Promise<AdapterResult<ChallengeSent>>;
+  requestRecovery(contactChannel: string): Promise<AdapterResult<ChallengeSent>>;
   signOut(): Promise<AdapterResult<true>>;
   revokeAllSessions(accountId: string): Promise<AdapterResult<true>>;
 }
@@ -34,7 +43,37 @@ export class PublicDemoAuthAdapter implements AuthAdapter {
 
   async acceptInvite(
     _input: InviteAcceptanceInput,
+  ): Promise<AdapterResult<ChallengeSent>> {
+    return {
+      ok: false,
+      error: "Authentication is disabled in public-demo mode",
+      code: "PUBLIC_DEMO_NO_AUTH",
+    };
+  }
+
+  async completeChallenge(
+    _token: string,
   ): Promise<AdapterResult<AuthSession>> {
+    return {
+      ok: false,
+      error: "Authentication is disabled in public-demo mode",
+      code: "PUBLIC_DEMO_NO_AUTH",
+    };
+  }
+
+  async requestSignIn(
+    _contactChannel: string,
+  ): Promise<AdapterResult<ChallengeSent>> {
+    return {
+      ok: false,
+      error: "Authentication is disabled in public-demo mode",
+      code: "PUBLIC_DEMO_NO_AUTH",
+    };
+  }
+
+  async requestRecovery(
+    _contactChannel: string,
+  ): Promise<AdapterResult<ChallengeSent>> {
     return {
       ok: false,
       error: "Authentication is disabled in public-demo mode",

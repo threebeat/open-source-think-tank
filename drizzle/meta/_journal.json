@@ -8,6 +8,20 @@
       "when": 1786304004436,
       "tag": "0000_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786305281208,
+      "tag": "0001_constraints_immutability",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786305852245,
+      "tag": "0002_auth_sessions_challenges",
+      "breakpoints": true
     }
   ]
 }

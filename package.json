@@ -10,6 +10,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "npm run build && playwright test",
+    "test:e2e:gated": "npm run db:up && node scripts/gated-e2e-prepare.mjs && npm run build && playwright test -c playwright.gated.config.ts",
+    "db:seed": "tsx scripts/seed-synthetic.ts",
     "capture:screenshots": "node scripts/capture-presentation-backup.mjs",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
@@ -24,6 +26,7 @@
     "drizzle-orm": "^0.45.2",
     "lucide-react": "^1.30.0",
     "next": "16.3.0",
+    "next-auth": "^5.0.0-beta.32",
     "postgres": "^3.4.9",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -50,6 +53,7 @@
     "eslint-config-next": "16.3.0",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4",
+    "tsx": "^4.23.11",
     "typescript": "^5",
     "vitest": "^4.1.10"
   }
