@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 
 import { legalHolds } from "@/db/schema";
 import type { FoundationDb } from "@/db/types";
@@ -8,6 +8,11 @@ import { newEntityId } from "@/lib/auth/tokens";
 import { authorizeCapability } from "@/lib/authz/authorize-capability";
 import { loadPrincipal } from "@/lib/authz/load-principal";
 import { assertEnvironmentSafe } from "@/lib/env/app-mode";
+import {
+  lockApprovedDualControl,
+  markDualControlExecuted,
+} from "@/lib/privacy/dual-control";
+import { lockPrivacySubject } from "@/lib/privacy/subject-lock";
 
 export async function hasActiveLegalHold(
   db: FoundationDb,
@@ -62,45 +67,82 @@ export async function placeLegalHold(
     return { ok: false, error: decision.error, code: decision.code };
   }
 
-  if (await hasActiveLegalHold(db, input.subjectType, input.subjectId)) {
+  const subjectType = input.subjectType.trim();
+  const subjectId = input.subjectId.trim();
+  const id = newEntityId("hold");
+  const now = new Date();
+
+  try {
+    return await db.transaction(async (tx) => {
+      await lockPrivacySubject(tx, subjectType, subjectId);
+
+      const [existing] = await tx
+        .select({ id: legalHolds.id })
+        .from(legalHolds)
+        .where(
+          and(
+            eq(legalHolds.subjectType, subjectType),
+            eq(legalHolds.subjectId, subjectId),
+            isNull(legalHolds.releasedAt),
+          ),
+        )
+        .limit(1);
+      if (existing) {
+        return {
+          ok: false as const,
+          error: "Active legal hold already exists for subject",
+          code: "LEGAL_HOLD_EXISTS",
+        };
+      }
+
+      await tx.insert(legalHolds).values({
+        id,
+        subjectType,
+        subjectId,
+        reason: input.reason.trim(),
+        placedByAccountId: input.actorAccountId,
+        placedAt: now,
+        synthetic: decision.principal.synthetic,
+      });
+
+      await appendAuthAudit(tx, {
+        actorRole: "administrator",
+        actorAccountId: input.actorAccountId,
+        action: "privacy.legal_hold_placed",
+        subjectType,
+        subjectId,
+        summary: "Legal hold placed (staff-restricted).",
+        reason: input.reason.trim(),
+        privatePayload: { holdId: id },
+        synthetic: decision.principal.synthetic,
+        at: now,
+      });
+
+      return { ok: true as const, value: { id } };
+    });
+  } catch (error) {
     return {
       ok: false,
-      error: "Active legal hold already exists for subject",
-      code: "LEGAL_HOLD_EXISTS",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Legal hold placement failed and was rolled back",
+      code: "LEGAL_HOLD_TX_FAILED",
     };
   }
-
-  const id = newEntityId("hold");
-  await db.insert(legalHolds).values({
-    id,
-    subjectType: input.subjectType.trim(),
-    subjectId: input.subjectId.trim(),
-    reason: input.reason.trim(),
-    placedByAccountId: input.actorAccountId,
-    synthetic: decision.principal.synthetic,
-  });
-
-  await appendAuthAudit(db, {
-    actorRole: "administrator",
-    actorAccountId: input.actorAccountId,
-    action: "privacy.legal_hold_placed",
-    subjectType: input.subjectType.trim(),
-    subjectId: input.subjectId.trim(),
-    summary: "Legal hold placed (staff-restricted).",
-    reason: input.reason.trim(),
-    privatePayload: { holdId: id },
-    synthetic: decision.principal.synthetic,
-  });
-
-  return { ok: true, value: { id } };
 }
 
+/**
+ * Release requires an approved dual-control request whose payload matches
+ * `{ holdId }` exactly. Claim + release + audit are one transaction.
+ */
 export async function releaseLegalHold(
   db: FoundationDb,
   input: {
     actorAccountId: string;
     holdId: string;
     reason: string;
+    dualControlRequestId: string;
   },
 ): Promise<AdapterResult<{ id: string }>> {
   if (assertEnvironmentSafe() !== "gated") {
@@ -128,38 +170,79 @@ export async function releaseLegalHold(
     return { ok: false, error: decision.error, code: decision.code };
   }
 
-  const [row] = await db
-    .select()
-    .from(legalHolds)
-    .where(and(eq(legalHolds.id, input.holdId), isNull(legalHolds.releasedAt)))
-    .limit(1);
-  if (!row) {
+  try {
+    return await db.transaction(async (tx) => {
+      // Dual-control first so replay surfaces ALREADY_EXECUTED before hold lookup.
+      const locked = await lockApprovedDualControl(tx, {
+        dualControlRequestId: input.dualControlRequestId,
+        action: "privacy.release_legal_hold",
+        expectedPayload: { holdId: input.holdId },
+      });
+      if (!locked.ok) {
+        return locked;
+      }
+
+      await tx.execute(
+        sql`SELECT id FROM legal_holds WHERE id = ${input.holdId} FOR UPDATE`,
+      );
+
+      const [row] = await tx
+        .select()
+        .from(legalHolds)
+        .where(
+          and(eq(legalHolds.id, input.holdId), isNull(legalHolds.releasedAt)),
+        )
+        .limit(1);
+      if (!row) {
+        return {
+          ok: false as const,
+          error: "Active legal hold not found",
+          code: "LEGAL_HOLD_NOT_FOUND",
+        };
+      }
+
+      await lockPrivacySubject(tx, row.subjectType, row.subjectId);
+
+      const claim = await markDualControlExecuted(tx, locked.value.id);
+      if (!claim.ok) {
+        return claim;
+      }
+
+      const now = new Date();
+      await tx
+        .update(legalHolds)
+        .set({
+          releasedAt: now,
+          releasedByAccountId: input.actorAccountId,
+        })
+        .where(eq(legalHolds.id, row.id));
+
+      await appendAuthAudit(tx, {
+        actorRole: "administrator",
+        actorAccountId: input.actorAccountId,
+        action: "privacy.legal_hold_released",
+        subjectType: row.subjectType,
+        subjectId: row.subjectId,
+        summary: "Legal hold released (staff-restricted).",
+        reason: input.reason.trim(),
+        privatePayload: {
+          holdId: row.id,
+          dualControlRequestId: claim.value.id,
+        },
+        synthetic: decision.principal.synthetic && row.synthetic,
+        at: now,
+      });
+
+      return { ok: true as const, value: { id: row.id } };
+    });
+  } catch (error) {
     return {
       ok: false,
-      error: "Active legal hold not found",
-      code: "LEGAL_HOLD_NOT_FOUND",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Legal hold release failed and was rolled back",
+      code: "LEGAL_HOLD_TX_FAILED",
     };
   }
-
-  await db
-    .update(legalHolds)
-    .set({
-      releasedAt: new Date(),
-      releasedByAccountId: input.actorAccountId,
-    })
-    .where(eq(legalHolds.id, row.id));
-
-  await appendAuthAudit(db, {
-    actorRole: "administrator",
-    actorAccountId: input.actorAccountId,
-    action: "privacy.legal_hold_released",
-    subjectType: row.subjectType,
-    subjectId: row.subjectId,
-    summary: "Legal hold released (staff-restricted).",
-    reason: input.reason.trim(),
-    privatePayload: { holdId: row.id },
-    synthetic: decision.principal.synthetic && row.synthetic,
-  });
-
-  return { ok: true, value: { id: row.id } };
 }

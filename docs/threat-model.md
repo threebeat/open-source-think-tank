@@ -41,7 +41,8 @@ Publication of private contact, location, or identity details.
 Uneven statement or evidence moderation changes outcomes.
 
 - **Phase 1:** Moderation is not live; evidence-review states are fixture-authored and labeled.
-- **Later:** Dual control for sensitive actions, appeal paths, published moderation reasons, audit events for staff actions.
+- **Phase 2 (partial):** Dual-control claim is enforced for legal-hold release and account closure; staff audit events append to the institutional ledger.
+- **Later:** Dual control for moderation and other sensitive actions; appeal paths; published moderation reasons.
 
 ### Administrator abuse
 
@@ -85,7 +86,7 @@ Controls below are **implemented** through 2.11 unless noted as still blocked.
 | Audit tampering by ordinary roles | Append-only ledger; continuity digests over institutional fields; public projections allowlisted (2.9) |
 | Cross-account export leakage | Own-account export aborts if another `account-*` id appears (2.11) |
 | Silent destruction on closure | Closure retains assent/audit; legal holds block closure/purge (2.11) |
-| Single-admin high-impact mistakes | Dual-control request/approve for selected ops; self-approve denied ([incident-response.md](./incident-response.md)) |
+| Single-admin high-impact mistakes | Dual-control request/approve/claim for hold release and closure; execution consumes an approved unexpired matching request in the same transaction; self-approve denied ([incident-response.md](./incident-response.md)) |
 | Email / DB vendor abuse | DPA/region/retention checklist before production keys; managed DB host still blocked pending addendum |
 
 ## Explicit non-goals for Phase 1 / Phase 2 public-demo

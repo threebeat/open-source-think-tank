@@ -2,9 +2,9 @@
 
 **Status:** Active work-package source for Phase 2  
 **Baseline:** Phase 1 demonstration release tag [`phase-1-demonstration`](https://github.com/threebeat/open-source-think-tank/releases/tag/phase-1-demonstration) at commit `33ff0cc`  
-**Current package:** **2.11 complete** — next **2.12** after approval. Managed Postgres host and production email vendor remain blocked pending addenda.
+**Current package:** **2.12 complete** — closed readiness review and [phase-2-handoff.md](./phase-2-handoff.md) written. **Stop for human approval before tagging** a foundation release. Managed Postgres host and production email vendor remain blocked pending addenda; gated E2E not re-run here (Docker unavailable).
 
-Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [open-questions.md](./open-questions.md), [legal-questions.md](./legal-questions.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [phase-1-handoff.md](./phase-1-handoff.md)
+Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [open-questions.md](./open-questions.md), [legal-questions.md](./legal-questions.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [phase-1-handoff.md](./phase-1-handoff.md), [phase-2-handoff.md](./phase-2-handoff.md)
 
 ---
 
@@ -491,4 +491,4 @@ When Phase 2 work is active:
 3. Prefer “account holder” / “community participant” language; never invent statutory membership.
 4. After each package: report files changed, commands run, failed checks, and unresolved decisions; stop for approval.
 
-Next package after 2.11 approval: **2.12 — Closed readiness review and handoff**.
+Phase 2 engineering packages **2.1–2.12** are complete pending human approval of [phase-2-handoff.md](./phase-2-handoff.md). Do not start Phase 3 work or tag a foundation release without that approval.
