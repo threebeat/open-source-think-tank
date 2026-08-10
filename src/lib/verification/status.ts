@@ -4,7 +4,6 @@ import { verificationCases } from "@/db/schema";
 import type { FoundationDb } from "@/db/types";
 import type { VerificationAssertionKind } from "@/lib/adapters/verification";
 import type { Capability } from "@/lib/authz/types";
-import { expireDueCases } from "@/lib/verification/cases";
 import {
   ASSURANCE_LEVELS,
   assuranceForCapability,
@@ -26,12 +25,27 @@ export type VerificationStatusView = {
   /** Never includes evidence pointers or raw artifacts. */
 };
 
+function effectiveStatus(
+  status: VerificationStatusView["status"] | "approved",
+  expiresAt: Date | null,
+  now: Date,
+): VerificationStatusView["status"] {
+  if (
+    status === "approved" &&
+    expiresAt &&
+    expiresAt.getTime() <= now.getTime()
+  ) {
+    return "expired";
+  }
+  return status;
+}
+
 /** Status-only view for an account — safe for account-private surfaces. */
 export async function listAccountVerificationStatus(
   db: FoundationDb,
   accountId: string,
 ): Promise<VerificationStatusView[]> {
-  await expireDueCases(db);
+  const now = new Date();
   const rows = await db
     .select({
       id: verificationCases.id,
@@ -51,7 +65,7 @@ export async function listAccountVerificationStatus(
     }
     byKind.set(row.kind, {
       kind: row.kind,
-      status: row.status,
+      status: effectiveStatus(row.status, row.expiresAt, now),
       caseId: row.id,
       expiresAt: row.expiresAt?.toISOString() ?? null,
     });
@@ -64,7 +78,6 @@ export async function getKindStatus(
   accountId: string,
   kind: VerificationAssertionKind,
 ): Promise<VerificationStatusView["status"]> {
-  await expireDueCases(db);
   const now = new Date();
   const [open] = await db
     .select()
@@ -103,14 +116,16 @@ export async function getKindStatus(
     .orderBy(desc(verificationCases.updatedAt))
     .limit(1);
 
-  return latest?.status ?? "none";
+  if (!latest) {
+    return "none";
+  }
+  return effectiveStatus(latest.status, latest.expiresAt, now);
 }
 
 export async function approvedKindsForAccount(
   db: FoundationDb,
   accountId: string,
 ): Promise<Set<VerificationAssertionKind>> {
-  await expireDueCases(db);
   const now = new Date();
   const rows = await db
     .select()

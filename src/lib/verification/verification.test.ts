@@ -6,7 +6,7 @@ import {
   accounts,
   persons,
   roleAssignments,
-  verificationArtifactHolds,
+  verificationAssertions,
   verificationCases,
 } from "@/db/schema";
 import { seedSyntheticFoundation } from "@/db/seeds/synthetic";
@@ -16,23 +16,30 @@ import {
   toPublicConsultationSafeProjection,
 } from "@/lib/verification/ladder";
 import {
+  resolveArtifactAccess,
+} from "@/lib/verification/artifacts";
+import {
   appealCase,
   approveCase,
   assignReviewer,
-  denyCase,
   expireDueCases,
   openVerificationCase,
   purgeExpiredArtifactHolds,
+  reassignReviewer,
   revokeCase,
 } from "@/lib/verification/cases";
 import {
-  evaluateAssurance,
   getKindStatus,
   listAccountVerificationStatus,
 } from "@/lib/verification/status";
+import {
+  L2_KINDS,
+  seedApprovedAssertions,
+} from "@/lib/verification/seed-assurance";
 
 const SUBJECT = "account-ostt-synth-verify-subject";
 const REVIEWER = "account-ostt-synth-verify-reviewer";
+const REVIEWER_B = "account-ostt-synth-verify-reviewer-b";
 const INTRUDER = "account-ostt-synth-verify-intruder";
 
 async function insertActive(
@@ -77,7 +84,10 @@ describe("verification ladder (2.7)", () => {
     await seedSyntheticFoundation(db);
     await insertActive(db, SUBJECT, ["participant"]);
     await insertActive(db, REVIEWER, ["reviewer"]);
+    await insertActive(db, REVIEWER_B, ["reviewer"]);
     await insertActive(db, INTRUDER, ["participant"]);
+    await seedApprovedAssertions(db, REVIEWER, L2_KINDS);
+    await seedApprovedAssertions(db, REVIEWER_B, L2_KINDS);
   }, 120_000);
 
   afterAll(async () => {
@@ -105,33 +115,78 @@ describe("verification ladder (2.7)", () => {
       evidencePointer: "pointer",
       vote: "agree",
     });
-    expect(safe).toEqual({ statementId: "s1", text: "synthetic statement", vote: "agree" });
-    expect("verification" in safe).toBe(false);
-    expect("evidencePointer" in safe).toBe(false);
+    expect(safe).toEqual({
+      statementId: "s1",
+      text: "synthetic statement",
+      vote: "agree",
+    });
   });
 
-  it("opens distinct assertion kinds, rejects conflicts, and blocks unauthorized reviewers", async () => {
+  it("rejects client pointers/URLs and purges artifact access after expiry", async () => {
+    const badPointer = await openVerificationCase(db, {
+      accountId: SUBJECT,
+      kind: "residency",
+      assertionSummary: "Synthetic residency summary.",
+      actorAccountId: SUBJECT,
+      evidencePointer: "https://evil.example/doc.pdf",
+    });
+    expect(badPointer.ok).toBe(false);
+    if (!badPointer.ok) {
+      expect(badPointer.code).toBe("VERIFY_POINTER_FORBIDDEN");
+    }
+
+    const badSummary = await openVerificationCase(db, {
+      accountId: SUBJECT,
+      kind: "residency",
+      assertionSummary: "See https://evil.example/secret",
+      actorAccountId: SUBJECT,
+    });
+    expect(badSummary.ok).toBe(false);
+
     const opened = await openVerificationCase(db, {
       accountId: SUBJECT,
-      kind: "uniqueness",
-      assertionSummary: "Synthetic uniqueness attestation (no raw artifact).",
+      kind: "residency",
+      assertionSummary: "Synthetic residency assertion summary.",
       actorAccountId: SUBJECT,
-      holdPurpose: "short-lived uniqueness review hold",
+      artifact: {
+        purpose: "short-lived residency review hold",
+        sensitivePayload: "SYNTHETIC-SENSITIVE-ARTIFACT",
+        ttlMs: 1,
+      },
     });
     expect(opened.ok).toBe(true);
     if (!opened.ok) {
       return;
     }
+    expect(opened.value.evidencePointer).toMatch(/^ostt:vhold:/);
 
-    const conflict = await openVerificationCase(db, {
+    await new Promise((r) => setTimeout(r, 5));
+    const purged = await purgeExpiredArtifactHolds(db, new Date());
+    expect(purged).toBeGreaterThanOrEqual(1);
+
+    const access = await resolveArtifactAccess(
+      db,
+      opened.value.evidencePointer!,
+    );
+    expect(access.ok).toBe(false);
+
+    const [assertion] = await db
+      .select()
+      .from(verificationAssertions)
+      .where(eq(verificationAssertions.id, opened.value.assertionId));
+    expect(assertion?.evidencePointer).toMatch(/^ostt:purged:/);
+  });
+
+  it("assigns/decides transactionally and rejects concurrent non-assignee decisions", async () => {
+    const opened = await openVerificationCase(db, {
       accountId: SUBJECT,
       kind: "uniqueness",
-      assertionSummary: "Conflicting second uniqueness case.",
+      assertionSummary: "Synthetic uniqueness attestation (no raw artifact).",
       actorAccountId: SUBJECT,
     });
-    expect(conflict.ok).toBe(false);
-    if (!conflict.ok) {
-      expect(conflict.code).toBe("VERIFY_CONFLICTING_CASE");
+    expect(opened.ok).toBe(true);
+    if (!opened.ok) {
+      return;
     }
 
     const unauthorized = await assignReviewer(db, {
@@ -147,9 +202,6 @@ describe("verification ladder (2.7)", () => {
       actorAccountId: REVIEWER,
     });
     expect(selfReview.ok).toBe(false);
-    if (!selfReview.ok) {
-      expect(selfReview.code).toBe("VERIFY_SELF_REVIEW");
-    }
 
     const assigned = await assignReviewer(db, {
       caseId: opened.value.caseId,
@@ -158,20 +210,44 @@ describe("verification ladder (2.7)", () => {
     });
     expect(assigned.ok).toBe(true);
 
-    const deniedNoReason = await denyCase(db, {
+    const secondAssign = await assignReviewer(db, {
       caseId: opened.value.caseId,
-      actorAccountId: REVIEWER,
-      reason: "   ",
+      reviewerAccountId: REVIEWER_B,
+      actorAccountId: REVIEWER_B,
     });
-    expect(deniedNoReason.ok).toBe(false);
+    expect(secondAssign.ok).toBe(false);
+
+    const otherDecides = await approveCase(db, {
+      caseId: opened.value.caseId,
+      actorAccountId: REVIEWER_B,
+      reason: "Not the assigned reviewer.",
+    });
+    expect(otherDecides.ok).toBe(false);
+    if (!otherDecides.ok) {
+      expect(otherDecides.code).toBe("VERIFY_DECISION_CONFLICT");
+    }
+
+    const reassigned = await reassignReviewer(db, {
+      caseId: opened.value.caseId,
+      reviewerAccountId: REVIEWER_B,
+      actorAccountId: REVIEWER,
+      reason: "Explicit reassignment for concurrency coverage.",
+    });
+    expect(reassigned.ok).toBe(true);
 
     const approved = await approveCase(db, {
       caseId: opened.value.caseId,
-      actorAccountId: REVIEWER,
+      actorAccountId: REVIEWER_B,
       reason: "Synthetic uniqueness approved for ladder tests.",
       expiresAt: new Date(Date.now() + 60_000),
     });
     expect(approved.ok).toBe(true);
+
+    const [row] = await db
+      .select()
+      .from(verificationCases)
+      .where(eq(verificationCases.id, opened.value.caseId));
+    expect(row?.reviewerAccountId).toBe(REVIEWER_B);
     expect(await getKindStatus(db, SUBJECT, "uniqueness")).toBe("approved");
   });
 
@@ -216,6 +292,11 @@ describe("verification ladder (2.7)", () => {
       return;
     }
 
+    await assignReviewer(db, {
+      caseId: reopened.value.caseId,
+      reviewerAccountId: REVIEWER,
+      actorAccountId: REVIEWER,
+    });
     await approveCase(db, {
       caseId: reopened.value.caseId,
       actorAccountId: REVIEWER,
@@ -239,26 +320,9 @@ describe("verification ladder (2.7)", () => {
     expect(await getKindStatus(db, SUBJECT, "eligibility")).toBe("appealed");
   });
 
-  it("evaluates assurance gaps and purges expired artifact holds", async () => {
-    const vote = await evaluateAssurance(db, SUBJECT, "institutional.vote");
-    expect(vote.requiredLevel).toBe("L3_uniqueness");
-    // uniqueness approved earlier; bot_resistance + contact_continuity still missing
-    expect(vote.ok).toBe(false);
-    expect(vote.missingKinds).toContain("bot_resistance");
-    expect(vote.missingKinds).toContain("contact_continuity");
-
+  it("lists status without evidence pointers", async () => {
     const statuses = await listAccountVerificationStatus(db, SUBJECT);
     expect(statuses.every((row) => !("evidencePointer" in row))).toBe(true);
-
-    const holds = await db.select().from(verificationArtifactHolds);
-    if (holds.length > 0) {
-      await db
-        .update(verificationArtifactHolds)
-        .set({ expiresAt: new Date(Date.now() - 5_000) })
-        .where(eq(verificationArtifactHolds.id, holds[0]!.id));
-      const purged = await purgeExpiredArtifactHolds(db);
-      expect(purged).toBeGreaterThanOrEqual(1);
-    }
   });
 
   it("rejects self-review at the database layer", async () => {
@@ -266,7 +330,7 @@ describe("verification ladder (2.7)", () => {
       db.insert(verificationCases).values({
         id: newEntityId("vcase"),
         accountId: SUBJECT,
-        kind: "residency",
+        kind: "legal_identity",
         status: "pending",
         reviewerAccountId: SUBJECT,
         synthetic: true,

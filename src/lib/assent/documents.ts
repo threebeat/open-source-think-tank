@@ -8,7 +8,7 @@ import type { AdapterResult } from "@/lib/adapters/types";
 import { appendAuthAudit } from "@/lib/auth/audit-log";
 import { newEntityId } from "@/lib/auth/tokens";
 import { containsNotLegallyReviewedMarker } from "@/lib/assent/legal-review";
-import { authorize } from "@/lib/authz/authorize";
+import { authorizeCapability } from "@/lib/authz/authorize-capability";
 import { loadPrincipal } from "@/lib/authz/load-principal";
 
 export type DocumentKind =
@@ -33,7 +33,11 @@ export async function createDraftDocument(
   },
 ): Promise<AdapterResult<{ id: string; contentHash: string }>> {
   const actor = await loadPrincipal(db, input.actorAccountId);
-  const decision = authorize(actor, "documents.publish");
+  const decision = await authorizeCapability(
+    db,
+    actor,
+    "documents.publish",
+  );
   if (!decision.ok) {
     return { ok: false, error: decision.error, code: decision.code };
   }
@@ -75,7 +79,11 @@ export async function markCounselReviewed(
   },
 ): Promise<AdapterResult<true>> {
   const actor = await loadPrincipal(db, input.actorAccountId);
-  const decision = authorize(actor, "documents.publish");
+  const decision = await authorizeCapability(
+    db,
+    actor,
+    "documents.publish",
+  );
   if (!decision.ok) {
     return { ok: false, error: decision.error, code: decision.code };
   }
@@ -133,7 +141,11 @@ export async function publishDocument(
   },
 ): Promise<AdapterResult<true>> {
   const actor = await loadPrincipal(db, input.actorAccountId);
-  const decision = authorize(actor, "documents.publish");
+  const decision = await authorizeCapability(
+    db,
+    actor,
+    "documents.publish",
+  );
   if (!decision.ok) {
     return { ok: false, error: decision.error, code: decision.code };
   }

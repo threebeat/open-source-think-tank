@@ -284,7 +284,7 @@ describe("AuthService lifecycle (synthetic)", () => {
   it("refuses lifecycle transition to active in 2.4", () => {
     expect(() =>
       assertAllowedLifecycleTransition("pending_onboarding", "active"),
-    ).toThrow(/owned by 2\.8/);
+    ).toThrow(/activateAccount \(Work Package 2\.8\)/);
   });
 
   it("does not leave open challenges stranded after successful completion", async () => {

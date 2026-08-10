@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 2  
 **Baseline:** Phase 1 demonstration release tag [`phase-1-demonstration`](https://github.com/threebeat/open-source-think-tank/releases/tag/phase-1-demonstration) at commit `33ff0cc`  
-**Current package:** **2.7 complete** — next **2.8** after approval. Managed Postgres host and production email vendor remain blocked pending addenda.
+**Current package:** **2.8 complete** — next **2.9** after approval. Managed Postgres host and production email vendor remain blocked pending addenda.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [open-questions.md](./open-questions.md), [legal-questions.md](./legal-questions.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [phase-1-handoff.md](./phase-1-handoff.md)
 
@@ -340,7 +340,7 @@ Stop Phase 2 implementation and escalate to humans if:
 
 ### Work package 2.7 — Implement the verification ladder
 
-**Status:** Complete for configurable assurance levels (`docs/verification-ladder.md`), distinct assertion kinds, capability→assurance map, status-only storage with short-lived artifact holds, reviewer assign/approve/deny/expire/revoke/appeal, and tests for expiration, revocation, conflicting cases, and unauthorized/self-review. Identity-vendor selection remains blocked in §4. Counsel gates LQ10–14 remain blocking. Real participant `active` transition remains owned by **2.8**.
+**Status:** Complete for configurable assurance levels (`docs/verification-ladder.md`), `authorizeCapability` enforcement, concurrency-safe reviewer transitions, approved `ostt:vhold:` artifact pointers with purge tombstones, and tests for assurance / expiration / revocation / conflicts / unauthorized review. Identity-vendor selection remains blocked in §4. Counsel gates LQ10–14 remain blocking.
 
 1. Define configurable assurance levels without assuming government ID is required.
 2. Keep bot resistance, contact continuity, uniqueness, eligibility, residency, and legal identity as distinct assertions.
@@ -363,6 +363,8 @@ Stop Phase 2 implementation and escalate to humans if:
 ---
 
 ### Work package 2.8 — Build invite-only onboarding
+
+**Status:** Complete for gated invite-only `/join`, onboarding progress UI, sole `pending_onboarding` → `active` path (`activateAccount`) gated on published-document assent + L3 uniqueness + eligibility assertions, declined/incomplete blocking reasons, and staff-redacted invitation/onboarding queues (`onboarding.staff_read`). Counsel gates on assent/eligibility/membership remain blocking. Public-demo `/join` preview unchanged; public recruitment CTA remains disabled.
 
 1. Replace the join preview only in the gated Phase 2 environment.
 2. Implement invitation, eligibility assertions, document review, assent, applicable verification steps, and the **only** production transition from `pending_onboarding` → `active`.
@@ -483,4 +485,4 @@ When Phase 2 work is active:
 3. Prefer “account holder” / “community participant” language; never invent statutory membership.
 4. After each package: report files changed, commands run, failed checks, and unresolved decisions; stop for approval.
 
-Next package after 2.7 approval: **2.8 — Build invite-only onboarding**.
+Next package after 2.8 approval: **2.9 — Build the audit ledger**.

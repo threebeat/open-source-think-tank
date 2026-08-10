@@ -5,7 +5,7 @@ import type { FoundationDb } from "@/db/types";
 import type { AdapterResult } from "@/lib/adapters/types";
 import { appendAuthAudit } from "@/lib/auth/audit-log";
 import { newEntityId } from "@/lib/auth/tokens";
-import { authorize } from "@/lib/authz/authorize";
+import { authorizeCapability } from "@/lib/authz/authorize-capability";
 import { loadPrincipal } from "@/lib/authz/load-principal";
 import { classifyMultiAccountSynthetic } from "@/lib/authz/synthetic-classification";
 import type { CouncilRole, PlatformRole } from "@/lib/authz/types";
@@ -46,7 +46,11 @@ export async function grantPlatformRole(
   }
 
   const actor = await loadPrincipal(db, input.actorAccountId);
-  const decision = authorize(actor, "roles.grant_platform");
+  const decision = await authorizeCapability(
+    db,
+    actor,
+    "roles.grant_platform",
+  );
   if (!decision.ok) {
     return { ok: false, error: decision.error, code: decision.code };
   }
@@ -139,7 +143,11 @@ export async function grantCouncilSeat(
   }
 
   const actor = await loadPrincipal(db, input.actorAccountId);
-  const decision = authorize(actor, "roles.grant_council");
+  const decision = await authorizeCapability(
+    db,
+    actor,
+    "roles.grant_council",
+  );
   if (!decision.ok) {
     return { ok: false, error: decision.error, code: decision.code };
   }
@@ -221,7 +229,11 @@ export async function revokePlatformRole(
   }
 
   const actor = await loadPrincipal(db, input.actorAccountId);
-  const decision = authorize(actor, "roles.revoke_platform");
+  const decision = await authorizeCapability(
+    db,
+    actor,
+    "roles.revoke_platform",
+  );
   if (!decision.ok) {
     return { ok: false, error: decision.error, code: decision.code };
   }
@@ -378,7 +390,11 @@ export async function revokeCouncilSeat(
   }
 
   const actor = await loadPrincipal(db, input.actorAccountId);
-  const decision = authorize(actor, "roles.revoke_council");
+  const decision = await authorizeCapability(
+    db,
+    actor,
+    "roles.revoke_council",
+  );
   if (!decision.ok) {
     return { ok: false, error: decision.error, code: decision.code };
   }

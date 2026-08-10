@@ -35,7 +35,14 @@ Source of truth: `src/lib/verification/ladder.ts`.
 | `documents.publish` / role grants/revokes / `moderation.act` | L3_uniqueness | Staff/admin impact |
 | `verification.review_case` / `audit.read_restricted` | L2_contact_continuity | Staff continuity |
 
-Role authorization (`authorize`) and assurance evaluation (`evaluateAssurance`) are separate gates. Production activation into `active` remains owned by package **2.8**.
+Protected actions must call `authorizeCapability` (role/lifecycle **and** `evaluateAssurance`). Production activation into `active` is owned by package **2.8** and requires published-document assent plus L3 + eligibility approvals.
+
+## Artifact pointers
+
+- Server-minted scheme only: `ostt:vhold:<holdId>`
+- After purge: tombstone `ostt:purged:<holdId>`; payload row cleared (`deleted_at`)
+- Client-supplied URLs, JWTs, raw payloads, or arbitrary pointers are rejected
+- Retention metadata (`purpose`, `retention_policy`, `expires_at`) is required whenever a payload exists
 
 ## Reviewer workflow
 

@@ -55,6 +55,10 @@ export default async function AccountPage() {
         </div>
       </dl>
       <p className="text-sm">
+        <a className="underline" href="/account/onboarding">
+          Onboarding progress
+        </a>
+        {" · "}
         <a className="underline" href="/account/assent">
           View assent history
         </a>

@@ -24,6 +24,10 @@ import {
   mapActiveAccountToApplicableDocuments,
 } from "@/lib/assent/status";
 import { newEntityId } from "@/lib/auth/tokens";
+import {
+  L3_KINDS,
+  seedApprovedAssertions,
+} from "@/lib/verification/seed-assurance";
 
 const ADMIN_ID = "account-ostt-synth-doc-admin";
 
@@ -52,6 +56,7 @@ async function insertActiveAdmin(
     grantedByLabel: "ostt-synth-assent-test",
     reason: "Publish documents in assent tests.",
   });
+  await seedApprovedAssertions(db, ADMIN_ID, L3_KINDS);
 }
 
 describe("versioned documents and assent (2.6)", () => {

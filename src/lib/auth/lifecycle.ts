@@ -2,7 +2,7 @@ import type { AccountLifecycleState } from "@/lib/adapters/types";
 
 /**
  * 2.4 may move invited → pending_onboarding after contact verification.
- * Transition to `active` is owned by 2.8 — never performed here.
+ * Transition to `active` is owned by 2.8 (`assertActivationTransition` only).
  */
 export function assertAllowedLifecycleTransition(
   from: AccountLifecycleState,
@@ -10,7 +10,7 @@ export function assertAllowedLifecycleTransition(
 ): void {
   if (to === "active") {
     throw new Error(
-      "Refusing lifecycle transition to active in Work Package 2.4 (owned by 2.8).",
+      "Refusing lifecycle transition to active outside activateAccount (Work Package 2.8).",
     );
   }
   if (from === "invited" && to === "pending_onboarding") {
@@ -19,5 +19,20 @@ export function assertAllowedLifecycleTransition(
   if (from === to) {
     return;
   }
-  throw new Error(`Unsupported lifecycle transition ${from} → ${to} in 2.4`);
+  throw new Error(`Unsupported lifecycle transition ${from} → ${to}`);
+}
+
+/** Sole allowed production path into active (called only from onboarding activate). */
+export function assertActivationTransition(
+  from: AccountLifecycleState,
+  to: AccountLifecycleState,
+): void {
+  if (to !== "active") {
+    throw new Error(`assertActivationTransition only targets active (got ${to})`);
+  }
+  if (from !== "pending_onboarding") {
+    throw new Error(
+      `Activation requires pending_onboarding (got ${from})`,
+    );
+  }
 }

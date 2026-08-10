@@ -26,6 +26,7 @@ export const CAPABILITIES = [
   "roles.grant_council",
   "roles.revoke_council",
   "verification.review_case",
+  "onboarding.staff_read",
   "moderation.act",
   "audit.read_restricted",
   "documents.publish",
@@ -47,4 +48,12 @@ export type AuthzPrincipal = {
 
 export type AuthzDecision =
   | { ok: true; principal: AuthzPrincipal }
-  | { ok: false; code: string; error: string; status: 401 | 403 | 404 };
+  | {
+      ok: false;
+      code: string;
+      error: string;
+      status: 401 | 403 | 404;
+      /** Present when denial is due to missing/expired/revoked assurance. */
+      missingKinds?: string[];
+      requiredLevel?: string;
+    };

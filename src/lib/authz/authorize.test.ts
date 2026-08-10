@@ -25,6 +25,10 @@ import {
   type AuthzPrincipal,
   type Capability,
 } from "@/lib/authz/types";
+import {
+  L3_KINDS,
+  seedApprovedAssertions,
+} from "@/lib/verification/seed-assurance";
 
 async function insertAccount(
   db: Awaited<ReturnType<typeof createTestDatabase>>["db"],
@@ -99,6 +103,9 @@ describe("authorization capability matrix", () => {
       lifecycle: "active",
       roles: ["administrator"],
     });
+    // Role-change services enforce assurance (L3) in addition to roles.
+    await seedApprovedAssertions(db, "account-ostt-synth-admin", L3_KINDS);
+    await seedApprovedAssertions(db, "account-ostt-synth-admin-b", L3_KINDS);
     await insertAccount(db, {
       id: "account-ostt-synth-participant",
       lifecycle: "active",
@@ -220,13 +227,14 @@ describe("authorization capability matrix", () => {
           "roles.grant_platform",
           "roles.revoke_platform",
           "documents.publish",
+          "onboarding.staff_read",
           "institutional.council_deliberation",
           "institutional.council_policy",
         ],
       },
       {
         accountId: "account-ostt-synth-reviewer",
-        allow: ["verification.review_case"],
+        allow: ["verification.review_case", "onboarding.staff_read"],
         deny: [
           "moderation.act",
           "roles.grant_platform",
@@ -261,6 +269,7 @@ describe("authorization capability matrix", () => {
           "roles.grant_council",
           "roles.revoke_council",
           "verification.review_case",
+          "onboarding.staff_read",
           "moderation.act",
           "audit.read_restricted",
           "documents.publish",
@@ -471,6 +480,8 @@ describe("authorization capability matrix", () => {
     expect(classifyMultiAccountSynthetic(false, true)).toBe(false);
     expect(classifyMultiAccountSynthetic(true, false)).toBe(false);
     expect(classifyMultiAccountSynthetic(false, false)).toBe(false);
+
+    await seedApprovedAssertions(db, "account-real-admin", L3_KINDS);
 
     const mixedGrant = await grantPlatformRole(db, {
       actorAccountId: "account-real-admin",

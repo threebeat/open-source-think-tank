@@ -6,6 +6,7 @@ const ACTIVE_ONLY = new Set<Capability>([
   "roles.grant_council",
   "roles.revoke_council",
   "verification.review_case",
+  "onboarding.staff_read",
   "moderation.act",
   "audit.read_restricted",
   "documents.publish",
@@ -91,6 +92,12 @@ export function authorize(
       return { ok: true, principal };
 
     case "verification.review_case":
+      if (!hasPlatform(principal, ["reviewer", "administrator"])) {
+        return deny(capability);
+      }
+      return { ok: true, principal };
+
+    case "onboarding.staff_read":
       if (!hasPlatform(principal, ["reviewer", "administrator"])) {
         return deny(capability);
       }

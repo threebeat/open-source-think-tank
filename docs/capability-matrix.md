@@ -26,6 +26,7 @@ Default decision: **deny**.
 | `roles.grant_council` | active | administrator | — | Requires reason; **actor ≠ subject**; deliberation/policy chosen explicitly |
 | `roles.revoke_council` | active | administrator | — | Requires reason; conditional claim; **actor ≠ subject** |
 | `verification.review_case` | active | reviewer or administrator | — | No raw artifact access in Phase 2; see also assurance map in `docs/verification-ladder.md` |
+| `onboarding.staff_read` | active | reviewer or administrator | — | Redacted invitation/onboarding queues only (2.8) |
 | `moderation.act` | active | moderator or administrator | — | Placeholder action surface for 2.5 tests |
 | `audit.read_restricted` | active | auditor or administrator | — | Staff-restricted ledger read |
 | `documents.publish` | active | administrator | — | Draft → counsel_reviewed → published only; synthetic derived from actor |
@@ -43,6 +44,6 @@ Default decision: **deny**.
 
 ## Enforcement
 
-- UI hiding is never sufficient; every protected route/action calls `authorize(...)` on the server.
+- UI hiding is never sufficient; every protected route/action calls `authorizeCapability(...)` (role + assurance) on the server.
 - Probe routes under `/api/authz/*` exist for automated positive/negative tests.
 - Public-demo mode exposes no authorization APIs (404).

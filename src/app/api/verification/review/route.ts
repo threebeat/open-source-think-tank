@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   }
 
   let body: {
-    action?: "assign" | "approve" | "deny" | "revoke";
+    action?: "assign" | "reassign" | "approve" | "deny" | "revoke";
     caseId?: string;
     reviewerAccountId?: string;
     reason?: string;
@@ -43,6 +43,7 @@ export async function POST(request: Request) {
   const { getGatedDb } = await import("@/lib/auth/runtime");
   const {
     assignReviewer,
+    reassignReviewer,
     approveCase,
     denyCase,
     revokeCase,
@@ -63,6 +64,20 @@ export async function POST(request: Request) {
         caseId: body.caseId,
         reviewerAccountId: body.reviewerAccountId,
         actorAccountId,
+      });
+      break;
+    case "reassign":
+      if (!body.reviewerAccountId?.trim() || !body.reason?.trim()) {
+        return NextResponse.json(
+          { error: "reviewerAccountId and reason are required for reassign" },
+          { status: 400 },
+        );
+      }
+      result = await reassignReviewer(db, {
+        caseId: body.caseId,
+        reviewerAccountId: body.reviewerAccountId,
+        actorAccountId,
+        reason: body.reason,
       });
       break;
     case "approve":

@@ -140,6 +140,7 @@ export const CAPABILITY_ASSURANCE: Partial<
   "roles.grant_council": "L3_uniqueness",
   "roles.revoke_council": "L3_uniqueness",
   "verification.review_case": "L2_contact_continuity",
+  "onboarding.staff_read": "L2_contact_continuity",
   "moderation.act": "L3_uniqueness",
   "audit.read_restricted": "L2_contact_continuity",
 };

@@ -457,34 +457,6 @@ export const verificationCases = pgTable(
   ],
 );
 
-/**
- * Short-lived hold metadata for reviewer workflow. Never stores raw identity
- * document bytes — only a purpose label and expiry for purge.
- */
-export const verificationArtifactHolds = pgTable(
-  "verification_artifact_holds",
-  {
-    id: text("id").primaryKey(),
-    caseId: text("case_id")
-      .notNull()
-      .references(() => verificationCases.id, { onDelete: "cascade" }),
-    purpose: text("purpose").notNull(),
-    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-    purgedAt: timestamp("purged_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (table) => [
-    index("verification_artifact_holds_case_idx").on(table.caseId),
-    index("verification_artifact_holds_expires_idx").on(table.expiresAt),
-    check(
-      "verification_artifact_holds_purpose_nonempty",
-      sql`length(btrim(${table.purpose})) > 0`,
-    ),
-  ],
-);
-
 export const verificationAssertions = pgTable(
   "verification_assertions",
   {
@@ -492,7 +464,10 @@ export const verificationAssertions = pgTable(
     caseId: text("case_id").notNull(),
     kind: verificationKindEnum("kind").notNull(),
     assertionSummary: text("assertion_summary").notNull(),
-    /** Status only — raw artifacts must not be stored in this table. */
+    /**
+     * Approved scheme only: `ostt:vhold:<holdId>` or tombstone `ostt:purged:<holdId>`.
+     * Never URLs, JWTs, or raw payloads.
+     */
     evidencePointer: text("evidence_pointer"),
     assertedAt: timestamp("asserted_at", { withTimezone: true })
       .notNull()
@@ -512,6 +487,57 @@ export const verificationAssertions = pgTable(
       foreignColumns: [verificationCases.id, verificationCases.kind],
     }).onDelete("cascade"),
   ],
+);
+
+/**
+ * Short-lived retention metadata. Payloads live in verification_artifact_payloads
+ * and are deleted on purge; assertions are tombstoned.
+ */
+export const verificationArtifactHolds = pgTable(
+  "verification_artifact_holds",
+  {
+    id: text("id").primaryKey(),
+    caseId: text("case_id")
+      .notNull()
+      .references(() => verificationCases.id, { onDelete: "cascade" }),
+    assertionId: text("assertion_id").references(() => verificationAssertions.id, {
+      onDelete: "set null",
+    }),
+    purpose: text("purpose").notNull(),
+    retentionPolicy: text("retention_policy").notNull().default("ttl-24h"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    purgedAt: timestamp("purged_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("verification_artifact_holds_case_idx").on(table.caseId),
+    index("verification_artifact_holds_expires_idx").on(table.expiresAt),
+    check(
+      "verification_artifact_holds_purpose_nonempty",
+      sql`length(btrim(${table.purpose})) > 0`,
+    ),
+    check(
+      "verification_artifact_holds_retention_nonempty",
+      sql`length(btrim(${table.retentionPolicy})) > 0`,
+    ),
+  ],
+);
+
+/** Sensitive artifact body — cleared on purge (not retained indefinitely). */
+export const verificationArtifactPayloads = pgTable(
+  "verification_artifact_payloads",
+  {
+    holdId: text("hold_id")
+      .primaryKey()
+      .references(() => verificationArtifactHolds.id, { onDelete: "cascade" }),
+    payload: text("payload"),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
 );
 
 /** Immutable audit events — UPDATEs/DELETEs blocked by migration trigger. */
@@ -616,6 +642,7 @@ export const foundationTables = {
   verificationCases,
   verificationAssertions,
   verificationArtifactHolds,
+  verificationArtifactPayloads,
   auditEvents,
   authSessions,
   authChallenges,

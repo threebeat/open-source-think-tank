@@ -1,10 +1,12 @@
 import { getGatedDb } from "@/lib/auth/runtime";
 import { requireGatedSession } from "@/lib/auth/guard";
-import { authorize } from "@/lib/authz/authorize";
+import { authorizeCapability } from "@/lib/authz/authorize-capability";
 import { loadPrincipal } from "@/lib/authz/load-principal";
 import type { AuthzDecision, Capability } from "@/lib/authz/types";
 
-/** Load the session principal and evaluate a capability (deny by default). */
+/**
+ * Load the session principal and evaluate role + assurance (deny by default).
+ */
 export async function requireCapability(
   capability: Capability,
 ): Promise<AuthzDecision> {
@@ -20,5 +22,5 @@ export async function requireCapability(
 
   const db = getGatedDb();
   const principal = await loadPrincipal(db, gated.session.accountId);
-  return authorize(principal, capability);
+  return authorizeCapability(db, principal, capability);
 }
