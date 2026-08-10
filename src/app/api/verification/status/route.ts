@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { resolveAppMode } from "@/lib/env/app-mode";
 
-/** Lists applicable published documents without embedding full bodies. */
+/** Account-private verification status (no artifacts, no evidence pointers). */
 export async function GET() {
   if (resolveAppMode() !== "gated") {
     return NextResponse.json({ error: "Not Found" }, { status: 404 });
@@ -18,13 +18,18 @@ export async function GET() {
   }
 
   const { getGatedDb } = await import("@/lib/auth/runtime");
-  const { mapActiveAccountToApplicableDocuments } = await import(
-    "@/lib/assent/status"
-  );
-  const documents = await mapActiveAccountToApplicableDocuments(
+  const { listAccountVerificationStatus, describeAssuranceLadder } =
+    await import("@/lib/verification/status");
+
+  const statuses = await listAccountVerificationStatus(
     getGatedDb(),
     gated.session.accountId,
   );
 
-  return NextResponse.json({ documents });
+  return NextResponse.json({
+    statuses,
+    ladder: describeAssuranceLadder(),
+    disclaimer:
+      "Verification status is not proof of ideology, credibility, or policy expertise.",
+  });
 }

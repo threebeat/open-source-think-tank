@@ -124,6 +124,8 @@ describe("foundation schema (ephemeral PGlite)", () => {
   it("rejects assent to a withdrawn document", async () => {
     const body = "Synthetic withdrawn document body.";
     const contentHash = createHash("sha256").update(body).digest("hex");
+    const reviewedAt = new Date("2026-07-01T00:00:00.000Z");
+    const publishedAt = new Date("2026-07-01T01:00:00.000Z");
     await db.insert(documentVersions).values({
       id: "doc-ostt-synth-withdrawn-v1",
       kind: "participation",
@@ -131,9 +133,34 @@ describe("foundation schema (ephemeral PGlite)", () => {
       contentHash,
       title: "Synthetic withdrawn participation",
       body,
-      state: "withdrawn",
-      publishedAt: new Date("2026-07-01T00:00:00.000Z"),
+      state: "draft",
+      requiredNotices: [],
     });
+    await db
+      .update(documentVersions)
+      .set({
+        state: "counsel_reviewed",
+        counselReviewedAt: reviewedAt,
+        counselReviewedByAccountId: "account-ostt-synth-ben",
+        updatedAt: reviewedAt,
+      })
+      .where(eq(documentVersions.id, "doc-ostt-synth-withdrawn-v1"));
+    await db
+      .update(documentVersions)
+      .set({
+        state: "published",
+        publishedAt,
+        publishedByAccountId: "account-ostt-synth-ben",
+        updatedAt: publishedAt,
+      })
+      .where(eq(documentVersions.id, "doc-ostt-synth-withdrawn-v1"));
+    await db
+      .update(documentVersions)
+      .set({
+        state: "withdrawn",
+        updatedAt: new Date("2026-07-02T00:00:00.000Z"),
+      })
+      .where(eq(documentVersions.id, "doc-ostt-synth-withdrawn-v1"));
 
     await expect(
       db.insert(assentRecords).values({

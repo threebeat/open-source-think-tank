@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 2  
 **Baseline:** Phase 1 demonstration release tag [`phase-1-demonstration`](https://github.com/threebeat/open-source-think-tank/releases/tag/phase-1-demonstration) at commit `33ff0cc`  
-**Current package:** **2.6 complete** — next **2.7** after approval. Managed Postgres host and production email vendor remain blocked pending addenda.
+**Current package:** **2.7 complete** — next **2.8** after approval. Managed Postgres host and production email vendor remain blocked pending addenda.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [open-questions.md](./open-questions.md), [legal-questions.md](./legal-questions.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [phase-1-handoff.md](./phase-1-handoff.md)
 
@@ -316,7 +316,7 @@ Stop Phase 2 implementation and escalate to humans if:
 
 ### Work package 2.6 — Add versioned documents and assent
 
-**Status:** Complete for gated document versioning, assent/decline/withdraw outcomes, and account-private assent history. Counsel gate on electronic assent remains blocking for production legal claims.
+**Status:** Complete for gated document versioning, counsel_reviewed→published publication gates, presentation-gated assent/decline, withdrawal clearing current status, required notices, and account-private history with outcomes. Counsel gate on electronic assent remains blocking for production legal claims.
 
 1. Model conduct terms, participation terms, privacy notices, and any legally distinct consent separately.
 2. Support draft, counsel-reviewed, published, superseded, and withdrawn document states.
@@ -339,6 +339,8 @@ Stop Phase 2 implementation and escalate to humans if:
 ---
 
 ### Work package 2.7 — Implement the verification ladder
+
+**Status:** Complete for configurable assurance levels (`docs/verification-ladder.md`), distinct assertion kinds, capability→assurance map, status-only storage with short-lived artifact holds, reviewer assign/approve/deny/expire/revoke/appeal, and tests for expiration, revocation, conflicting cases, and unauthorized/self-review. Identity-vendor selection remains blocked in §4. Counsel gates LQ10–14 remain blocking. Real participant `active` transition remains owned by **2.8**.
 
 1. Define configurable assurance levels without assuming government ID is required.
 2. Keep bot resistance, contact continuity, uniqueness, eligibility, residency, and legal identity as distinct assertions.
@@ -481,4 +483,4 @@ When Phase 2 work is active:
 3. Prefer “account holder” / “community participant” language; never invent statutory membership.
 4. After each package: report files changed, commands run, failed checks, and unresolved decisions; stop for approval.
 
-Next package after 2.6 approval: **2.7 — Implement the verification ladder**.
+Next package after 2.7 approval: **2.8 — Build invite-only onboarding**.

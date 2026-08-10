@@ -17,7 +17,8 @@ export type VerificationCaseStatus =
   | "approved"
   | "denied"
   | "expired"
-  | "appealed";
+  | "appealed"
+  | "revoked";
 
 export interface VerificationAdapter {
   readonly name: "verification";

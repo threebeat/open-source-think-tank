@@ -28,6 +28,7 @@ export const CAPABILITIES = [
   "verification.review_case",
   "moderation.act",
   "audit.read_restricted",
+  "documents.publish",
   "institutional.vote",
   "institutional.council_deliberation",
   "institutional.council_policy",

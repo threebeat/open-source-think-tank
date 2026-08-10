@@ -16,6 +16,7 @@ export type { EmailAdapter, EmailMessage } from "@/lib/adapters/email";
 export { NoopEmailAdapter } from "@/lib/adapters/email";
 export type { VerificationAdapter } from "@/lib/adapters/verification";
 export { StubVerificationAdapter } from "@/lib/adapters/verification";
+export { LocalManualVerificationAdapter } from "@/lib/verification/adapter";
 export type { AuditPublishAdapter } from "@/lib/adapters/audit-publish";
 export { InMemoryDeniedAuditAdapter } from "@/lib/adapters/audit-publish";
 export type {

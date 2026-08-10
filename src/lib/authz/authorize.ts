@@ -8,6 +8,7 @@ const ACTIVE_ONLY = new Set<Capability>([
   "verification.review_case",
   "moderation.act",
   "audit.read_restricted",
+  "documents.publish",
   "institutional.vote",
   "institutional.council_deliberation",
   "institutional.council_policy",
@@ -103,6 +104,12 @@ export function authorize(
 
     case "audit.read_restricted":
       if (!hasPlatform(principal, ["auditor", "administrator"])) {
+        return deny(capability);
+      }
+      return { ok: true, principal };
+
+    case "documents.publish":
+      if (!hasPlatform(principal, ["administrator"])) {
         return deny(capability);
       }
       return { ok: true, principal };

@@ -9,7 +9,7 @@ export async function POST(request: Request) {
 
   let body: {
     documentVersionId?: string;
-    presentedContentHash?: string;
+    presentationId?: string;
     reason?: string;
   };
   try {
@@ -18,9 +18,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  if (!body.documentVersionId?.trim() || !body.presentedContentHash?.trim()) {
+  if (!body.documentVersionId?.trim() || !body.presentationId?.trim()) {
     return NextResponse.json(
-      { error: "documentVersionId and presentedContentHash are required" },
+      { error: "documentVersionId and presentationId are required" },
       { status: 400 },
     );
   }
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
   const result = await declineDocument(getGatedDb(), {
     accountId: gated.session.accountId,
     documentVersionId: body.documentVersionId,
-    presentedContentHash: body.presentedContentHash,
+    presentationId: body.presentationId,
     reason: body.reason,
   });
 

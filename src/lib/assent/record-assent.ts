@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import { accounts, assentRecords, documentVersions } from "@/db/schema";
 import type { FoundationDb } from "@/db/types";
@@ -6,18 +6,26 @@ import type { AdapterResult } from "@/lib/adapters/types";
 import { appendAuthAudit } from "@/lib/auth/audit-log";
 import { newEntityId } from "@/lib/auth/tokens";
 import { containsNotLegallyReviewedMarker } from "@/lib/assent/legal-review";
+import { consumePresentation } from "@/lib/assent/presentation";
+
+function noticesSatisfied(
+  required: string[],
+  acknowledged: string[],
+): boolean {
+  const set = new Set(acknowledged);
+  return required.every((notice) => set.has(notice));
+}
 
 /**
- * Record assent only after the caller presents the complete published document.
- * Uses “assent” vocabulary — not a claim that processing is legal “consent”.
+ * Record assent only after a server-issued presentation of the complete document
+ * and acknowledgment of every required notice on that version.
  */
 export async function recordAssent(
   db: FoundationDb,
   input: {
     accountId: string;
     documentVersionId: string;
-    /** Must match the published document hash the account holder was shown. */
-    presentedContentHash: string;
+    presentationId: string;
     method: string;
     noticesAcknowledged: string[];
   },
@@ -61,13 +69,6 @@ export async function recordAssent(
       code: "ASSENT_DOC_NOT_PUBLISHED",
     };
   }
-  if (doc.contentHash !== input.presentedContentHash) {
-    return {
-      ok: false,
-      error: "Presented document hash does not match the published version.",
-      code: "ASSENT_HASH_MISMATCH",
-    };
-  }
   if (containsNotLegallyReviewedMarker(doc.title, doc.body)) {
     return {
       ok: false,
@@ -75,6 +76,23 @@ export async function recordAssent(
         "Documents marked “not legally reviewed” cannot receive active assent.",
       code: "ASSENT_NOT_LEGALLY_REVIEWED",
     };
+  }
+  if (!noticesSatisfied(doc.requiredNotices, input.noticesAcknowledged)) {
+    return {
+      ok: false,
+      error: "All required notices for this document version must be acknowledged.",
+      code: "ASSENT_NOTICES_INCOMPLETE",
+    };
+  }
+
+  const presentation = await consumePresentation(db, {
+    presentationId: input.presentationId,
+    accountId: input.accountId,
+    documentVersionId: doc.id,
+    contentHash: doc.contentHash,
+  });
+  if (!presentation.ok) {
+    return presentation;
   }
 
   const assentId = newEntityId("assent");
@@ -100,81 +118,12 @@ export async function recordAssent(
         documentVersionId: doc.id,
         contentHash: doc.contentHash,
         method: input.method.trim(),
+        presentationId: input.presentationId,
+        noticesAcknowledged: input.noticesAcknowledged,
       },
       synthetic: account.synthetic,
     });
   });
 
   return { ok: true, value: { assentId } };
-}
-
-export async function listAssentHistory(db: FoundationDb, accountId: string) {
-  const assents = await db
-    .select({
-      assent: assentRecords,
-      document: documentVersions,
-    })
-    .from(assentRecords)
-    .innerJoin(
-      documentVersions,
-      eq(assentRecords.documentVersionId, documentVersions.id),
-    )
-    .where(eq(assentRecords.accountId, accountId))
-    .orderBy(desc(assentRecords.assentedAt));
-
-  return assents.map((row) => ({
-    assentId: row.assent.id,
-    documentVersionId: row.document.id,
-    kind: row.document.kind,
-    versionLabel: row.document.versionLabel,
-    title: row.document.title,
-    contentHash: row.assent.contentHash,
-    method: row.assent.method,
-    assentedAt: row.assent.assentedAt.toISOString(),
-    noticesAcknowledged: row.assent.noticesAcknowledged,
-    documentState: row.document.state,
-    /** Prior assents remain visible even when the document is no longer current. */
-    isCurrentPublished:
-      row.document.state === "published" &&
-      row.assent.contentHash === row.document.contentHash,
-  }));
-}
-
-export async function mapActiveAccountToApplicableDocuments(
-  db: FoundationDb,
-  accountId: string,
-) {
-  const published = await db
-    .select()
-    .from(documentVersions)
-    .where(eq(documentVersions.state, "published"));
-
-  const result = [];
-  for (const doc of published) {
-    const [latestAssent] = await db
-      .select()
-      .from(assentRecords)
-      .where(
-        and(
-          eq(assentRecords.accountId, accountId),
-          eq(assentRecords.documentVersionId, doc.id),
-          eq(assentRecords.contentHash, doc.contentHash),
-        ),
-      )
-      .orderBy(desc(assentRecords.assentedAt))
-      .limit(1);
-
-    result.push({
-      documentVersionId: doc.id,
-      kind: doc.kind,
-      versionLabel: doc.versionLabel,
-      title: doc.title,
-      contentHash: doc.contentHash,
-      body: doc.body,
-      requiresAssent: !latestAssent,
-      latestAssentId: latestAssent?.id ?? null,
-      latestAssentedAt: latestAssent?.assentedAt.toISOString() ?? null,
-    });
-  }
-  return result;
 }

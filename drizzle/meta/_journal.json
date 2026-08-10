@@ -29,6 +29,20 @@
       "when": 1786388308646,
       "tag": "0003_documents_assent_outcomes",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786389032733,
+      "tag": "0004_assent_presentation_publish_gates",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786390000000,
+      "tag": "0005_verification_ladder",
+      "breakpoints": true
     }
   ]
 }

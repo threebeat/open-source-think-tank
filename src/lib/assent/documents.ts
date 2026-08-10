@@ -8,19 +8,14 @@ import type { AdapterResult } from "@/lib/adapters/types";
 import { appendAuthAudit } from "@/lib/auth/audit-log";
 import { newEntityId } from "@/lib/auth/tokens";
 import { containsNotLegallyReviewedMarker } from "@/lib/assent/legal-review";
+import { authorize } from "@/lib/authz/authorize";
+import { loadPrincipal } from "@/lib/authz/load-principal";
 
 export type DocumentKind =
   | "conduct"
   | "participation"
   | "privacy_notice"
   | "other_legal";
-
-export type DocumentState =
-  | "draft"
-  | "counsel_reviewed"
-  | "published"
-  | "superseded"
-  | "withdrawn";
 
 export function hashDocumentBody(body: string): string {
   return createHash("sha256").update(body).digest("hex");
@@ -33,10 +28,16 @@ export async function createDraftDocument(
     versionLabel: string;
     title: string;
     body: string;
-    actorAccountId?: string | null;
-    synthetic: boolean;
+    requiredNotices: string[];
+    actorAccountId: string;
   },
 ): Promise<AdapterResult<{ id: string; contentHash: string }>> {
+  const actor = await loadPrincipal(db, input.actorAccountId);
+  const decision = authorize(actor, "documents.publish");
+  if (!decision.ok) {
+    return { ok: false, error: decision.error, code: decision.code };
+  }
+
   const id = newEntityId("doc");
   const contentHash = hashDocumentBody(input.body);
   await db.insert(documentVersions).values({
@@ -47,16 +48,21 @@ export async function createDraftDocument(
     title: input.title,
     body: input.body,
     state: "draft",
+    requiredNotices: input.requiredNotices,
   });
   await appendAuthAudit(db, {
-    actorRole: "document_steward",
-    actorAccountId: input.actorAccountId ?? null,
+    actorRole: "administrator",
+    actorAccountId: input.actorAccountId,
     action: "assent.document_draft_created",
     subjectType: "document_version",
     subjectId: id,
     summary: `Draft ${input.kind} document created.`,
-    privatePayload: { kind: input.kind, versionLabel: input.versionLabel },
-    synthetic: input.synthetic,
+    privatePayload: {
+      kind: input.kind,
+      versionLabel: input.versionLabel,
+      requiredNotices: input.requiredNotices,
+    },
+    synthetic: decision.principal.synthetic,
   });
   return { ok: true, value: { id, contentHash } };
 }
@@ -65,10 +71,15 @@ export async function markCounselReviewed(
   db: FoundationDb,
   input: {
     documentVersionId: string;
-    actorAccountId?: string | null;
-    synthetic: boolean;
+    actorAccountId: string;
   },
 ): Promise<AdapterResult<true>> {
+  const actor = await loadPrincipal(db, input.actorAccountId);
+  const decision = authorize(actor, "documents.publish");
+  if (!decision.ok) {
+    return { ok: false, error: decision.error, code: decision.code };
+  }
+
   const [doc] = await db
     .select()
     .from(documentVersions)
@@ -84,34 +95,49 @@ export async function markCounselReviewed(
       code: "ASSENT_DOC_STATE",
     };
   }
+
+  const now = new Date();
   await db
     .update(documentVersions)
-    .set({ state: "counsel_reviewed", updatedAt: new Date() })
+    .set({
+      state: "counsel_reviewed",
+      counselReviewedAt: now,
+      counselReviewedByAccountId: input.actorAccountId,
+      updatedAt: now,
+    })
     .where(eq(documentVersions.id, doc.id));
+
   await appendAuthAudit(db, {
-    actorRole: "document_steward",
-    actorAccountId: input.actorAccountId ?? null,
+    actorRole: "administrator",
+    actorAccountId: input.actorAccountId,
     action: "assent.document_counsel_reviewed",
     subjectType: "document_version",
     subjectId: doc.id,
-    summary: "Document marked counsel_reviewed (not an approval claim).",
-    synthetic: input.synthetic,
+    summary:
+      "Document marked counsel_reviewed (engineering provenance; not a counsel clearance claim).",
+    privatePayload: { counselReviewedAt: now.toISOString() },
+    synthetic: decision.principal.synthetic,
   });
   return { ok: true, value: true };
 }
 
 /**
- * Publish a document version. Supersedes any currently published version of the
- * same kind in the same transaction. Rejects “not legally reviewed” placeholders.
+ * Publish only from counsel_reviewed. Publisher and synthetic classification are
+ * derived from the authorized actor — never caller-supplied.
  */
 export async function publishDocument(
   db: FoundationDb,
   input: {
     documentVersionId: string;
-    actorAccountId?: string | null;
-    synthetic: boolean;
+    actorAccountId: string;
   },
 ): Promise<AdapterResult<true>> {
+  const actor = await loadPrincipal(db, input.actorAccountId);
+  const decision = authorize(actor, "documents.publish");
+  if (!decision.ok) {
+    return { ok: false, error: decision.error, code: decision.code };
+  }
+
   try {
     await db.transaction(async (tx) => {
       const [doc] = await tx
@@ -122,7 +148,10 @@ export async function publishDocument(
       if (!doc) {
         throw new Error("ASSENT_DOC_MISSING");
       }
-      if (doc.state !== "draft" && doc.state !== "counsel_reviewed") {
+      if (doc.state !== "counsel_reviewed") {
+        throw new Error("ASSENT_DOC_STATE");
+      }
+      if (!doc.counselReviewedAt) {
         throw new Error("ASSENT_DOC_STATE");
       }
       if (containsNotLegallyReviewedMarker(doc.title, doc.body)) {
@@ -156,13 +185,14 @@ export async function publishDocument(
         .set({
           state: "published",
           publishedAt: now,
+          publishedByAccountId: input.actorAccountId,
           updatedAt: now,
         })
         .where(eq(documentVersions.id, doc.id));
 
       await appendAuthAudit(tx, {
-        actorRole: "document_steward",
-        actorAccountId: input.actorAccountId ?? null,
+        actorRole: "administrator",
+        actorAccountId: input.actorAccountId,
         action: "assent.document_published",
         subjectType: "document_version",
         subjectId: doc.id,
@@ -170,8 +200,10 @@ export async function publishDocument(
         privatePayload: {
           kind: doc.kind,
           supersededIds: currentPublished.map((row) => row.id),
+          counselReviewedAt: doc.counselReviewedAt?.toISOString(),
+          counselReviewedByAccountId: doc.counselReviewedByAccountId,
         },
-        synthetic: input.synthetic,
+        synthetic: decision.principal.synthetic,
       });
     });
     return { ok: true, value: true };
@@ -182,7 +214,7 @@ export async function publishDocument(
     if (error instanceof Error && error.message === "ASSENT_DOC_STATE") {
       return {
         ok: false,
-        error: "Document cannot be published from its current state.",
+        error: "Document must be counsel_reviewed before publication.",
         code: error.message,
       };
     }
@@ -199,13 +231,6 @@ export async function publishDocument(
     }
     throw error;
   }
-}
-
-export async function listPublishedDocuments(db: FoundationDb) {
-  return db
-    .select()
-    .from(documentVersions)
-    .where(eq(documentVersions.state, "published"));
 }
 
 export async function getDocumentVersion(

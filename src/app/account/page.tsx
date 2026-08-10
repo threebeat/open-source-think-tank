@@ -58,6 +58,10 @@ export default async function AccountPage() {
         <a className="underline" href="/account/assent">
           View assent history
         </a>
+        {" · "}
+        <a className="underline" href="/account/verification">
+          View verification status
+        </a>
       </p>
     </MainContainer>
   );

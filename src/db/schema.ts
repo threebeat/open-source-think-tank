@@ -73,6 +73,7 @@ export const verificationCaseStatusEnum = pgEnum("verification_case_status", [
   "denied",
   "expired",
   "appealed",
+  "revoked",
 ]);
 
 const timestamps = {
@@ -234,7 +235,21 @@ export const documentVersions = pgTable(
     title: text("title").notNull(),
     body: text("body").notNull(),
     state: documentStateEnum("state").notNull(),
+    /** Notice identifiers that must be acknowledged before assent. */
+    requiredNotices: jsonb("required_notices")
+      .$type<string[]>()
+      .notNull()
+      .default([]),
+    counselReviewedAt: timestamp("counsel_reviewed_at", { withTimezone: true }),
+    counselReviewedByAccountId: text("counsel_reviewed_by_account_id").references(
+      () => accounts.id,
+      { onDelete: "set null" },
+    ),
     publishedAt: timestamp("published_at", { withTimezone: true }),
+    publishedByAccountId: text("published_by_account_id").references(
+      () => accounts.id,
+      { onDelete: "set null" },
+    ),
     supersededAt: timestamp("superseded_at", { withTimezone: true }),
     ...timestamps,
   },
@@ -255,6 +270,10 @@ export const documentVersions = pgTable(
     check(
       "document_versions_superseded_needs_timestamp",
       sql`(${table.state} <> 'superseded') OR (${table.supersededAt} IS NOT NULL)`,
+    ),
+    check(
+      "document_versions_counsel_reviewed_needs_provenance",
+      sql`(${table.state} <> 'counsel_reviewed' AND ${table.state} <> 'published' AND ${table.state} <> 'superseded') OR (${table.counselReviewedAt} IS NOT NULL)`,
     ),
   ],
 );
@@ -284,6 +303,12 @@ export const assentRecords = pgTable(
   },
   (table) => [
     index("assent_records_account_idx").on(table.accountId),
+    uniqueIndex("assent_records_id_account_doc_hash_uidx").on(
+      table.id,
+      table.accountId,
+      table.documentVersionId,
+      table.contentHash,
+    ),
     foreignKey({
       name: "assent_records_document_hash_fk",
       columns: [table.documentVersionId, table.contentHash],
@@ -330,10 +355,64 @@ export const assentOutcomes = pgTable(
       columns: [table.documentVersionId, table.contentHash],
       foreignColumns: [documentVersions.id, documentVersions.contentHash],
     }).onDelete("restrict"),
+    foreignKey({
+      name: "assent_outcomes_prior_assent_match_fk",
+      columns: [
+        table.priorAssentId,
+        table.accountId,
+        table.documentVersionId,
+        table.contentHash,
+      ],
+      foreignColumns: [
+        assentRecords.id,
+        assentRecords.accountId,
+        assentRecords.documentVersionId,
+        assentRecords.contentHash,
+      ],
+    }).onDelete("restrict"),
+    uniqueIndex("assent_outcomes_one_withdrawn_per_assent_uidx")
+      .on(table.priorAssentId)
+      .where(sql`${table.outcome} = 'withdrawn' AND ${table.priorAssentId} IS NOT NULL`),
     check(
       "assent_outcomes_withdrawn_needs_prior_assent",
       sql`(${table.outcome} <> 'withdrawn') OR (${table.priorAssentId} IS NOT NULL)`,
     ),
+    check(
+      "assent_outcomes_declined_has_no_prior_assent",
+      sql`(${table.outcome} <> 'declined') OR (${table.priorAssentId} IS NULL)`,
+    ),
+  ],
+);
+
+/**
+ * Server-issued presentation of a full published document before assent/decline.
+ * Assent recording requires an unconsumed, unexpired presentation row.
+ */
+export const assentPresentations = pgTable(
+  "assent_presentations",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    documentVersionId: text("document_version_id").notNull(),
+    contentHash: text("content_hash").notNull(),
+    presentedAt: timestamp("presented_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("assent_presentations_account_idx").on(table.accountId),
+    foreignKey({
+      name: "assent_presentations_document_hash_fk",
+      columns: [table.documentVersionId, table.contentHash],
+      foreignColumns: [documentVersions.id, documentVersions.contentHash],
+    }).onDelete("restrict"),
   ],
 );
 
@@ -350,14 +429,58 @@ export const verificationCases = pgTable(
       onDelete: "set null",
     }),
     decisionReason: text("decision_reason"),
+    assignedAt: timestamp("assigned_at", { withTimezone: true }),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
+    synthetic: boolean("synthetic").notNull().default(true),
     ...timestamps,
   },
   (table) => [
     uniqueIndex("verification_cases_id_kind_uidx").on(table.id, table.kind),
+    uniqueIndex("verification_cases_one_open_per_account_kind_uidx")
+      .on(table.accountId, table.kind)
+      .where(
+        sql`${table.status} IN ('pending', 'approved', 'appealed')`,
+      ),
     check(
       "verification_cases_no_self_review",
       sql`${table.reviewerAccountId} IS NULL OR ${table.reviewerAccountId} <> ${table.accountId}`,
+    ),
+    check(
+      "verification_cases_terminal_needs_reason",
+      sql`(${table.status} IN ('pending', 'appealed')) OR (${table.decisionReason} IS NOT NULL AND length(btrim(${table.decisionReason})) > 0)`,
+    ),
+    check(
+      "verification_cases_decided_needs_timestamp",
+      sql`(${table.status} IN ('pending', 'appealed')) OR (${table.decidedAt} IS NOT NULL)`,
+    ),
+  ],
+);
+
+/**
+ * Short-lived hold metadata for reviewer workflow. Never stores raw identity
+ * document bytes — only a purpose label and expiry for purge.
+ */
+export const verificationArtifactHolds = pgTable(
+  "verification_artifact_holds",
+  {
+    id: text("id").primaryKey(),
+    caseId: text("case_id")
+      .notNull()
+      .references(() => verificationCases.id, { onDelete: "cascade" }),
+    purpose: text("purpose").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    purgedAt: timestamp("purged_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("verification_artifact_holds_case_idx").on(table.caseId),
+    index("verification_artifact_holds_expires_idx").on(table.expiresAt),
+    check(
+      "verification_artifact_holds_purpose_nonempty",
+      sql`length(btrim(${table.purpose})) > 0`,
     ),
   ],
 );
@@ -489,8 +612,10 @@ export const foundationTables = {
   documentVersions,
   assentRecords,
   assentOutcomes,
+  assentPresentations,
   verificationCases,
   verificationAssertions,
+  verificationArtifactHolds,
   auditEvents,
   authSessions,
   authChallenges,

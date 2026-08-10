@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 
+import { eq } from "drizzle-orm";
+
 import {
   accounts,
   assentRecords,
@@ -126,7 +128,10 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
   const privacyBody =
     "Synthetic privacy notice for foundation tests. Provisional engineering text — counsel disposition still blocking for production legal claims.";
   const contentHash = createHash("sha256").update(privacyBody).digest("hex");
+  const reviewedAt = new Date("2026-08-01T00:00:00.000Z");
+  const publishedAt = new Date("2026-08-01T01:00:00.000Z");
 
+  // Insert as draft, then transition — DB state machine forbids non-draft inserts.
   await db.insert(documentVersions).values({
     id: "doc-ostt-synth-privacy-v1",
     kind: "privacy_notice",
@@ -134,9 +139,27 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
     contentHash,
     title: "Synthetic privacy notice",
     body: privacyBody,
-    state: "published",
-    publishedAt: new Date("2026-08-01T00:00:00.000Z"),
+    state: "draft",
+    requiredNotices: ["synthetic-notice"],
   });
+  await db
+    .update(documentVersions)
+    .set({
+      state: "counsel_reviewed",
+      counselReviewedAt: reviewedAt,
+      counselReviewedByAccountId: "account-ostt-synth-ben",
+      updatedAt: reviewedAt,
+    })
+    .where(eq(documentVersions.id, "doc-ostt-synth-privacy-v1"));
+  await db
+    .update(documentVersions)
+    .set({
+      state: "published",
+      publishedAt,
+      publishedByAccountId: "account-ostt-synth-ben",
+      updatedAt: publishedAt,
+    })
+    .where(eq(documentVersions.id, "doc-ostt-synth-privacy-v1"));
 
   await db.insert(assentRecords).values({
     id: "assent-ostt-synth-ada-privacy-v1",
@@ -155,6 +178,9 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
     status: "approved",
     reviewerAccountId: "account-ostt-synth-ben",
     decisionReason: "Synthetic approval for seed data.",
+    assignedAt: new Date("2026-08-01T00:30:00.000Z"),
+    decidedAt: new Date("2026-08-01T01:00:00.000Z"),
+    synthetic: true,
   });
 
   await db.insert(verificationAssertions).values({

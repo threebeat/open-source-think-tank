@@ -17,13 +17,15 @@ export async function GET() {
   }
 
   const { getGatedDb } = await import("@/lib/auth/runtime");
-  const { listAssentHistory } = await import("@/lib/assent/record-assent");
-  const history = await listAssentHistory(getGatedDb(), gated.session.accountId);
+  const { listAssentHistoryWithOutcomes } = await import("@/lib/assent/status");
+  const history = await listAssentHistoryWithOutcomes(
+    getGatedDb(),
+    gated.session.accountId,
+  );
 
   return NextResponse.json({
     accountId: gated.session.accountId,
     history,
-    /** Downloadable JSON — no secrets; account-private assent history. */
     download: {
       format: "application/json",
       generatedAt: new Date().toISOString(),

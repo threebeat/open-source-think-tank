@@ -25,9 +25,10 @@ Default decision: **deny**.
 | `roles.revoke_platform` | active | administrator | — | Requires reason; conditional claim; cannot self-revoke administrator; cannot revoke last administrator or last auditor |
 | `roles.grant_council` | active | administrator | — | Requires reason; **actor ≠ subject**; deliberation/policy chosen explicitly |
 | `roles.revoke_council` | active | administrator | — | Requires reason; conditional claim; **actor ≠ subject** |
-| `verification.review_case` | active | reviewer or administrator | — | No raw artifact access in Phase 2 |
+| `verification.review_case` | active | reviewer or administrator | — | No raw artifact access in Phase 2; see also assurance map in `docs/verification-ladder.md` |
 | `moderation.act` | active | moderator or administrator | — | Placeholder action surface for 2.5 tests |
 | `audit.read_restricted` | active | auditor or administrator | — | Staff-restricted ledger read |
+| `documents.publish` | active | administrator | — | Draft → counsel_reviewed → published only; synthetic derived from actor |
 | `institutional.vote` | **active only** | **participant only** | — | Administrator does **not** imply participant/voting rights |
 | `institutional.council_deliberation` | **active only** | — | deliberation_council | Does **not** imply policy council |
 | `institutional.council_policy` | **active only** | — | policy_council | Does **not** imply deliberation council |

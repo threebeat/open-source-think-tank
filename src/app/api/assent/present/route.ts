@@ -7,29 +7,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not Found" }, { status: 404 });
   }
 
-  let body: {
-    documentVersionId?: string;
-    presentationId?: string;
-    method?: string;
-    noticesAcknowledged?: string[];
-  };
+  let body: { documentVersionId?: string };
   try {
     body = (await request.json()) as typeof body;
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  if (
-    !body.documentVersionId?.trim() ||
-    !body.presentationId?.trim() ||
-    !body.method?.trim() ||
-    !Array.isArray(body.noticesAcknowledged)
-  ) {
+  if (!body.documentVersionId?.trim()) {
     return NextResponse.json(
-      {
-        error:
-          "documentVersionId, presentationId, method, and noticesAcknowledged are required",
-      },
+      { error: "documentVersionId is required" },
       { status: 400 },
     );
   }
@@ -44,13 +31,12 @@ export async function POST(request: Request) {
   }
 
   const { getGatedDb } = await import("@/lib/auth/runtime");
-  const { recordAssent } = await import("@/lib/assent/record-assent");
-  const result = await recordAssent(getGatedDb(), {
+  const { openDocumentPresentation } = await import(
+    "@/lib/assent/presentation"
+  );
+  const result = await openDocumentPresentation(getGatedDb(), {
     accountId: gated.session.accountId,
     documentVersionId: body.documentVersionId,
-    presentationId: body.presentationId,
-    method: body.method,
-    noticesAcknowledged: body.noticesAcknowledged,
   });
 
   if (!result.ok) {
