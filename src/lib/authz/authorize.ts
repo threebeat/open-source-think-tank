@@ -108,7 +108,8 @@ export function authorize(
       return { ok: true, principal };
 
     case "institutional.vote":
-      if (!hasPlatform(principal, ["participant", "administrator"])) {
+      // Administrator never implies participant / voting rights.
+      if (!hasPlatform(principal, ["participant"])) {
         return deny(capability);
       }
       return { ok: true, principal };

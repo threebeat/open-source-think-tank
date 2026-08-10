@@ -244,9 +244,17 @@ export const documentVersions = pgTable(
       table.versionLabel,
     ),
     uniqueIndex("document_versions_id_hash_uidx").on(table.id, table.contentHash),
+    /** At most one currently published version per document kind. */
+    uniqueIndex("document_versions_one_published_per_kind_uidx")
+      .on(table.kind)
+      .where(sql`${table.state} = 'published'`),
     check(
       "document_versions_published_needs_timestamp",
       sql`(${table.state} <> 'published') OR (${table.publishedAt} IS NOT NULL)`,
+    ),
+    check(
+      "document_versions_superseded_needs_timestamp",
+      sql`(${table.state} <> 'superseded') OR (${table.supersededAt} IS NOT NULL)`,
     ),
   ],
 );
@@ -281,6 +289,51 @@ export const assentRecords = pgTable(
       columns: [table.documentVersionId, table.contentHash],
       foreignColumns: [documentVersions.id, documentVersions.contentHash],
     }).onDelete("restrict"),
+  ],
+);
+
+export const assentOutcomeEnum = pgEnum("assent_outcome", [
+  "declined",
+  "withdrawn",
+]);
+
+/**
+ * Non-assent outcomes (decline / withdraw). Prior assent rows stay immutable;
+ * withdrawal never deletes retained assent history.
+ */
+export const assentOutcomes = pgTable(
+  "assent_outcomes",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    documentVersionId: text("document_version_id").notNull(),
+    contentHash: text("content_hash").notNull(),
+    outcome: assentOutcomeEnum("outcome").notNull(),
+    priorAssentId: text("prior_assent_id").references(() => assentRecords.id, {
+      onDelete: "restrict",
+    }),
+    reason: text("reason"),
+    decidedAt: timestamp("decided_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    synthetic: boolean("synthetic").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("assent_outcomes_account_idx").on(table.accountId),
+    foreignKey({
+      name: "assent_outcomes_document_hash_fk",
+      columns: [table.documentVersionId, table.contentHash],
+      foreignColumns: [documentVersions.id, documentVersions.contentHash],
+    }).onDelete("restrict"),
+    check(
+      "assent_outcomes_withdrawn_needs_prior_assent",
+      sql`(${table.outcome} <> 'withdrawn') OR (${table.priorAssentId} IS NOT NULL)`,
+    ),
   ],
 );
 
@@ -435,6 +488,7 @@ export const foundationTables = {
   councilAppointments,
   documentVersions,
   assentRecords,
+  assentOutcomes,
   verificationCases,
   verificationAssertions,
   auditEvents,

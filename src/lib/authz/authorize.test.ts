@@ -3,45 +3,54 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestDatabase } from "@/db/pglite";
 import {
   accounts,
+  auditEvents,
   councilAppointments,
   persons,
   roleAssignments,
 } from "@/db/schema";
 import { seedSyntheticFoundation } from "@/db/seeds/synthetic";
+import { eq } from "drizzle-orm";
+import { newEntityId } from "@/lib/auth/tokens";
 import { authorize } from "@/lib/authz/authorize";
 import { loadPrincipal } from "@/lib/authz/load-principal";
 import {
   grantCouncilSeat,
   grantPlatformRole,
+  revokeCouncilSeat,
+  revokePlatformRole,
 } from "@/lib/authz/role-changes";
+import { classifyMultiAccountSynthetic } from "@/lib/authz/synthetic-classification";
 import {
   CAPABILITIES,
   type AuthzPrincipal,
   type Capability,
 } from "@/lib/authz/types";
-import { newEntityId } from "@/lib/auth/tokens";
 
 async function insertAccount(
   db: Awaited<ReturnType<typeof createTestDatabase>>["db"],
   input: {
     id: string;
     lifecycle: "pending_onboarding" | "active";
-    roles?: Array<"participant" | "reviewer" | "moderator" | "administrator" | "auditor">;
+    synthetic?: boolean;
+    roles?: Array<
+      "participant" | "reviewer" | "moderator" | "administrator" | "auditor"
+    >;
     councils?: Array<"deliberation_council" | "policy_council">;
   },
 ) {
   const personId = newEntityId("person");
+  const synthetic = input.synthetic ?? true;
   await db.insert(persons).values({
     id: personId,
-    synthetic: true,
-    displayLabel: `ostt-synth ${input.id}`,
+    synthetic,
+    displayLabel: `${synthetic ? "ostt-synth" : "real"} ${input.id}`,
   });
   await db.insert(accounts).values({
     id: input.id,
     personId,
-    contactChannel: `${input.id}@ostt.synth.test`,
+    contactChannel: `${input.id}@${synthetic ? "ostt.synth.test" : "example.test"}`,
     lifecycleState: input.lifecycle,
-    synthetic: true,
+    synthetic,
     contactVerifiedAt: new Date("2026-08-01T00:00:00.000Z"),
     activatedAt:
       input.lifecycle === "active"
@@ -54,7 +63,7 @@ async function insertAccount(
       accountId: input.id,
       role,
       grantedByLabel: "ostt-synth-authz-test",
-      reason: "Synthetic capability matrix fixture.",
+      reason: "Capability matrix fixture.",
     });
   }
   for (const councilRole of input.councils ?? []) {
@@ -62,7 +71,7 @@ async function insertAccount(
       id: newEntityId("council"),
       accountId: input.id,
       councilRole,
-      selectionPath: "Synthetic authz fixture path.",
+      selectionPath: "Authz fixture path.",
       termStartsOn: new Date("2026-08-01T00:00:00.000Z"),
     });
   }
@@ -78,10 +87,17 @@ describe("authorization capability matrix", () => {
     db = created.db;
     await seedSyntheticFoundation(db);
 
+    // Administrator without participant — must not inherit voting rights.
     await insertAccount(db, {
       id: "account-ostt-synth-admin",
       lifecycle: "active",
-      roles: ["administrator", "participant"],
+      roles: ["administrator"],
+    });
+    // Second admin for continuity / revoke tests.
+    await insertAccount(db, {
+      id: "account-ostt-synth-admin-b",
+      lifecycle: "active",
+      roles: ["administrator"],
     });
     await insertAccount(db, {
       id: "account-ostt-synth-participant",
@@ -104,6 +120,11 @@ describe("authorization capability matrix", () => {
       roles: ["auditor"],
     });
     await insertAccount(db, {
+      id: "account-ostt-synth-auditor-b",
+      lifecycle: "active",
+      roles: ["auditor"],
+    });
+    await insertAccount(db, {
       id: "account-ostt-synth-deliberation",
       lifecycle: "active",
       roles: ["participant"],
@@ -114,6 +135,18 @@ describe("authorization capability matrix", () => {
       lifecycle: "active",
       roles: ["participant"],
       councils: ["policy_council"],
+    });
+    await insertAccount(db, {
+      id: "account-real-admin",
+      lifecycle: "active",
+      synthetic: false,
+      roles: ["administrator"],
+    });
+    await insertAccount(db, {
+      id: "account-real-subject",
+      lifecycle: "active",
+      synthetic: false,
+      roles: ["participant"],
     });
   }, 120_000);
 
@@ -151,7 +184,9 @@ describe("authorization capability matrix", () => {
       "moderation.act",
       "audit.read_restricted",
       "roles.grant_platform",
+      "roles.revoke_platform",
       "roles.grant_council",
+      "roles.revoke_council",
     ];
     for (const capability of activeOnly) {
       const decision = authorize(pending, capability);
@@ -161,6 +196,12 @@ describe("authorization capability matrix", () => {
       }
     }
     expect(authorize(pending, "account.read_own").ok).toBe(true);
+  });
+
+  it("does not grant institutional.vote from administrator alone", async () => {
+    const admin = await principal("account-ostt-synth-admin");
+    expect(admin.platformRoles).toEqual(["administrator"]);
+    expect(authorize(admin, "institutional.vote").ok).toBe(false);
   });
 
   it("allows each role its positive capabilities and denies the others", async () => {
@@ -177,6 +218,7 @@ describe("authorization capability matrix", () => {
           "moderation.act",
           "audit.read_restricted",
           "roles.grant_platform",
+          "roles.revoke_platform",
           "institutional.council_deliberation",
           "institutional.council_policy",
         ],
@@ -194,19 +236,21 @@ describe("authorization capability matrix", () => {
       {
         accountId: "account-ostt-synth-auditor",
         allow: ["audit.read_restricted"],
-        deny: ["moderation.act", "roles.grant_council"],
+        deny: ["moderation.act", "roles.grant_council", "roles.revoke_council"],
       },
       {
         accountId: "account-ostt-synth-admin",
         allow: [
           "roles.grant_platform",
+          "roles.revoke_platform",
           "roles.grant_council",
+          "roles.revoke_council",
           "verification.review_case",
           "moderation.act",
           "audit.read_restricted",
-          "institutional.vote",
         ],
         deny: [
+          "institutional.vote",
           "institutional.council_deliberation",
           "institutional.council_policy",
         ],
@@ -248,12 +292,8 @@ describe("authorization capability matrix", () => {
 
   it("keeps deliberation and policy council authority independent", async () => {
     const bothPath = await principal("account-ostt-synth-ada");
-    // Seed gives ada both seats but pending_onboarding → still denied.
     expect(bothPath.councilRoles).toEqual(
-      expect.arrayContaining([
-        "deliberation_council",
-        "policy_council",
-      ]),
+      expect.arrayContaining(["deliberation_council", "policy_council"]),
     );
     expect(authorize(bothPath, "institutional.council_deliberation").ok).toBe(
       false,
@@ -328,5 +368,169 @@ describe("authorization capability matrix", () => {
     expect(authorize(participant, "institutional.council_policy").ok).toBe(
       false,
     );
+  });
+
+  it("revokes platform roles with continuity and concurrency safeguards", async () => {
+    const selfRevoke = await revokePlatformRole(db, {
+      actorAccountId: "account-ostt-synth-admin",
+      subjectAccountId: "account-ostt-synth-admin",
+      role: "administrator",
+      reason: "Attempting to revoke own administrator role.",
+    });
+    expect(selfRevoke.ok).toBe(false);
+    if (!selfRevoke.ok) {
+      expect(selfRevoke.code).toBe("AUTHZ_SELF_CONTINUITY_FORBIDDEN");
+    }
+
+    const revoked = await revokePlatformRole(db, {
+      actorAccountId: "account-ostt-synth-admin",
+      subjectAccountId: "account-ostt-synth-participant",
+      role: "reviewer",
+      reason: "Revoke reviewer after synthetic matrix coverage.",
+    });
+    expect(revoked.ok).toBe(true);
+
+    const [first, second] = await Promise.all([
+      revokePlatformRole(db, {
+        actorAccountId: "account-ostt-synth-admin",
+        subjectAccountId: "account-ostt-synth-participant",
+        role: "reviewer",
+        reason: "Concurrent revoke should fail for the loser.",
+      }),
+      revokePlatformRole(db, {
+        actorAccountId: "account-ostt-synth-admin-b",
+        subjectAccountId: "account-ostt-synth-participant",
+        role: "reviewer",
+        reason: "Concurrent revoke should fail for the loser.",
+      }),
+    ]);
+    expect([first, second].filter((result) => result.ok)).toHaveLength(0);
+    expect(
+      [first, second].every(
+        (result) => !result.ok && result.code === "AUTHZ_ROLE_NOT_HELD",
+      ),
+    ).toBe(true);
+
+    const after = await principal("account-ostt-synth-participant");
+    expect(after.platformRoles).not.toContain("reviewer");
+  });
+
+  it("revokes council seats with actor≠subject and concurrent claim", async () => {
+    const selfCouncilRevoke = await revokeCouncilSeat(db, {
+      actorAccountId: "account-ostt-synth-admin",
+      subjectAccountId: "account-ostt-synth-admin",
+      councilRole: "deliberation_council",
+      reason: "Self council revoke must fail even without a seat.",
+    });
+    expect(selfCouncilRevoke.ok).toBe(false);
+    if (!selfCouncilRevoke.ok) {
+      expect(selfCouncilRevoke.code).toBe("AUTHZ_SELF_CONTINUITY_FORBIDDEN");
+    }
+
+    const revoked = await revokeCouncilSeat(db, {
+      actorAccountId: "account-ostt-synth-admin",
+      subjectAccountId: "account-ostt-synth-participant",
+      councilRole: "deliberation_council",
+      reason: "Revoke deliberation seat after synthetic coverage.",
+    });
+    expect(revoked.ok).toBe(true);
+
+    const again = await revokeCouncilSeat(db, {
+      actorAccountId: "account-ostt-synth-admin",
+      subjectAccountId: "account-ostt-synth-participant",
+      councilRole: "deliberation_council",
+      reason: "Second revoke must fail — seat already claimed.",
+    });
+    expect(again.ok).toBe(false);
+    if (!again.ok) {
+      expect(again.code).toBe("AUTHZ_SEAT_NOT_HELD");
+    }
+
+    const participant = await principal("account-ostt-synth-participant");
+    expect(participant.councilRoles).not.toContain("deliberation_council");
+  });
+
+  it("classifies mixed real/synthetic role-change audits as non-synthetic", async () => {
+    expect(classifyMultiAccountSynthetic(true, true)).toBe(true);
+    expect(classifyMultiAccountSynthetic(false, true)).toBe(false);
+    expect(classifyMultiAccountSynthetic(true, false)).toBe(false);
+    expect(classifyMultiAccountSynthetic(false, false)).toBe(false);
+
+    const mixedGrant = await grantPlatformRole(db, {
+      actorAccountId: "account-real-admin",
+      subjectAccountId: "account-ostt-synth-participant",
+      role: "moderator",
+      reason: "Real administrator granting role to synthetic subject.",
+    });
+    expect(mixedGrant.ok).toBe(true);
+
+    const grantAudits = await db
+      .select()
+      .from(auditEvents)
+      .where(eq(auditEvents.action, "authz.platform_role_granted"));
+    const mixedGrantAudit = grantAudits.find(
+      (row) =>
+        row.actorAccountId === "account-real-admin" &&
+        row.subjectId === "account-ostt-synth-participant",
+    );
+    expect(mixedGrantAudit?.synthetic).toBe(false);
+
+    const mixedRevoke = await revokePlatformRole(db, {
+      actorAccountId: "account-real-admin",
+      subjectAccountId: "account-ostt-synth-participant",
+      role: "moderator",
+      reason: "Real administrator revoking role on synthetic subject.",
+    });
+    expect(mixedRevoke.ok).toBe(true);
+
+    const revokeAudits = await db
+      .select()
+      .from(auditEvents)
+      .where(eq(auditEvents.action, "authz.platform_role_revoked"));
+    const mixedRevokeAudit = revokeAudits.find(
+      (row) =>
+        row.actorAccountId === "account-real-admin" &&
+        row.subjectId === "account-ostt-synth-participant",
+    );
+    expect(mixedRevokeAudit?.synthetic).toBe(false);
+
+    const bothReal = await grantPlatformRole(db, {
+      actorAccountId: "account-real-admin",
+      subjectAccountId: "account-real-subject",
+      role: "reviewer",
+      reason: "Real administrator granting role to real subject.",
+    });
+    expect(bothReal.ok).toBe(true);
+    const bothRealAudit = (
+      await db
+        .select()
+        .from(auditEvents)
+        .where(eq(auditEvents.action, "authz.platform_role_granted"))
+    ).find(
+      (row) =>
+        row.actorAccountId === "account-real-admin" &&
+        row.subjectId === "account-real-subject",
+    );
+    expect(bothRealAudit?.synthetic).toBe(false);
+
+    const bothSynth = await grantPlatformRole(db, {
+      actorAccountId: "account-ostt-synth-admin",
+      subjectAccountId: "account-ostt-synth-participant",
+      role: "moderator",
+      reason: "Synthetic administrator granting role to synthetic subject.",
+    });
+    expect(bothSynth.ok).toBe(true);
+    const bothSynthAudit = (
+      await db
+        .select()
+        .from(auditEvents)
+        .where(eq(auditEvents.action, "authz.platform_role_granted"))
+    ).find(
+      (row) =>
+        row.actorAccountId === "account-ostt-synth-admin" &&
+        row.subjectId === "account-ostt-synth-participant" &&
+        (row.privatePayload as { role?: string } | null)?.role === "moderator",
+    );
+    expect(bothSynthAudit?.synthetic).toBe(true);
   });
 });

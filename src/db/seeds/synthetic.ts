@@ -124,7 +124,7 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
   ]);
 
   const privacyBody =
-    "Synthetic privacy notice for foundation tests. Not legally reviewed.";
+    "Synthetic privacy notice for foundation tests. Provisional engineering text — counsel disposition still blocking for production legal claims.";
   const contentHash = createHash("sha256").update(privacyBody).digest("hex");
 
   await db.insert(documentVersions).values({

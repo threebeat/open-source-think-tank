@@ -54,6 +54,11 @@ export default async function AccountPage() {
           <dd className="font-mono text-xs break-all">{session.accountId}</dd>
         </div>
       </dl>
+      <p className="text-sm">
+        <a className="underline" href="/account/assent">
+          View assent history
+        </a>
+      </p>
     </MainContainer>
   );
 }

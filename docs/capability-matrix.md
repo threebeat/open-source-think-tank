@@ -22,13 +22,13 @@ Default decision: **deny**.
 | `account.revoke_all_sessions` | invited, pending_onboarding, active | any / none | — | Session holder; self only |
 | `invite.accept` | anonymous → invited | — | — | Invite gate (2.4); not a logged-in capability |
 | `roles.grant_platform` | active | administrator | — | Requires non-empty reason; cannot grant `administrator` to self |
-| `roles.revoke_platform` | active | administrator | — | Requires reason; cannot revoke last auditor silently without reason |
+| `roles.revoke_platform` | active | administrator | — | Requires reason; conditional claim; cannot self-revoke administrator; cannot revoke last administrator or last auditor |
 | `roles.grant_council` | active | administrator | — | Requires reason; **actor ≠ subject**; deliberation/policy chosen explicitly |
-| `roles.revoke_council` | active | administrator | — | Requires reason; actor ≠ subject |
+| `roles.revoke_council` | active | administrator | — | Requires reason; conditional claim; **actor ≠ subject** |
 | `verification.review_case` | active | reviewer or administrator | — | No raw artifact access in Phase 2 |
 | `moderation.act` | active | moderator or administrator | — | Placeholder action surface for 2.5 tests |
 | `audit.read_restricted` | active | auditor or administrator | — | Staff-restricted ledger read |
-| `institutional.vote` | **active only** | participant (or any platform role that includes participant duties) | — | Denied to pending_onboarding |
+| `institutional.vote` | **active only** | **participant only** | — | Administrator does **not** imply participant/voting rights |
 | `institutional.council_deliberation` | **active only** | — | deliberation_council | Does **not** imply policy council |
 | `institutional.council_policy` | **active only** | — | policy_council | Does **not** imply deliberation council |
 | `institutional.publish_decision` | **active only** | — | policy_council | Recommendation publication only; not board adoption |
@@ -37,7 +37,8 @@ Default decision: **deny**.
 
 1. An administrator **must not** grant themselves `deliberation_council` or `policy_council` appointments.
 2. An administrator **must not** grant themselves the `administrator` platform role (no-op / silent self-grant forbidden).
-3. Role and seat changes require a recorded `reason` and appear in the audit ledger with correct `synthetic` classification.
+3. Role and seat changes require a recorded `reason` and appear in the audit ledger with correct `synthetic` classification: an event is synthetic only when **every** involved account (actor and subject) is synthetic.
+4. Platform roles are never inferred from each other (administrator ≠ participant).
 
 ## Enforcement
 
