@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 3 (packages 3.1–3.12)  
 **Baseline:** Phase 2 foundation at or after `a894317317f3ff1e80d0a3602df69e5b4d8cd589` (tag `phase-2-foundation` recorded in [phase-2-handoff.md](./phase-2-handoff.md))  
-**Current package:** **3.5 complete (awaiting human approval before 3.6).** Gated participant claim/evidence submissions, Tennessee topic geography classification, and public-demo Tennessee discovery / evidence inventory interactivity are implemented. Review queues, publication, revision history, moderation UI, and gated workspace search/export remain later packages.
+**Current package:** **3.6 complete (awaiting human approval before 3.7).** First operational vertical slice is visitor-visible: staff claim/evidence review, independent evidence quality, participant-visible public rationales, administrator publish, and gated anonymous allowlisted projection. Public-demo remains the 3.5 Tennessee fixture experience. Revision history, moderation UI, deliberation, public-interface hardening, and workspace search/export remain later packages.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [phase-2-plan.md](./phase-2-plan.md), [phase-2-handoff.md](./phase-2-handoff.md), [architecture-phase-2.md](./architecture-phase-2.md), [architecture-phase-3.md](./architecture-phase-3.md), [capability-matrix.md](./capability-matrix.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [open-questions.md](./open-questions.md), [decisions/0006-phase-3-two-lane-sequencing.md](./decisions/0006-phase-3-two-lane-sequencing.md), [decisions/0007-alpha-test-interim-council-dispositions.md](./decisions/0007-alpha-test-interim-council-dispositions.md), [decisions/0008-phase-3-operational-alpha-contract.md](./decisions/0008-phase-3-operational-alpha-contract.md), [decisions/0009-phase-3-operational-slice-corrections.md](./decisions/0009-phase-3-operational-slice-corrections.md)
 
@@ -521,7 +521,7 @@ Still **forbidden in Phase 3** unless a future ADR + register update says otherw
 
 ### Work package 3.6 — Review queues and minimal visitor-visible publish
 
-**Status:** Not started.
+**Status:** Complete (awaiting human approval before 3.7).
 
 **Objective:** Reviewers (and admin fallback) record **claim** workflow decisions (`claims.review`), **evidence** workflow decisions and independent evidence-quality decisions (`evidence.review`), then administrators publish a reviewed topic so a **visitor** sees the minimal gated public projection.
 
@@ -550,6 +550,14 @@ Still **forbidden in Phase 3** unless a future ADR + register update says otherw
 **Non-goals:** Full revision/disclosure/moderation/presentation hardening (3.10); automated source scoring; AI assist.
 
 **Stop condition:** Human review before **3.7**. End of first operational vertical slice (visitor-visible result included).
+
+**3.6 delivery notes (implemented):**
+
+- Domain services: `src/lib/claims/review.ts`, `src/lib/evidence/review.ts`, `src/lib/topics/publish.ts`, pure `src/lib/topics/public-projection.ts`, gated read `src/lib/topics/gated-public-read.ts`, queues `src/lib/review/queues.ts`.
+- Workspace: `/workspace/review` (+ claim/evidence detail), publish controls on workspace topic detail, participant public rationales + edit/resubmit on own submission detail.
+- Mode-branched `/topics` and `/topics/[slug]`: public-demo retains 3.5 Tennessee fixtures; gated serves published allowlisted DTOs only via dynamic import + `connection()`.
+- No incremental migration: reused 3.2 review/publication schema and append-only triggers.
+- No unpublish; pause/reopen leave publication status unchanged.
 
 ---
 

@@ -7,7 +7,7 @@ import { expectNoHorizontalOverflow, signInWithCapturedEmail } from "./gated-hel
  * Requires playwright.gated.config.ts + prepared synthetic DB.
  */
 test.describe("gated topic authoring", () => {
-  test("administrator can create a draft and open it without a publish control", async ({
+  test("administrator can create a draft, see publish readiness, and open without publishing", async ({
     page,
   }) => {
     await signInWithCapturedEmail(page, "staff-admin@ostt.synth.test");
@@ -17,7 +17,6 @@ test.describe("gated topic authoring", () => {
     ).toBeVisible();
     await expect(page.getByText(/operational workflow/i).first()).toBeVisible();
     await expect(page.getByText(/publication status/i).first()).toBeVisible();
-    await expect(page.getByRole("button", { name: /publish/i })).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
 
     await page.goto("/workspace/topics/new");
@@ -36,7 +35,8 @@ test.describe("gated topic authoring", () => {
     });
     await expect(page.getByText(/draft/i).first()).toBeVisible();
     await expect(page.getByText(/not published/i).first()).toBeVisible();
-    await expect(page.getByRole("button", { name: /publish/i })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Publish", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Publish topic" })).toBeDisabled();
 
     await page.getByLabel(/action/i).selectOption("open");
     await page.getByRole("button", { name: /apply transition/i }).click();

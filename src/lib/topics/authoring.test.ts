@@ -64,7 +64,7 @@ describe("topic authoring services (3.4)", () => {
     ]) {
       expect(isRegisteredAuditAction(action)).toBe(true);
     }
-    expect(isRegisteredAuditAction("topics.published")).toBe(false);
+    expect(isRegisteredAuditAction("topics.published")).toBe(true);
   });
 
   it("creates draft unpublished topics from the principal", async () => {

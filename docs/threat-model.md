@@ -101,6 +101,10 @@ Controls below are **implemented** through 2.11 unless noted as still blocked.
 | Private disclosure leakage (3.5) | Disclosure attaches to claim only; private_detail never in public projections or audit private payloads |
 | Geography-as-eligibility confusion (3.5) | Documented classification-only fields; no capability grants from FIPS; alpha still has no geographic eligibility rule |
 | Public-demo proposed-topic bleed (3.5) | `discoveryState` fixture field; default listing excludes proposed; not reused for gated unpublished rows |
+| Staff review / private notes leakage (3.6) | Private notes staff-only on review DTOs; never in public projection, participant views, audit summaries, or URL state |
+| Unpublished gated topic enumeration (3.6) | Repository filter `publication_status=published` + projection rejects non-publishable rows; missing/unpublished → generic 404; metadata indistinguishability |
+| Workflow/quality/publication confusion (3.6) | Independent axes in schema, services, UI copy; publish preserves operational workflow; pause does not unpublish |
+| Stale concurrent review/publish races (3.6) | Expected-state updates; one winner; audit failure rolls back review/state/publication together |
 | Bootstrap disguised as independent review | `decision_source = operator_bootstrap` + null `reviewer_account_id` + operator label; dedicated audit actions |
 
 ## Explicit non-goals for Phase 1 / Phase 2 public-demo

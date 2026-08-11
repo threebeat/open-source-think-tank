@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 
 import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { PageHeader } from "@/components/PageHeader";
@@ -18,13 +19,22 @@ import {
   listTopics,
 } from "@/domain/selectors";
 import { fixtureCatalog } from "@/fixtures";
+import { resolveAppMode } from "@/lib/env/app-mode";
 import { cn } from "@/lib/utils";
 
 type TopicPageProps = {
   params: Promise<{ slug: string }>;
 };
 
+// Dual-mode: gated published projections are request-time; conditional
+// `dynamic` exports are not statically analyzable in Next 16.3.
+export const dynamic = "force-dynamic";
+
 export function generateStaticParams() {
+  // Gated builds must not enumerate fixture slugs for DB topics.
+  if (resolveAppMode() === "gated") {
+    return [];
+  }
   return listTopics(fixtureCatalog).map((topic) => ({ slug: topic.slug }));
 }
 
@@ -32,6 +42,13 @@ export async function generateMetadata({
   params,
 }: TopicPageProps): Promise<Metadata> {
   const { slug } = await params;
+  if (resolveAppMode() === "gated") {
+    await connection();
+    const { gatedTopicMetadata } = await import(
+      "../gated-published-topic-detail"
+    );
+    return gatedTopicMetadata(slug);
+  }
   const bundle = getScenarioBundle(fixtureCatalog, slug);
   if (!bundle) {
     return { title: "Topic not found" };
@@ -44,6 +61,15 @@ export async function generateMetadata({
 
 export default async function TopicDetailPage({ params }: TopicPageProps) {
   const { slug } = await params;
+
+  if (resolveAppMode() === "gated") {
+    await connection();
+    const { default: GatedPublishedTopicDetailPage } = await import(
+      "../gated-published-topic-detail"
+    );
+    return <GatedPublishedTopicDetailPage slug={slug} />;
+  }
+
   const bundle = getScenarioBundle(fixtureCatalog, slug);
   if (!bundle) {
     notFound();
