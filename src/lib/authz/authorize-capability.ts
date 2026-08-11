@@ -1,6 +1,6 @@
-import type { FoundationDb } from "@/db/types";
 import { authorize } from "@/lib/authz/authorize";
 import type { AuthzDecision, AuthzPrincipal, Capability } from "@/lib/authz/types";
+import type { GatedDb } from "@/lib/persistence/gated";
 import { CAPABILITY_ASSURANCE } from "@/lib/verification/ladder";
 import { evaluateAssurance } from "@/lib/verification/status";
 
@@ -9,7 +9,7 @@ import { evaluateAssurance } from "@/lib/verification/status";
  * Use this for every protected action — not `authorize()` alone.
  */
 export async function authorizeCapability(
-  db: FoundationDb,
+  db: GatedDb,
   principal: AuthzPrincipal | null | undefined,
   capability: Capability,
 ): Promise<AuthzDecision> {

@@ -1,9 +1,9 @@
 import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
 
 import { verificationCases } from "@/db/schema";
-import type { FoundationDb } from "@/db/types";
 import type { VerificationAssertionKind } from "@/lib/adapters/verification";
 import type { Capability } from "@/lib/authz/types";
+import type { GatedDb } from "@/lib/persistence/gated";
 import {
   ASSURANCE_LEVELS,
   assuranceForCapability,
@@ -42,7 +42,7 @@ function effectiveStatus(
 
 /** Status-only view for an account — safe for account-private surfaces. */
 export async function listAccountVerificationStatus(
-  db: FoundationDb,
+  db: GatedDb,
   accountId: string,
 ): Promise<VerificationStatusView[]> {
   const now = new Date();
@@ -74,7 +74,7 @@ export async function listAccountVerificationStatus(
 }
 
 export async function getKindStatus(
-  db: FoundationDb,
+  db: GatedDb,
   accountId: string,
   kind: VerificationAssertionKind,
 ): Promise<VerificationStatusView["status"]> {
@@ -123,7 +123,7 @@ export async function getKindStatus(
 }
 
 export async function approvedKindsForAccount(
-  db: FoundationDb,
+  db: GatedDb,
   accountId: string,
 ): Promise<Set<VerificationAssertionKind>> {
   const now = new Date();
@@ -145,7 +145,7 @@ export async function approvedKindsForAccount(
 }
 
 export async function evaluateAssurance(
-  db: FoundationDb,
+  db: GatedDb,
   accountId: string,
   capability: Capability,
 ): Promise<{

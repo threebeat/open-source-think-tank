@@ -369,6 +369,117 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
     highImpact: false,
     publicProject: () => "Synthetic foundation seed applied.",
   }),
+
+  // Topics (3.4 authoring — no public projector for draft/staff actions)
+  "topics.created": def("topics.created", "Topic draft created", {
+    requireActorAccount: true,
+    payloadSchema: z
+      .object({
+        topicId: z.string(),
+        capability: z.literal("topics.create"),
+        previousWorkflowState: z.null(),
+        nextWorkflowState: z.literal("draft"),
+        actorAccountId: z.string(),
+        slug: z.string(),
+      })
+      .strict() as z.ZodType<Record<string, unknown>>,
+  }),
+  "topics.updated": def("topics.updated", "Topic draft metadata updated", {
+    requireActorAccount: true,
+    payloadSchema: z
+      .object({
+        topicId: z.string(),
+        capability: z.literal("topics.update"),
+        previousWorkflowState: z.string(),
+        nextWorkflowState: z.string(),
+        changedFields: z.array(z.string()),
+        actorAccountId: z.string(),
+        expectedUpdatedAt: z.string(),
+      })
+      .strict() as z.ZodType<Record<string, unknown>>,
+  }),
+  "topics.opened": def("topics.opened", "Topic opened for submissions", {
+    requireActorAccount: true,
+    payloadSchema: z
+      .object({
+        topicId: z.string(),
+        capability: z.literal("topics.open"),
+        previousWorkflowState: z.string(),
+        nextWorkflowState: z.string(),
+        actorAccountId: z.string(),
+        expectedWorkflowState: z.string(),
+        publicationStatusUnchanged: z.string(),
+      })
+      .strict() as z.ZodType<Record<string, unknown>>,
+  }),
+  "topics.review_started": def(
+    "topics.review_started",
+    "Topic moved under review",
+    {
+      requireActorAccount: true,
+      requireReason: true,
+      payloadSchema: z
+        .object({
+          topicId: z.string(),
+          capability: z.literal("topics.update"),
+          previousWorkflowState: z.string(),
+          nextWorkflowState: z.string(),
+          actorAccountId: z.string(),
+          expectedWorkflowState: z.string(),
+          publicationStatusUnchanged: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "topics.reopened": def(
+    "topics.reopened",
+    "Topic reopened for submissions",
+    {
+      requireActorAccount: true,
+      requireReason: true,
+      payloadSchema: z
+        .object({
+          topicId: z.string(),
+          capability: z.literal("topics.open"),
+          previousWorkflowState: z.string(),
+          nextWorkflowState: z.string(),
+          actorAccountId: z.string(),
+          expectedWorkflowState: z.string(),
+          publicationStatusUnchanged: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "topics.paused": def("topics.paused", "Topic paused", {
+    requireActorAccount: true,
+    requireReason: true,
+    payloadSchema: z
+      .object({
+        topicId: z.string(),
+        capability: z.literal("topics.pause"),
+        previousWorkflowState: z.string(),
+        nextWorkflowState: z.string(),
+        actorAccountId: z.string(),
+        expectedWorkflowState: z.string(),
+        publicationStatusUnchanged: z.string(),
+      })
+      .strict() as z.ZodType<Record<string, unknown>>,
+  }),
+  "topics.archived": def("topics.archived", "Topic archived", {
+    requireActorAccount: true,
+    requireReason: true,
+    payloadSchema: z
+      .object({
+        topicId: z.string(),
+        capability: z.literal("topics.archive"),
+        previousWorkflowState: z.string(),
+        nextWorkflowState: z.string(),
+        actorAccountId: z.string(),
+        expectedWorkflowState: z.string(),
+        publicationStatusUnchanged: z.string(),
+      })
+      .strict() as z.ZodType<Record<string, unknown>>,
+  }),
 };
 
 export type RegisteredAuditAction = keyof typeof AUDIT_EVENT_REGISTRY;

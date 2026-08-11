@@ -334,7 +334,7 @@ export async function finalizeAdministratorBootstrap(
         });
       }
 
-      const activated = await activateAccount(tx as unknown as FoundationDb, {
+      const activated = await activateAccount(tx, {
         accountId,
       });
       if (!activated.ok) {

@@ -161,6 +161,47 @@ export async function listTopics(db: GatedDb, filters?: {
 }
 
 /**
+ * Expected-state metadata update for draft topics only (enforced by caller).
+ * Does not touch workflow_state or publication fields.
+ * Returns null value when expectedUpdatedAt no longer matches (stale write).
+ */
+export async function updateTopicMetadata(
+  db: GatedDb,
+  input: {
+    topicId: string;
+    expectedUpdatedAt: Date;
+    title: string;
+    question: string;
+    background: string;
+    scope: string;
+  },
+): Promise<AdapterResult<TopicRecord | null>> {
+  const denied = requireGatedPersistence();
+  if (denied) {
+    return denied;
+  }
+
+  const [row] = await db
+    .update(topics)
+    .set({
+      title: input.title,
+      question: input.question,
+      background: input.background,
+      scope: input.scope,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(topics.id, input.topicId),
+        eq(topics.updatedAt, input.expectedUpdatedAt),
+      ),
+    )
+    .returning();
+
+  return { ok: true, value: row ? mapTopic(row) : null };
+}
+
+/**
  * Expected-state workflow update. Does not touch publication_status.
  * Returns null value when the expected workflow no longer matches (lost update).
  */
