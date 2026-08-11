@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 type EvidenceSourceCardProps = {
   source: EvidenceSource;
-  relationLabel?: "Supporting" | "Counterevidence";
+  relationLabel?: "Supporting" | "Evidence Against This Claim";
   /** Set false when the same source is also rendered in the topic inventory. */
   anchor?: boolean;
 };

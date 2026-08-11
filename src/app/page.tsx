@@ -30,7 +30,7 @@ export default function Home() {
       <PageHeader
         eyebrow="Proposed project · Phase 1 prototype"
         title="Open-Source Think Tank"
-        description="A public, nonpartisan process for examining policy questions with open evidence, structured consultation, transparent agenda rules, capacity-limited deliberation, and published decision records."
+        description="A public, nonpartisan process for examining policy questions with open evidence, public input from eligible/invited participants, clear public criteria, capacity-limited policy drafting, and published recommendations (not enacted law)."
         actions={
           <>
             <Link
@@ -55,7 +55,7 @@ export default function Home() {
                 "min-h-11 px-4",
               )}
             >
-              Join preview
+              How Joining Works
             </Link>
           </>
         }
@@ -109,7 +109,7 @@ export default function Home() {
 
       <section className="space-y-4">
         <h2 className="font-heading text-2xl text-foreground">
-          Institutional pipeline
+          How the Process Works
         </h2>
         <ProcessStepper
           steps={institutionalProcessSteps}

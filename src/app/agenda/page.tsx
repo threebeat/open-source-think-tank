@@ -11,9 +11,9 @@ import { fixtureCatalog } from "@/fixtures";
 import { agendaStateLabels } from "@/lib/evidence-labels";
 
 export const metadata: Metadata = {
-  title: "Agenda",
+  title: "Decide What Moves Forward",
   description:
-    "Synthetic agenda gate explanation and agenda items in proposed, qualified, deferred, and rejected states.",
+    "Synthetic explanation of how public criteria and human review decide what moves forward, with items in proposed, qualified, deferred, and rejected states.",
 };
 
 export default function AgendaPage() {
@@ -29,15 +29,16 @@ export default function AgendaPage() {
         items={[{ href: "/", label: "Home" }, { label: "Agenda" }]}
       />
       <PageHeader
-        eyebrow="Synthetic agenda gate"
-        title="Agenda"
-        description="Published thresholds organize what may enter capacity-limited deliberation. Algorithms recommend; humans record a reasoned review. No single popularity score decides the agenda."
+        eyebrow="Decide What Moves Forward"
+        title="Decide What Moves Forward"
+        description="Public criteria organize what may enter capacity-limited policy drafting. Algorithms recommend; humans record a reasoned review. No single popularity score decides what moves forward."
       />
 
-      <DisclosureNotice title="How the agenda gate works">
-        A consultation snapshot is checked against separate eligibility thresholds:
-        participation coverage, cross-group support, disagreement or salience,
-        and evidence readiness. Representation warnings stay visible and are not
+      <DisclosureNotice title="How deciding what moves forward works">
+        A public-input snapshot (from eligible/invited participants in the intended
+        product) is checked against separate public criteria: participation
+        coverage, cross-group support, disagreement or salience, and enough
+        research to move forward. Representation warnings stay visible and are not
         treated as a population mandate. A human reviewer then qualifies, defers,
         rejects, or leaves an item proposed. Departures from the default
         calculation are written into the public review record.

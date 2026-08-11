@@ -240,7 +240,7 @@ export function DeliberationObserver({
 
       <section className="space-y-3" aria-labelledby="recusal-heading">
         <h2 id="recusal-heading" className="font-heading text-2xl text-foreground">
-          Recusal
+          Stepped Aside Because of a Conflict
         </h2>
         <div className="rounded-md border border-border bg-surface p-5 text-sm leading-6">
           <p className="font-medium text-foreground">
@@ -309,7 +309,7 @@ export function DeliberationObserver({
             "min-h-11 px-4",
           )}
         >
-          Open consultation path
+          Open public input path
         </Link>
         <Link
           href={`/decisions/${topic.slug}`}
@@ -318,7 +318,7 @@ export function DeliberationObserver({
             "min-h-11 px-4",
           )}
         >
-          Open decision record
+          Open recommendation & council vote
         </Link>
       </section>
     </div>

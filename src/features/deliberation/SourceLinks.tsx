@@ -53,7 +53,7 @@ export function SourceLinks({
             href={`/topics/${topicSlug}/consult#${statement.id}`}
             className="inline-flex min-h-11 items-center rounded-md bg-muted px-2 text-foreground underline-offset-4 hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
           >
-            Consultation statement: {statement.text}
+            Public input statement: {statement.text}
           </Link>
         </li>
       ))}

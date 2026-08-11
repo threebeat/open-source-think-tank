@@ -149,7 +149,7 @@ export function ConsultationResults({
           explanation="Average share of statements answered in the synthetic cohort."
         />
         <MetricWithExplanation
-          label="Opinion groups"
+          label="Areas of Agreement and Disagreement"
           value={groups.map((group) => group.label).join(", ")}
           explanation="Neutral labels only. No liberal/conservative or other ideology tags."
         />

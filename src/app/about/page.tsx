@@ -21,7 +21,7 @@ export default function AboutPage() {
       <PageHeader
         eyebrow="Proposed project · Phase 1"
         title="About this demonstration"
-        description="A browser prototype of a proposed open-source think tank. It shows how join preview, evidence, consultation, agenda rules, capacity-limited deliberation, recommendation records, and transparency could fit together—using synthetic data only."
+        description="A browser prototype of a proposed open-source think tank. It shows how joining works, fact-check & research, public input, deciding what moves forward, state-level policy drafting, recommendation & council vote, and the public record could fit together—using synthetic data only."
         actions={
           <>
             <Link
@@ -55,10 +55,11 @@ export default function AboutPage() {
         </h2>
         <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
           Build a public, nonpartisan process for examining policy questions with
-          open evidence, structured consultation, transparent agenda rules,
-          capacity-limited deliberation, and published decision records—so that
-          preference, cross-group agreement, and evidence quality stay visibly
-          separate, and no algorithm silently becomes the institution.
+          open evidence, public input from eligible/invited participants, public
+          criteria, capacity-limited policy drafting, and published recommendations
+          (not enacted law)—so that preference, cross-group agreement, and research
+          quality stay visibly separate, and no algorithm silently becomes the
+          institution.
         </p>
       </section>
 
@@ -71,23 +72,24 @@ export default function AboutPage() {
         </h2>
         <ul className="max-w-3xl list-disc space-y-2 pl-5 text-sm leading-6 text-muted-foreground">
           <li>
-            Evidence-review status stays independent of popularity and consensus.
+            Research review status stays independent of popularity and consensus,
+            and is not proof that a claim is true.
           </li>
           <li>
-            Opinion groups are labeled neutrally; the interface does not infer or
-            display participant ideology.
+            Areas of agreement and disagreement are labeled neutrally; the
+            interface does not infer or display participant ideology.
           </li>
           <li>
             Algorithms and fixtures organize or recommend; humans record
             institutional decisions, with overrides visible when applicable.
           </li>
           <li>
-            Decision records keep majority rationale and minority reports at equal
-            structural prominence.
+            Recommendation & council vote records keep majority rationale and
+            minority reports at equal structural prominence (not board adoption).
           </li>
           <li>
-            Transparency means explainable institutional action, not publication of
-            identity or granular political-opinion histories.
+            The public record means explainable institutional action, not
+            publication of identity or granular political-opinion histories.
           </li>
           <li>
             Unresolved legal and governance questions are listed rather than
@@ -146,14 +148,14 @@ export default function AboutPage() {
             href="/transparency"
             className="font-medium text-primary underline underline-offset-4 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
           >
-            Transparency
+            The Public Record
           </Link>
           {" · "}
           <Link
             href="/join"
             className="font-medium text-primary underline underline-offset-4 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
           >
-            Join preview
+            How Joining Works
           </Link>
           .
         </p>

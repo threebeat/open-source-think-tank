@@ -21,10 +21,14 @@ export const evidenceReviewLabels: Record<EvidenceReviewStatus, string> = {
 };
 
 export const evidenceReviewExplanations: Record<EvidenceReviewStatus, string> = {
-  pending: "Submitted for review; not yet relied on as accepted evidence.",
-  accepted: "Reviewed and usable for institutional consideration, with stated limitations.",
-  limited: "Usable only with important caveats; not treated as full support.",
-  disputed: "Material objections remain about methods, conflicts, or interpretation.",
+  pending:
+    "Submitted for research review; not yet relied on as accepted evidence. A research review status is not proof that a claim is true.",
+  accepted:
+    "Reviewed as usable for institutional consideration, with stated limitations. This is not proof that a claim is true.",
+  limited:
+    "Usable only with important caveats; not treated as full support. This is not proof that a claim is true.",
+  disputed:
+    "Material objections remain about methods, conflicts, or interpretation. This is not proof that a claim is true.",
   rejected: "Not accepted for reliance in this demonstration record.",
 };
 
@@ -48,11 +52,11 @@ export const sourceTypeLabels: Record<SourceType, string> = {
 
 export const topicStageLabels: Record<TopicStage, string> = {
   brief: "Brief",
-  evidence: "Evidence",
-  consultation: "Consultation",
-  agenda: "Agenda",
-  deliberation: "Deliberation",
-  decision: "Decision",
+  evidence: "Fact-Check & Research",
+  consultation: "Public Input",
+  agenda: "Decide What Moves Forward",
+  deliberation: "State-Level Policy Drafting",
+  decision: "Recommendation & Council Vote",
   closed: "Closed",
 };
 
@@ -102,10 +106,10 @@ export const voteChoiceLabels: Record<VoteChoice, string> = {
   for: "For",
   against: "Against",
   abstain: "Abstain",
-  recused: "Recused",
+  recused: "Stepped aside (conflict)",
 };
 
 export const councilRoleLabels: Record<CouncilRole, string> = {
-  deliberation_council: "Deliberation council",
+  deliberation_council: "Policy Drafting Council",
   policy_council: "Policy council",
 };

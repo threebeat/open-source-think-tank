@@ -23,10 +23,10 @@ export async function generateMetadata({
   const { slug } = await params;
   const bundle = getDecisionBundle(fixtureCatalog, slug);
   if (!bundle) {
-    return { title: "Decision not found" };
+    return { title: "Recommendation not found" };
   }
   return {
-    title: `Decision — ${bundle.topic.title}`,
+    title: `Recommendation & Council Vote — ${bundle.topic.title}`,
     description: bundle.decision.rationale,
   };
 }
@@ -43,14 +43,14 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
       <Breadcrumbs
         items={[
           { href: "/", label: "Home" },
-          { label: "Decisions" },
+          { label: "Recommendation & Council Vote" },
           { label: bundle.topic.title },
         ]}
       />
       <PageHeader
-        eyebrow={`Synthetic decision · ${decisionOutcomeLabels[bundle.decision.outcome]}`}
+        eyebrow={`Synthetic recommendation · ${decisionOutcomeLabels[bundle.decision.outcome]}`}
         title={bundle.topic.title}
-        description="Final proposal, roll call, rationale, minority report, and links back through the institutional path."
+        description="Final proposal, roll call, rationale, minority report, and links back through how the process works. This is a council recommendation — not enacted law and not governing-board adoption."
       />
       <DecisionRecord
         decision={bundle.decision}

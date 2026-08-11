@@ -135,7 +135,7 @@ export function ConsultationSimulator({
   if (!result || statements.length === 0) {
     return (
       <EmptyState
-        title="Consultation not open for this topic"
+        title="Public input not open for this topic"
         description={`${topicTitle} does not yet have a sealed synthetic consultation snapshot. Earlier-stage topics intentionally stop before this step.`}
       />
     );
@@ -181,7 +181,7 @@ export function ConsultationSimulator({
         role="status"
         aria-live="polite"
         aria-atomic="true"
-        aria-label="Consultation practice updates"
+        aria-label="Public input practice updates"
       >
         {liveStatus}
       </p>

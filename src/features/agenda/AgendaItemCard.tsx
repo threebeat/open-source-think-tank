@@ -30,7 +30,7 @@ export function AgendaItemCard({ item }: AgendaItemCardProps) {
       </p>
       <p className="mt-4 text-xs text-muted-foreground">
         Popularity is not shown as a single score. Open the item for separate
-        thresholds and the calculation trace.
+        public criteria and how this result was calculated.
       </p>
     </article>
   );

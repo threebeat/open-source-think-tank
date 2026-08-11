@@ -8,7 +8,7 @@ import { GuidedDemo } from "@/features/demo/GuidedDemo";
 export const metadata: Metadata = {
   title: "Guided demo",
   description:
-    "Five-to-eight-minute synthetic walkthrough from join preview through decision and transparency stops.",
+    "Five-to-eight-minute synthetic walkthrough from how joining works through recommendation & council vote and the public record.",
 };
 
 export default function DemoPage() {

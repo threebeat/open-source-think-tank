@@ -32,7 +32,7 @@ export function AgendaDetail({ item, topic }: AgendaDetailProps) {
 
       <section className="space-y-3" aria-labelledby="threshold-heading">
         <h2 id="threshold-heading" className="font-heading text-2xl text-foreground">
-          Published eligibility thresholds
+          Public Criteria
         </h2>
         <ul className="space-y-3">
           {item.thresholds.map((threshold) => (
@@ -92,7 +92,7 @@ export function AgendaDetail({ item, topic }: AgendaDetailProps) {
             explanation={item.disagreementSalience}
           />
           <MetricWithExplanation
-            label="Evidence readiness"
+            label="Enough Research to Move Forward"
             value="Reported separately"
             explanation={item.evidenceReadiness}
           />
@@ -104,7 +104,7 @@ export function AgendaDetail({ item, topic }: AgendaDetailProps) {
 
       <section className="space-y-3" aria-labelledby="trace-heading">
         <h2 id="trace-heading" className="font-heading text-2xl text-foreground">
-          Calculation trace
+          How This Result Was Calculated
         </h2>
         <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
           Plain-language steps from fixed fixture inputs. This is a mock
@@ -177,7 +177,7 @@ export function AgendaDetail({ item, topic }: AgendaDetailProps) {
           href={`/topics/${topic.slug}/consult`}
           className={cn(buttonVariants({ size: "lg" }), "min-h-11 px-4")}
         >
-          Open consultation report path
+          Open public input report path
         </Link>
         <Link
           href={`/topics/${topic.slug}`}
@@ -186,7 +186,7 @@ export function AgendaDetail({ item, topic }: AgendaDetailProps) {
             "min-h-11 px-4",
           )}
         >
-          Open evidence record
+          Open fact-check & research record
         </Link>
       </section>
     </div>

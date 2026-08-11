@@ -77,7 +77,7 @@ export default async function TopicDetailPage({ params }: TopicPageProps) {
                 href={`/topics/${topic.slug}/consult`}
                 className={cn(buttonVariants({ size: "lg" }), "min-h-11 px-4")}
               >
-                Open consultation simulation
+                Open public input simulation
               </Link>
             ) : null}
           </>
@@ -155,7 +155,7 @@ export default async function TopicDetailPage({ params }: TopicPageProps) {
             <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
               All sources attached to this topic, including pending, limited,
               disputed, and rejected states. Source quality is shown independently
-              from any consultation popularity.
+              from any public-input popularity.
             </p>
             <div className="grid gap-4 lg:grid-cols-2">
               {evidenceSources.map((source) => (

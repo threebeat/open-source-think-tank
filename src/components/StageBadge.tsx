@@ -1,15 +1,6 @@
 import type { TopicStage } from "@/domain/status";
+import { topicStageLabels } from "@/lib/evidence-labels";
 import { cn } from "@/lib/utils";
-
-const stageLabels: Record<TopicStage, string> = {
-  brief: "Brief",
-  evidence: "Evidence",
-  consultation: "Consultation",
-  agenda: "Agenda",
-  deliberation: "Deliberation",
-  decision: "Decision",
-  closed: "Closed",
-};
 
 type StageBadgeProps = {
   stage: TopicStage;
@@ -24,7 +15,7 @@ export function StageBadge({ stage, className }: StageBadgeProps) {
         className,
       )}
     >
-      {stageLabels[stage]}
+      {topicStageLabels[stage]}
     </span>
   );
 }
