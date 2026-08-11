@@ -1,11 +1,11 @@
 # Phase 3 architecture — operational alpha
 
-**Status:** Work Package 3.1 contract (design only — not implemented)  
+**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009 (design only — not implemented)  
 **Plan:** [phase-3-plan.md](./phase-3-plan.md)  
-**ADR:** [0008-phase-3-operational-alpha-contract.md](./decisions/0008-phase-3-operational-alpha-contract.md)  
+**ADRs:** [0008](./decisions/0008-phase-3-operational-alpha-contract.md), [0009](./decisions/0009-phase-3-operational-slice-corrections.md)  
 **Foundation:** [architecture-phase-2.md](./architecture-phase-2.md), ADRs 0002–0005, capability matrix, audit registry
 
-This document proposes service boundaries, table groups, routes, and projections for Phase 3. It does **not** authorize migrations, routes, or vendor installs by itself. Implementing packages own those changes.
+This document proposes service boundaries, table groups, routes, and projections for Phase 3. It does **not** authorize migrations, routes, or vendor installs by itself. Implementing packages own those changes. A real off-device multi-user alpha requires an approved reachable gated deployment and persistent PostgreSQL; do not select a vendor here.
 
 ---
 
@@ -83,27 +83,29 @@ Conceptual groups to add in **3.2** (names may adjust during migration design):
 
 ### 3.1 Core topic group
 
-- `topics` — id, slug, title, question, background, scope, workflow_state, timestamps, created_by_account_id, synthetic flag if any seed rows
+- `topics` — id, slug, title, question, background, scope, **`workflow_state`** (`draft` | `open_for_submissions` | `under_review` | `paused` | `archived`), **`publication_status`** (`unpublished` | `published`), timestamps, created_by_account_id, synthetic flag if any seed rows
+- Operational workflow and publication status are independent; pause must not flip publication
 - Optional `topic_changelog` or rely on revisions + audit
 
 ### 3.2 Claims and evidence
 
-- `claims` — topic_id, author_account_id, title, summary, approach_label, workflow_state, moderation_visibility, timestamps
-- `evidence_sources` / `evidence_submissions` — topic_id, submitter_account_id, url, title, organization, author_type, source_type, limitations, workflow_state, quality_status, moderation_visibility, timestamps
-- `claim_evidence_links` — claim_id, evidence_id, relationship (`supporting` | `counterevidence`)
+- `claims` — topic_id, author_account_id, title, summary, approach_label, workflow_state, moderation_visibility (`visible` | `held` | `hidden`), timestamps
+- `evidence_sources` / `evidence_submissions` — topic_id, submitter_account_id, url, title, organization, author_type, source_type, limitations, workflow_state, quality_status, moderation_visibility (`visible` | `held` | `hidden`), timestamps
+- `claim_evidence_links` — claim_id, evidence_id, relationship (`supporting` | `counterevidence`) — **basic link in 3.2/3.5**; richer comparison in 3.7
 
 ### 3.3 Disclosures
 
 - `conflict_disclosures` — subject_type/id, account_id, public_summary, private_detail, created_at, updated_at
 
-### 3.4 Revisions
+### 3.4 Revisions (enriched in 3.7)
 
 - `content_revisions` — subject_type/id, revision_n, snapshot jsonb or normalized columns, edited_by_account_id, reason, created_at  
-  Append-only from application permissions.
+  Append-only from application permissions. Schema stubs may appear in 3.2; full history UX is 3.7.
 
 ### 3.5 Review artifacts
 
-- Either columns on evidence/claims or `evidence_reviews` — reviewer_account_id, quality_status, workflow_decision, public_rationale, private_notes, created_at
+- Claim workflow reviews via `claims.review`; evidence workflow + quality via `evidence.review`
+- Either columns on evidence/claims or review tables — reviewer_account_id, quality_status (evidence), workflow_decision, public_rationale, private_notes, created_at
 
 ### Relationships (logical)
 
@@ -124,18 +126,18 @@ all mutable institutional actions ---> audit_events
 
 ## 4. Proposed public read projection
 
-Allowlisted fields for gated anonymous/public topic reads after `topics.publish`:
+Allowlisted fields for gated anonymous/public topic reads when `publication_status = published`:
 
 | Include | Exclude |
 | --- | --- |
-| Topic title, question, background, scope, published timestamps, workflow public label | Account IDs, contact channels |
-| Claims/sources in workflow `accepted` (or explicitly publication-eligible) **and** visibility `visible`/`restored` | Drafts, rejected-only bodies, held/hidden bodies |
+| Topic title, question, background, scope, published timestamps, operational workflow public label | Account IDs, contact channels |
+| Claims/sources in workflow `accepted` (or explicitly publication-eligible) **and** visibility `visible` | Drafts, rejected-only bodies, held/hidden bodies |
 | Evidence quality status + **public** rationale | Private moderation/review notes |
-| Public conflict summaries | Private disclosure detail |
-| Revision summaries safe for public (what changed, when, role—not account id) | Invite tokens, verification cases |
+| Public conflict summaries (deepened after 3.8) | Private disclosure detail |
+| Revision summaries safe for public (deepened in 3.7/3.10) | Invite tokens, verification cases |
 | Allowlisted audit summaries (existing 2.9 projectors) | Raw privatePayload |
 
-Projection builder lives in a pure module testable without React. 3.10 wires it into routes.
+Projection builder lives in a pure module testable without React. **Minimal path wires in 3.6**; **3.10** completes and hardens.
 
 ---
 
@@ -148,10 +150,10 @@ Projection builder lives in a pure module testable without React. 3.10 wires it 
 | `/workspace` | Alpha home / tasks | session |
 | `/workspace/topics` | Staff/participant topic list | read scoped |
 | `/workspace/topics/new` | Create topic | `topics.create` |
-| `/workspace/topics/[slug]` | Edit/open/pause/archive; staff tools | `topics.*` / review |
-| `/workspace/topics/[slug]/submit` | Claim/evidence submit | `claims.submit`, `evidence.submit` |
-| `/workspace/review` | Evidence review queue | `evidence.review` |
-| `/workspace/moderation` | Visibility actions | `moderation.review_submission` |
+| `/workspace/topics/[slug]` | Edit/open/pause/archive; publish; staff tools | `topics.*` / review |
+| `/workspace/topics/[slug]/submit` | Claim/evidence submit with basic relationship | `claims.submit`, `evidence.submit` |
+| `/workspace/review` | Claim and evidence review queues | `claims.review`, `evidence.review` |
+| `/workspace/moderation` | Visibility hold/hide/restore-to-visible | `moderation.review_submission` |
 | `/staff/invitations` (or extend existing staff) | Issue invites | `invites.issue` |
 
 Exact paths may align with existing `/account/*` and `/staff/*` trees; do not expose them on public-demo.
@@ -178,14 +180,15 @@ Exact paths may align with existing `/account/*` and `/staff/*` trees; do not ex
 | Operation | Transaction scope |
 | --- | --- |
 | Topic create | topic row + audit |
-| Topic transition | topic state update + audit (+ optional changelog) |
+| Topic operational transition | `workflow_state` update + audit (+ optional changelog); **must not** alter `publication_status` unless the mutation is explicitly a publish/unpublish |
 | Submit claim+evidence+disclosure | all inserts/links + audit; fail together |
-| Resubmit after changes_requested | revision row + content update + workflow state + audit |
-| Quality decision | review row/columns + audit; must not rewrite unrelated popularity fields |
-| Moderation visibility | visibility update + audit; never delete revisions |
+| Resubmit after changes_requested | content update + workflow state + audit (+ revision row when 3.7 lands) |
+| Claim workflow decision | `claims.review` + audit |
+| Evidence workflow / quality decision | `evidence.review` + audit; must not rewrite unrelated popularity fields |
+| Moderation visibility | visibility ∈ {visible,held,hidden} + audit; restore action → visible + `moderation.submission_restored`; never delete revisions |
 | Invite issue | invitation row (hash) + audit; raw token only in response memory |
 | Bootstrap admin | person/account/role (+ assurance seed if required) + audit |
-| Publish | topic state + projection stamp + audit |
+| Publish | `publication_status` → published + projection stamp + audit (minimal in 3.6) |
 | Alpha reset | documented ordered deletes/truncates in one operator procedure; audited |
 
 **Concurrency:** use row-level conditions (update … where state = expected) or equivalent to prevent lost updates on workflow transitions; follow Phase 2 patterns used for invite claim / dual-control.
@@ -239,12 +242,13 @@ sequenceDiagram
   Admin->>DB: 3.3 issue invitation hash
   Part->>DB: Phase 2 accept + onboard + activate
   Admin->>DB: 3.4 create draft topic + open
-  Part->>DB: 3.5 submit claim URL disclosure
-  Rev->>DB: 3.6 changes_requested or quality decision
-  Note over DB: 3.10 later publishes projection to visitors
+  Part->>DB: 3.5 submit claim URL relationship disclosure
+  Rev->>DB: 3.6 claims.review / evidence.review / quality
+  Admin->>DB: 3.6 topics.publish publication_status
+  Note over DB: Visitor reads published projection; 3.10 hardens UI depth
 ```
 
-**Slice done means:** staff can run topic open → submit → review in gated UI/API with durable schema, capabilities, and audits—even if anonymous public pages still wait for 3.10.
+**Slice done means:** staff can run topic open → submit → review → publish, and a visitor can see the minimal gated published projection—with durable schema, capabilities, and audits. **3.10** hardens presentation/revision/disclosure/moderation depth.
 
 ---
 
@@ -264,7 +268,7 @@ Items below may be completed later **without** silently weakening core authoriza
 
 | ID | Item | Notes |
 | --- | --- | --- |
-| D1 | Managed PostgreSQL host selection + DPA | Still blocked pending addendum |
+| D1 | Managed PostgreSQL host selection + DPA | Still blocked pending addendum; required for real off-device multi-user alpha once approved |
 | D2 | Production email vendor (Resend/SES/etc.) | Capture-only + operator-delivered links until then |
 | D3 | Dual-control for all moderation/publish actions | Phase 2 dual-control exists for holds/closure; broader use deferred |
 | D4 | File uploads / object storage | Out of initial slice |

@@ -2,9 +2,9 @@
 
 **Status:** Active work-package source for Phase 3 (packages 3.1–3.12)  
 **Baseline:** Phase 2 foundation at or after `a894317317f3ff1e80d0a3602df69e5b4d8cd589` (tag `phase-2-foundation` recorded in [phase-2-handoff.md](./phase-2-handoff.md))  
-**Current package:** **3.1 — Operational contract (documentation only).** No Phase 3 runtime routes, migrations, or capabilities are implemented yet.
+**Current package:** **3.1.1 — Operational-contract corrections and plain-language UI.** No Phase 3 topic/evidence runtime routes, migrations, or capabilities are implemented yet. Contract corrections in Checkpoint 1 amend ADR 0008 via [ADR 0009](./decisions/0009-phase-3-operational-slice-corrections.md).
 
-Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [phase-2-plan.md](./phase-2-plan.md), [phase-2-handoff.md](./phase-2-handoff.md), [architecture-phase-2.md](./architecture-phase-2.md), [architecture-phase-3.md](./architecture-phase-3.md), [capability-matrix.md](./capability-matrix.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [open-questions.md](./open-questions.md), [decisions/0006-phase-3-two-lane-sequencing.md](./decisions/0006-phase-3-two-lane-sequencing.md), [decisions/0007-alpha-test-interim-council-dispositions.md](./decisions/0007-alpha-test-interim-council-dispositions.md), [decisions/0008-phase-3-operational-alpha-contract.md](./decisions/0008-phase-3-operational-alpha-contract.md)
+Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [phase-2-plan.md](./phase-2-plan.md), [phase-2-handoff.md](./phase-2-handoff.md), [architecture-phase-2.md](./architecture-phase-2.md), [architecture-phase-3.md](./architecture-phase-3.md), [capability-matrix.md](./capability-matrix.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [open-questions.md](./open-questions.md), [decisions/0006-phase-3-two-lane-sequencing.md](./decisions/0006-phase-3-two-lane-sequencing.md), [decisions/0007-alpha-test-interim-council-dispositions.md](./decisions/0007-alpha-test-interim-council-dispositions.md), [decisions/0008-phase-3-operational-alpha-contract.md](./decisions/0008-phase-3-operational-alpha-contract.md), [decisions/0009-phase-3-operational-slice-corrections.md](./decisions/0009-phase-3-operational-slice-corrections.md)
 
 ---
 
@@ -48,20 +48,22 @@ Someone reviewing Phase 3 should be able to answer:
 
 ## 2. Locked architectural decisions
 
-These are binding for packages 3.2–3.12 (recorded also in [ADR 0008](./decisions/0008-phase-3-operational-alpha-contract.md) and [architecture-phase-3.md](./architecture-phase-3.md)):
+These are binding for packages 3.2–3.12 (recorded in [ADR 0008](./decisions/0008-phase-3-operational-alpha-contract.md), amended by [ADR 0009](./decisions/0009-phase-3-operational-slice-corrections.md), and [architecture-phase-3.md](./architecture-phase-3.md)):
 
 1. **One repository / one Next.js App Router application.**
 2. **PostgreSQL 16 + Drizzle** remains the gated persistence stack.
 3. **Domain and workflow rules stay independent from React** (services/repositories callable from route handlers and tests).
 4. **Gated mutations never read the synthetic fixture catalog** as a write source.
 5. **Public-demo mode remains fixture-backed** and must never construct the gated database or authentication runtime.
-6. **Gated public read model exposes only published projections.** Drafts, rejected material, private moderation notes, contact channels, verification records, and account identifiers are not public.
-7. **All mutations** use server-side `authorizeCapability` checks, Zod validation, transactions where multiple records change, CSRF protection, and registered audit events.
-8. **Store source URLs and submitter-provided metadata initially.** Do not fetch, scrape, preview, or download remote source content in the initial slice.
-9. **Do not add** file uploads, rich-text dependencies, AI APIs, analytics, payments, live Pol.is, notifications, or new external services in the initial slice.
-10. **Evidence-review status** remains independent from submission workflow status, participant popularity, and later consultation consensus.
-11. **Revisions are preserved.** Withdrawal, rejection, or moderation does not erase institutional history.
-12. **Alpha-test data remains fully resettable** (no alpha users or topic discussions carried into a later production system).
+6. **Topic operational workflow is independent from publication status** (ADR 0009). Pausing submissions must not unpublish an already published topic.
+7. **Gated public read model exposes only published projections** (`publication_status = published`). Drafts, rejected material, private moderation notes, contact channels, verification records, and account identifiers are not public.
+8. **All mutations** use server-side `authorizeCapability` checks, Zod validation, transactions where multiple records change, CSRF protection, and registered audit events.
+9. **Store source URLs and submitter-provided metadata initially.** Do not fetch, scrape, preview, or download remote source content in the initial slice.
+10. **Do not add** file uploads, rich-text dependencies, AI APIs, analytics, payments, live Pol.is, notifications, or new external services in the initial slice.
+11. **Evidence-review status** remains independent from submission workflow status, participant popularity, and later consultation consensus.
+12. **Revisions are preserved.** Withdrawal, rejection, or moderation does not erase institutional history.
+13. **Alpha-test data remains fully resettable** (no alpha users or topic discussions carried into a later production system).
+14. **A real off-device multi-user alpha** requires an approved reachable gated deployment and persistent PostgreSQL. Do **not** select a managed host or email vendor in the contract packages.
 
 ---
 
@@ -69,16 +71,17 @@ These are binding for packages 3.2–3.12 (recorded also in [ADR 0008](./decisio
 
 | Package | Outcome |
 | --- | --- |
-| 3.1 | Written operational contract, architecture, and ADR (this package) |
-| 3.2 | Durable topic/evidence schema and repositories (migrations; no authoring UI yet) |
+| 3.1 | Written operational contract, architecture, and ADR 0008 |
+| 3.1.1 | Contract corrections (ADR 0009) + plain-language public UI |
+| 3.2 | Durable topic/evidence schema and repositories, including basic claim↔evidence supporting/counterevidence links (migrations; no authoring UI yet) |
 | 3.3 | Capability additions + audited first-administrator bootstrap and invitation issuance |
-| 3.4 | Topic authoring and lifecycle transitions (draft → open → …) |
-| 3.5 | Participant claim/evidence submissions with limitations and conflict disclosure |
-| 3.6 | Evidence review rubric and staff review queue |
-| 3.7 | Counterevidence linkage and immutable revision history |
+| 3.4 | Topic authoring and operational workflow transitions (draft → open → …); publication status stays independent |
+| 3.5 | Participant claim/evidence submissions with basic relationship, limitations, and conflict disclosure |
+| 3.6 | Claim/evidence review queues, evidence-quality decisions, and **minimal visitor-visible publish path** |
+| 3.7 | Richer counterevidence linking/comparison and immutable revision history |
 | 3.8 | Conflict-disclosure workflow depth and moderation visibility actions |
 | 3.9 | Source-URL security and abuse controls (no remote fetch) |
-| 3.10 | Database-backed gated public topic interface (demo fixtures preserved) |
+| 3.10 | Complete and harden the gated public topic interface (revision, disclosure, moderation, presentation depth); public-demo fixtures preserved |
 | 3.11 | Search and export for staff/account-appropriate scopes |
 | 3.12 | Operational hardening, reset drill, and Phase 3 handoff |
 
@@ -86,9 +89,9 @@ These are binding for packages 3.2–3.12 (recorded also in [ADR 0008](./decisio
 
 Demonstrable path after 3.6 (still invite-only, still resettable):
 
-operator bootstrap → invitation → onboarding → topic create/open → claim/source submit → evidence review → (publication lands in 3.10; through 3.6 staff can preview gated projections)
+operator bootstrap → invitation → onboarding → topic create/open → claim/source submit (with supporting/counterevidence relationship) → claim/evidence review → administrator sets `publication_status = published` → **visitor sees** the published topic, accepted visible claims/sources, quality labels, and public review explanations
 
-Publication to anonymous visitors is **3.10**. Packages 3.2–3.6 must leave publication projection shapes ready so 3.10 does not invent a second data model.
+Package **3.10** then completes and hardens that public interface. It is not the first introduction of visitor-visible gated publication.
 
 ---
 
@@ -110,22 +113,30 @@ Phase 3 is complete only when a closed alpha environment can demonstrate all of 
 
 ---
 
-## 5. Planned workflow states (contract only — not implemented in 3.1)
+## 5. Planned workflow and publication states (contract only — not implemented in 3.1)
 
-Phase 1 fixture `TopicStatus` (`open` / `paused` / `closed`) and institutional `TopicStage` remain for the **public-demo catalog**. Gated alpha uses the workflow states below. Mapping into demo labels is a presentation concern for 3.10; see [open-questions.md](./open-questions.md) OQ9a / OQ18.
+Phase 1 fixture `TopicStatus` (`open` / `paused` / `closed`) and institutional `TopicStage` remain for the **public-demo catalog**. Gated alpha separates **operational workflow** from **publication status** ([ADR 0009](./decisions/0009-phase-3-operational-slice-corrections.md)). Mapping into demo labels is a presentation concern; see [open-questions.md](./open-questions.md) OQ9a / OQ18.
 
-### 5.1 Topic workflow
+### 5.1 Topic operational workflow (independent of publication)
 
 | State | Meaning |
 | --- | --- |
-| `draft` | Administrator-authored brief; not open for submissions; not public |
+| `draft` | Administrator-authored brief; not open for submissions |
 | `open_for_submissions` | Active participants may submit claims/evidence |
 | `under_review` | Submissions frozen or limited; staff review in progress |
-| `published` | Approved public projection available to visitors (gated public routes) |
-| `paused` | Temporarily not accepting submissions; prior public projection may remain if already published (policy in transition table) |
+| `paused` | Temporarily not accepting submissions |
 | `archived` | Closed for further workflow; retained for audit/reset until alpha wipe |
 
-#### Topic transitions
+### 5.1a Topic publication status (independent axis)
+
+| Status | Meaning |
+| --- | --- |
+| `unpublished` | No visitor-facing gated public projection |
+| `published` | Approved public projection available to visitors on gated public routes |
+
+**Hard rule:** Changing operational workflow (including `topics.pause` / reopen) **must not** change `publication_status`. Pausing an already published topic leaves it published unless a separate unpublish/archive policy action is explicitly modeled later.
+
+#### Topic operational transitions
 
 | From | To | Actor capability | Reason required? | Audit event (planned) |
 | --- | --- | --- | --- | --- |
@@ -135,13 +146,18 @@ Phase 1 fixture `TopicStatus` (`open` / `paused` / `closed`) and institutional `
 | `open_for_submissions` | `under_review` | `topics.update` (admin) | Recommended | `topics.review_started` |
 | `open_for_submissions` | `paused` | `topics.pause` | Yes | `topics.paused` |
 | `under_review` | `open_for_submissions` | `topics.open` | Yes | `topics.reopened` |
-| `under_review` | `published` | `topics.publish` | Yes | `topics.published` |
-| `published` | `paused` | `topics.pause` | Yes | `topics.paused` |
+| `under_review` | `paused` | `topics.pause` | Yes | `topics.paused` |
 | `paused` | `open_for_submissions` | `topics.open` | Yes | `topics.reopened` |
-| `paused` | `published` | `topics.publish` | Yes | `topics.published` (re-affirm) |
 | `*` (except archived) | `archived` | `topics.archive` | Yes | `topics.archived` |
 
-**Disallowed:** skipping `draft` creation; publishing from `draft` without opening/review path that records publication readiness; any transition by UI-only checks.
+#### Topic publication transitions
+
+| From | To | Actor capability | Reason required? | Audit event (planned) |
+| --- | --- | --- | --- | --- |
+| `unpublished` | `published` | `topics.publish` | Yes | `topics.published` |
+| `published` | `unpublished` | `topics.publish` (or later dedicated unpublish if split) | Yes | `topics.unpublished` |
+
+**Disallowed:** skipping `draft` creation; publishing without a reviewed topic ready for projection; any transition by UI-only checks; treating pause as unpublish.
 
 **Alpha note:** An administrator may perform reviewer/moderator **operations** where Phase 2 already permits administrator fallback, but every action records the **actual capability exercised** and the actor account.
 
@@ -165,13 +181,13 @@ Applies to claim records and evidence-source submission records (linked; may sha
 | (none) | `draft` | `claims.submit` / `evidence.submit` | No | `claims.draft_created` / `evidence.draft_created` |
 | `draft` | `draft` | `claims.edit_own` / `evidence.edit_own` | No | `*.updated` |
 | `draft` | `submitted` | `claims.submit` / `evidence.submit` | No | `*.submitted` |
-| `submitted` | `changes_requested` | `evidence.review` (or topic admin path) | Yes | `*.changes_requested` |
+| `submitted` | `changes_requested` | `claims.review` (claims) / `evidence.review` (evidence) | Yes | `*.changes_requested` |
 | `changes_requested` | `submitted` | `claims.edit_own` / `evidence.edit_own` then submit | No | `*.resubmitted` |
-| `submitted` | `accepted` | `evidence.review` | Yes (brief rationale) | `*.accepted` |
-| `submitted` | `rejected` | `evidence.review` | Yes | `*.rejected` |
+| `submitted` | `accepted` | `claims.review` / `evidence.review` | Yes (brief rationale) | `*.accepted` |
+| `submitted` | `rejected` | `claims.review` / `evidence.review` | Yes | `*.rejected` |
 | `draft` / `submitted` / `changes_requested` | `withdrawn` | `claims.withdraw_own` / `evidence.withdraw_own` | Recommended | `*.withdrawn` |
 
-**Disallowed:** submitter self-accept; deleting history on withdraw/reject; changing evidence-quality enum via submission workflow alone.
+**Disallowed:** submitter self-accept; deleting history on withdraw/reject; changing evidence-quality enum via submission workflow alone; using `evidence.review` to decide claim workflow (use `claims.review`).
 
 ### 5.3 Evidence-quality review (independent axis)
 
@@ -195,12 +211,15 @@ Applies to claim records and evidence-source submission records (linked; may sha
 
 ### 5.4 Moderation visibility (independent axis)
 
+Stored visibility values are only:
+
 | State | Meaning |
 | --- | --- |
-| `visible` | Eligible for staff and (when topic published) public projection if otherwise allowed |
+| `visible` | Eligible for staff and (when topic `publication_status = published`) public projection if otherwise allowed |
 | `held` | Temporarily withheld from public projection; retained |
 | `hidden` | Hidden from public projection; retained |
-| `restored` | Returned to `visible` after hold/hide |
+
+**Restoration** is an **action**, not a stored state: it transitions `held`/`hidden` → `visible` and emits `moderation.submission_restored`.
 
 #### Visibility transitions
 
@@ -208,9 +227,9 @@ Applies to claim records and evidence-source submission records (linked; may sha
 | --- | --- | --- | --- | --- |
 | `visible` | `held` | `moderation.review_submission` | Yes | `moderation.submission_held` |
 | `visible` / `held` | `hidden` | `moderation.review_submission` | Yes | `moderation.submission_hidden` |
-| `held` / `hidden` | `restored` (`visible`) | `moderation.review_submission` | Yes | `moderation.submission_restored` |
+| `held` / `hidden` | `visible` (restore action) | `moderation.review_submission` | Yes | `moderation.submission_restored` |
 
-**Disallowed:** hard-delete of submission content as the moderation action; public exposure of private moderation notes.
+**Disallowed:** hard-delete of submission content as the moderation action; public exposure of private moderation notes; persisting a distinct `restored` enum value.
 
 ---
 
@@ -227,21 +246,22 @@ Existing Phase 2 capabilities and rules remain in force ([capability-matrix.md](
 
 | Capability | Lifecycle | Platform role | Ownership / seat | Notes |
 | --- | --- | --- | --- | --- |
-| `topics.create` | active | administrator | — | Creates `draft` topic |
+| `topics.create` | active | administrator | — | Creates `draft` topic (`publication_status = unpublished`) |
 | `topics.update` | active | administrator | — | Edit draft / meta; not a substitute for publish |
 | `topics.open` | active | administrator | — | → `open_for_submissions` |
-| `topics.publish` | active | administrator | — | → `published`; reason required |
-| `topics.pause` | active | administrator | — | → `paused`; reason required |
+| `topics.publish` | active | administrator | — | Sets `publication_status = published` (independent of pause); reason required |
+| `topics.pause` | active | administrator | — | → operational `paused`; **does not** change publication status |
 | `topics.archive` | active | administrator | — | → `archived`; reason required |
 | `claims.submit` | active | participant | — | Create/submit own claims |
 | `claims.edit_own` | active | participant | own draft/changes_requested | Server checks ownership |
 | `claims.withdraw_own` | active | participant | own non-terminal where allowed | History retained |
-| `evidence.submit` | active | participant | — | Source URL + metadata only |
+| `claims.review` | active | reviewer **or** administrator | — | Claim workflow accept/reject/changes_requested only |
+| `evidence.submit` | active | participant | — | Source URL + metadata only; may link supporting/counterevidence |
 | `evidence.edit_own` | active | participant | own draft/changes_requested | No remote fetch |
 | `evidence.withdraw_own` | active | participant | own | History retained |
-| `evidence.review` | active | reviewer **or** administrator | — | Workflow accept/reject/changes **and** quality decisions |
+| `evidence.review` | active | reviewer **or** administrator | — | Evidence workflow accept/reject/changes **and** evidence-quality decisions |
 | `conflicts.disclose_own` | active | participant (any role that submits) | own disclosure | Required on submit path in 3.5 |
-| `moderation.review_submission` | active | moderator **or** administrator | — | Visibility hold/hide/restore with reason |
+| `moderation.review_submission` | active | moderator **or** administrator | — | Visibility hold/hide/restore-to-visible with reason |
 
 ### Operator / invite capabilities (planned for 3.3)
 
@@ -262,9 +282,9 @@ Exact assurance ladder rows for new capabilities are set in 3.3 without weakenin
 | Invitation issuance UI/CLI | **Missing** for real operators (seeds only) | **Must** land in **3.3** |
 | First-administrator bootstrap | **Missing** | **Must** land in **3.3** (audited gated operator workflow or CLI) |
 | Token safety | Phase 2 hashes invite tokens | Raw tokens shown **once**, never persisted unhashed, never written to application logs, never exposed in public-demo |
-| Managed PostgreSQL | Blocked pending addendum | Do **not** select/install in 3.1 |
-| Production email vendor | Blocked pending addendum | Do **not** select/install in 3.1 |
-| Public topic pages | Fixture-backed (`/topics`, `/topics/[slug]`) | Replaced by gated **published** read model in **3.10**; public-demo fixture behavior remains intact |
+| Managed PostgreSQL | Blocked pending addendum | Do **not** select/install in contract packages; a real off-device multi-user alpha still **requires** approved reachable gated deployment + persistent PostgreSQL when that addendum lands |
+| Production email vendor | Blocked pending addendum | Do **not** select/install in contract packages |
+| Public topic pages | Fixture-backed (`/topics`, `/topics/[slug]`) | Minimal gated **published** projection by end of **3.6**; **3.10** completes/hardens; public-demo fixtures remain intact |
 
 ---
 
@@ -337,17 +357,17 @@ Still **forbidden** unless a future ADR + register update says otherwise: paymen
 
 **Status:** Not started.
 
-**Objective:** Add gated Drizzle tables and repositories for topics, claims, evidence submissions, disclosures, revision stubs, and moderation/quality axes—without authoring UI.
+**Objective:** Add gated Drizzle tables and repositories for topics (separate `workflow_state` and `publication_status`), claims, evidence submissions, basic `claim_evidence_links` (`supporting` | `counterevidence`), disclosures, moderation visibility (`visible`/`held`/`hidden`), and quality axes—without authoring UI. Rich revision history remains **3.7**.
 
-**Prerequisites:** 3.1 approved.
+**Prerequisites:** 3.1 and 3.1.1 Checkpoint 1 approved.
 
 **Implementation steps:**
 
-1. Design migrations for planned table groups in [architecture-phase-3.md](./architecture-phase-3.md) (topics, claims, evidence sources/submissions, relationships, conflict disclosures, revision records, moderation visibility).
-2. Enforce enums/checks for workflow, quality, and visibility states.
+1. Design migrations for planned table groups in [architecture-phase-3.md](./architecture-phase-3.md), including independent topic workflow and publication columns and basic claim↔evidence relationship links.
+2. Enforce enums/checks for operational workflow, publication status, quality, and visibility states (`visible`/`held`/`hidden` only).
 3. Implement repository modules under gated persistence only; call `assertEnvironmentSafe()` before DB access.
 4. Ensure repositories never import `@/fixtures` / fixture catalog.
-5. Add unit/integration tests for constraints, ownership FKs, and immutability of revision/audit append paths.
+5. Add unit/integration tests for constraints, ownership FKs, and pause-does-not-unpublish invariants.
 6. Extend synthetic seed only if needed for schema smoke tests—label synthetic; do not invent real people.
 
 **Expected user-visible outcome:** None in UI. Migrations apply in gated local/CI DB.
@@ -359,11 +379,11 @@ Still **forbidden** unless a future ADR + register update says otherwise: paymen
 **Tests and acceptance criteria:**
 
 - Clean migrate from empty DB.
-- Invalid state combinations rejected.
+- Invalid state combinations rejected; `paused` + `published` is allowed.
 - Public-demo build still has zero `DATABASE_URL` requirement.
 - Fixture catalog unchanged in behavior.
 
-**Non-goals:** Authoring UI, publish routes, invite bootstrap, remote URL fetch, file uploads.
+**Non-goals:** Authoring UI, publish routes, invite bootstrap, remote URL fetch, file uploads, rich revision UX (3.7).
 
 **Stop condition:** Human review before **3.3**.
 
@@ -409,7 +429,7 @@ Still **forbidden** unless a future ADR + register update says otherwise: paymen
 
 **Status:** Not started.
 
-**Objective:** Gated workspace UI + mutations for administrators to create, update, open, pause, and archive topics (publish may be preview-gated until 3.10).
+**Objective:** Gated workspace UI + mutations for administrators to create, update, open, pause, and archive topics. Show operational workflow and publication status as separate fields. Publish mutation may land with 3.6; pause must not flip publication.
 
 **Prerequisites:** 3.3 capabilities live.
 
@@ -417,19 +437,19 @@ Still **forbidden** unless a future ADR + register update says otherwise: paymen
 
 1. Add gated routes (e.g. `/workspace/topics`, `/workspace/topics/[slug]`) behind authz.
 2. Mutations: create/update/open/pause/archive with Zod + transactions + audit.
-3. Show workflow state clearly; never imply statutory authority.
+3. Show operational workflow and publication status clearly; never imply statutory authority.
 4. Keyboard-accessible forms; mobile-usable staff layout.
-5. Tests for allowed/denied transitions and CSRF failure paths.
+5. Tests for allowed/denied transitions, pause-without-unpublish, and CSRF failure paths.
 
 **Expected user-visible outcome:** Administrator creates a draft topic and opens it for submissions.
 
-**Authorization and audit:** `topics.*` capabilities; events in §5.1.
+**Authorization and audit:** `topics.*` capabilities; events in §5.1 / §5.1a.
 
 **Privacy/security/accessibility:** Staff-only; no public leak of drafts.
 
-**Tests and acceptance criteria:** Participant cannot create topics; invalid transitions fail closed; audit rows present.
+**Tests and acceptance criteria:** Participant cannot create topics; invalid transitions fail closed; pausing a published topic keeps `publication_status = published`; audit rows present.
 
-**Non-goals:** Public published pages (3.10); participant submissions (3.5).
+**Non-goals:** Full public-interface hardening (3.10); participant submissions (3.5).
 
 **Stop condition:** Human review before **3.5**.
 
@@ -439,87 +459,91 @@ Still **forbidden** unless a future ADR + register update says otherwise: paymen
 
 **Status:** Not started.
 
-**Objective:** Active participants submit claims and evidence source URLs with relationship, limitations, and conflict disclosure.
+**Objective:** Active participants submit claims and evidence source URLs with **basic** supporting/counterevidence relationship, limitations, and conflict disclosure.
 
 **Prerequisites:** 3.4 topics can be `open_for_submissions`.
 
 **Implementation steps:**
 
 1. Submission forms in gated workspace for own claims/evidence.
-2. Persist URL + metadata only (title, organization, authorType, sourceType, limitations, relationship).
+2. Persist URL + metadata only (title, organization, authorType, sourceType, limitations) and `claim_evidence_links.relationship` (`supporting` | `counterevidence`).
 3. Require `conflicts.disclose_own` fields on submit path.
 4. Enforce edit/withdraw ownership rules and workflow transitions in §5.2.
-5. Transaction: submission row + disclosure + audit (+ revision stub if model requires).
-6. Tests for ownership, topic-state gates, and Zod URL validation (syntax only).
+5. Transaction: submission row + link + disclosure + audit.
+6. Tests for ownership, topic-state gates, relationship integrity, and Zod URL validation (syntax only).
 
-**Expected user-visible outcome:** Participant submits a claim with a source URL and disclosure while topic is open.
+**Expected user-visible outcome:** Participant submits a claim with a source URL, supporting or counterevidence relationship, and disclosure while topic is open.
 
-**Authorization and audit:** `claims.*`, `evidence.*`, `conflicts.disclose_own`.
+**Authorization and audit:** `claims.submit` / `edit_own` / `withdraw_own`, `evidence.*` submit/edit/withdraw, `conflicts.disclose_own`.
 
-**Privacy/security/accessibility:** Submissions staff-visible; not public until 3.10 projection rules; accessible forms.
+**Privacy/security/accessibility:** Submissions staff-visible; not visitor-public until published projection; accessible forms.
 
-**Tests and acceptance criteria:** Cannot submit on `draft`/`archived`; cannot edit others’ drafts; no HTTP fetch of URL.
+**Tests and acceptance criteria:** Cannot submit on `draft`/`archived`/`paused`; cannot edit others’ drafts; no HTTP fetch of URL; relationship required when linking evidence to a claim.
 
-**Non-goals:** Review rubric UI (3.6); counterevidence graph polish (3.7); moderation visibility UI (3.8).
+**Non-goals:** Review rubric UI (3.6); richer comparison/revision history (3.7); moderation visibility UI (3.8).
 
 **Stop condition:** Human review before **3.6**.
 
 ---
 
-### Work package 3.6 — Evidence review rubric and queue
+### Work package 3.6 — Review queues and minimal visitor-visible publish
 
 **Status:** Not started.
 
-**Objective:** Reviewers (and admin fallback) record workflow decisions and independent evidence-quality decisions with published-safe rationales.
+**Objective:** Reviewers (and admin fallback) record **claim** workflow decisions (`claims.review`), **evidence** workflow decisions and independent evidence-quality decisions (`evidence.review`), then administrators publish a reviewed topic so a **visitor** sees the minimal gated public projection.
 
 **Prerequisites:** 3.5 submissions exist.
 
 **Implementation steps:**
 
-1. Staff review queue (redacted as needed).
-2. Rubric checklist UI that writes structured reason fields (not a popularity score).
-3. Mutations for changes_requested / accepted / rejected and quality axis (§5.2–5.3).
+1. Staff review queues for claims and evidence (redacted as needed).
+2. Rubric checklist UI that writes structured reason fields (not a popularity score); never imply a quality label proves a claim true.
+3. Mutations for claim/evidence changes_requested / accepted / rejected and evidence quality axis (§5.2–5.3).
 4. Keep quality independent from workflow in schema and UI copy.
-5. Tests for independence invariant and reason requirements.
+5. Minimal publish path: `topics.publish` sets `publication_status = published`; gated `/topics/[slug]` (or equivalent) serves allowlisted projection; public-demo remains fixture-backed.
+6. Tests for independence invariant, reason requirements, leak checklist, and visitor-visible happy path.
 
-**Expected user-visible outcome:** Reviewer requests changes or records a quality decision visible to the submitter in workspace.
+**Expected user-visible outcome:**
 
-**Authorization and audit:** `evidence.review`; `evidence.quality_decided` / `*.changes_requested` / etc.
+- Reviewer requests changes or records a quality decision visible to the submitter in workspace.
+- After publish, a visitor sees the topic, accepted visible claims/sources, quality labels, and public review explanations—not private account/verification/contact data.
 
-**Privacy/security/accessibility:** Private reviewer notes field allowed only if excluded from public projection; queue a11y.
+**Authorization and audit:** `claims.review`, `evidence.review`, `topics.publish`; `evidence.quality_decided` / `*.changes_requested` / `topics.published` / etc.
 
-**Tests and acceptance criteria:** Quality change does not alter popularity fields; denied for plain participants; admin fallback audited.
+**Privacy/security/accessibility:** Private reviewer notes excluded from public projection; queue and public topic a11y.
 
-**Non-goals:** Public visitor pages; automated source scoring; AI assist.
+**Tests and acceptance criteria:** Quality change does not alter popularity fields; denied for plain participants; admin fallback audited; unpublished topics 404 for visitors in gated mode; demo mode never queries DB.
 
-**Stop condition:** Human review before **3.7**. End of first vertical slice for staff workflow (publication still 3.10).
+**Non-goals:** Full revision/disclosure/moderation/presentation hardening (3.10); automated source scoring; AI assist.
+
+**Stop condition:** Human review before **3.7**. End of first operational vertical slice (visitor-visible result included).
 
 ---
 
-### Work package 3.7 — Counterevidence and immutable revision history
+### Work package 3.7 — Richer linking, comparison, and immutable revision history
 
 **Status:** Not started.
 
-**Objective:** Explicit supporting/counterevidence relationships and append-only revision history for edits after submit.
+**Objective:** Build on the basic supporting/counterevidence links from 3.2/3.5 with richer comparison UX and append-only revision history for edits after submit.
 
-**Prerequisites:** 3.6 review path available.
+**Prerequisites:** 3.6 review + minimal publish path available.
 
 **Implementation steps:**
 
-1. Relationship table/fields for supporting vs counterevidence links.
+1. Enrich linking/comparison presentation (still using the basic relationship model unless a justified extension is approved).
 2. On edit after submission, write revision rows; do not overwrite historical bodies silently.
-3. Staff/submitter views of history; public shape prepared for 3.10.
+3. Staff/submitter views of history; deepen public revision summaries for published topics.
 4. Tests that withdraw/reject/hide do not delete revision rows.
 
-**Expected user-visible outcome:** Users can see that a submission changed over time and how counterevidence is attached.
+**Expected user-visible outcome:** Users can see that a submission changed over time and compare supporting vs counterevidence more clearly.
 
 **Authorization and audit:** Edits still capability-gated; `*.revision_recorded` events.
 
 **Privacy/security/accessibility:** History must not reveal private notes or account IDs publicly.
 
-**Tests and acceptance criteria:** Immutable history under moderation/withdraw; relationship integrity constraints.
+**Tests and acceptance criteria:** Immutable history under moderation/withdraw; relationship integrity constraints remain.
 
-**Non-goals:** Full legal e-discovery export; git-like UI chrome.
+**Non-goals:** Full legal e-discovery export; git-like UI chrome; inventing a second relationship model that abandons 3.2 links.
 
 **Stop condition:** Human review before **3.8**.
 
@@ -529,24 +553,24 @@ Still **forbidden** unless a future ADR + register update says otherwise: paymen
 
 **Status:** Not started.
 
-**Objective:** Deepen disclosure capture and moderation visibility actions (`visible`/`held`/`hidden`/`restored`) with mandatory reasons.
+**Objective:** Deepen disclosure capture and moderation visibility actions (`visible`/`held`/`hidden`, with restore-to-visible action) with mandatory reasons.
 
 **Prerequisites:** 3.7 history model.
 
 **Implementation steps:**
 
 1. Disclosure create/update rules for submitters; staff summary vs private detail split.
-2. Moderation mutations per §5.4; never hard-delete content.
-3. Surface reasoned visibility in staff UI; prepare public reason string for 3.10.
-4. Tests for reason required, admin/moderator allow, participant deny.
+2. Moderation mutations per §5.4; never hard-delete content; never store `restored` as a state.
+3. Surface reasoned visibility in staff UI; deepen public reason strings on published topics.
+4. Tests for reason required, admin/moderator allow, participant deny, restore → `visible`.
 
-**Expected user-visible outcome:** Moderator holds or hides a submission with a recorded reason; history remains.
+**Expected user-visible outcome:** Moderator holds or hides a submission with a recorded reason; restore returns it to visible; history remains.
 
-**Authorization and audit:** `moderation.review_submission`, `conflicts.disclose_own`.
+**Authorization and audit:** `moderation.review_submission`, `conflicts.disclose_own`; `moderation.submission_restored` on restore.
 
 **Privacy/security/accessibility:** Private detail never in public projection; accessible moderation forms.
 
-**Tests and acceptance criteria:** Hide ≠ delete; restore audited; public-demo unaffected.
+**Tests and acceptance criteria:** Hide ≠ delete; restore audited and lands on `visible`; public-demo unaffected.
 
 **Non-goals:** Dual-control for every moderation action (deferred unless owner pulls forward); appeals tribunal.
 
@@ -584,31 +608,31 @@ Still **forbidden** unless a future ADR + register update says otherwise: paymen
 
 ---
 
-### Work package 3.10 — Database-backed public topic interface
+### Work package 3.10 — Public interface completion and hardening
 
 **Status:** Not started.
 
-**Objective:** In gated mode, serve published topic projections from the database; keep public-demo fixture pages operational and unchanged in behavior.
+**Objective:** Complete and harden the gated public topic interface introduced minimally in **3.6**, including later revision, disclosure, moderation, and presentation depth. Keep public-demo fixture pages operational and unchanged in behavior.
 
-**Prerequisites:** 3.4–3.9 data and review quality sufficient to publish.
+**Prerequisites:** 3.6 minimal publish path exists; 3.7–3.9 enrichments available as applicable.
 
 **Implementation steps:**
 
-1. Define allowlisted public DTO/projection (topic brief, accepted visible claims/sources, quality labels, public review explanations, public conflict summaries, revision summaries as allowed).
-2. Branch topic routes: public-demo → fixtures; gated → published projection only.
-3. Administrator `topics.publish` makes projection visible; unpublished slugs 404 for visitors.
+1. Expand allowlisted public DTO/projection (revision summaries, public conflict summaries, moderation public reasons, presentation polish) without inventing a second data model.
+2. Harden topic route branching: public-demo → fixtures; gated → published projection only.
+3. Regression: unpublished slugs 404; pause does not hide a published projection unless visibility/moderation rules say so.
 4. Ensure no account IDs, contact channels, verification, private notes, or drafts leak.
 5. E2E: gated publish path + public-demo fixture smoke still pass.
 
-**Expected user-visible outcome:** Visitor on gated deployment sees published topic and review explanations only.
+**Expected user-visible outcome:** Visitor on gated deployment sees a complete, hardened published topic surface (still without private account data).
 
-**Authorization and audit:** Publish capability + `topics.published`; public reads are unauthenticated allowlist only.
+**Authorization and audit:** Existing publish capability + public reads remain unauthenticated allowlist only.
 
 **Privacy/security/accessibility:** Same responsive/a11y bar as Phase 1 topic pages.
 
-**Tests and acceptance criteria:** Draft/rejected/held hidden; demo mode never queries DB; projection tests against leak checklist.
+**Tests and acceptance criteria:** Draft/rejected/held hidden; demo mode never queries DB; projection tests against leak checklist; pause≠unpublish covered.
 
-**Non-goals:** Consultation integration; agenda engine; replacing Phase 1 decision/deliberation fixture journeys.
+**Non-goals:** Consultation integration; agenda engine; replacing Phase 1 decision/deliberation fixture journeys; selecting a managed DB vendor.
 
 **Stop condition:** Human review before **3.11**.
 
