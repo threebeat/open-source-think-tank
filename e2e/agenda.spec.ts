@@ -6,7 +6,7 @@ test.describe("agenda gate", () => {
   }) => {
     await page.goto("/agenda");
     await expect(
-      page.getByRole("heading", { name: "Agenda", exact: true }),
+      page.getByRole("heading", { name: "Decide What Moves Forward", exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Proposed", exact: true }),
@@ -35,20 +35,20 @@ test.describe("agenda gate", () => {
       page.getByText("No combined truth score", { exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Published eligibility thresholds" }),
+      page.getByRole("heading", { name: "Public Criteria" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Calculation trace" }),
+      page.getByRole("heading", { name: "How This Result Was Calculated" }),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Human review" }),
     ).toBeVisible();
     await expect(page.getByText(/Sensitivity note:/i)).toBeVisible();
     await expect(
-      page.getByRole("link", { name: /Open consultation report path/i }),
+      page.getByRole("link", { name: /Open public input report path/i }),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: /Open evidence record/i }),
+      page.getByRole("link", { name: /Open fact-check & research record/i }),
     ).toBeVisible();
   });
 });

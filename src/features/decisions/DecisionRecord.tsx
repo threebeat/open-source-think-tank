@@ -183,7 +183,7 @@ export function DecisionRecord({
                         <p className="mt-1 text-xs text-muted-foreground">
                           Disclosed {conflict.disclosedAt}
                           {entry.vote === "recused"
-                            ? " · Public reason accompanying recusal"
+                            ? " · Public reason for stepping aside because of a conflict"
                             : ""}
                         </p>
                       </div>
@@ -235,7 +235,7 @@ export function DecisionRecord({
         </h2>
         <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
           Expand each version for its full text, or open the matching selectable
-          version in the deliberation navigator.
+          version in the policy drafting navigator.
         </p>
         <ol className="space-y-3">
           {orderedHistory.map((proposal) => (
@@ -269,7 +269,7 @@ export function DecisionRecord({
                     href={`/deliberation/${deliberation.slug}?version=${proposal.version}#proposal-versions`}
                     className="font-medium text-foreground underline-offset-4 hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
                   >
-                    Open version {proposal.version} in deliberation navigator
+                    Open version {proposal.version} in policy drafting navigator
                   </Link>
                 </p>
               </details>

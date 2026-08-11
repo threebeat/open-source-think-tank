@@ -14,6 +14,9 @@ export const metadata: Metadata = {
     "Invite-only enrollment in the gated foundation, or a nonfunctional public explanation of how joining works.",
 };
 
+/** Mode-branched page: must not bake public-demo HTML into gated deploys. */
+export const dynamic = "force-dynamic";
+
 export default async function JoinPage() {
   if (resolveAppMode() === "gated") {
     const { requireGatedSession } = await import("@/lib/auth/guard");

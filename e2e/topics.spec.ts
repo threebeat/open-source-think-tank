@@ -24,7 +24,7 @@ test.describe("topics and evidence", () => {
     await expect(page.getByText("Review: Disputed").first()).toBeVisible();
     await expect(page.getByText("Review: Accepted").first()).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "How evidence is reviewed" }),
+      page.getByRole("heading", { name: "Research Review Status" }),
     ).toBeVisible();
     await expect(page.locator("#evidence-basin-storage-note")).toBeVisible();
   });

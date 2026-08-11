@@ -6,7 +6,7 @@ test.describe("join preview", () => {
   }) => {
     await page.goto("/join");
     await expect(
-      page.getByRole("heading", { name: "Join preview" }),
+      page.getByRole("heading", { name: "How Joining Works" }),
     ).toBeVisible();
     await page.getByRole("button", { name: /Conduct assent/i }).click();
     await expect(page.getByText("Not legally reviewed").first()).toBeVisible();

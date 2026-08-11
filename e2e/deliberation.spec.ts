@@ -51,7 +51,7 @@ test.describe("deliberation observer", () => {
       }),
     ).toBeVisible();
     const sunsetLink = page.getByRole("link", {
-      name: /Consultation statement: .*sunset/i,
+      name: /Public input statement: .*sunset/i,
     });
     await expect(sunsetLink).toHaveAttribute(
       "href",
@@ -68,7 +68,7 @@ test.describe("deliberation observer", () => {
       page.getByText(/would lapse unless renewed by the legally authorized body/i),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Recusal", exact: true }),
+      page.getByRole("heading", { name: "Stepped Aside Because of a Conflict", exact: true }),
     ).toBeVisible();
     await expect(
       page.getByText("Public redaction reason", { exact: true }),

@@ -1027,7 +1027,7 @@ export const fixtureCatalog = {
       synthetic: true,
       participantId: "council-hugo-ren",
       summary:
-        "Employer holds a fictional billing-software contract with another water district; disclosed for Policy Council service and grounds the recorded recusal. Private contract terms are not published.",
+        "Employer holds a fictional billing-software contract with another water district; disclosed for Policy Council service and grounds the recorded step-aside because of a conflict. Private contract terms are not published.",
       disclosedAt: "2026-04-12",
     },
   ],
