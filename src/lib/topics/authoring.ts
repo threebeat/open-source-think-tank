@@ -4,7 +4,6 @@ import type { AdapterResult } from "@/lib/adapters/types";
 import { appendAuthAudit } from "@/lib/auth/audit-log";
 import { authorizeCapability } from "@/lib/authz/authorize-capability";
 import { loadPrincipal } from "@/lib/authz/load-principal";
-import type { Capability } from "@/lib/authz/types";
 import { assertEnvironmentSafe } from "@/lib/env/app-mode";
 import type { GatedDb } from "@/lib/persistence/gated";
 import {
@@ -16,6 +15,13 @@ import {
   updateTopicMetadata,
   updateTopicWorkflow,
 } from "@/lib/topics/repository";
+import {
+  TOPIC_TRANSITIONS,
+  type TopicTransitionAction,
+} from "@/lib/topics/transitions";
+
+export type { TopicTransitionAction } from "@/lib/topics/transitions";
+export { allowedTopicActions } from "@/lib/topics/transitions";
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const MAX_TITLE = 200;
@@ -57,109 +63,6 @@ export const topicTransitionInputSchema = z.object({
   ]),
   reason: z.string().trim().min(MIN_REASON).max(2000).optional(),
 });
-
-export type TopicTransitionAction =
-  | "open"
-  | "begin_review"
-  | "reopen"
-  | "pause"
-  | "archive";
-
-type TransitionRule = {
-  from: TopicWorkflowState;
-  to: TopicWorkflowState;
-  capability: Capability;
-  auditAction:
-    | "topics.opened"
-    | "topics.review_started"
-    | "topics.reopened"
-    | "topics.paused"
-    | "topics.archived";
-  reasonRequired: boolean;
-};
-
-const TRANSITIONS: Record<TopicTransitionAction, TransitionRule[]> = {
-  open: [
-    {
-      from: "draft",
-      to: "open_for_submissions",
-      capability: "topics.open",
-      auditAction: "topics.opened",
-      reasonRequired: false,
-    },
-  ],
-  begin_review: [
-    {
-      from: "open_for_submissions",
-      to: "under_review",
-      capability: "topics.update",
-      auditAction: "topics.review_started",
-      reasonRequired: true,
-    },
-  ],
-  reopen: [
-    {
-      from: "under_review",
-      to: "open_for_submissions",
-      capability: "topics.open",
-      auditAction: "topics.reopened",
-      reasonRequired: true,
-    },
-    {
-      from: "paused",
-      to: "open_for_submissions",
-      capability: "topics.open",
-      auditAction: "topics.reopened",
-      reasonRequired: true,
-    },
-  ],
-  pause: [
-    {
-      from: "open_for_submissions",
-      to: "paused",
-      capability: "topics.pause",
-      auditAction: "topics.paused",
-      reasonRequired: true,
-    },
-    {
-      from: "under_review",
-      to: "paused",
-      capability: "topics.pause",
-      auditAction: "topics.paused",
-      reasonRequired: true,
-    },
-  ],
-  archive: [
-    {
-      from: "draft",
-      to: "archived",
-      capability: "topics.archive",
-      auditAction: "topics.archived",
-      reasonRequired: true,
-    },
-    {
-      from: "open_for_submissions",
-      to: "archived",
-      capability: "topics.archive",
-      auditAction: "topics.archived",
-      reasonRequired: true,
-    },
-    {
-      from: "under_review",
-      to: "archived",
-      capability: "topics.archive",
-      auditAction: "topics.archived",
-      reasonRequired: true,
-    },
-    {
-      from: "paused",
-      to: "archived",
-      capability: "topics.archive",
-      auditAction: "topics.archived",
-      reasonRequired: true,
-    },
-  ],
-};
 
 function gatedOrDeny(): AdapterResult<never> | null {
   if (assertEnvironmentSafe() !== "gated") {
@@ -466,7 +369,7 @@ export async function transitionTopic(
     };
   }
 
-  const rules = TRANSITIONS[input.action];
+  const rules = TOPIC_TRANSITIONS[input.action];
   const rule = rules.find((row) => row.from === parsed.data.expectedWorkflowState);
   if (!rule) {
     return {
@@ -600,18 +503,3 @@ export async function transitionTopic(
   }
 }
 
-/** Allowed transition actions from a workflow state (for UI hints only). */
-export function allowedTopicActions(
-  workflowState: TopicWorkflowState,
-): TopicTransitionAction[] {
-  const actions: TopicTransitionAction[] = [];
-  for (const [action, rules] of Object.entries(TRANSITIONS) as [
-    TopicTransitionAction,
-    TransitionRule[],
-  ][]) {
-    if (rules.some((rule) => rule.from === workflowState)) {
-      actions.push(action);
-    }
-  }
-  return actions;
-}
