@@ -46,7 +46,7 @@ Phase 2 decision register and counsel gates: [phase-2-plan.md](./phase-2-plan.md
 
 9. **Evidence-review rubric depth in Phase 1** — Unresolved. How much of a future review checklist is shown as explanatory UI versus deferred to Phase 3?
 
-9a. **Topic `status` vs institutional `stage`** — Unresolved for production meaning. Phase 1 treats `status` (`open` / `paused` / `closed`) as brief-publication availability independent of pipeline `stage`. Whether production uses the same pair, merges them, or derives availability from permissions remains open.
+9a. **Topic `status` vs institutional `stage`** — Unresolved for production meaning. Phase 1 treats `status` (`open` / `paused` / `closed`) as brief-publication availability independent of pipeline `stage`. Phase 3 plans a gated **workflow** state machine (`draft` → `open_for_submissions` → `under_review` → `published` → `paused`/`archived`) in [phase-3-plan.md](./phase-3-plan.md); how that maps to demo `status`/`stage` labels for visitors remains open.
 
 10. **Redaction placeholders** — Unresolved. What examples of “permitted narrow redaction + public reason” are appropriate in the deliberation observer view without teaching harmful disclosure patterns?
 
@@ -75,6 +75,16 @@ Phase 2 decision register and counsel gates: [phase-2-plan.md](./phase-2-plan.md
 16. **Phase 3 start while Phase 2 readiness was blocked** — Product/sequencing (not counsel). [ADR 0006](./decisions/0006-phase-3-two-lane-sequencing.md): Phase 3 synthetic/closed engineering may proceed. Lane B alpha-test foundation now authorized under ADR 0007 scopes.
 
 17. **Post-alpha report contents** — Required by interim council. After the alpha test, retain the product and a report covering the full plan, achievements, and **lasting open questions / decisions** that must be made once the alpha test is over. Do not carry alpha-test users or topic discussion forward.
+
+---
+
+## Phase 3 operational alpha
+
+18. **Public attribution of claim/evidence authors** — Unresolved. Phase 3 forbids publishing account identifiers, contact channels, and verification records. Whether gated published topics show a preferred display name, a neutral “participant” label, or no personal attribution remains open ([phase-3-plan.md](./phase-3-plan.md), [architecture-phase-3.md](./architecture-phase-3.md) D14).
+
+19. **Alpha wipe versus assent/audit copies for the post-alpha report** — Unresolved at the edge. ADR 0007 requires resetting alpha users and topic discussion; Phase 2 closure retains assent/audit for living accounts. What redacted aggregates (if any) may be copied into the post-alpha report without carrying live alpha datastores forward remains open (architecture D15).
+
+20. **Pre-publication visibility of others’ in-flight submissions** — Unresolved. Visitors must not see drafts/rejected/held material. Whether **other active participants** (not staff) may see peers’ submitted-but-unpublished claims in the gated workspace before topic publication remains open (architecture D16).
 
 ---
 

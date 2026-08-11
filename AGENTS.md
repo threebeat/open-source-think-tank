@@ -17,11 +17,12 @@ Before editing:
 1. Read `docs/product-charter.md`.
 2. Read the current work package:
    - Phase 1 / demo work: `docs/open-source-think-tank-mvp-plan.md`
-   - Phase 2 work: `docs/phase-2-plan.md` (active packages 2.1–2.12)
+   - Phase 2 foundation: `docs/phase-2-plan.md` (packages 2.1–2.12; still the source for counsel gates, permitted services, and dual-mode isolation)
+   - Phase 3 work: `docs/phase-3-plan.md` (active packages 3.1–3.12) and `docs/architecture-phase-3.md`
 3. Restate the acceptance criteria.
 4. Propose the exact files to create or change.
 5. Identify privacy, security, accessibility, and governance assumptions.
-6. Check the **permitted-services register** and **counsel disposition gates** in `docs/phase-2-plan.md` before introducing any external service or real account flow.
+6. Check the **permitted-services register** and **counsel disposition gates** in `docs/phase-2-plan.md` before introducing any external service or real account flow. Phase 3 does not add vendors by default; see also `docs/decisions/0008-phase-3-operational-alpha-contract.md`.
 
 While editing:
 
@@ -56,4 +57,6 @@ Additional rules:
 - Create an entry in `docs/open-questions.md` when a choice affects legal authority, privacy, verification, representation, moderation, or public data.
 - Do not weaken a test, type, access boundary, or acceptance criterion merely to make a check pass.
 - Keep changes small enough for a human to review.
-- Honor Phase 2 stop conditions in `docs/phase-2-plan.md` §8.
+- Honor Phase 2 stop conditions in `docs/phase-2-plan.md` §8 and Phase 3 stop conditions in `docs/phase-3-plan.md` §14.
+- Phase 3 targets an operational invite-only multi-user alpha on the gated foundation; it is not a single-user alpha and not merely another synthetic demonstration. Preserve separately deployable public-demo fixtures. Alpha-test accounts and topic workflow data must remain fully resettable.
+- Do not claim unimplemented Phase 3 runtime behavior already exists. Complete only the approved Phase 3 package; stop for human approval before the next.

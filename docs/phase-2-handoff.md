@@ -23,7 +23,7 @@ Engineering packages **2.1–2.12** are in place. Alpha-test data must remain **
 | --- | --- | --- |
 | Application-level gated E2E (account/staff axe, mobile account flows) | Covered by Docker Compose PG16 run below | Green gated suite on the SHA below |
 | Docker Compose PostgreSQL **16** (`npm run test:e2e:gated`) | **Cleared locally** 2026-08-10 — see evidence log | Green compose-based run (also reconfirm via CI `e2e-gated`) |
-| CI on GitHub Actions | Workflow present; **run URL still pending** on candidate SHA | Green `unit` + `e2e-public` + `e2e-gated` (non-blocking for interim council tag authorization) |
+| CI on GitHub Actions | **Cleared** — run [31463889998](https://github.com/threebeat/open-source-think-tank/actions/runs/31463889998) | Green `unit` + `e2e-public` + `e2e-gated` |
 | Counsel dispositions | **Cleared** (alpha-test interim council) | §7 + `dispositions.ts`; `readinessCounselAllowsFoundationTag() === true` |
 | Manual NVDA spot-check (account/staff) | **Pending** (non-blocking for interim council tag authorization) | Notes in evidence table |
 | Managed Postgres / production email | Blocked pending vendor addenda | Permitted-services register |
@@ -41,7 +41,7 @@ Engineering packages **2.1–2.12** are in place. Alpha-test data must remain **
 | Date / host | 2026-08-10 (local Windows, Docker Desktop + WSL2) |
 | Test count / result | **9 passed / 0 failed** (16.6s, 1 worker) — Pass |
 | Specs covered | `a11y.gated.spec.ts`, `auth-lifecycle.gated.spec.ts`, `onboarding.gated.spec.ts` (incl. phone account flows + staff narrow viewport) |
-| GitHub Actions run URL | _pending_ |
+| GitHub Actions run URL | https://github.com/threebeat/open-source-think-tank/actions/runs/31463889998 |
 | Manual NVDA result | _pending_ |
 | Counsel §7 readiness gates | **cleared** (alpha-test scopes) — [ADR 0007](./decisions/0007-alpha-test-interim-council-dispositions.md) |
 
@@ -87,12 +87,12 @@ Interim council = project owner acting as council until alpha test; formal counc
 See [open-questions.md](./open-questions.md) (incl. OQ16–OQ17), [legal-questions.md](./legal-questions.md), plan §7 scopes.
 
 1. Post-alpha report must capture lasting open questions and decisions (OQ17).
-2. GitHub Actions CI green URL still desirable on the tagged SHA.
-3. Manual NVDA spot-check still pending.
-4. Managed Postgres host and production email vendors blocked pending addenda.
-5. Payments, analytics, AI APIs, live Pol.is, identity-verification SDKs forbidden until register approval.
-6. Production backup/PITR after host approval (PGlite drill insufficient).
-7. Penetration test / formal security review before a later pilot.
+2. Manual NVDA spot-check still pending.
+3. Managed Postgres host and production email vendors blocked pending addenda.
+4. Payments, analytics, AI APIs, live Pol.is, identity-verification SDKs forbidden until register approval.
+5. Production backup/PITR after host approval (PGlite drill insufficient).
+6. Penetration test / formal security review before a later pilot.
+7. Phase 3 operational runtime not started — see [phase-3-plan.md](./phase-3-plan.md) (package 3.1 contract only).
 
 ## Tagging rule
 
@@ -122,6 +122,9 @@ npm run db:down        # cleanup when finished
 - [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md)
 - [decisions/0006-phase-3-two-lane-sequencing.md](./decisions/0006-phase-3-two-lane-sequencing.md)
 - [decisions/0007-alpha-test-interim-council-dispositions.md](./decisions/0007-alpha-test-interim-council-dispositions.md)
+- [phase-3-plan.md](./phase-3-plan.md)
+- [architecture-phase-3.md](./architecture-phase-3.md)
+- [decisions/0008-phase-3-operational-alpha-contract.md](./decisions/0008-phase-3-operational-alpha-contract.md)
 - [phase-1-handoff.md](./phase-1-handoff.md)
 - [secrets-and-operations.md](./secrets-and-operations.md)
 - [incident-response.md](./incident-response.md)

@@ -1,18 +1,30 @@
-# Open-Source Think Tank (Phase 1 Demonstration)
+# Open-Source Think Tank
 
-Browser-based demonstration of a proposed open-source think tank. **Synthetic data only.** This repository does not accept real memberships, donations, identity documents, or legally binding agreements. It does not claim that an organization is incorporated, tax-exempt, or legally reviewed.
+Browser-based demonstration of a proposed open-source think tank, plus a **separately deployable gated foundation** for an invite-only alpha test. The default **public-demo** mode uses **synthetic data only**. This repository does not accept public self-registration, donations, identity documents, or legally binding agreements as a public product. It does not claim that an organization is incorporated, tax-exempt, or legally reviewed.
 
-Source vision and work packages: [`docs/open-source-think-tank-mvp-plan.md`](docs/open-source-think-tank-mvp-plan.md)  
+Source vision: [`docs/open-source-think-tank-mvp-plan.md`](docs/open-source-think-tank-mvp-plan.md)  
 Build contract: [`docs/product-charter.md`](docs/product-charter.md)  
-Handoff: [`docs/phase-1-handoff.md`](docs/phase-1-handoff.md)
+Phase 1 handoff: [`docs/phase-1-handoff.md`](docs/phase-1-handoff.md)  
+Phase 2 foundation: [`docs/phase-2-plan.md`](docs/phase-2-plan.md) · [`docs/phase-2-handoff.md`](docs/phase-2-handoff.md)  
+Phase 3 plan (contract; runtime not implemented yet): [`docs/phase-3-plan.md`](docs/phase-3-plan.md)
 
 ## Requirements
+
+### Public-demo (default)
 
 - Node.js 22 (see `.nvmrc`)
 - npm 10+
 - Git
 
-No environment variables, API keys, or third-party accounts are required.
+No environment variables, API keys, or third-party accounts are required for public-demo.
+
+### Gated foundation (invite-only alpha engineering)
+
+- Same Node/npm/Git requirements
+- Local PostgreSQL 16 via Docker Compose (`npm run db:up`) when exercising gated paths
+- `APP_MODE=gated` and documented secrets only in gated environments — see [`docs/secrets-and-operations.md`](docs/secrets-and-operations.md)
+- Managed PostgreSQL host and production email vendors remain **blocked** pending register addenda
+- Phase 3 operational topic/evidence workflow is **planned** in [`docs/phase-3-plan.md`](docs/phase-3-plan.md); do not assume those routes or tables already exist
 
 ## Setup
 
@@ -114,10 +126,18 @@ Direct product URLs still work without presentation mode.
 | [`docs/phase-1-handoff.md`](docs/phase-1-handoff.md) | Completed work and Phase 2 sequence |
 | [`docs/phase-1-manual-qa.md`](docs/phase-1-manual-qa.md) | Required Phase 1 QA results |
 | [`docs/phase-2-plan.md`](docs/phase-2-plan.md) | Phase 2 invite-only foundation work packages |
+| [`docs/phase-2-handoff.md`](docs/phase-2-handoff.md) | Phase 2 foundation evidence and alpha-test posture |
 | [`docs/architecture-phase-2.md`](docs/architecture-phase-2.md) | Phase 2 environments, adapters, data-flow |
+| [`docs/phase-3-plan.md`](docs/phase-3-plan.md) | Phase 3 operational alpha work packages (active plan) |
+| [`docs/architecture-phase-3.md`](docs/architecture-phase-3.md) | Phase 3 planned services, tables, projections (design) |
+| [`docs/decisions/0008-phase-3-operational-alpha-contract.md`](docs/decisions/0008-phase-3-operational-alpha-contract.md) | Phase 3 operational alpha ADR |
+| [`docs/capability-matrix.md`](docs/capability-matrix.md) | Server-enforced capabilities |
 | [`docs/secrets-and-operations.md`](docs/secrets-and-operations.md) | Secrets, backup, vendor ops checklist |
 | [`docs/presentation-backup/`](docs/presentation-backup/) | Static screenshot backup |
 
 ## Status
 
-Phase 1 demonstration MVP is complete (tag `phase-1-demonstration`). Phase 2 work packages live in [`docs/phase-2-plan.md`](docs/phase-2-plan.md); start with package 2.1 before installing auth or databases. Public recruitment, live Pol.is, payments, and legal formation remain out of scope until their gates clear.
+- **Phase 1** demonstration MVP is complete (tag `phase-1-demonstration`). Public-demo mode remains synthetic and separately deployable.
+- **Phase 2** invite-only foundation packages 2.1–2.12 are in place (tag `phase-2-foundation`; see [`docs/phase-2-handoff.md`](docs/phase-2-handoff.md)). Gated auth, roles, assent, verification, audit, and isolation are the baseline for alpha engineering.
+- **Phase 3** is the active planning track for an operational multi-user alpha ([`docs/phase-3-plan.md`](docs/phase-3-plan.md)). Package **3.1** is the documentation contract only — Phase 3 topic authoring, submissions, review, and gated public projections are **not** implemented yet.
+- Public recruitment, live Pol.is, payments, analytics, AI APIs, and unsettled legal formation claims remain out of scope until their gates clear. Alpha-test data must stay fully resettable.
