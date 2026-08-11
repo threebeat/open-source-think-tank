@@ -857,6 +857,400 @@ export const schemaMeta = pgTable("schema_meta", {
     .defaultNow(),
 });
 
+/* -------------------------------------------------------------------------- */
+/* Phase 3 — durable topic / claim / evidence model (WP 3.2)                  */
+/* Workflow and publication are independent. No Pol.is provider columns.      */
+/* -------------------------------------------------------------------------- */
+
+export const topicWorkflowStateEnum = pgEnum("topic_workflow_state", [
+  "draft",
+  "open_for_submissions",
+  "under_review",
+  "paused",
+  "archived",
+]);
+
+export const topicPublicationStatusEnum = pgEnum("topic_publication_status", [
+  "unpublished",
+  "published",
+]);
+
+export const submissionWorkflowStateEnum = pgEnum("submission_workflow_state", [
+  "draft",
+  "submitted",
+  "changes_requested",
+  "accepted",
+  "rejected",
+  "withdrawn",
+]);
+
+export const evidenceQualityStatusEnum = pgEnum("evidence_quality_status", [
+  "pending",
+  "accepted",
+  "limited",
+  "disputed",
+  "rejected",
+]);
+
+/** Stored visibility only — restore is an action back to visible (ADR 0009). */
+export const moderationVisibilityEnum = pgEnum("moderation_visibility", [
+  "visible",
+  "held",
+  "hidden",
+]);
+
+export const claimEvidenceRelationshipEnum = pgEnum(
+  "claim_evidence_relationship",
+  ["supporting", "counterevidence"],
+);
+
+export const evidenceAuthorTypeEnum = pgEnum("evidence_author_type", [
+  "agency",
+  "researcher",
+  "journalist",
+  "civil_society",
+  "industry",
+  "other",
+]);
+
+export const evidenceSourceTypeEnum = pgEnum("evidence_source_type", [
+  "report",
+  "dataset",
+  "peer_reviewed",
+  "news",
+  "memo",
+  "other",
+]);
+
+export const claimReviewDecisionEnum = pgEnum("claim_review_decision", [
+  "changes_requested",
+  "accepted",
+  "rejected",
+]);
+
+export const evidenceReviewDecisionEnum = pgEnum("evidence_review_decision", [
+  "changes_requested",
+  "accepted",
+  "rejected",
+  "quality_decided",
+]);
+
+export const topics = pgTable(
+  "topics",
+  {
+    id: text("id").primaryKey(),
+    slug: text("slug").notNull(),
+    title: text("title").notNull(),
+    question: text("question").notNull(),
+    background: text("background").notNull(),
+    scope: text("scope").notNull(),
+    workflowState: topicWorkflowStateEnum("workflow_state")
+      .notNull()
+      .default("draft"),
+    publicationStatus: topicPublicationStatusEnum("publication_status")
+      .notNull()
+      .default("unpublished"),
+    createdByAccountId: text("created_by_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    publishedByAccountId: text("published_by_account_id").references(
+      () => accounts.id,
+      { onDelete: "restrict" },
+    ),
+    /** Explicit value required for real rows — default false (not true). */
+    synthetic: boolean("synthetic").notNull().default(false),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("topics_slug_uidx").on(table.slug),
+    uniqueIndex("topics_id_uidx").on(table.id),
+    index("topics_workflow_idx").on(table.workflowState),
+    index("topics_publication_idx").on(table.publicationStatus),
+    index("topics_created_by_idx").on(table.createdByAccountId),
+    check(
+      "topics_title_nonblank",
+      sql`char_length(btrim(${table.title})) > 0`,
+    ),
+    check(
+      "topics_slug_nonblank",
+      sql`char_length(btrim(${table.slug})) > 0`,
+    ),
+    check(
+      "topics_question_nonblank",
+      sql`char_length(btrim(${table.question})) > 0`,
+    ),
+    check(
+      "topics_background_nonblank",
+      sql`char_length(btrim(${table.background})) > 0`,
+    ),
+    check(
+      "topics_scope_nonblank",
+      sql`char_length(btrim(${table.scope})) > 0`,
+    ),
+    check(
+      "topics_published_requires_provenance",
+      sql`(${table.publicationStatus} <> 'published') OR (${table.publishedAt} IS NOT NULL AND ${table.publishedByAccountId} IS NOT NULL)`,
+    ),
+    check(
+      "topics_unpublished_clears_publication_stamp",
+      sql`(${table.publicationStatus} <> 'unpublished') OR (${table.publishedAt} IS NULL AND ${table.publishedByAccountId} IS NULL)`,
+    ),
+  ],
+);
+
+export const claims = pgTable(
+  "claims",
+  {
+    id: text("id").primaryKey(),
+    topicId: text("topic_id")
+      .notNull()
+      .references(() => topics.id, { onDelete: "restrict" }),
+    authorAccountId: text("author_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    title: text("title").notNull(),
+    summary: text("summary").notNull(),
+    approachLabel: text("approach_label").notNull(),
+    workflowState: submissionWorkflowStateEnum("workflow_state")
+      .notNull()
+      .default("draft"),
+    moderationVisibility: moderationVisibilityEnum("moderation_visibility")
+      .notNull()
+      .default("visible"),
+    synthetic: boolean("synthetic").notNull().default(false),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("claims_id_topic_uidx").on(table.id, table.topicId),
+    index("claims_topic_idx").on(table.topicId),
+    index("claims_workflow_idx").on(table.workflowState),
+    index("claims_visibility_idx").on(table.moderationVisibility),
+    index("claims_author_idx").on(table.authorAccountId),
+    check("claims_title_nonblank", sql`char_length(btrim(${table.title})) > 0`),
+    check(
+      "claims_summary_nonblank",
+      sql`char_length(btrim(${table.summary})) > 0`,
+    ),
+    check(
+      "claims_approach_label_nonblank",
+      sql`char_length(btrim(${table.approachLabel})) > 0`,
+    ),
+  ],
+);
+
+/**
+ * Single alpha source-submission model: URL + submitter metadata only.
+ * No remote fetch/scrape/preview columns.
+ */
+export const evidenceSubmissions = pgTable(
+  "evidence_submissions",
+  {
+    id: text("id").primaryKey(),
+    topicId: text("topic_id")
+      .notNull()
+      .references(() => topics.id, { onDelete: "restrict" }),
+    submitterAccountId: text("submitter_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    sourceUrl: text("source_url").notNull(),
+    title: text("title").notNull(),
+    organization: text("organization").notNull(),
+    authorType: evidenceAuthorTypeEnum("author_type").notNull(),
+    sourceType: evidenceSourceTypeEnum("source_type").notNull(),
+    limitations: text("limitations").notNull(),
+    workflowState: submissionWorkflowStateEnum("workflow_state")
+      .notNull()
+      .default("draft"),
+    qualityStatus: evidenceQualityStatusEnum("quality_status")
+      .notNull()
+      .default("pending"),
+    moderationVisibility: moderationVisibilityEnum("moderation_visibility")
+      .notNull()
+      .default("visible"),
+    synthetic: boolean("synthetic").notNull().default(false),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("evidence_submissions_id_topic_uidx").on(table.id, table.topicId),
+    index("evidence_submissions_topic_idx").on(table.topicId),
+    index("evidence_submissions_workflow_idx").on(table.workflowState),
+    index("evidence_submissions_quality_idx").on(table.qualityStatus),
+    index("evidence_submissions_visibility_idx").on(table.moderationVisibility),
+    index("evidence_submissions_submitter_idx").on(table.submitterAccountId),
+    check(
+      "evidence_submissions_title_nonblank",
+      sql`char_length(btrim(${table.title})) > 0`,
+    ),
+    check(
+      "evidence_submissions_url_nonblank",
+      sql`char_length(btrim(${table.sourceUrl})) > 0`,
+    ),
+    check(
+      "evidence_submissions_organization_nonblank",
+      sql`char_length(btrim(${table.organization})) > 0`,
+    ),
+    check(
+      "evidence_submissions_limitations_nonblank",
+      sql`char_length(btrim(${table.limitations})) > 0`,
+    ),
+  ],
+);
+
+export const claimEvidenceLinks = pgTable(
+  "claim_evidence_links",
+  {
+    id: text("id").primaryKey(),
+    topicId: text("topic_id")
+      .notNull()
+      .references(() => topics.id, { onDelete: "restrict" }),
+    claimId: text("claim_id").notNull(),
+    evidenceSubmissionId: text("evidence_submission_id").notNull(),
+    relationship: claimEvidenceRelationshipEnum("relationship").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("claim_evidence_links_pair_uidx").on(
+      table.claimId,
+      table.evidenceSubmissionId,
+    ),
+    index("claim_evidence_links_topic_idx").on(table.topicId),
+    index("claim_evidence_links_claim_idx").on(table.claimId),
+    index("claim_evidence_links_evidence_idx").on(table.evidenceSubmissionId),
+    foreignKey({
+      name: "claim_evidence_links_claim_topic_fk",
+      columns: [table.claimId, table.topicId],
+      foreignColumns: [claims.id, claims.topicId],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "claim_evidence_links_evidence_topic_fk",
+      columns: [table.evidenceSubmissionId, table.topicId],
+      foreignColumns: [evidenceSubmissions.id, evidenceSubmissions.topicId],
+    }).onDelete("restrict"),
+  ],
+);
+
+/**
+ * Enforceable subject attachment: exactly one of claim_id / evidence_submission_id.
+ * Avoids unenforced polymorphic subject_type/subject_id.
+ */
+export const conflictDisclosures = pgTable(
+  "conflict_disclosures",
+  {
+    id: text("id").primaryKey(),
+    disclosingAccountId: text("disclosing_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    claimId: text("claim_id").references(() => claims.id, {
+      onDelete: "restrict",
+    }),
+    evidenceSubmissionId: text("evidence_submission_id").references(
+      () => evidenceSubmissions.id,
+      { onDelete: "restrict" },
+    ),
+    publicSummary: text("public_summary").notNull(),
+    privateDetail: text("private_detail"),
+    synthetic: boolean("synthetic").notNull().default(false),
+    ...timestamps,
+  },
+  (table) => [
+    index("conflict_disclosures_account_idx").on(table.disclosingAccountId),
+    index("conflict_disclosures_claim_idx").on(table.claimId),
+    index("conflict_disclosures_evidence_idx").on(table.evidenceSubmissionId),
+    check(
+      "conflict_disclosures_public_summary_nonblank",
+      sql`char_length(btrim(${table.publicSummary})) > 0`,
+    ),
+    check(
+      "conflict_disclosures_exactly_one_subject",
+      sql`(
+        (${table.claimId} IS NOT NULL AND ${table.evidenceSubmissionId} IS NULL)
+        OR (${table.claimId} IS NULL AND ${table.evidenceSubmissionId} IS NOT NULL)
+      )`,
+    ),
+  ],
+);
+
+/** Append-only claim workflow review provenance (immutable via migration trigger). */
+export const claimReviews = pgTable(
+  "claim_reviews",
+  {
+    id: text("id").primaryKey(),
+    claimId: text("claim_id")
+      .notNull()
+      .references(() => claims.id, { onDelete: "restrict" }),
+    reviewerAccountId: text("reviewer_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    decision: claimReviewDecisionEnum("decision").notNull(),
+    publicRationale: text("public_rationale").notNull(),
+    privateNotes: text("private_notes"),
+    synthetic: boolean("synthetic").notNull().default(false),
+    decidedAt: timestamp("decided_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("claim_reviews_claim_idx").on(table.claimId),
+    index("claim_reviews_reviewer_idx").on(table.reviewerAccountId),
+    index("claim_reviews_decided_at_idx").on(table.decidedAt),
+    check(
+      "claim_reviews_public_rationale_nonblank",
+      sql`char_length(btrim(${table.publicRationale})) > 0`,
+    ),
+  ],
+);
+
+/**
+ * Append-only evidence workflow + quality review provenance
+ * (immutable via migration trigger). Quality decisions never rewrite
+ * popularity/consensus fields (none exist on these tables).
+ */
+export const evidenceReviews = pgTable(
+  "evidence_reviews",
+  {
+    id: text("id").primaryKey(),
+    evidenceSubmissionId: text("evidence_submission_id")
+      .notNull()
+      .references(() => evidenceSubmissions.id, { onDelete: "restrict" }),
+    reviewerAccountId: text("reviewer_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    decision: evidenceReviewDecisionEnum("decision").notNull(),
+    /** Present when decision records or revises quality_status. */
+    qualityStatus: evidenceQualityStatusEnum("quality_status"),
+    /** Present when decision records a workflow outcome. */
+    workflowDecision: submissionWorkflowStateEnum("workflow_decision"),
+    publicRationale: text("public_rationale").notNull(),
+    privateNotes: text("private_notes"),
+    synthetic: boolean("synthetic").notNull().default(false),
+    decidedAt: timestamp("decided_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("evidence_reviews_evidence_idx").on(table.evidenceSubmissionId),
+    index("evidence_reviews_reviewer_idx").on(table.reviewerAccountId),
+    index("evidence_reviews_decided_at_idx").on(table.decidedAt),
+    check(
+      "evidence_reviews_public_rationale_nonblank",
+      sql`char_length(btrim(${table.publicRationale})) > 0`,
+    ),
+    check(
+      "evidence_reviews_quality_decided_needs_status",
+      sql`(${table.decision} <> 'quality_decided') OR (${table.qualityStatus} IS NOT NULL)`,
+    ),
+  ],
+);
+
 export const foundationTables = {
   persons,
   accounts,
@@ -883,4 +1277,11 @@ export const foundationTables = {
   authSessions,
   authChallenges,
   schemaMeta,
+  topics,
+  claims,
+  evidenceSubmissions,
+  claimEvidenceLinks,
+  conflictDisclosures,
+  claimReviews,
+  evidenceReviews,
 };

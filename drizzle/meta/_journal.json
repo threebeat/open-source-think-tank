@@ -85,6 +85,13 @@
       "when": 1786396000000,
       "tag": "0011_privacy_ops",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1786432494999,
+      "tag": "0012_topic_evidence",
+      "breakpoints": true
     }
   ]
 }
