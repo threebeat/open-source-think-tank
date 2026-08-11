@@ -2,6 +2,12 @@ import Link from "next/link";
 
 import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { PageHeader } from "@/components/PageHeader";
+import {
+  EvidenceComparison,
+  groupEvidenceByRelationship,
+  type ComparableEvidenceItem,
+} from "@/components/topics/EvidenceComparison";
+import { PublicRevisionSummaryNotice } from "@/components/topics/RevisionHistoryPanel";
 import { formatTopicGeography } from "@/lib/geography/tennessee-counties";
 import type { PublicTopicProjection } from "@/lib/topics/public-projection";
 
@@ -26,6 +32,65 @@ function qualityPlainLanguage(
     case "rejected":
       return "Rejected quality means reviewers did not accept the source for this publication. It does not settle claim truth.";
   }
+}
+
+function EvidenceBlock({
+  evidence,
+  relationship,
+}: {
+  evidence: PublicTopicProjection["evidence"][number];
+  relationship: "supporting" | "counterevidence";
+}) {
+  return (
+    <li className="min-w-0 rounded-md border border-border bg-surface px-4 py-3 text-sm">
+      <p className="font-medium text-foreground break-words">
+        {evidence.title}
+      </p>
+      <p className="mt-1 text-muted-foreground break-words">
+        {relationship === "supporting" ? "Supporting evidence" : "Counterevidence"}{" "}
+        · {evidence.organization} · {evidence.authorType} · {evidence.sourceType}
+      </p>
+      <p className="mt-2 text-muted-foreground break-words">
+        <span className="font-medium text-foreground">Evidence quality: </span>
+        {evidence.qualityStatus.replaceAll("_", " ")}.{" "}
+        {qualityPlainLanguage(evidence.qualityStatus)}
+      </p>
+      {evidence.qualityPublicRationale ? (
+        <p className="mt-2 text-muted-foreground break-words whitespace-pre-wrap">
+          <span className="font-medium text-foreground">
+            Quality rationale:{" "}
+          </span>
+          {evidence.qualityPublicRationale}
+        </p>
+      ) : null}
+      {evidence.workflowPublicRationale ? (
+        <p className="mt-2 text-muted-foreground break-words whitespace-pre-wrap">
+          <span className="font-medium text-foreground">
+            Review decision (public):{" "}
+          </span>
+          {evidence.workflowPublicRationale}
+        </p>
+      ) : null}
+      <p className="mt-2 text-muted-foreground break-words whitespace-pre-wrap">
+        <span className="font-medium text-foreground">Limitations: </span>
+        {evidence.limitations}
+      </p>
+      <PublicRevisionSummaryNotice summary={evidence.revisionSummary} />
+      <p className="mt-2">
+        <a
+          href={evidence.sourceUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="break-all text-primary underline"
+        >
+          {evidence.sourceUrl}
+        </a>
+        <span className="mt-1 block text-xs text-muted-foreground">
+          External link — not fetched by this application.
+        </span>
+      </p>
+    </li>
+  );
 }
 
 type GatedPublicTopicViewProps = {
@@ -62,7 +127,8 @@ export function GatedPublicTopicView({ projection }: GatedPublicTopicViewProps) 
         This is a resettable alpha publication from the gated environment. It is
         not government adoption, legal authority, or truth certification.
         Evidence quality labels are independent of popularity and consultation
-        agreement.
+        agreement. Supporting and counterevidence are shown for comparison; neither
+        side is ranked.
       </DisclosureNotice>
 
       <section className="grid gap-4 md:grid-cols-2">
@@ -87,106 +153,153 @@ export function GatedPublicTopicView({ projection }: GatedPublicTopicViewProps) 
         >
           Claims and evidence
         </h2>
-        <div className="space-y-6">
-          {projection.claims.map((claim) => (
-            <article
-              key={`${claim.title}:${claim.approachLabel}`}
-              className="space-y-4 border-t border-border pt-4"
-            >
-              <h3 className="font-heading text-xl text-foreground">
-                {claim.title}
-              </h3>
-              <p className="text-sm text-muted-foreground">{claim.summary}</p>
-              <p className="text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">Approach: </span>
-                {claim.approachLabel}
-              </p>
-              {claim.workflowPublicRationale ? (
-                <p className="text-sm text-muted-foreground">
-                  <span className="font-medium text-foreground">
-                    Public claim review:{" "}
-                  </span>
-                  {claim.workflowPublicRationale}
+        <div className="space-y-8">
+          {projection.claims.map((claim, claimIndex) => {
+            const linked = claim.evidenceLinks
+              .map((link) => {
+                const evidence = evidenceByKey.get(link.evidenceKey);
+                if (!evidence) return null;
+                return { link, evidence };
+              })
+              .filter(
+                (
+                  row,
+                ): row is {
+                  link: (typeof claim.evidenceLinks)[number];
+                  evidence: PublicTopicProjection["evidence"][number];
+                } => Boolean(row),
+              );
+
+            const grouped = groupEvidenceByRelationship(
+              linked.map(({ link, evidence }) => ({
+                relationship: link.relationship,
+                evidence,
+              })),
+            );
+
+            const comparable: ComparableEvidenceItem[] = linked.map(
+              ({ link, evidence }) => ({
+                key: `${claimIndex}-${link.evidenceKey}`,
+                relationship: link.relationship,
+                title: evidence.title,
+                organization: evidence.organization,
+                authorType: evidence.authorType,
+                sourceType: evidence.sourceType,
+                limitations: evidence.limitations,
+                qualityStatus: evidence.qualityStatus,
+                qualityPlainLanguage: qualityPlainLanguage(
+                  evidence.qualityStatus,
+                ),
+                qualityPublicRationale: evidence.qualityPublicRationale,
+                workflowPublicRationale: evidence.workflowPublicRationale,
+                sourceUrl: evidence.sourceUrl,
+                revisionSummaryLabel: evidence.revisionSummary
+                  ? `${evidence.revisionSummary.revisionCount} revision(s)`
+                  : null,
+              }),
+            );
+
+            return (
+              <article
+                key={`${claim.title}:${claim.approachLabel}:${claimIndex}`}
+                className="space-y-4 border-t border-border pt-4"
+              >
+                <h3 className="font-heading text-xl text-foreground break-words">
+                  {claim.title}
+                </h3>
+                <p className="text-sm text-muted-foreground break-words whitespace-pre-wrap">
+                  {claim.summary}
                 </p>
-              ) : null}
-              {claim.conflictPublicSummary ? (
                 <p className="text-sm text-muted-foreground">
-                  <span className="font-medium text-foreground">
-                    Conflict summary:{" "}
-                  </span>
-                  {claim.conflictPublicSummary}
+                  <span className="font-medium text-foreground">Approach: </span>
+                  {claim.approachLabel}
                 </p>
-              ) : null}
-              <ul className="space-y-3">
-                {claim.evidenceLinks.map((link) => {
-                  const evidence = evidenceByKey.get(link.evidenceKey);
-                  if (!evidence) return null;
-                  return (
-                    <li
-                      key={`${link.relationship}:${link.evidenceKey}`}
-                      className="rounded-md border border-border bg-surface px-4 py-3 text-sm"
+                {claim.workflowPublicRationale ? (
+                  <p className="text-sm text-muted-foreground break-words whitespace-pre-wrap">
+                    <span className="font-medium text-foreground">
+                      Public claim review:{" "}
+                    </span>
+                    {claim.workflowPublicRationale}
+                  </p>
+                ) : null}
+                {claim.conflictPublicSummary ? (
+                  <p className="text-sm text-muted-foreground break-words">
+                    <span className="font-medium text-foreground">
+                      Conflict summary:{" "}
+                    </span>
+                    {claim.conflictPublicSummary}
+                  </p>
+                ) : null}
+                <PublicRevisionSummaryNotice summary={claim.revisionSummary} />
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <section
+                    aria-labelledby={`claim-${claimIndex}-supporting`}
+                    className="space-y-2"
+                  >
+                    <h4
+                      id={`claim-${claimIndex}-supporting`}
+                      className="text-sm font-medium text-foreground"
                     >
-                      <p className="font-medium text-foreground">
-                        {evidence.title}{" "}
-                        <span className="font-normal text-muted-foreground">
-                          ({link.relationship})
-                        </span>
+                      Supporting evidence
+                    </h4>
+                    {grouped.supporting.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        No supporting sources in this publication.
                       </p>
-                      <p className="mt-1 text-muted-foreground">
-                        {evidence.organization} · {evidence.authorType} ·{" "}
-                        {evidence.sourceType}
+                    ) : (
+                      <ul className="space-y-3">
+                        {grouped.supporting.map(({ evidence }) => (
+                          <EvidenceBlock
+                            key={evidence.key}
+                            evidence={evidence}
+                            relationship="supporting"
+                          />
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                  <section
+                    aria-labelledby={`claim-${claimIndex}-counter`}
+                    className="space-y-2"
+                  >
+                    <h4
+                      id={`claim-${claimIndex}-counter`}
+                      className="text-sm font-medium text-foreground"
+                    >
+                      Counterevidence
+                    </h4>
+                    {grouped.counterevidence.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        No counterevidence in this publication.
                       </p>
-                      <p className="mt-2 text-muted-foreground">
-                        <span className="font-medium text-foreground">
-                          Quality:{" "}
-                        </span>
-                        {evidence.qualityStatus.replaceAll("_", " ")}.{" "}
-                        {qualityPlainLanguage(evidence.qualityStatus)}
-                      </p>
-                      {evidence.qualityPublicRationale ? (
-                        <p className="mt-2 text-muted-foreground">
-                          <span className="font-medium text-foreground">
-                            Quality rationale:{" "}
-                          </span>
-                          {evidence.qualityPublicRationale}
-                        </p>
-                      ) : null}
-                      {evidence.workflowPublicRationale ? (
-                        <p className="mt-2 text-muted-foreground">
-                          <span className="font-medium text-foreground">
-                            Workflow rationale:{" "}
-                          </span>
-                          {evidence.workflowPublicRationale}
-                        </p>
-                      ) : null}
-                      <p className="mt-2 text-muted-foreground">
-                        Limitations: {evidence.limitations}
-                      </p>
-                      <p className="mt-3">
-                        <a
-                          href={evidence.sourceUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline underline-offset-2"
-                        >
-                          Open third-party source URL
-                        </a>
-                        <span className="ml-2 text-xs text-muted-foreground">
-                          (not fetched by this application)
-                        </span>
-                      </p>
-                    </li>
-                  );
-                })}
-              </ul>
-            </article>
-          ))}
+                    ) : (
+                      <ul className="space-y-3">
+                        {grouped.counterevidence.map(({ evidence }) => (
+                          <EvidenceBlock
+                            key={evidence.key}
+                            evidence={evidence}
+                            relationship="counterevidence"
+                          />
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                </div>
+
+                <EvidenceComparison
+                  claimTitle={claim.title}
+                  items={comparable}
+                />
+              </article>
+            );
+          })}
         </div>
       </section>
 
-      <p className="text-sm text-muted-foreground">
-        <Link href="/topics" className="underline underline-offset-2">
-          Back to published topics
+      <p>
+        <Link href="/topics" className="text-sm text-primary underline">
+          Back to topics
         </Link>
       </p>
     </div>

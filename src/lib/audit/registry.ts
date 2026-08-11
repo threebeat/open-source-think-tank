@@ -510,13 +510,31 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
       })
       .strict() as z.ZodType<Record<string, unknown>>,
   }),
+  "claims.revision_recorded": def(
+    "claims.revision_recorded",
+    "Claim content revision recorded",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          claimId: z.string(),
+          topicId: z.string(),
+          revisionNumber: z.number().int().positive(),
+          changedFields: z.array(z.string()).min(1),
+          capability: z.literal("claims.edit_own"),
+          previousWorkflowState: z.string(),
+          nextWorkflowState: z.string(),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
   "claims.resubmitted": def("claims.resubmitted", "Claim resubmitted", {
     requireActorAccount: true,
     payloadSchema: z
       .object({
         claimId: z.string(),
         topicId: z.string(),
-        evidenceSubmissionId: z.string(),
         capability: z.literal("claims.submit"),
         previousWorkflowState: z.literal("changes_requested"),
         nextWorkflowState: z.literal("submitted"),
@@ -530,7 +548,6 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
       .object({
         claimId: z.string(),
         topicId: z.string(),
-        evidenceSubmissionId: z.string(),
         capability: z.literal("claims.withdraw_own"),
         previousWorkflowState: z.string(),
         nextWorkflowState: z.literal("withdrawn"),
@@ -563,7 +580,6 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
       .object({
         evidenceSubmissionId: z.string(),
         topicId: z.string(),
-        claimId: z.string(),
         capability: z.literal("evidence.edit_own"),
         previousWorkflowState: z.string(),
         nextWorkflowState: z.string(),
@@ -572,6 +588,25 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
       })
       .strict() as z.ZodType<Record<string, unknown>>,
   }),
+  "evidence.revision_recorded": def(
+    "evidence.revision_recorded",
+    "Evidence content revision recorded",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          evidenceSubmissionId: z.string(),
+          topicId: z.string(),
+          revisionNumber: z.number().int().positive(),
+          changedFields: z.array(z.string()).min(1),
+          capability: z.literal("evidence.edit_own"),
+          previousWorkflowState: z.string(),
+          nextWorkflowState: z.string(),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
   "evidence.resubmitted": def(
     "evidence.resubmitted",
     "Evidence resubmitted",
@@ -581,7 +616,6 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
         .object({
           evidenceSubmissionId: z.string(),
           topicId: z.string(),
-          claimId: z.string(),
           capability: z.literal("evidence.submit"),
           previousWorkflowState: z.literal("changes_requested"),
           nextWorkflowState: z.literal("submitted"),
@@ -596,7 +630,6 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
       .object({
         evidenceSubmissionId: z.string(),
         topicId: z.string(),
-        claimId: z.string(),
         capability: z.literal("evidence.withdraw_own"),
         previousWorkflowState: z.string(),
         nextWorkflowState: z.literal("withdrawn"),

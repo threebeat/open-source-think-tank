@@ -4,6 +4,7 @@ import {
   check,
   foreignKey,
   index,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -1312,6 +1313,81 @@ export const claimReviews = pgTable(
 );
 
 /**
+ * Append-only content revision history (Package 3.7).
+ * Exactly one of claim_id / evidence_submission_id; snapshots are content-only.
+ * Immutable via migration trigger — withdraw/reject/hide never delete rows.
+ */
+export const contentRevisions = pgTable(
+  "content_revisions",
+  {
+    id: text("id").primaryKey(),
+    topicId: text("topic_id")
+      .notNull()
+      .references(() => topics.id, { onDelete: "restrict" }),
+    claimId: text("claim_id"),
+    evidenceSubmissionId: text("evidence_submission_id"),
+    revisionNumber: integer("revision_number").notNull(),
+    editorAccountId: text("editor_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    changedFields: text("changed_fields").array().notNull(),
+    beforeSnapshot: jsonb("before_snapshot")
+      .$type<Record<string, unknown>>()
+      .notNull(),
+    afterSnapshot: jsonb("after_snapshot")
+      .$type<Record<string, unknown>>()
+      .notNull(),
+    synthetic: boolean("synthetic").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("content_revisions_claim_revision_uidx")
+      .on(table.claimId, table.revisionNumber)
+      .where(sql`${table.claimId} IS NOT NULL`),
+    uniqueIndex("content_revisions_evidence_revision_uidx")
+      .on(table.evidenceSubmissionId, table.revisionNumber)
+      .where(sql`${table.evidenceSubmissionId} IS NOT NULL`),
+    index("content_revisions_claim_created_idx")
+      .on(table.claimId, table.createdAt)
+      .where(sql`${table.claimId} IS NOT NULL`),
+    index("content_revisions_evidence_created_idx")
+      .on(table.evidenceSubmissionId, table.createdAt)
+      .where(sql`${table.evidenceSubmissionId} IS NOT NULL`),
+    index("content_revisions_topic_created_idx").on(
+      table.topicId,
+      table.createdAt,
+    ),
+    foreignKey({
+      name: "content_revisions_claim_topic_fk",
+      columns: [table.claimId, table.topicId],
+      foreignColumns: [claims.id, claims.topicId],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "content_revisions_evidence_topic_fk",
+      columns: [table.evidenceSubmissionId, table.topicId],
+      foreignColumns: [evidenceSubmissions.id, evidenceSubmissions.topicId],
+    }).onDelete("restrict"),
+    check(
+      "content_revisions_revision_number_positive",
+      sql`${table.revisionNumber} > 0`,
+    ),
+    check(
+      "content_revisions_changed_fields_nonempty",
+      sql`cardinality(${table.changedFields}) > 0`,
+    ),
+    check(
+      "content_revisions_exactly_one_subject",
+      sql`(
+        (${table.claimId} IS NOT NULL AND ${table.evidenceSubmissionId} IS NULL)
+        OR (${table.claimId} IS NULL AND ${table.evidenceSubmissionId} IS NOT NULL)
+      )`,
+    ),
+  ],
+);
+
+/**
  * Append-only evidence workflow + quality review provenance
  * (immutable via migration trigger). Quality decisions never rewrite
  * popularity/consensus fields (none exist on these tables).
@@ -1388,6 +1464,7 @@ export const foundationTables = {
   evidenceSubmissions,
   claimEvidenceLinks,
   conflictDisclosures,
+  contentRevisions,
   claimReviews,
   evidenceReviews,
 };

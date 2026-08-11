@@ -19,12 +19,17 @@ function statusFor(code: string): number {
   if (code === "SUBMISSION_STATE_CONFLICT") {
     return 409;
   }
-  if (code === "CLAIM_NOT_FOUND") {
+  if (code === "CLAIM_NOT_FOUND" || code === "EVIDENCE_NOT_FOUND") {
     return 404;
   }
   return 400;
 }
 
+/**
+ * Subject-specific own-submission mutations (3.7).
+ * Body.subject must be "claim" or "evidence"; evidence actions require
+ * evidenceSubmissionId — never inferred from links[0].
+ */
 export async function PATCH(request: Request, context: RouteContext) {
   if (resolveAppMode() !== "gated") {
     return NextResponse.json({ error: "Not Found" }, { status: 404 });
@@ -54,99 +59,195 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const action = String(body.action ?? "update");
+  const subject = String(body.subject ?? "");
+  const evidenceSubmissionId =
+    typeof body.evidenceSubmissionId === "string"
+      ? body.evidenceSubmissionId
+      : "";
+
   const { getGatedDb } = await import("@/lib/auth/runtime");
   const {
-    resubmitOwnSubmission,
-    updateOwnSubmission,
-    withdrawOwnSubmission,
+    resubmitOwnClaim,
+    resubmitOwnEvidence,
+    updateOwnClaimContent,
+    updateOwnEvidenceContent,
+    withdrawOwnClaim,
+    withdrawOwnEvidence,
   } = await import("@/lib/submissions/submit");
 
+  const db = getGatedDb();
+  const actorAccountId = gated.session.accountId;
+  const noStore = { "Cache-Control": "no-store" };
+
   if (action === "withdraw") {
-    const result = await withdrawOwnSubmission(getGatedDb(), {
-      actorAccountId: gated.session.accountId,
+    if (subject === "evidence") {
+      if (!evidenceSubmissionId) {
+        return NextResponse.json(
+          {
+            error: "evidenceSubmissionId is required",
+            code: "SUBMISSION_INPUT_INVALID",
+          },
+          { status: 400, headers: noStore },
+        );
+      }
+      const result = await withdrawOwnEvidence(db, {
+        actorAccountId,
+        evidenceSubmissionId,
+        expectedWorkflowState: String(
+          body.expectedWorkflowState ?? "",
+        ) as "draft" | "submitted" | "changes_requested",
+        reason: typeof body.reason === "string" ? body.reason : undefined,
+      });
+      if (!result.ok) {
+        return NextResponse.json(
+          { error: result.error, code: result.code },
+          { status: statusFor(result.code), headers: noStore },
+        );
+      }
+      return NextResponse.json(result.value, { headers: noStore });
+    }
+
+    if (subject !== "claim") {
+      return NextResponse.json(
+        { error: "subject must be claim or evidence", code: "SUBMISSION_INPUT_INVALID" },
+        { status: 400, headers: noStore },
+      );
+    }
+
+    const result = await withdrawOwnClaim(db, {
+      actorAccountId,
       claimId,
-      expectedClaimWorkflowState: String(
-        body.expectedClaimWorkflowState ?? "",
-      ) as "draft" | "submitted" | "changes_requested",
-      expectedEvidenceWorkflowState: String(
-        body.expectedEvidenceWorkflowState ?? "",
+      expectedWorkflowState: String(
+        body.expectedWorkflowState ?? "",
       ) as "draft" | "submitted" | "changes_requested",
       reason: typeof body.reason === "string" ? body.reason : undefined,
     });
     if (!result.ok) {
       return NextResponse.json(
         { error: result.error, code: result.code },
-        {
-          status: statusFor(result.code),
-          headers: { "Cache-Control": "no-store" },
-        },
+        { status: statusFor(result.code), headers: noStore },
       );
     }
-    return NextResponse.json(result.value, {
-      headers: { "Cache-Control": "no-store" },
-    });
+    return NextResponse.json(result.value, { headers: noStore });
   }
 
   if (action === "resubmit") {
-    const result = await resubmitOwnSubmission(getGatedDb(), {
-      actorAccountId: gated.session.accountId,
+    if (subject === "evidence") {
+      if (!evidenceSubmissionId) {
+        return NextResponse.json(
+          {
+            error: "evidenceSubmissionId is required",
+            code: "SUBMISSION_INPUT_INVALID",
+          },
+          { status: 400, headers: noStore },
+        );
+      }
+      const result = await resubmitOwnEvidence(db, {
+        actorAccountId,
+        evidenceSubmissionId,
+        expectedWorkflowState: "changes_requested",
+      });
+      if (!result.ok) {
+        return NextResponse.json(
+          { error: result.error, code: result.code },
+          { status: statusFor(result.code), headers: noStore },
+        );
+      }
+      return NextResponse.json(result.value, { headers: noStore });
+    }
+
+    if (subject !== "claim") {
+      return NextResponse.json(
+        { error: "subject must be claim or evidence", code: "SUBMISSION_INPUT_INVALID" },
+        { status: 400, headers: noStore },
+      );
+    }
+
+    const result = await resubmitOwnClaim(db, {
+      actorAccountId,
       claimId,
-      expectedClaimWorkflowState: "changes_requested",
-      expectedEvidenceWorkflowState: "changes_requested",
+      expectedWorkflowState: "changes_requested",
     });
     if (!result.ok) {
       return NextResponse.json(
         { error: result.error, code: result.code },
-        {
-          status: statusFor(result.code),
-          headers: { "Cache-Control": "no-store" },
-        },
+        { status: statusFor(result.code), headers: noStore },
       );
     }
-    return NextResponse.json(result.value, {
-      headers: { "Cache-Control": "no-store" },
-    });
+    return NextResponse.json(result.value, { headers: noStore });
   }
 
-  const result = await updateOwnSubmission(getGatedDb(), {
-    actorAccountId: gated.session.accountId,
+  if (action !== "update") {
+    return NextResponse.json(
+      { error: "Unknown action", code: "SUBMISSION_INPUT_INVALID" },
+      { status: 400, headers: noStore },
+    );
+  }
+
+  if (subject === "evidence") {
+    if (!evidenceSubmissionId) {
+      return NextResponse.json(
+        {
+          error: "evidenceSubmissionId is required",
+          code: "SUBMISSION_INPUT_INVALID",
+        },
+        { status: 400, headers: noStore },
+      );
+    }
+    const result = await updateOwnEvidenceContent(db, {
+      actorAccountId,
+      evidenceSubmissionId,
+      expectedUpdatedAt: String(body.expectedUpdatedAt ?? ""),
+      sourceUrl: String(body.sourceUrl ?? ""),
+      title: String(body.evidenceTitle ?? body.title ?? ""),
+      organization: String(body.organization ?? ""),
+      authorType: body.authorType as
+        | "agency"
+        | "researcher"
+        | "journalist"
+        | "civil_society"
+        | "industry"
+        | "other",
+      sourceType: body.sourceType as
+        | "report"
+        | "dataset"
+        | "peer_reviewed"
+        | "news"
+        | "memo"
+        | "other",
+      limitations: String(body.limitations ?? ""),
+    });
+    if (!result.ok) {
+      return NextResponse.json(
+        { error: result.error, code: result.code },
+        { status: statusFor(result.code), headers: noStore },
+      );
+    }
+    return NextResponse.json(result.value, { headers: noStore });
+  }
+
+  if (subject !== "claim") {
+    return NextResponse.json(
+      { error: "subject must be claim or evidence", code: "SUBMISSION_INPUT_INVALID" },
+      { status: 400, headers: noStore },
+    );
+  }
+
+  const result = await updateOwnClaimContent(db, {
+    actorAccountId,
     claimId,
-    expectedClaimUpdatedAt: String(body.expectedClaimUpdatedAt ?? ""),
-    expectedEvidenceUpdatedAt: String(body.expectedEvidenceUpdatedAt ?? ""),
-    claimTitle: String(body.claimTitle ?? ""),
-    claimSummary: String(body.claimSummary ?? ""),
+    expectedUpdatedAt: String(body.expectedUpdatedAt ?? ""),
+    title: String(body.claimTitle ?? body.title ?? ""),
+    summary: String(body.claimSummary ?? body.summary ?? ""),
     approachLabel: String(body.approachLabel ?? ""),
-    sourceUrl: String(body.sourceUrl ?? ""),
-    evidenceTitle: String(body.evidenceTitle ?? ""),
-    organization: String(body.organization ?? ""),
-    authorType: body.authorType as
-      | "agency"
-      | "researcher"
-      | "journalist"
-      | "civil_society"
-      | "industry"
-      | "other",
-    sourceType: body.sourceType as
-      | "report"
-      | "dataset"
-      | "peer_reviewed"
-      | "news"
-      | "memo"
-      | "other",
-    limitations: String(body.limitations ?? ""),
   });
 
   if (!result.ok) {
     return NextResponse.json(
       { error: result.error, code: result.code },
-      {
-        status: statusFor(result.code),
-        headers: { "Cache-Control": "no-store" },
-      },
+      { status: statusFor(result.code), headers: noStore },
     );
   }
 
-  return NextResponse.json(result.value, {
-    headers: { "Cache-Control": "no-store" },
-  });
+  return NextResponse.json(result.value, { headers: noStore });
 }

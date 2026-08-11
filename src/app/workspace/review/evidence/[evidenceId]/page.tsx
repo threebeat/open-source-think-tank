@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { PageHeader } from "@/components/PageHeader";
+import { RevisionHistoryPanel } from "@/components/topics/RevisionHistoryPanel";
 import { EvidenceReviewForms } from "@/components/workspace/EvidenceReviewForms";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { MainContainer } from "@/components/layout/MainContainer";
@@ -26,7 +27,8 @@ export default async function EvidenceReviewDetailPage({ params }: PageProps) {
 
   const { getGatedDb } = await import("@/lib/auth/runtime");
   const { getEvidenceReviewDetail } = await import("@/lib/review/queues");
-  const detail = await getEvidenceReviewDetail(getGatedDb(), {
+  const db = getGatedDb();
+  const detail = await getEvidenceReviewDetail(db, {
     actorAccountId: gated.session.accountId,
     evidenceSubmissionId: evidenceId,
   });
@@ -35,7 +37,23 @@ export default async function EvidenceReviewDetailPage({ params }: PageProps) {
     notFound();
   }
 
+  const { getStaffEvidenceRevisionHistory } = await import(
+    "@/lib/revisions/history"
+  );
+  const evidenceHistory = await getStaffEvidenceRevisionHistory(db, {
+    actorAccountId: gated.session.accountId,
+    evidenceSubmissionId: evidenceId,
+  });
+
   const { evidence, topic, linkedClaims, reviews } = detail.value;
+  const latestReviewAt = reviews.at(-1)?.decidedAt ?? null;
+  const evidenceLatestRevisionAt =
+    evidenceHistory.ok ? evidenceHistory.value.latestRevisionAt : null;
+  const reviewPredates =
+    Boolean(latestReviewAt) &&
+    Boolean(evidenceLatestRevisionAt) &&
+    new Date(latestReviewAt!).getTime() <
+      new Date(evidenceLatestRevisionAt!).getTime();
 
   return (
     <MainContainer className="space-y-8">
@@ -84,18 +102,33 @@ export default async function EvidenceReviewDetailPage({ params }: PageProps) {
         <h2 id="linked-claims-heading" className="font-heading text-xl">
           Linked claims
         </h2>
+        <p className="text-sm text-muted-foreground">
+          One evidence source may support or counter several claims. Evidence
+          content history appears once below — not once per link.
+        </p>
         <ul className="space-y-1 text-sm">
           {linkedClaims.map((claim) => (
             <li key={claim.claimId}>
-              {claim.title} ({claim.relationship})
+              {claim.title} (
+              {claim.relationship === "supporting"
+                ? "Supporting evidence"
+                : "Counterevidence"}
+              )
             </li>
           ))}
         </ul>
       </section>
 
+      <RevisionHistoryPanel
+        title="Evidence content revisions"
+        history={evidenceHistory.ok ? evidenceHistory.value : null}
+        reviewPredatesLatestRevision={reviewPredates}
+        latestReviewAt={latestReviewAt}
+      />
+
       <section className="space-y-3" aria-labelledby="prior-evidence-reviews">
         <h2 id="prior-evidence-reviews" className="font-heading text-xl">
-          Prior reviews
+          Prior review decisions
         </h2>
         {reviews.length === 0 ? (
           <p className="text-sm text-muted-foreground">No reviews yet.</p>

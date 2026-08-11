@@ -13,8 +13,9 @@ import { seedSyntheticFoundation } from "@/db/seeds/synthetic";
 import { isRegisteredAuditAction } from "@/lib/audit/registry";
 import {
   createAndSubmitClaimEvidence,
-  updateOwnSubmission,
-  withdrawOwnSubmission,
+  updateOwnClaimContent,
+  withdrawOwnClaim,
+  withdrawOwnEvidence,
 } from "@/lib/submissions/submit";
 import { createTopic, transitionTopic } from "@/lib/topics/authoring";
 import { seedApprovedAssertions } from "@/lib/verification/seed-assurance";
@@ -232,20 +233,13 @@ describe("participant submissions (3.5)", () => {
     expect(created.ok).toBe(true);
     if (!created.ok) return;
 
-    const stolen = await updateOwnSubmission(db, {
+    const stolen = await updateOwnClaimContent(db, {
       actorAccountId: OTHER,
       claimId: created.value.claim.id,
-      expectedClaimUpdatedAt: created.value.claim.updatedAt.toISOString(),
-      expectedEvidenceUpdatedAt: created.value.evidence.updatedAt.toISOString(),
-      claimTitle: "Hijack",
-      claimSummary: "Hijack",
+      expectedUpdatedAt: created.value.claim.updatedAt.toISOString(),
+      title: "Hijack",
+      summary: "Hijack",
       approachLabel: "Hijack",
-      sourceUrl: "https://example.org/hijack",
-      evidenceTitle: "Hijack",
-      organization: "Hijack",
-      authorType: "other",
-      sourceType: "other",
-      limitations: "Hijack",
     });
     // Staff admin is not a participant; capability check fails closed.
     expect(stolen.ok).toBe(false);
@@ -253,17 +247,31 @@ describe("participant submissions (3.5)", () => {
       expect(stolen.code).toMatch(/^AUTHZ_/);
     }
 
-    const withdrawn = await withdrawOwnSubmission(db, {
+    const withdrawnClaim = await withdrawOwnClaim(db, {
       actorAccountId: PARTICIPANT,
       claimId: created.value.claim.id,
-      expectedClaimWorkflowState: "submitted",
-      expectedEvidenceWorkflowState: "submitted",
+      expectedWorkflowState: "submitted",
       reason: "Changing approach",
     });
-    expect(withdrawn.ok).toBe(true);
-    if (!withdrawn.ok) return;
-    expect(withdrawn.value.claim.workflowState).toBe("withdrawn");
-    expect(withdrawn.value.evidence.workflowState).toBe("withdrawn");
+    expect(withdrawnClaim.ok).toBe(true);
+    if (!withdrawnClaim.ok) return;
+    expect(withdrawnClaim.value.claim.workflowState).toBe("withdrawn");
+
+    // Evidence remains until withdrawn independently (3.7 subject independence).
+    const [evidenceStill] = await db
+      .select()
+      .from(evidenceSubmissions)
+      .where(eq(evidenceSubmissions.id, created.value.evidence.id));
+    expect(evidenceStill?.workflowState).toBe("submitted");
+
+    const withdrawnEvidence = await withdrawOwnEvidence(db, {
+      actorAccountId: PARTICIPANT,
+      evidenceSubmissionId: created.value.evidence.id,
+      expectedWorkflowState: "submitted",
+    });
+    expect(withdrawnEvidence.ok).toBe(true);
+    if (!withdrawnEvidence.ok) return;
+    expect(withdrawnEvidence.value.evidence.workflowState).toBe("withdrawn");
 
     const [claimRow] = await db
       .select()

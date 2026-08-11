@@ -68,6 +68,12 @@ export type ClaimReviewDetail = {
     evidenceSubmissionId: string;
     relationship: "supporting" | "counterevidence";
     evidenceTitle: string;
+    organization: string;
+    authorType: string;
+    sourceType: string;
+    limitations: string;
+    qualityStatus: string;
+    workflowState: string;
     sourceUrl: string;
   }>;
   reviews: Array<{
@@ -303,6 +309,12 @@ export async function getClaimReviewDetail(
       evidenceSubmissionId: evidence.value.id,
       relationship: link.relationship,
       evidenceTitle: evidence.value.title,
+      organization: evidence.value.organization,
+      authorType: evidence.value.authorType,
+      sourceType: evidence.value.sourceType,
+      limitations: evidence.value.limitations,
+      qualityStatus: evidence.value.qualityStatus,
+      workflowState: evidence.value.workflowState,
       sourceUrl: evidence.value.sourceUrl,
     });
   }

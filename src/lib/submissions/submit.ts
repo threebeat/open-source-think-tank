@@ -10,10 +10,8 @@ import {
   getClaimById,
   insertClaim,
   insertClaimEvidenceLink,
-  listClaimEvidenceLinks,
   listClaims,
   type SubmissionWorkflowState,
-  updateClaimContent,
   updateClaimWorkflow,
 } from "@/lib/claims/repository";
 import { insertConflictDisclosure } from "@/lib/conflicts/repository";
@@ -24,11 +22,19 @@ import {
   type EvidenceSubmissionRecord,
   getEvidenceSubmissionById,
   insertEvidenceSubmission,
-  updateEvidenceContent,
   updateEvidenceWorkflow,
 } from "@/lib/evidence/repository";
 import type { GatedDb } from "@/lib/persistence/gated";
+import {
+  updateOwnClaimContent,
+  updateOwnEvidenceContent,
+} from "@/lib/revisions/edit";
 import { getTopicById } from "@/lib/topics/repository";
+
+export {
+  updateOwnClaimContent,
+  updateOwnEvidenceContent,
+} from "@/lib/revisions/edit";
 
 /**
  * Disclosure attachment rule (3.5):
@@ -407,210 +413,32 @@ export async function createAndSubmitClaimEvidence(
   }
 }
 
-const editableStates: SubmissionWorkflowState[] = ["draft", "changes_requested"];
-
-export const updateOwnSubmissionSchema = z.object({
-  claimId: z.string().min(1),
-  expectedClaimUpdatedAt: z.string().datetime({ offset: true }),
-  expectedEvidenceUpdatedAt: z.string().datetime({ offset: true }),
-  claimTitle: z.string().trim().min(1).max(MAX_TITLE),
-  claimSummary: z.string().trim().min(1).max(MAX_SUMMARY),
-  approachLabel: z.string().trim().min(1).max(MAX_APPROACH),
-  sourceUrl: httpUrlSchema,
-  evidenceTitle: z.string().trim().min(1).max(MAX_TITLE),
-  organization: z.string().trim().min(1).max(MAX_ORG),
-  authorType: authorTypeSchema,
-  sourceType: sourceTypeSchema,
-  limitations: z.string().trim().min(1).max(MAX_LIMITATIONS),
-});
-
 /**
- * Owner content edit for draft or changes_requested only (expected-state).
+ * Subject-specific claim resubmit: changes_requested → submitted.
+ * Does not mutate linked evidence (3.7 independence).
  */
-export async function updateOwnSubmission(
-  db: GatedDb,
-  input: {
-    actorAccountId: string;
-  } & z.input<typeof updateOwnSubmissionSchema>,
-): Promise<AdapterResult<SubmissionEnvelope>> {
-  const denied = gatedOrDeny();
-  if (denied) return denied;
-
-  const parsed = updateOwnSubmissionSchema.safeParse(input);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      error: "Invalid submission update",
-      code: "SUBMISSION_INPUT_INVALID",
-    };
-  }
-
-  try {
-    return await db.transaction(async (tx) => {
-      const principal = await requirePrincipal(tx, input.actorAccountId);
-      for (const capability of ["claims.edit_own", "evidence.edit_own"] as const) {
-        const decision = await authorizeCapability(tx, principal, capability);
-        if (!decision.ok) {
-          throw Object.assign(new Error(decision.code), { decision });
-        }
-      }
-
-      const claim = await getClaimById(tx, parsed.data.claimId);
-      if (!claim.ok || !claim.value) throw new Error("CLAIM_NOT_FOUND");
-      if (claim.value.authorAccountId !== principal.accountId) {
-        throw new Error("SUBMISSION_NOT_OWNED");
-      }
-      if (!editableStates.includes(claim.value.workflowState)) {
-        throw new Error("SUBMISSION_NOT_EDITABLE");
-      }
-
-      const links = await listClaimEvidenceLinks(tx, {
-        claimId: claim.value.id,
-      });
-      if (!links.ok || links.value.length === 0) {
-        throw new Error("SUBMISSION_LINK_MISSING");
-      }
-      const link = links.value[0]!;
-      const evidence = await getEvidenceSubmissionById(
-        tx,
-        link.evidenceSubmissionId,
-      );
-      if (!evidence.ok || !evidence.value) throw new Error("EVIDENCE_NOT_FOUND");
-      if (evidence.value.submitterAccountId !== principal.accountId) {
-        throw new Error("SUBMISSION_NOT_OWNED");
-      }
-      if (!editableStates.includes(evidence.value.workflowState)) {
-        throw new Error("SUBMISSION_NOT_EDITABLE");
-      }
-
-      const updatedClaim = await updateClaimContent(tx, {
-        claimId: claim.value.id,
-        expectedUpdatedAt: new Date(parsed.data.expectedClaimUpdatedAt),
-        title: parsed.data.claimTitle,
-        summary: parsed.data.claimSummary,
-        approachLabel: parsed.data.approachLabel,
-      });
-      if (!updatedClaim.ok) throw new Error(updatedClaim.code);
-      if (!updatedClaim.value) throw new Error("SUBMISSION_STATE_CONFLICT");
-
-      const updatedEvidence = await updateEvidenceContent(tx, {
-        evidenceId: evidence.value.id,
-        expectedUpdatedAt: new Date(parsed.data.expectedEvidenceUpdatedAt),
-        sourceUrl: parsed.data.sourceUrl,
-        title: parsed.data.evidenceTitle,
-        organization: parsed.data.organization,
-        authorType: parsed.data.authorType as EvidenceAuthorType,
-        sourceType: parsed.data.sourceType as EvidenceSourceType,
-        limitations: parsed.data.limitations,
-      });
-      if (!updatedEvidence.ok) throw new Error(updatedEvidence.code);
-      if (!updatedEvidence.value) throw new Error("SUBMISSION_STATE_CONFLICT");
-
-      await appendAuthAudit(tx, {
-        actorRole: "account_holder",
-        actorAccountId: principal.accountId,
-        action: "claims.updated",
-        subjectType: "claim",
-        subjectId: updatedClaim.value.id,
-        summary: "Own claim content updated.",
-        privatePayload: {
-          claimId: updatedClaim.value.id,
-          topicId: updatedClaim.value.topicId,
-          capability: "claims.edit_own",
-          previousWorkflowState: claim.value.workflowState,
-          nextWorkflowState: updatedClaim.value.workflowState,
-          actorAccountId: principal.accountId,
-        },
-        synthetic: principal.synthetic,
-      });
-
-      await appendAuthAudit(tx, {
-        actorRole: "account_holder",
-        actorAccountId: principal.accountId,
-        action: "evidence.updated",
-        subjectType: "evidence_submission",
-        subjectId: updatedEvidence.value.id,
-        summary: "Own evidence content updated.",
-        privatePayload: {
-          evidenceSubmissionId: updatedEvidence.value.id,
-          topicId: updatedEvidence.value.topicId,
-          claimId: updatedClaim.value.id,
-          capability: "evidence.edit_own",
-          previousWorkflowState: evidence.value.workflowState,
-          nextWorkflowState: updatedEvidence.value.workflowState,
-          actorAccountId: principal.accountId,
-          sourceUrlHost: new URL(parsed.data.sourceUrl).host,
-        },
-        synthetic: principal.synthetic,
-      });
-
-      return {
-        ok: true as const,
-        value: {
-          claim: updatedClaim.value,
-          evidence: updatedEvidence.value,
-          relationship: link.relationship,
-          disclosureId: "",
-        },
-      };
-    });
-  } catch (error) {
-    const authz = mapThrownAuthz(error);
-    if (authz) return authz;
-    const message = error instanceof Error ? error.message : "";
-    if (message === "CLAIM_NOT_FOUND" || message === "EVIDENCE_NOT_FOUND") {
-      return { ok: false, error: "Submission not found", code: "CLAIM_NOT_FOUND" };
-    }
-    if (message === "SUBMISSION_NOT_OWNED") {
-      return {
-        ok: false,
-        error: "You can only edit your own submissions",
-        code: "SUBMISSION_NOT_OWNED",
-      };
-    }
-    if (message === "SUBMISSION_NOT_EDITABLE") {
-      return {
-        ok: false,
-        error: "Submission is not editable in its current state",
-        code: "SUBMISSION_NOT_EDITABLE",
-      };
-    }
-    if (message === "SUBMISSION_STATE_CONFLICT") {
-      return {
-        ok: false,
-        error: "Submission changed; reload and retry",
-        code: "SUBMISSION_STATE_CONFLICT",
-      };
-    }
-    return {
-      ok: false,
-      error: "Submission update failed",
-      code: "SUBMISSION_UPDATE_FAILED",
-    };
-  }
-}
-
-/**
- * Resubmit after changes_requested (claim + linked evidence).
- */
-export async function resubmitOwnSubmission(
+export async function resubmitOwnClaim(
   db: GatedDb,
   input: {
     actorAccountId: string;
     claimId: string;
-    expectedClaimWorkflowState: SubmissionWorkflowState;
-    expectedEvidenceWorkflowState: SubmissionWorkflowState;
+    expectedWorkflowState: SubmissionWorkflowState;
   },
-): Promise<AdapterResult<SubmissionEnvelope>> {
+): Promise<AdapterResult<{ claim: ClaimRecord }>> {
   const denied = gatedOrDeny();
   if (denied) return denied;
 
   try {
     return await db.transaction(async (tx) => {
-      const principal = await requireSubmitCapabilities(
+      const principal = await requirePrincipal(tx, input.actorAccountId);
+      const decision = await authorizeCapability(
         tx,
-        input.actorAccountId,
+        principal,
+        "claims.submit",
       );
+      if (!decision.ok) {
+        throw Object.assign(new Error(decision.code), { decision });
+      }
 
       const claim = await getClaimById(tx, input.claimId);
       if (!claim.ok || !claim.value) throw new Error("CLAIM_NOT_FOUND");
@@ -620,7 +448,7 @@ export async function resubmitOwnSubmission(
       if (claim.value.workflowState !== "changes_requested") {
         throw new Error("SUBMISSION_NOT_RESUBMITTABLE");
       }
-      if (claim.value.workflowState !== input.expectedClaimWorkflowState) {
+      if (claim.value.workflowState !== input.expectedWorkflowState) {
         throw new Error("SUBMISSION_STATE_CONFLICT");
       }
 
@@ -630,44 +458,12 @@ export async function resubmitOwnSubmission(
         throw new Error("TOPIC_NOT_OPEN_FOR_SUBMISSIONS");
       }
 
-      const links = await listClaimEvidenceLinks(tx, {
-        claimId: claim.value.id,
-      });
-      if (!links.ok || links.value.length === 0) {
-        throw new Error("SUBMISSION_LINK_MISSING");
-      }
-      const link = links.value[0]!;
-      const evidence = await getEvidenceSubmissionById(
-        tx,
-        link.evidenceSubmissionId,
-      );
-      if (!evidence.ok || !evidence.value) throw new Error("EVIDENCE_NOT_FOUND");
-      if (evidence.value.submitterAccountId !== principal.accountId) {
-        throw new Error("SUBMISSION_NOT_OWNED");
-      }
-      if (evidence.value.workflowState !== "changes_requested") {
-        throw new Error("SUBMISSION_NOT_RESUBMITTABLE");
-      }
-      if (
-        evidence.value.workflowState !== input.expectedEvidenceWorkflowState
-      ) {
-        throw new Error("SUBMISSION_STATE_CONFLICT");
-      }
-
       const nextClaim = await updateClaimWorkflow(tx, {
         claimId: claim.value.id,
         expectedWorkflowState: "changes_requested",
         nextWorkflowState: "submitted",
       });
       if (!nextClaim.ok || !nextClaim.value) {
-        throw new Error("SUBMISSION_STATE_CONFLICT");
-      }
-      const nextEvidence = await updateEvidenceWorkflow(tx, {
-        evidenceSubmissionId: evidence.value.id,
-        expectedWorkflowState: "changes_requested",
-        nextWorkflowState: "submitted",
-      });
-      if (!nextEvidence.ok || !nextEvidence.value) {
         throw new Error("SUBMISSION_STATE_CONFLICT");
       }
 
@@ -681,7 +477,6 @@ export async function resubmitOwnSubmission(
         privatePayload: {
           claimId: nextClaim.value.id,
           topicId: nextClaim.value.topicId,
-          evidenceSubmissionId: nextEvidence.value.id,
           capability: "claims.submit",
           previousWorkflowState: "changes_requested",
           nextWorkflowState: "submitted",
@@ -689,53 +484,20 @@ export async function resubmitOwnSubmission(
         },
         synthetic: principal.synthetic,
       });
-      await appendAuthAudit(tx, {
-        actorRole: "account_holder",
-        actorAccountId: principal.accountId,
-        action: "evidence.resubmitted",
-        subjectType: "evidence_submission",
-        subjectId: nextEvidence.value.id,
-        summary: "Evidence resubmitted after changes requested.",
-        privatePayload: {
-          evidenceSubmissionId: nextEvidence.value.id,
-          topicId: nextEvidence.value.topicId,
-          claimId: nextClaim.value.id,
-          capability: "evidence.submit",
-          previousWorkflowState: "changes_requested",
-          nextWorkflowState: "submitted",
-          actorAccountId: principal.accountId,
-        },
-        synthetic: principal.synthetic,
-      });
 
-      return {
-        ok: true as const,
-        value: {
-          claim: nextClaim.value,
-          evidence: nextEvidence.value,
-          relationship: link.relationship,
-          disclosureId: "",
-        },
-      };
+      return { ok: true as const, value: { claim: nextClaim.value } };
     });
   } catch (error) {
     const authz = mapThrownAuthz(error);
     if (authz) return authz;
     const message = error instanceof Error ? error.message : "";
-    if (message === "CLAIM_NOT_FOUND" || message === "EVIDENCE_NOT_FOUND") {
+    if (message === "CLAIM_NOT_FOUND" || message === "SUBMISSION_NOT_OWNED") {
       return { ok: false, error: "Submission not found", code: "CLAIM_NOT_FOUND" };
-    }
-    if (message === "SUBMISSION_NOT_OWNED") {
-      return {
-        ok: false,
-        error: "You can only resubmit your own submissions",
-        code: "SUBMISSION_NOT_OWNED",
-      };
     }
     if (message === "SUBMISSION_NOT_RESUBMITTABLE") {
       return {
         ok: false,
-        error: "Only changes_requested submissions can be resubmitted",
+        error: "Only changes_requested claims can be resubmitted",
         code: "SUBMISSION_NOT_RESUBMITTABLE",
       };
     }
@@ -749,7 +511,7 @@ export async function resubmitOwnSubmission(
     if (message === "SUBMISSION_STATE_CONFLICT") {
       return {
         ok: false,
-        error: "Submission changed; reload and retry",
+        error: "Claim changed; reload and retry",
         code: "SUBMISSION_STATE_CONFLICT",
       };
     }
@@ -762,38 +524,153 @@ export async function resubmitOwnSubmission(
 }
 
 /**
- * Withdraw own claim + linked evidence. Rows and history retained.
+ * Subject-specific evidence resubmit: changes_requested → submitted.
+ * Does not mutate linked claims (3.7 independence).
  */
-export async function withdrawOwnSubmission(
+export async function resubmitOwnEvidence(
   db: GatedDb,
   input: {
     actorAccountId: string;
-    claimId: string;
-    expectedClaimWorkflowState: SubmissionWorkflowState;
-    expectedEvidenceWorkflowState: SubmissionWorkflowState;
-    reason?: string;
+    evidenceSubmissionId: string;
+    expectedWorkflowState: SubmissionWorkflowState;
   },
-): Promise<AdapterResult<SubmissionEnvelope>> {
+): Promise<AdapterResult<{ evidence: EvidenceSubmissionRecord }>> {
   const denied = gatedOrDeny();
   if (denied) return denied;
-
-  const withdrawable: SubmissionWorkflowState[] = [
-    "draft",
-    "submitted",
-    "changes_requested",
-  ];
 
   try {
     return await db.transaction(async (tx) => {
       const principal = await requirePrincipal(tx, input.actorAccountId);
-      for (const capability of [
+      const decision = await authorizeCapability(
+        tx,
+        principal,
+        "evidence.submit",
+      );
+      if (!decision.ok) {
+        throw Object.assign(new Error(decision.code), { decision });
+      }
+
+      const evidence = await getEvidenceSubmissionById(
+        tx,
+        input.evidenceSubmissionId,
+      );
+      if (!evidence.ok || !evidence.value) throw new Error("EVIDENCE_NOT_FOUND");
+      if (evidence.value.submitterAccountId !== principal.accountId) {
+        throw new Error("SUBMISSION_NOT_OWNED");
+      }
+      if (evidence.value.workflowState !== "changes_requested") {
+        throw new Error("SUBMISSION_NOT_RESUBMITTABLE");
+      }
+      if (evidence.value.workflowState !== input.expectedWorkflowState) {
+        throw new Error("SUBMISSION_STATE_CONFLICT");
+      }
+
+      const topic = await getTopicById(tx, evidence.value.topicId);
+      if (!topic.ok || !topic.value) throw new Error("TOPIC_NOT_FOUND");
+      if (topic.value.workflowState !== "open_for_submissions") {
+        throw new Error("TOPIC_NOT_OPEN_FOR_SUBMISSIONS");
+      }
+
+      const nextEvidence = await updateEvidenceWorkflow(tx, {
+        evidenceSubmissionId: evidence.value.id,
+        expectedWorkflowState: "changes_requested",
+        nextWorkflowState: "submitted",
+      });
+      if (!nextEvidence.ok || !nextEvidence.value) {
+        throw new Error("SUBMISSION_STATE_CONFLICT");
+      }
+
+      await appendAuthAudit(tx, {
+        actorRole: "account_holder",
+        actorAccountId: principal.accountId,
+        action: "evidence.resubmitted",
+        subjectType: "evidence_submission",
+        subjectId: nextEvidence.value.id,
+        summary: "Evidence resubmitted after changes requested.",
+        privatePayload: {
+          evidenceSubmissionId: nextEvidence.value.id,
+          topicId: nextEvidence.value.topicId,
+          capability: "evidence.submit",
+          previousWorkflowState: "changes_requested",
+          nextWorkflowState: "submitted",
+          actorAccountId: principal.accountId,
+        },
+        synthetic: principal.synthetic,
+      });
+
+      return { ok: true as const, value: { evidence: nextEvidence.value } };
+    });
+  } catch (error) {
+    const authz = mapThrownAuthz(error);
+    if (authz) return authz;
+    const message = error instanceof Error ? error.message : "";
+    if (message === "EVIDENCE_NOT_FOUND" || message === "SUBMISSION_NOT_OWNED") {
+      return {
+        ok: false,
+        error: "Submission not found",
+        code: "EVIDENCE_NOT_FOUND",
+      };
+    }
+    if (message === "SUBMISSION_NOT_RESUBMITTABLE") {
+      return {
+        ok: false,
+        error: "Only changes_requested evidence can be resubmitted",
+        code: "SUBMISSION_NOT_RESUBMITTABLE",
+      };
+    }
+    if (message === "TOPIC_NOT_OPEN_FOR_SUBMISSIONS") {
+      return {
+        ok: false,
+        error: "Topic is not open for submissions",
+        code: "TOPIC_NOT_OPEN_FOR_SUBMISSIONS",
+      };
+    }
+    if (message === "SUBMISSION_STATE_CONFLICT") {
+      return {
+        ok: false,
+        error: "Evidence changed; reload and retry",
+        code: "SUBMISSION_STATE_CONFLICT",
+      };
+    }
+    return {
+      ok: false,
+      error: "Resubmit failed",
+      code: "SUBMISSION_RESUBMIT_FAILED",
+    };
+  }
+}
+
+const withdrawableStates: SubmissionWorkflowState[] = [
+  "draft",
+  "submitted",
+  "changes_requested",
+];
+
+/**
+ * Withdraw own claim only. Linked evidence and revision history are retained.
+ */
+export async function withdrawOwnClaim(
+  db: GatedDb,
+  input: {
+    actorAccountId: string;
+    claimId: string;
+    expectedWorkflowState: SubmissionWorkflowState;
+    reason?: string;
+  },
+): Promise<AdapterResult<{ claim: ClaimRecord }>> {
+  const denied = gatedOrDeny();
+  if (denied) return denied;
+
+  try {
+    return await db.transaction(async (tx) => {
+      const principal = await requirePrincipal(tx, input.actorAccountId);
+      const decision = await authorizeCapability(
+        tx,
+        principal,
         "claims.withdraw_own",
-        "evidence.withdraw_own",
-      ] as const) {
-        const decision = await authorizeCapability(tx, principal, capability);
-        if (!decision.ok) {
-          throw Object.assign(new Error(decision.code), { decision });
-        }
+      );
+      if (!decision.ok) {
+        throw Object.assign(new Error(decision.code), { decision });
       }
 
       const claim = await getClaimById(tx, input.claimId);
@@ -801,34 +678,10 @@ export async function withdrawOwnSubmission(
       if (claim.value.authorAccountId !== principal.accountId) {
         throw new Error("SUBMISSION_NOT_OWNED");
       }
-      if (!withdrawable.includes(claim.value.workflowState)) {
+      if (!withdrawableStates.includes(claim.value.workflowState)) {
         throw new Error("SUBMISSION_NOT_WITHDRAWABLE");
       }
-      if (claim.value.workflowState !== input.expectedClaimWorkflowState) {
-        throw new Error("SUBMISSION_STATE_CONFLICT");
-      }
-
-      const links = await listClaimEvidenceLinks(tx, {
-        claimId: claim.value.id,
-      });
-      if (!links.ok || links.value.length === 0) {
-        throw new Error("SUBMISSION_LINK_MISSING");
-      }
-      const link = links.value[0]!;
-      const evidence = await getEvidenceSubmissionById(
-        tx,
-        link.evidenceSubmissionId,
-      );
-      if (!evidence.ok || !evidence.value) throw new Error("EVIDENCE_NOT_FOUND");
-      if (evidence.value.submitterAccountId !== principal.accountId) {
-        throw new Error("SUBMISSION_NOT_OWNED");
-      }
-      if (!withdrawable.includes(evidence.value.workflowState)) {
-        throw new Error("SUBMISSION_NOT_WITHDRAWABLE");
-      }
-      if (
-        evidence.value.workflowState !== input.expectedEvidenceWorkflowState
-      ) {
+      if (claim.value.workflowState !== input.expectedWorkflowState) {
         throw new Error("SUBMISSION_STATE_CONFLICT");
       }
 
@@ -838,14 +691,6 @@ export async function withdrawOwnSubmission(
         nextWorkflowState: "withdrawn",
       });
       if (!nextClaim.ok || !nextClaim.value) {
-        throw new Error("SUBMISSION_STATE_CONFLICT");
-      }
-      const nextEvidence = await updateEvidenceWorkflow(tx, {
-        evidenceSubmissionId: evidence.value.id,
-        expectedWorkflowState: evidence.value.workflowState,
-        nextWorkflowState: "withdrawn",
-      });
-      if (!nextEvidence.ok || !nextEvidence.value) {
         throw new Error("SUBMISSION_STATE_CONFLICT");
       }
 
@@ -860,7 +705,6 @@ export async function withdrawOwnSubmission(
         privatePayload: {
           claimId: nextClaim.value.id,
           topicId: nextClaim.value.topicId,
-          evidenceSubmissionId: nextEvidence.value.id,
           capability: "claims.withdraw_own",
           previousWorkflowState: claim.value.workflowState,
           nextWorkflowState: "withdrawn",
@@ -868,6 +712,89 @@ export async function withdrawOwnSubmission(
         },
         synthetic: principal.synthetic,
       });
+
+      return { ok: true as const, value: { claim: nextClaim.value } };
+    });
+  } catch (error) {
+    const authz = mapThrownAuthz(error);
+    if (authz) return authz;
+    const message = error instanceof Error ? error.message : "";
+    if (message === "CLAIM_NOT_FOUND" || message === "SUBMISSION_NOT_OWNED") {
+      return { ok: false, error: "Submission not found", code: "CLAIM_NOT_FOUND" };
+    }
+    if (message === "SUBMISSION_NOT_WITHDRAWABLE") {
+      return {
+        ok: false,
+        error: "Claim cannot be withdrawn in its current state",
+        code: "SUBMISSION_NOT_WITHDRAWABLE",
+      };
+    }
+    if (message === "SUBMISSION_STATE_CONFLICT") {
+      return {
+        ok: false,
+        error: "Claim changed; reload and retry",
+        code: "SUBMISSION_STATE_CONFLICT",
+      };
+    }
+    return {
+      ok: false,
+      error: "Withdraw failed",
+      code: "SUBMISSION_WITHDRAW_FAILED",
+    };
+  }
+}
+
+/**
+ * Withdraw own evidence only. Linked claims, links, and revision history retained.
+ */
+export async function withdrawOwnEvidence(
+  db: GatedDb,
+  input: {
+    actorAccountId: string;
+    evidenceSubmissionId: string;
+    expectedWorkflowState: SubmissionWorkflowState;
+    reason?: string;
+  },
+): Promise<AdapterResult<{ evidence: EvidenceSubmissionRecord }>> {
+  const denied = gatedOrDeny();
+  if (denied) return denied;
+
+  try {
+    return await db.transaction(async (tx) => {
+      const principal = await requirePrincipal(tx, input.actorAccountId);
+      const decision = await authorizeCapability(
+        tx,
+        principal,
+        "evidence.withdraw_own",
+      );
+      if (!decision.ok) {
+        throw Object.assign(new Error(decision.code), { decision });
+      }
+
+      const evidence = await getEvidenceSubmissionById(
+        tx,
+        input.evidenceSubmissionId,
+      );
+      if (!evidence.ok || !evidence.value) throw new Error("EVIDENCE_NOT_FOUND");
+      if (evidence.value.submitterAccountId !== principal.accountId) {
+        throw new Error("SUBMISSION_NOT_OWNED");
+      }
+      if (!withdrawableStates.includes(evidence.value.workflowState)) {
+        throw new Error("SUBMISSION_NOT_WITHDRAWABLE");
+      }
+      if (evidence.value.workflowState !== input.expectedWorkflowState) {
+        throw new Error("SUBMISSION_STATE_CONFLICT");
+      }
+
+      const nextEvidence = await updateEvidenceWorkflow(tx, {
+        evidenceSubmissionId: evidence.value.id,
+        expectedWorkflowState: evidence.value.workflowState,
+        nextWorkflowState: "withdrawn",
+      });
+      if (!nextEvidence.ok || !nextEvidence.value) {
+        throw new Error("SUBMISSION_STATE_CONFLICT");
+      }
+
       await appendAuthAudit(tx, {
         actorRole: "account_holder",
         actorAccountId: principal.accountId,
@@ -879,7 +806,6 @@ export async function withdrawOwnSubmission(
         privatePayload: {
           evidenceSubmissionId: nextEvidence.value.id,
           topicId: nextEvidence.value.topicId,
-          claimId: nextClaim.value.id,
           capability: "evidence.withdraw_own",
           previousWorkflowState: evidence.value.workflowState,
           nextWorkflowState: "withdrawn",
@@ -888,41 +814,30 @@ export async function withdrawOwnSubmission(
         synthetic: principal.synthetic,
       });
 
-      return {
-        ok: true as const,
-        value: {
-          claim: nextClaim.value,
-          evidence: nextEvidence.value,
-          relationship: link.relationship,
-          disclosureId: "",
-        },
-      };
+      return { ok: true as const, value: { evidence: nextEvidence.value } };
     });
   } catch (error) {
     const authz = mapThrownAuthz(error);
     if (authz) return authz;
     const message = error instanceof Error ? error.message : "";
-    if (message === "CLAIM_NOT_FOUND" || message === "EVIDENCE_NOT_FOUND") {
-      return { ok: false, error: "Submission not found", code: "CLAIM_NOT_FOUND" };
-    }
-    if (message === "SUBMISSION_NOT_OWNED") {
+    if (message === "EVIDENCE_NOT_FOUND" || message === "SUBMISSION_NOT_OWNED") {
       return {
         ok: false,
-        error: "You can only withdraw your own submissions",
-        code: "SUBMISSION_NOT_OWNED",
+        error: "Submission not found",
+        code: "EVIDENCE_NOT_FOUND",
       };
     }
     if (message === "SUBMISSION_NOT_WITHDRAWABLE") {
       return {
         ok: false,
-        error: "Submission cannot be withdrawn in its current state",
+        error: "Evidence cannot be withdrawn in its current state",
         code: "SUBMISSION_NOT_WITHDRAWABLE",
       };
     }
     if (message === "SUBMISSION_STATE_CONFLICT") {
       return {
         ok: false,
-        error: "Submission changed; reload and retry",
+        error: "Evidence changed; reload and retry",
         code: "SUBMISSION_STATE_CONFLICT",
       };
     }
@@ -932,6 +847,71 @@ export async function withdrawOwnSubmission(
       code: "SUBMISSION_WITHDRAW_FAILED",
     };
   }
+}
+
+/** @deprecated Prefer subject-specific updateOwnClaimContent / updateOwnEvidenceContent. */
+export async function updateOwnSubmission(
+  db: GatedDb,
+  input: {
+    actorAccountId: string;
+    claimId: string;
+    evidenceSubmissionId: string;
+    expectedClaimUpdatedAt: string;
+    expectedEvidenceUpdatedAt: string;
+    claimTitle: string;
+    claimSummary: string;
+    approachLabel: string;
+    sourceUrl: string;
+    evidenceTitle: string;
+    organization: string;
+    authorType: z.infer<typeof authorTypeSchema>;
+    sourceType: z.infer<typeof sourceTypeSchema>;
+    limitations: string;
+  },
+): Promise<
+  AdapterResult<{
+    claim: ClaimRecord;
+    evidence: EvidenceSubmissionRecord;
+  }>
+> {
+  if (!input.evidenceSubmissionId?.trim()) {
+    return {
+      ok: false,
+      error: "evidenceSubmissionId is required",
+      code: "SUBMISSION_INPUT_INVALID",
+    };
+  }
+
+  const claimResult = await updateOwnClaimContent(db, {
+    actorAccountId: input.actorAccountId,
+    claimId: input.claimId,
+    expectedUpdatedAt: input.expectedClaimUpdatedAt,
+    title: input.claimTitle,
+    summary: input.claimSummary,
+    approachLabel: input.approachLabel,
+  });
+  if (!claimResult.ok) return claimResult;
+
+  const evidenceResult = await updateOwnEvidenceContent(db, {
+    actorAccountId: input.actorAccountId,
+    evidenceSubmissionId: input.evidenceSubmissionId,
+    expectedUpdatedAt: input.expectedEvidenceUpdatedAt,
+    sourceUrl: input.sourceUrl,
+    title: input.evidenceTitle,
+    organization: input.organization,
+    authorType: input.authorType,
+    sourceType: input.sourceType,
+    limitations: input.limitations,
+  });
+  if (!evidenceResult.ok) return evidenceResult;
+
+  return {
+    ok: true,
+    value: {
+      claim: claimResult.value.claim,
+      evidence: evidenceResult.value.evidence,
+    },
+  };
 }
 
 /** List claims authored by the principal (own submissions only). */
