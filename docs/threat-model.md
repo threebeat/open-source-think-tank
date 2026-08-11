@@ -105,6 +105,11 @@ Controls below are **implemented** through 2.11 unless noted as still blocked.
 | Unpublished gated topic enumeration (3.6) | Repository filter `publication_status=published` + projection rejects non-publishable rows; missing/unpublished → generic 404; metadata indistinguishability |
 | Workflow/quality/publication confusion (3.6) | Independent axes in schema, services, UI copy; publish preserves operational workflow; pause does not unpublish |
 | Stale concurrent review/publish races (3.6) | Expected-state updates; one winner; audit failure rolls back review/state/publication together |
+| Revision tampering or silent deletion (3.7) | `content_revisions` immutable trigger rejects UPDATE/DELETE; withdraw/reject/hide retain history |
+| Historic-body leakage in public projection (3.7) | Public allowlist is summary-only (count, timestamps, field labels); never historic snapshot bodies, URLs, editor IDs, or revision row IDs |
+| Cross-account revision history reads (3.7) | Owner history requires `*.edit_own` + ownership; staff history requires `claims.review` / `evidence.review`; no broad history capability |
+| Cross-topic link / revision confusion (3.7) | Same-topic composite FKs on `claim_evidence_links` and `content_revisions`; comparison UX uses existing supporting/counterevidence links only |
+| Reviews predating revised content (3.7) | Chronology notice in owner/staff history UI; 3.7 does **not** auto-reset evidence quality or invent a new publish blocker (see OQ22) |
 | Bootstrap disguised as independent review | `decision_source = operator_bootstrap` + null `reviewer_account_id` + operator label; dedicated audit actions |
 
 ## Explicit non-goals for Phase 1 / Phase 2 public-demo

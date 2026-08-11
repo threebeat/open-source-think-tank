@@ -48,13 +48,13 @@ Default decision: **deny**.
 | `topics.pause` | active | administrator | — | Operational pause; **does not** change publication status |
 | `topics.archive` | active | administrator | — | → `archived`; reason required |
 | `claims.submit` | active | participant | — | Create/submit own claims |
-| `claims.edit_own` | active | participant | own (service checks) | Authz establishes eligibility only; ownership verified in transaction |
+| `claims.edit_own` | active | participant | own (service checks) | Authz establishes eligibility only; ownership verified in transaction; also authorizes **owner** claim revision-history reads (3.7) |
 | `claims.withdraw_own` | active | participant | own (service checks) | History retained |
-| `claims.review` | active | reviewer or administrator | — | Claim workflow decisions (3.6 queues/services) |
+| `claims.review` | active | reviewer or administrator | — | Claim workflow decisions (3.6 queues/services); also authorizes **staff** claim subject revision history (3.7) |
 | `evidence.submit` | active | participant | — | Source URL + metadata only |
-| `evidence.edit_own` | active | participant | own (service checks) | No remote fetch |
+| `evidence.edit_own` | active | participant | own (service checks) | No remote fetch; also authorizes **owner** evidence revision-history reads (3.7) |
 | `evidence.withdraw_own` | active | participant | own (service checks) | History retained |
-| `evidence.review` | active | reviewer or administrator | — | Workflow + independent quality decisions (3.6) |
+| `evidence.review` | active | reviewer or administrator | — | Workflow + independent quality decisions (3.6); also authorizes **staff** evidence subject revision history (3.7) |
 | `conflicts.disclose_own` | active | participant | own (service checks) | Required on submit path in 3.5 |
 | `moderation.review_submission` | active | moderator or administrator | — | Visibility hold/hide/restore-to-visible; moderators do **not** get pseudonym reverse-map |
 | `invites.issue` | active | administrator | — | Hashed token at rest; raw link returned once; never public-demo |
