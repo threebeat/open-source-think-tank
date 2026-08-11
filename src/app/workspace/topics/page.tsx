@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { DisclosureNotice } from "@/components/DisclosureNotice";
@@ -69,12 +70,12 @@ export default async function WorkspaceTopicsPage() {
       </DisclosureNotice>
 
       <p>
-        <a
+        <Link
           className="inline-flex min-h-11 items-center rounded-md bg-foreground px-4 text-sm text-background"
           href="/workspace/topics/new"
         >
           Create draft topic
-        </a>
+        </Link>
       </p>
 
       <section aria-labelledby="workspace-topic-list-heading" className="space-y-3">
@@ -116,12 +117,12 @@ export default async function WorkspaceTopicsPage() {
                 topics.map((topic) => (
                   <tr key={topic.id} className="border-b border-border/70">
                     <td className="px-3 py-3">
-                      <a
+                      <Link
                         className="underline"
                         href={`/workspace/topics/${topic.slug}`}
                       >
                         {topic.title}
-                      </a>
+                      </Link>
                     </td>
                     <td className="px-3 py-3 font-mono text-xs">{topic.slug}</td>
                     <td className="px-3 py-3">

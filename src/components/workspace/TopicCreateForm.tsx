@@ -60,9 +60,12 @@ export function TopicCreateForm() {
         </div>
       ) : null}
 
-      <label className="block space-y-2 text-sm">
-        <span>Slug (lowercase ASCII, hyphens allowed)</span>
+      <div className="space-y-2 text-sm">
+        <label htmlFor="topic-slug" className="block">
+          Slug (lowercase ASCII, hyphens allowed)
+        </label>
         <input
+          id="topic-slug"
           className="w-full rounded-md border border-border bg-background px-3 py-2"
           name="slug"
           value={slug}
@@ -71,14 +74,15 @@ export function TopicCreateForm() {
           aria-invalid={Boolean(errors.slug)}
           onChange={(event) => setSlug(event.target.value)}
         />
-        <span className="text-xs text-muted-foreground">
-          {slug.length}/80
-        </span>
-      </label>
+        <span className="text-xs text-muted-foreground">{slug.length}/80</span>
+      </div>
 
-      <label className="block space-y-2 text-sm">
-        <span>Title</span>
+      <div className="space-y-2 text-sm">
+        <label htmlFor="topic-title" className="block">
+          Title
+        </label>
         <input
+          id="topic-title"
           className="w-full rounded-md border border-border bg-background px-3 py-2"
           name="title"
           value={title}
@@ -86,14 +90,15 @@ export function TopicCreateForm() {
           required
           onChange={(event) => setTitle(event.target.value)}
         />
-        <span className="text-xs text-muted-foreground">
-          {title.length}/200
-        </span>
-      </label>
+        <span className="text-xs text-muted-foreground">{title.length}/200</span>
+      </div>
 
-      <label className="block space-y-2 text-sm">
-        <span>Question</span>
+      <div className="space-y-2 text-sm">
+        <label htmlFor="topic-question" className="block">
+          Question
+        </label>
         <textarea
+          id="topic-question"
           className="w-full rounded-md border border-border bg-background px-3 py-2"
           name="question"
           rows={3}
@@ -105,11 +110,14 @@ export function TopicCreateForm() {
         <span className="text-xs text-muted-foreground">
           {question.length}/2000
         </span>
-      </label>
+      </div>
 
-      <label className="block space-y-2 text-sm">
-        <span>Background</span>
+      <div className="space-y-2 text-sm">
+        <label htmlFor="topic-background" className="block">
+          Background
+        </label>
         <textarea
+          id="topic-background"
           className="w-full rounded-md border border-border bg-background px-3 py-2"
           name="background"
           rows={5}
@@ -121,11 +129,14 @@ export function TopicCreateForm() {
         <span className="text-xs text-muted-foreground">
           {background.length}/8000
         </span>
-      </label>
+      </div>
 
-      <label className="block space-y-2 text-sm">
-        <span>Scope</span>
+      <div className="space-y-2 text-sm">
+        <label htmlFor="topic-scope" className="block">
+          Scope
+        </label>
         <textarea
+          id="topic-scope"
           className="w-full rounded-md border border-border bg-background px-3 py-2"
           name="scope"
           rows={3}
@@ -137,7 +148,7 @@ export function TopicCreateForm() {
         <span className="text-xs text-muted-foreground">
           {scope.length}/4000
         </span>
-      </label>
+      </div>
 
       <p className="text-sm text-muted-foreground">
         New topics always start as Draft and Not published. Actor, creator, and

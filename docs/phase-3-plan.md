@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 3 (packages 3.1–3.12)  
 **Baseline:** Phase 2 foundation at or after `a894317317f3ff1e80d0a3602df69e5b4d8cd589` (tag `phase-2-foundation` recorded in [phase-2-handoff.md](./phase-2-handoff.md))  
-**Current package:** **3.4 — Topic authoring** (in progress). Package 3.3 (capabilities, invitations, first-administrator bootstrap) is complete. Close bounded 3.3 follow-ups in Checkpoint 1 before topic mutations. No participant submissions, publication, review queues, moderation, or live Pol.is in this package.
+**Current package:** **3.4 complete (awaiting human approval before 3.5).** Gated topic authoring (create/update/open/review/reopen/pause/archive) is implemented. Publication, participant submissions, review queues, moderation, and live Pol.is are not in this package.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [phase-2-plan.md](./phase-2-plan.md), [phase-2-handoff.md](./phase-2-handoff.md), [architecture-phase-2.md](./architecture-phase-2.md), [architecture-phase-3.md](./architecture-phase-3.md), [capability-matrix.md](./capability-matrix.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [open-questions.md](./open-questions.md), [decisions/0006-phase-3-two-lane-sequencing.md](./decisions/0006-phase-3-two-lane-sequencing.md), [decisions/0007-alpha-test-interim-council-dispositions.md](./decisions/0007-alpha-test-interim-council-dispositions.md), [decisions/0008-phase-3-operational-alpha-contract.md](./decisions/0008-phase-3-operational-alpha-contract.md), [decisions/0009-phase-3-operational-slice-corrections.md](./decisions/0009-phase-3-operational-slice-corrections.md)
 
@@ -458,31 +458,25 @@ Still **forbidden in Phase 3** unless a future ADR + register update says otherw
 
 ### Work package 3.4 — Topic authoring
 
-**Status:** In progress (3.3 follow-ups closed in Checkpoint 1; authoring implementation follows).
+**Status:** Complete (awaiting human approval before 3.5).
 
 **Objective:** Gated workspace UI + mutations for administrators to create, update, open, begin-review, reopen, pause, and archive topics. Show operational workflow and publication status as separate fields. Publish mutation may land with 3.6; pause must not flip publication.
 
 **Prerequisites:** 3.3 capabilities live; Checkpoint 1 corrections (invitation CSRF, pending-contact uniqueness, production-neutral assurance kinds).
 
-**3.3 follow-ups closed before authoring:**
+**Implemented:**
 
-1. Explicit `assertCsrfSafe` on `POST /api/staff/invitations` (mode check first; CSRF before body).
-2. Partial unique index: at most one pending participant invitation per normalized contact (`0015_pending_participant_invite_unique`).
-3. L2/L3/L4 kind constants live in `src/lib/verification/assertion-kinds.ts`; bootstrap no longer depends on seed helpers for kinds.
-
-**Implementation steps:**
-
-1. Domain services over existing topic repository: create/update/open/review-start/reopen/pause/archive with Zod + expected-state transactions + audit.
-2. Add gated routes (e.g. `/workspace/topics`, `/workspace/topics/[slug]`) behind authz; public-demo 404 without gated runtime.
-3. Show operational workflow and publication status clearly; never imply statutory authority; no Publish control in 3.4.
-4. Keyboard-accessible forms; mobile-usable staff layout.
-5. Tests for allowed/denied transitions, pause-without-unpublish, stale writes, CSRF failure paths, and public-demo isolation.
+1. Domain services in `src/lib/topics/authoring.ts` over the existing repository; expected-state workflow updates; draft-only metadata; atomic audit append.
+2. Transition table enforced server-side (`src/lib/topics/transitions.ts`); no publish/unpublish path.
+3. Workspace pages `/workspace/topics`, `/new`, `/[slug]` and APIs under `/api/workspace/topics*` with CSRF, capability checks, no-store, public-demo 404.
+4. 3.3 follow-ups: invitation CSRF, pending-contact unique index `0015`, assertion-kinds module.
+5. Public-demo process copy clarifies fixed walkthrough; workspace routes absent.
 
 **Expected user-visible outcome:** Administrator creates a draft topic and opens it for submissions.
 
-**Authorization and audit:** `topics.*` capabilities; events `topics.created|updated|opened|review_started|reopened|paused|archived` (not `topics.published` yet).
+**Authorization and audit:** `topics.*` capabilities; events `topics.created|updated|opened|review_started|reopened|paused|archived` (not `topics.published`).
 
-**Privacy/security/accessibility:** Staff-only; no public leak of drafts.
+**Privacy/security/accessibility:** Staff-only; no public leak of drafts; keyboard-usable forms.
 
 **Tests and acceptance criteria:** Participant cannot create topics; invalid transitions fail closed; pausing a published topic keeps `publication_status = published`; audit rows present; public-demo workspace APIs 404.
 

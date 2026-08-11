@@ -93,6 +93,9 @@ Controls below are **implemented** through 2.11 unless noted as still blocked.
 | Invitation token replay / leakage (3.3) | Hash at rest; single-use accept; one-time raw link display; no-store responses; forbidSecrets on audit; public-demo 404 for issuance |
 | Concurrent same-contact invite race (3.4 follow-up) | Partial unique index on pending participant contact; revoke-and-reissue; safe conflict on uniqueness race |
 | Invitation CSRF bypass on staff POST (3.4 follow-up) | Explicit `assertCsrfSafe` on mutating invitations route in addition to proxy |
+| Draft topic leakage / slug enumeration (3.4) | Authoring behind `topics.create`; public-demo workspace 404; public `/topics` remain fixtures; safe slug conflict messages |
+| Stale topic transitions / lost updates (3.4) | Expected-state workflow/`updatedAt` checks; conflict without audit emit |
+| Topic mutation without audit (3.4) | Single transaction: mutate then append; audit failure rolls back |
 | Bootstrap disguised as independent review | `decision_source = operator_bootstrap` + null `reviewer_account_id` + operator label; dedicated audit actions |
 
 ## Explicit non-goals for Phase 1 / Phase 2 public-demo

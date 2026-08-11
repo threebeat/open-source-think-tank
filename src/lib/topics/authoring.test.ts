@@ -2,7 +2,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createTestDatabase } from "@/db/pglite";
-import { auditEvents, roleAssignments, topics } from "@/db/schema";
+import { auditEvents, roleAssignments } from "@/db/schema";
 import { seedSyntheticFoundation } from "@/db/seeds/synthetic";
 import { isRegisteredAuditAction } from "@/lib/audit/registry";
 import {

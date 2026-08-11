@@ -23,6 +23,21 @@ test.describe("auth isolation in public-demo", () => {
       data: { intendedContactChannel: "nobody@example.test" },
     });
     expect(invitationsPost.status()).toBe(404);
+
+    const workspaceTopics = await page.request.get("/api/workspace/topics");
+    expect(workspaceTopics.status()).toBe(404);
+
+    const workspaceCreate = await page.request.post("/api/workspace/topics", {
+      data: { slug: "demo-should-404" },
+    });
+    expect(workspaceCreate.status()).toBe(404);
+  });
+
+  test("workspace topic pages are not found in public-demo", async ({
+    page,
+  }) => {
+    const response = await page.goto("/workspace/topics");
+    expect(response?.status()).toBe(404);
   });
 
   test("public join preview still cannot enroll", async ({ page }) => {

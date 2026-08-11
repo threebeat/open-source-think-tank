@@ -26,6 +26,13 @@ export default function ProcessPage() {
         description="Seven stages from how joining works through the public record. This is a demonstration of a proposed project. Algorithms organize or recommend; humans decide. The governing board’s precise legal authority is pending counsel review."
       />
 
+      <DisclosureNotice title="Demonstration only" tone="caution">
+        This is a fixed demonstration of how a topic can move through the
+        process. In the gated alpha, authorized administrators create and open
+        topics; this walkthrough does not save changes or connect you with other
+        visitors.
+      </DisclosureNotice>
+
       <DisclosureNotice title="Governing board authority unresolved" tone="caution">
         The Policy Council may recommend a position. Whether any crowd or council
         decision can bind the legal governing board — and what explanation is
