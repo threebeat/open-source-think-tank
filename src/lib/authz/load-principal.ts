@@ -5,7 +5,7 @@ import {
   councilAppointments,
   roleAssignments,
 } from "@/db/schema";
-import type { FoundationDb } from "@/db/types";
+import type { GatedDb } from "@/lib/persistence/gated";
 import type {
   AuthzPrincipal,
   CouncilRole,
@@ -13,7 +13,7 @@ import type {
 } from "@/lib/authz/types";
 
 export async function loadPrincipal(
-  db: FoundationDb,
+  db: GatedDb,
   accountId: string,
 ): Promise<AuthzPrincipal | null> {
   const [account] = await db

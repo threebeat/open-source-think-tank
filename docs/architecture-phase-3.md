@@ -1,6 +1,6 @@
 # Phase 3 architecture — operational alpha
 
-**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2 schema + gated repositories implemented**; **3.3 capabilities, invitations, and first-administrator bootstrap implemented** (topic authoring UI begins in 3.4)  
+**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.4 implemented** (topic authoring workspace; publication remains 3.6)  
 **Plan:** [phase-3-plan.md](./phase-3-plan.md)  
 **ADRs:** [0008](./decisions/0008-phase-3-operational-alpha-contract.md), [0009](./decisions/0009-phase-3-operational-slice-corrections.md)  
 **Foundation:** [architecture-phase-2.md](./architecture-phase-2.md), ADRs 0002–0005, capability matrix, audit registry
@@ -156,7 +156,10 @@ Projection builder lives in a pure module testable without React. **Minimal path
 | `/workspace` | Alpha home / tasks | session |
 | `/workspace/topics` | Staff/participant topic list | read scoped |
 | `/workspace/topics/new` | Create topic | `topics.create` |
-| `/workspace/topics/[slug]` | Edit/open/pause/archive; publish; staff tools | `topics.*` / review |
+| `/workspace/topics` | List topics (workflow + publication columns) | `topics.create` (admin gate) |
+| `/workspace/topics/new` | Create draft | `topics.create` |
+| `/workspace/topics/[slug]` | Edit draft metadata; open/review/reopen/pause/archive | `topics.*` (no publish in 3.4) |
+| `/api/workspace/topics*` | Create/list/update/transition APIs | matching `topics.*`; public-demo 404 |
 | `/workspace/topics/[slug]/submit` | Claim/evidence submit with basic relationship | `claims.submit`, `evidence.submit` |
 | `/workspace/review` | Claim and evidence review queues | `claims.review`, `evidence.review` |
 | `/workspace/moderation` | Visibility hold/hide/restore-to-visible | `moderation.review_submission` |
@@ -210,7 +213,7 @@ Register in implementing packages (unregistered actions must fail):
 | --- | --- |
 | `operator.*` | `operator.bootstrap_invitation_issued`, `operator.bootstrap_verification_recorded`, `operator.bootstrap_administrator` |
 | `invites.*` | `invites.issued`, `invites.revoked` |
-| `topics.*` | `topics.created`, `topics.updated`, `topics.opened`, `topics.paused`, `topics.published`, `topics.archived`, `topics.reopened`, `topics.review_started` |
+| `topics.*` | **3.4 registered:** `topics.created`, `topics.updated`, `topics.opened`, `topics.review_started`, `topics.reopened`, `topics.paused`, `topics.archived`. **Later:** `topics.published` (3.6) |
 | `claims.*` | `claims.draft_created`, `claims.submitted`, `claims.changes_requested`, `claims.accepted`, `claims.rejected`, `claims.withdrawn`, `claims.revision_recorded` |
 | `evidence.*` | parallel to claims + `evidence.quality_decided`, `evidence.quality_revised` |
 | `conflicts.*` | `conflicts.disclosed`, `conflicts.updated` |
@@ -284,6 +287,27 @@ Implemented in Package 3.3. Summary (full runbook in [secrets-and-operations.md]
 7. Later administrators use ordinary `roles.grant_platform`. Public-demo never constructs this path.
 
 Owner-run interim limitation: operator self-attestation is not independent third-party verification ([open-questions.md](./open-questions.md) OQ21).
+
+---
+
+## 10b. 3.3 follow-ups closed at start of 3.4
+
+1. **Invitation CSRF:** `POST /api/staff/invitations` calls `assertCsrfSafe` after the public-demo mode check and before body parsing (in addition to the network proxy).
+2. **Pending-contact uniqueness:** migration `0015_pending_participant_invite_unique` enforces at most one `pending` + `participant` invitation per `lower(intended_contact_channel)`; revoke-and-reissue remains; uniqueness races return a safe conflict without leaking contact or token.
+3. **Assurance kinds:** L2/L3/L4 constants live in `src/lib/verification/assertion-kinds.ts`; `seed-assurance.ts` remains seed/test-only (`seedApprovedAssertions`). Operator bootstrap imports kinds from the production-neutral module.
+
+## 10c. Topic authoring service boundary (3.4)
+
+**Implemented.** Package 3.4 owns gated administrator create / metadata-update / open / begin-review / reopen / pause / archive over the existing topic schema.
+
+| Surface | Behavior |
+| --- | --- |
+| `src/lib/topics/authoring.ts` | Capability + assurance + expected-state mutation + audit in one transaction |
+| `src/lib/topics/transitions.ts` | Allowlisted operational transitions only |
+| `/workspace/topics*` | Administrator UI; public-demo `notFound()` before gated imports |
+| `/api/workspace/topics*` | CSRF on mutations; 401/403/404/409; `Cache-Control: no-store` |
+
+Publication remains read-only (`topics.publish` lands in 3.6). Pausing or archiving never changes `publication_status`. Drafts are never exposed on public `/topics` fixture routes. Stale expected-state updates return conflict without emitting audit.
 
 ---
 

@@ -1,7 +1,6 @@
 import { and, eq } from "drizzle-orm";
 
 import { accounts, roleAssignments } from "@/db/schema";
-import type { FoundationDb } from "@/db/types";
 import type { AdapterResult } from "@/lib/adapters/types";
 import { appendAuthAudit, type AuthAuditDb } from "@/lib/auth/audit-log";
 import { newEntityId } from "@/lib/auth/tokens";
@@ -26,7 +25,7 @@ export type ActivateAccountInput = {
  * applicable counsel dispositions remain blocking (alpha-test clearances in dispositions.ts).
  */
 export async function activateAccount(
-  db: FoundationDb,
+  db: AuthAuditDb,
   input: ActivateAccountInput,
 ): Promise<AdapterResult<{ accountId: string; activatedAt: string }>> {
   const now = new Date();

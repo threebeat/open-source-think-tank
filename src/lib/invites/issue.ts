@@ -155,6 +155,24 @@ export async function issueParticipantInvitation(
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "issue failed";
+    const constraint =
+      typeof error === "object" &&
+      error &&
+      "constraint" in error &&
+      typeof (error as { constraint?: unknown }).constraint === "string"
+        ? (error as { constraint: string }).constraint
+        : "";
+    // Unique index race: another pending participant invite for this contact won.
+    if (
+      /invitations_one_pending_participant_contact_uidx/i.test(message) ||
+      /invitations_one_pending_participant_contact_uidx/i.test(constraint)
+    ) {
+      return {
+        ok: false,
+        error: "Invitation issuance conflict; retry after reload",
+        code: "INVITE_ISSUE_CONFLICT",
+      };
+    }
     if (/token|invite|secret|http/i.test(message)) {
       return {
         ok: false,
