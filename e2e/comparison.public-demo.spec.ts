@@ -23,13 +23,14 @@ test.describe("public-demo evidence comparison", () => {
     const compare = page.getByRole("heading", { name: "Compare two sources" });
     if (await compare.count()) {
       await expect(compare.first()).toBeVisible();
-      const checkboxes = page.getByRole("checkbox");
+      const section = compare.first().locator("xpath=ancestor::section[1]");
+      const checkboxes = section.getByRole("checkbox");
       if ((await checkboxes.count()) >= 2) {
         await checkboxes.nth(0).focus();
         await page.keyboard.press("Space");
         await checkboxes.nth(1).focus();
         await page.keyboard.press("Space");
-        await expect(page.getByRole("status").first()).toContainText(
+        await expect(section.getByRole("status")).toContainText(
           /Comparing|selected/i,
         );
       }

@@ -47,13 +47,14 @@ test.describe("revisions and evidence comparison (gated)", () => {
       const checkboxes = page.getByRole("checkbox");
       const count = await checkboxes.count();
       if (count >= 2) {
-        await checkboxes.nth(0).check();
-        await checkboxes.nth(1).check();
-        await expect(page.getByRole("status").first()).toContainText(
-          /Comparing/i,
-        );
-        await page.getByRole("button", { name: /Clear comparison/i }).click();
-        await expect(page.getByRole("status").first()).toContainText(
+        const section = compareHeading.first().locator("xpath=ancestor::section[1]");
+        await section.getByRole("checkbox").nth(0).check();
+        await section.getByRole("checkbox").nth(1).check();
+        await expect(section.getByRole("status")).toContainText(/Comparing/i);
+        await section
+          .getByRole("button", { name: /Clear comparison/i })
+          .click();
+        await expect(section.getByRole("status")).toContainText(
           /No sources selected/i,
         );
       }
