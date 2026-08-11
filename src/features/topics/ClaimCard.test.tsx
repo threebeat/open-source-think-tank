@@ -60,14 +60,14 @@ describe("ClaimCard", () => {
       screen.getByRole("heading", { name: "Supporting evidence" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Counterevidence" }),
+      screen.getByRole("heading", { name: "Evidence Against This Claim" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Review: Pending")).toBeInTheDocument();
     expect(screen.getByText("Review: Disputed")).toBeInTheDocument();
     expect(screen.getAllByText("Supporting").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Counterevidence").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Evidence Against This Claim").length).toBeGreaterThan(0);
     expect(
-      screen.getByText(/Submitted for review; not yet relied on/i),
+      screen.getByText(/Submitted for research review; not yet relied on/i),
     ).toBeInTheDocument();
     expect(
       screen.getByText(/Material objections remain/i),

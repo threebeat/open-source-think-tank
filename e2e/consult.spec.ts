@@ -14,7 +14,7 @@ test.describe("simulated consultation", () => {
       name: "Respond to this statement",
     });
     const liveRegion = page.getByRole("status", {
-      name: "Consultation practice updates",
+      name: "Public input practice updates",
     });
 
     const agree = voteGroup.getByRole("button", { name: "Agree", exact: true });

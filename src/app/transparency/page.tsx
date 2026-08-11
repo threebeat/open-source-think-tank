@@ -9,9 +9,9 @@ import { fixtureCatalog } from "@/fixtures";
 import { resolveAppMode } from "@/lib/env/app-mode";
 
 export const metadata: Metadata = {
-  title: "Transparency",
+  title: "The Public Record",
   description:
-    "Synthetic audit feed, governance map, method registry, and open-versus-protected data guidance.",
+    "Demonstration activity history, who does what, methods and updates, and what we publish versus what we protect.",
 };
 
 export const dynamic = "force-dynamic";
@@ -42,12 +42,12 @@ export default async function TransparencyPage() {
   return (
     <MainContainer className="space-y-10">
       <Breadcrumbs
-        items={[{ href: "/", label: "Home" }, { label: "Transparency" }]}
+        items={[{ href: "/", label: "Home" }, { label: "The Public Record" }]}
       />
       <PageHeader
-        eyebrow="Public transparency center"
-        title="Transparency"
-        description="Audit events, method versions, governance relationships, and what stays protected even under openness commitments."
+        eyebrow="The Public Record"
+        title="The Public Record"
+        description="Demonstration activity history, method versions, who does what, and what stays protected even under openness commitments."
       />
       <TransparencyCenter auditEvents={auditEvents} />
     </MainContainer>

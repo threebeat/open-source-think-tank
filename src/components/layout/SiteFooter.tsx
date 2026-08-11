@@ -19,7 +19,7 @@ export function SiteFooter() {
             href="/transparency"
             className="text-primary underline-offset-4 hover:underline"
           >
-            Transparency
+            The Public Record
           </Link>
           {" · "}
           <Link href="/demo" className="text-primary underline-offset-4 hover:underline">

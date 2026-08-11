@@ -61,7 +61,7 @@ export function DecisionRecord({
   return (
     <div className="space-y-10">
       <DisclosureNotice title="Recommendation, not settled adoption" tone="caution">
-        This synthetic decision record is a Policy Council recommendation. Governing-board
+        This synthetic recommendation & council vote is a Policy Council recommendation — not enacted law and not governing-board adoption. Governing-board
         adoption authority remains unresolved and is not invented here. No effective
         adoption date is claimed.
       </DisclosureNotice>
@@ -130,7 +130,7 @@ export function DecisionRecord({
             <li>Abstain: {decision.voteAbstain}</li>
           </ul>
           <p className="mt-4 text-xs text-muted-foreground">
-            Recused and nonvoting facilitation seats are excluded from the counted
+            People who stepped aside because of a conflict and nonvoting facilitation seats are excluded from the counted
             tally in this synthetic record.
           </p>
         </div>
@@ -142,7 +142,7 @@ export function DecisionRecord({
         </h2>
         <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
           This roster is the Policy Council for the recommendation. It is not the
-          Deliberation Council roster. Dual-seat members have separately recorded
+          Policy Drafting Council roster. Dual-seat members have separately recorded
           Policy Council selection paths. Conflict disclosures below are scoped to
           this recommendation; private financial detail stays unpublished.
         </p>
@@ -183,7 +183,7 @@ export function DecisionRecord({
                         <p className="mt-1 text-xs text-muted-foreground">
                           Disclosed {conflict.disclosedAt}
                           {entry.vote === "recused"
-                            ? " · Public reason accompanying recusal"
+                            ? " · Public reason for stepping aside because of a conflict"
                             : ""}
                         </p>
                       </div>
@@ -235,7 +235,7 @@ export function DecisionRecord({
         </h2>
         <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
           Expand each version for its full text, or open the matching selectable
-          version in the deliberation navigator.
+          version in the policy drafting navigator.
         </p>
         <ol className="space-y-3">
           {orderedHistory.map((proposal) => (
@@ -269,7 +269,7 @@ export function DecisionRecord({
                     href={`/deliberation/${deliberation.slug}?version=${proposal.version}#proposal-versions`}
                     className="font-medium text-foreground underline-offset-4 hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
                   >
-                    Open version {proposal.version} in deliberation navigator
+                    Open version {proposal.version} in policy drafting navigator
                   </Link>
                 </p>
               </details>
@@ -283,7 +283,7 @@ export function DecisionRecord({
           href={`/topics/${topic.slug}`}
           className={cn(buttonVariants({ size: "lg" }), "min-h-11 px-4")}
         >
-          Topic and evidence
+          Fact-Check & Research
         </Link>
         <Link
           href={`/topics/${topic.slug}/consult`}
@@ -292,7 +292,7 @@ export function DecisionRecord({
             "min-h-11 px-4",
           )}
         >
-          Consultation
+          Public Input
         </Link>
         {agendaItem ? (
           <Link
@@ -312,7 +312,7 @@ export function DecisionRecord({
             "min-h-11 px-4",
           )}
         >
-          Deliberation
+          State-Level Policy Drafting
         </Link>
       </section>
     </div>

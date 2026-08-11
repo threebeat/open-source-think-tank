@@ -6,10 +6,10 @@ export type NavItem = {
 export const primaryNav: NavItem[] = [
   { href: "/", label: "Home" },
   { href: "/process", label: "Process" },
-  { href: "/join", label: "Join preview" },
+  { href: "/join", label: "How Joining Works" },
   { href: "/topics", label: "Topics" },
   { href: "/agenda", label: "Agenda" },
-  { href: "/transparency", label: "Transparency" },
+  { href: "/transparency", label: "The Public Record" },
   { href: "/about", label: "About" },
   { href: "/demo", label: "Demo" },
 ];

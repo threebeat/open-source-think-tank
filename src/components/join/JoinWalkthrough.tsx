@@ -18,7 +18,7 @@ export function JoinWalkthrough() {
 
   return (
     <div className="space-y-6">
-      <ol className="flex flex-wrap gap-2" aria-label="Join preview steps">
+      <ol className="flex flex-wrap gap-2" aria-label="How joining works steps">
         {joinSteps.map((item, index) => {
           const current = index === stepIndex;
           return (
@@ -129,7 +129,7 @@ export function JoinWalkthrough() {
 
       <DisclosureNotice title="Verification concepts are distinct">
         Bot resistance, account continuity, uniqueness, and legal identity are
-        different problems. The join preview shows them separately so later design
+        different problems. How joining works shows them separately so later design
         does not collapse them into a single “ID required” step.
       </DisclosureNotice>
 

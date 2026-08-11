@@ -96,7 +96,7 @@ describe("deliberation observer", () => {
     );
     expect(
       screen.getByRole("link", {
-        name: /Consultation statement: .*sunset/i,
+        name: /Public input statement: .*sunset/i,
       }),
     ).toHaveAttribute(
       "href",

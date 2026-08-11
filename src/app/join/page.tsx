@@ -9,10 +9,13 @@ import { MainContainer } from "@/components/layout/MainContainer";
 import { resolveAppMode } from "@/lib/env/app-mode";
 
 export const metadata: Metadata = {
-  title: "Join",
+  title: "How Joining Works",
   description:
-    "Invite-only enrollment in the gated foundation, or a nonfunctional public join preview.",
+    "Invite-only enrollment in the gated foundation, or a nonfunctional public explanation of how joining works.",
 };
+
+/** Mode-branched page: must not bake public-demo HTML into gated deploys. */
+export const dynamic = "force-dynamic";
 
 export default async function JoinPage() {
   if (resolveAppMode() === "gated") {
@@ -60,11 +63,11 @@ export default async function JoinPage() {
   return (
     <MainContainer className="space-y-8">
       <Breadcrumbs
-        items={[{ href: "/", label: "Home" }, { label: "Join preview" }]}
+        items={[{ href: "/", label: "Home" }, { label: "How Joining Works" }]}
       />
       <PageHeader
         eyebrow="Nonfunctional preview"
-        title="Join preview"
+        title="How Joining Works"
         description="A walkthrough of the intended eligibility, assurance, conduct, and privacy steps. Community participant status is not a settled legal membership category. Identification documents are not assumed to be required for every role."
       />
       <DisclosureNotice title="Not accepting members" tone="caution">

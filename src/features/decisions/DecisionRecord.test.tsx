@@ -39,9 +39,9 @@ describe("DecisionRecord", () => {
     expect(screen.getByText("Ada Nguyen")).toBeInTheDocument();
     expect(screen.getByText("Farah Quinn")).toBeInTheDocument();
     expect(screen.getByText("Hugo Ren")).toBeInTheDocument();
-    expect(screen.getByText("Recused")).toBeInTheDocument();
+    expect(screen.getByText("Stepped aside (conflict)")).toBeInTheDocument();
     expect(
-      screen.getByText(/grounds the recorded recusal/i),
+      screen.getByText(/grounds the recorded step-aside because of a conflict/i),
     ).toBeInTheDocument();
     expect(
       screen.getByText(/research stipend from a fictional water-efficiency nonprofit/i),
@@ -59,23 +59,23 @@ describe("DecisionRecord", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("link", {
-        name: "Open version 1 in deliberation navigator",
+        name: "Open version 1 in policy drafting navigator",
       }),
     ).toHaveAttribute(
       "href",
       "/deliberation/cedar-river-drought-surcharge?version=1#proposal-versions",
     );
     expect(
-      screen.getByRole("link", { name: "Topic and evidence" }),
+      screen.getByRole("link", { name: "Fact-Check & Research" }),
     ).toHaveAttribute("href", "/topics/cedar-river-drought-surcharge");
     expect(
-      screen.getByRole("link", { name: "Consultation" }),
+      screen.getByRole("link", { name: "Public Input" }),
     ).toHaveAttribute("href", "/topics/cedar-river-drought-surcharge/consult");
     expect(
       screen.getByRole("link", { name: "Agenda review" }),
     ).toHaveAttribute("href", "/agenda/cedar-river-drought-surcharge");
     expect(
-      screen.getByRole("link", { name: "Deliberation" }),
+      screen.getByRole("link", { name: "State-Level Policy Drafting" }),
     ).toHaveAttribute("href", "/deliberation/cedar-river-drought-surcharge");
   });
 });

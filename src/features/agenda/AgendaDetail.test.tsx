@@ -35,10 +35,10 @@ describe("AgendaDetail", () => {
         0,
       );
       expect(
-        screen.getByRole("heading", { name: "Published eligibility thresholds" }),
+        screen.getByRole("heading", { name: "Public Criteria" }),
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("heading", { name: "Calculation trace" }),
+        screen.getByRole("heading", { name: "How This Result Was Calculated" }),
       ).toBeInTheDocument();
       expect(
         screen.getByRole("heading", { name: "Human review" }),
@@ -50,10 +50,10 @@ describe("AgendaDetail", () => {
         screen.getByText(/Popularity alone does not determine the agenda/i),
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("link", { name: /Open consultation report path/i }),
+        screen.getByRole("link", { name: /Open public input report path/i }),
       ).toHaveAttribute("href", `/topics/${topic.slug}/consult`);
       expect(
-        screen.getByRole("link", { name: /Open evidence record/i }),
+        screen.getByRole("link", { name: /Open fact-check & research record/i }),
       ).toHaveAttribute("href", `/topics/${topic.slug}`);
       unmount();
     }

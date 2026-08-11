@@ -33,12 +33,12 @@ describe("GuidedDemo", () => {
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Next" }));
-    const joinHeading = screen.getByRole("heading", { name: "Join preview" });
+    const joinHeading = screen.getByRole("heading", { name: "How Joining Works" });
     expect(joinHeading).toBeInTheDocument();
     expect(joinHeading).toHaveFocus();
     expect(window.sessionStorage.getItem(DEMO_STEP_KEY)).toBe("1");
     expect(
-      screen.getByRole("link", { name: "Open join preview" }),
+      screen.getByRole("link", { name: "Open how joining works" }),
     ).toHaveAttribute("href", "/join?demoStep=join");
 
     await user.click(screen.getByRole("button", { name: "Show presenter notes" }));

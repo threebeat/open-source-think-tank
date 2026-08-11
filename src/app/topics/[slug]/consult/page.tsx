@@ -25,12 +25,12 @@ export async function generateMetadata({
   const { slug } = await params;
   const bundle = getScenarioBundle(fixtureCatalog, slug);
   if (!bundle) {
-    return { title: "Consultation not found" };
+    return { title: "Public input not found" };
   }
   return {
-    title: `Consultation · ${bundle.topic.title}`,
+    title: `Public Input · ${bundle.topic.title}`,
     description:
-      "Simulated statement consultation for the demonstration. Not a live Pol.is conversation; responses stay in the browser.",
+      "Simulated public input for the demonstration (eligible/invited participants in the intended product). Not a live Pol.is conversation; responses stay in the browser.",
   };
 }
 
@@ -61,13 +61,13 @@ export default async function ConsultPage({ params }: ConsultPageProps) {
           { href: "/", label: "Home" },
           { href: "/topics", label: "Topics" },
           { href: `/topics/${topic.slug}`, label: topic.title },
-          { label: "Consultation" },
+          { label: "Public Input" },
         ]}
       />
       <PageHeader
-        eyebrow="Simulated open consultation"
-        title={`Consultation · ${topic.title}`}
-        description="Practice responding to short statements, then open the sealed synthetic report. Preference signals stay separate from evidence quality."
+        eyebrow="Simulated public input"
+        title={`Public Input · ${topic.title}`}
+        description="Practice responding to short statements, then open the sealed synthetic report. In the intended product, input comes from eligible/invited participants. Preference signals stay separate from research quality."
       />
       <ConsultationSimulator
         topicId={topic.id}

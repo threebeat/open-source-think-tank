@@ -15,7 +15,7 @@ test.describe("phase-1 manual QA automation", () => {
     await expect(next).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(
-      page.getByRole("heading", { name: "Join preview" }),
+      page.getByRole("heading", { name: "How Joining Works" }),
     ).toBeFocused();
   });
 
@@ -65,7 +65,7 @@ test.describe("phase-1 manual QA automation", () => {
     await expect(page.getByRole("button", { name: "Next" })).toBeVisible();
     await page.getByRole("button", { name: "Next" }).click();
     await expect(
-      page.getByRole("heading", { name: "Join preview" }),
+      page.getByRole("heading", { name: "How Joining Works" }),
     ).toBeVisible();
     await page.evaluate(() => {
       document.documentElement.style.zoom = "";
@@ -112,7 +112,7 @@ test.describe("phase-1 manual QA automation", () => {
     );
     await page.getByRole("button", { name: "Next" }).click();
     await expect(
-      page.getByRole("heading", { name: "Join preview" }),
+      page.getByRole("heading", { name: "How Joining Works" }),
     ).toBeVisible();
     await page.goto("/topics/cedar-river-drought-surcharge");
     await expect(

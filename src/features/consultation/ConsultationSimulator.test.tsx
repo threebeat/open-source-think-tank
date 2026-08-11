@@ -46,7 +46,7 @@ describe("ConsultationSimulator", () => {
     ).toBeInTheDocument();
 
     const liveRegion = screen.getByRole("status", {
-      name: "Consultation practice updates",
+      name: "Public input practice updates",
     });
     const voteGroup = screen.getByRole("group", {
       name: "Respond to this statement",
@@ -156,7 +156,7 @@ describe("ConsultationSimulator", () => {
       "0",
     );
     expect(
-      screen.getByRole("status", { name: "Consultation practice updates" }),
+      screen.getByRole("status", { name: "Public input practice updates" }),
     ).toHaveTextContent(/Local responses cleared/i);
   });
 });

@@ -3,37 +3,37 @@ import type { ProcessStep } from "@/components/ProcessStepper";
 export const institutionalProcessSteps: ProcessStep[] = [
   {
     id: "join",
-    label: "Join preview",
+    label: "How Joining Works",
     description: "Eligibility and assent placeholders",
   },
   {
     id: "evidence",
-    label: "Topic & evidence",
+    label: "Fact-Check & Research",
     description: "Claims and source review",
   },
   {
     id: "consultation",
-    label: "Consultation",
-    description: "Preference mapping (simulated)",
+    label: "Public Input",
+    description: "Areas of agreement and disagreement (simulated)",
   },
   {
     id: "agenda",
-    label: "Agenda",
-    description: "Thresholds plus human review",
+    label: "Decide What Moves Forward",
+    description: "Public criteria plus human review",
   },
   {
     id: "deliberation",
-    label: "Deliberation",
+    label: "State-Level Policy Drafting",
     description: "Capacity-limited council view",
   },
   {
     id: "decision",
-    label: "Decision",
+    label: "Recommendation & Council Vote",
     description: "Record, dissent, review date",
   },
   {
     id: "transparency",
-    label: "Transparency",
-    description: "Audit and protected data",
+    label: "The Public Record",
+    description: "Activity history and protected data",
   },
 ];

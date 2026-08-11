@@ -38,7 +38,7 @@ export const fixtureCatalog = {
         },
         {
           at: "2026-03-01",
-          summary: "Open consultation closed; mock results fixed for demo.",
+          summary: "Public input closed; mock results fixed for demo.",
         },
         {
           at: "2026-03-18",
@@ -86,7 +86,7 @@ export const fixtureCatalog = {
       question:
         "Should the fictional Northline School District pilot later start times for secondary schools?",
       background:
-        "Fictional Northline School District is weighing a two-school pilot of later secondary start times. Transportation routing, athletics schedules, and household childcare constraints appear in early claims. Evidence review has started but consultation has not.",
+        "Fictional Northline School District is weighing a two-school pilot of later secondary start times. Transportation routing, athletics schedules, and household childcare constraints appear in early claims. Research review has started but public input has not.",
       scope:
         "A one-year pilot at two secondary campuses. Elementary schedules and permanent district-wide adoption are out of scope until pilot evaluation.",
       stage: "evidence",
@@ -573,7 +573,7 @@ export const fixtureCatalog = {
         },
         {
           id: "th-evidence",
-          label: "Evidence readiness",
+          label: "Enough Research to Move Forward",
           required: "≥ 3 accepted or limited sources; no reliance on rejected sources",
           actual: "3 accepted, 2 limited, 1 pending, 1 disputed, 1 rejected",
           met: true,
@@ -639,7 +639,7 @@ export const fixtureCatalog = {
         },
         {
           id: "th-hardship-evidence",
-          label: "Evidence readiness",
+          label: "Enough Research to Move Forward",
           required: "≥ 3 accepted or limited sources; no reliance on rejected sources",
           actual: "Equity memo accepted; billing ops estimate still pending",
           met: false,
@@ -647,7 +647,7 @@ export const fixtureCatalog = {
       ],
       participationCoverage: "72% average statement response coverage (synthetic).",
       crossGroupSupport:
-        "Consultation snapshot shows procedural consensus elsewhere; hardship rebate itself is not a consensus statement.",
+        "Public-input snapshot shows procedural consensus elsewhere; hardship rebate itself is not a consensus statement.",
       disagreementSalience:
         "Hardship rebate is moderately popular but is not one of the high-disagreement anchors.",
       evidenceReadiness:
@@ -659,7 +659,7 @@ export const fixtureCatalog = {
         "Loaded consultation snapshot consult-cedar-river-2026-03.",
         "Scoped question: whether hardship-rebate design should be a separate agenda item.",
         "Salience gate failed: statement is not in the high-disagreement set.",
-        "Evidence readiness incomplete while billing-ops estimate is pending.",
+        "Enough research to move forward incomplete while billing-ops estimate is pending.",
         "Default recommendation: remain proposed pending human review.",
       ],
       sensitivityNote:
@@ -705,7 +705,7 @@ export const fixtureCatalog = {
         },
         {
           id: "th-billing-evidence",
-          label: "Evidence readiness",
+          label: "Enough Research to Move Forward",
           required: "Accepted estimate of billing-system change cost before qualification",
           actual: "Billing ops estimate still pending",
           met: false,
@@ -770,7 +770,7 @@ export const fixtureCatalog = {
         },
         {
           id: "th-device-evidence",
-          label: "Evidence readiness",
+          label: "Enough Research to Move Forward",
           required: "≥ 3 accepted or limited sources; no reliance on rejected sources",
           actual: "Primary linked source is a rejected vendor whitepaper",
           met: false,
@@ -790,7 +790,7 @@ export const fixtureCatalog = {
         "Loaded consultation snapshot consult-cedar-river-2026-03.",
         "Measured agree share on device-subsidy statement: high popularity.",
         "Cross-group consensus gate failed for this framing.",
-        "Evidence readiness failed because the linked vendor whitepaper is rejected.",
+        "Enough research to move forward failed because the linked vendor whitepaper is rejected.",
         "Default recommendation: reject agenda qualification for this framing.",
       ],
       sensitivityNote:
@@ -987,7 +987,7 @@ export const fixtureCatalog = {
       synthetic: true,
       participantId: "council-ben-okonkwo",
       summary:
-        "Household holds a minority stake in a fictional irrigation-supply cooperative outside the district. Applies to Deliberation Council service.",
+        "Household holds a minority stake in a fictional irrigation-supply cooperative outside the district. Applies to Policy Drafting Council service.",
       disclosedAt: "2026-03-20",
     },
     {
@@ -995,7 +995,7 @@ export const fixtureCatalog = {
       synthetic: true,
       participantId: "council-elena-frost",
       summary:
-        "Serves unpaid on the advisory circle of a fictional watershed education nonprofit. Applies to Deliberation Council service.",
+        "Serves unpaid on the advisory circle of a fictional watershed education nonprofit. Applies to Policy Drafting Council service.",
       disclosedAt: "2026-03-21",
     },
     {
@@ -1003,7 +1003,7 @@ export const fixtureCatalog = {
       synthetic: true,
       participantId: "council-ada-nguyen",
       summary:
-        "Holds both Deliberation Council and Policy Council seats in this synthetic scenario; each seat has a separately recorded selection path. No additional financial conflict disclosed.",
+        "Holds both Policy Drafting Council and Policy Council seats in this synthetic scenario; each seat has a separately recorded selection path. No additional financial conflict disclosed.",
       disclosedAt: "2026-03-22",
     },
     {
@@ -1011,7 +1011,7 @@ export const fixtureCatalog = {
       synthetic: true,
       participantId: "council-cara-diaz",
       summary:
-        "Holds both Deliberation Council and Policy Council seats in this synthetic scenario; each seat has a separately recorded selection path. No additional financial conflict disclosed.",
+        "Holds both Policy Drafting Council and Policy Council seats in this synthetic scenario; each seat has a separately recorded selection path. No additional financial conflict disclosed.",
       disclosedAt: "2026-03-22",
     },
     {
@@ -1027,7 +1027,7 @@ export const fixtureCatalog = {
       synthetic: true,
       participantId: "council-hugo-ren",
       summary:
-        "Employer holds a fictional billing-software contract with another water district; disclosed for Policy Council service and grounds the recorded recusal. Private contract terms are not published.",
+        "Employer holds a fictional billing-software contract with another water district; disclosed for Policy Council service and grounds the recorded step-aside because of a conflict. Private contract terms are not published.",
       disclosedAt: "2026-04-12",
     },
   ],
@@ -1072,7 +1072,7 @@ export const fixtureCatalog = {
       recusal: {
         participantId: "council-ben-okonkwo",
         publicReason:
-          "Recused from the Deliberation Council recommendation vote because of a disclosed household financial interest in an irrigation-supply cooperative. Private financial details are not published. This recusal does not place Ben Okonkwo on the Policy Council.",
+          "Stepped aside from the Policy Drafting Council recommendation vote because of a disclosed household financial interest in an irrigation-supply cooperative. Private financial details are not published. This step-aside does not place Ben Okonkwo on the Policy Council.",
         recordedAt: "2026-04-18",
       },
       timeline: [
@@ -1094,7 +1094,7 @@ export const fixtureCatalog = {
         },
         {
           at: "2026-04-18",
-          summary: "Recusal recorded; final vote scheduled.",
+          summary: "Stepped aside because of a conflict; final vote scheduled.",
         },
         {
           at: "2026-04-18",
@@ -1148,7 +1148,7 @@ export const fixtureCatalog = {
         { participantId: "council-hugo-ren", vote: "recused" },
       ],
       rationale:
-        "The Policy Council recommended a graduated surcharge with hardship rebate and sunset review. Cross-group consensus supported publication of thresholds and protection of essential indoor use. Device-subsidy popularity was not treated as proof. The pending billing estimate was answered by an evidence request rather than by deferring indefinitely. This roll call is the Policy Council roster, not the Deliberation Council roster.",
+        "The Policy Council recommended a graduated surcharge with hardship rebate and sunset review. Cross-group consensus supported publication of thresholds and protection of essential indoor use. Device-subsidy popularity was not treated as proof. The pending billing estimate was answered by an evidence request rather than by deferring indefinitely. This roll call is the Policy Council roster, not the Policy Drafting Council roster.",
       minorityReport: {
         title: "Minority report — prefer voluntary-first extension",
         authorParticipantIds: ["council-farah-quinn"],

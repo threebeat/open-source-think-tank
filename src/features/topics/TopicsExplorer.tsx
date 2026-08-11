@@ -125,7 +125,7 @@ export function TopicsExplorer({ topics }: TopicsExplorerProps) {
           </select>
         </label>
         <p className="text-xs text-muted-foreground sm:col-span-3">
-          Stage is the institutional pipeline position. Status is brief
+          Stage is the position in how the process works. Status is brief
           availability (open, paused, or closed) and is filtered independently.
           Filters apply only to local synthetic fixtures.
         </p>

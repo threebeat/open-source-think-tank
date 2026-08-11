@@ -17,9 +17,9 @@ test.describe("guided demonstration", () => {
 
     await page.getByRole("button", { name: "Next" }).click();
     await expect(
-      page.getByRole("heading", { name: "Join preview" }),
+      page.getByRole("heading", { name: "How Joining Works" }),
     ).toBeFocused();
-    await page.getByRole("link", { name: "Open join preview" }).click();
+    await page.getByRole("link", { name: "Open how joining works" }).click();
     await expect(page).toHaveURL(/\/join\?demoStep=join/);
     await expect(
       page.getByRole("region", { name: "Guided demonstration controls" }),
@@ -30,7 +30,7 @@ test.describe("guided demonstration", () => {
     await page.getByRole("link", { name: "Return to guided demo" }).click();
     await expect(page).toHaveURL(/\/demo\?step=join/);
     await expect(
-      page.getByRole("heading", { name: "Join preview" }),
+      page.getByRole("heading", { name: "How Joining Works" }),
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Next" }).click();
@@ -45,7 +45,7 @@ test.describe("guided demonstration", () => {
       }),
     ).toBeVisible();
     await page
-      .getByRole("link", { name: "Continue to Simulated consultation" })
+      .getByRole("link", { name: "Continue to Public Input (simulated)" })
       .click();
     await expect(page).toHaveURL(
       /\/topics\/cedar-river-drought-surcharge\/consult\?demoStep=consultation/,
@@ -54,16 +54,16 @@ test.describe("guided demonstration", () => {
       page.getByRole("button", { name: "Agree", exact: true }),
     ).toBeVisible();
     await page
-      .getByRole("link", { name: "Continue to Agenda gate and human review" })
+      .getByRole("link", { name: "Continue to Decide What Moves Forward" })
       .click();
     await expect(page).toHaveURL(
       /\/agenda\/cedar-river-drought-surcharge\?demoStep=agenda/,
     );
     await expect(
-      page.getByRole("heading", { name: "Calculation trace" }),
+      page.getByRole("heading", { name: "How This Result Was Calculated" }),
     ).toBeVisible();
     await page
-      .getByRole("link", { name: "Continue to Deliberation observer view" })
+      .getByRole("link", { name: "Continue to State-Level Policy Drafting (observer view)" })
       .click();
     await expect(page).toHaveURL(
       /\/deliberation\/cedar-river-drought-surcharge\?demoStep=deliberation/,
@@ -72,7 +72,7 @@ test.describe("guided demonstration", () => {
       page.getByText("Public observation only", { exact: true }),
     ).toBeVisible();
     await page
-      .getByRole("link", { name: "Continue to Policy Council decision record" })
+      .getByRole("link", { name: "Continue to Recommendation & Council Vote" })
       .click();
     await expect(page).toHaveURL(
       /\/decisions\/cedar-river-drought-surcharge\?demoStep=decision/,
@@ -81,14 +81,14 @@ test.describe("guided demonstration", () => {
       page.getByRole("heading", { name: "Policy Council roll call" }),
     ).toBeVisible();
     await expect(
-      page.getByText(/grounds the recorded recusal/i),
+      page.getByText(/grounds the recorded step-aside because of a conflict/i),
     ).toBeVisible();
     await page
-      .getByRole("link", { name: "Continue to Transparency center" })
+      .getByRole("link", { name: "Continue to The Public Record" })
       .click();
     await expect(page).toHaveURL(/\/transparency\?demoStep=transparency/);
     await expect(
-      page.getByRole("heading", { name: "Transparency", exact: true }),
+      page.getByRole("heading", { name: "The Public Record", exact: true }),
     ).toBeVisible();
     await page.getByRole("link", { name: "Return to guided demo" }).click();
     await expect(page).toHaveURL(/\/demo\?step=transparency/);

@@ -9,9 +9,9 @@ import { institutionalProcessSteps } from "@/lib/process-steps";
 import { processStages } from "@/lib/process-content";
 
 export const metadata: Metadata = {
-  title: "Process",
+  title: "How the Process Works",
   description:
-    "Seven-stage explanation of the proposed institutional pipeline, using synthetic demonstration framing only.",
+    "Seven-stage explanation of how the proposed process works, using synthetic demonstration framing only.",
 };
 
 export default function ProcessPage() {
@@ -21,9 +21,9 @@ export default function ProcessPage() {
         items={[{ href: "/", label: "Home" }, { label: "Process" }]}
       />
       <PageHeader
-        eyebrow="Institutional pipeline"
+        eyebrow="How the Process Works"
         title="How the process is supposed to work"
-        description="Seven stages from join preview through transparency. This is a demonstration of a proposed project. Algorithms organize or recommend; humans decide. The governing board’s precise legal authority is pending counsel review."
+        description="Seven stages from how joining works through the public record. This is a demonstration of a proposed project. Algorithms organize or recommend; humans decide. The governing board’s precise legal authority is pending counsel review."
       />
 
       <DisclosureNotice title="Governing board authority unresolved" tone="caution">

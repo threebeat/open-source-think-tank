@@ -49,7 +49,7 @@ export function ClaimCard({ claim, supporting, counterevidence }: ClaimCardProps
             id={`${claim.id}-counter`}
             className="text-sm font-medium text-foreground"
           >
-            Counterevidence
+            Evidence Against This Claim
           </h4>
           <div className="mt-3 space-y-3">
             {counterevidence.length > 0 ? (
@@ -57,13 +57,13 @@ export function ClaimCard({ claim, supporting, counterevidence }: ClaimCardProps
                 <EvidenceSourceCard
                   key={source.id}
                   source={source}
-                  relationLabel="Counterevidence"
+                  relationLabel="Evidence Against This Claim"
                   anchor={false}
                 />
               ))
             ) : (
               <p className="rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground">
-                No counterevidence attached yet.
+                No evidence against this claim attached yet.
               </p>
             )}
           </div>

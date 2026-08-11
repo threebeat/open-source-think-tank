@@ -27,10 +27,10 @@ export async function generateMetadata({
   const { slug } = await params;
   const bundle = getDeliberationBundle(fixtureCatalog, slug);
   if (!bundle) {
-    return { title: "Deliberation not found" };
+    return { title: "Policy drafting not found" };
   }
   return {
-    title: `Deliberation — ${bundle.topic.title}`,
+    title: `State-Level Policy Drafting — ${bundle.topic.title}`,
     description: bundle.deliberation.observerNotice,
   };
 }
@@ -49,14 +49,14 @@ export default async function DeliberationPage({
       <Breadcrumbs
         items={[
           { href: "/", label: "Home" },
-          { label: "Deliberation" },
+          { label: "State-Level Policy Drafting" },
           { label: bundle.topic.title },
         ]}
       />
       <PageHeader
-        eyebrow="Public-observer deliberation"
+        eyebrow="Public-observer policy drafting"
         title={bundle.topic.title}
-        description="Capacity-limited synthetic council record. Closed means limited participation rights, not secret institutional action."
+        description="Capacity-limited synthetic Policy Drafting Council record. Closed means limited participation rights, not secret institutional action."
       />
       <DeliberationObserver
         deliberation={bundle.deliberation}

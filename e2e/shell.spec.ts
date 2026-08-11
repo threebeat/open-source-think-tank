@@ -89,7 +89,7 @@ test.describe("application shell", () => {
         expect(overflowY.maxHeight).not.toBe("none");
 
         await mobileNav
-          .getByRole("link", { name: "Transparency", exact: true })
+          .getByRole("link", { name: "The Public Record", exact: true })
           .focus();
         await page.keyboard.press("Enter");
         await expect(page).toHaveURL(/\/transparency$/);

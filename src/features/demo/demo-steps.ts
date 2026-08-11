@@ -19,39 +19,39 @@ export const demoSteps: DemoStep[] = [
   },
   {
     id: "join",
-    title: "Join preview",
+    title: "How Joining Works",
     summary:
       "Show the nonfunctional eligibility and assent placeholders. No form submits data; membership status remains an unresolved legal question.",
     href: "/join",
-    linkLabel: "Open join preview",
+    linkLabel: "Open how joining works",
     presenterNotes:
       "Point to disabled controls and “not legally reviewed” language. Do not invent whether participants are statutory members.",
   },
   {
     id: "topics",
-    title: "Topic brief and evidence",
+    title: "Fact-Check & Research",
     summary:
-      "Open the Cedar River topic. Keep popularity separate from evidence-review status. Note pending, accepted, limited, disputed, and rejected sources.",
+      "Open the Cedar River topic. Keep popularity separate from research review status. Note pending, accepted, limited, disputed, and rejected sources — none of these prove a claim is true by themselves.",
     href: "/topics/cedar-river-drought-surcharge",
     linkLabel: "Open Cedar River topic",
     presenterNotes:
-      "Call out the popular/weak vs less-popular/strong examples when you reach consultation. Evidence quality does not move with agreement.",
+      "Call out the popular/weak vs less-popular/strong examples when you reach public input. Research quality does not move with agreement.",
   },
   {
     id: "consultation",
-    title: "Simulated consultation",
+    title: "Public Input (simulated)",
     summary:
-      "Practice Agree / Disagree / Pass locally, then open the sealed synthetic report. Groups stay neutrally labeled; the cohort is not a population sample.",
+      "Practice Agree / Disagree / Pass locally, then open the sealed synthetic report. Input comes from eligible/invited participants in the intended product; groups stay neutrally labeled; the cohort is not a population sample.",
     href: "/topics/cedar-river-drought-surcharge/consult",
-    linkLabel: "Open consultation simulation",
+    linkLabel: "Open public input simulation",
     presenterNotes:
       "Remind viewers that local practice votes do not personalize the fixture report and that this is not a live Pol.is conversation.",
   },
   {
     id: "agenda",
-    title: "Agenda gate and human review",
+    title: "Decide What Moves Forward",
     summary:
-      "Show separate thresholds, the calculation trace, and a deferral that refuses to override evidence concerns. No combined truth score.",
+      "Show separate public criteria, how this result was calculated, and a deferral that refuses to override research concerns. No combined truth score.",
     href: "/agenda/cedar-river-drought-surcharge",
     linkLabel: "Open qualified agenda item",
     presenterNotes:
@@ -59,33 +59,33 @@ export const demoSteps: DemoStep[] = [
   },
   {
     id: "deliberation",
-    title: "Deliberation observer view",
+    title: "State-Level Policy Drafting (observer view)",
     summary:
-      "Walk proposal versions, amendments with targeted sources, the billing evidence request, recusal, and the redaction placeholder. Closed means capacity-limited, not secret.",
+      "Walk proposal versions, amendments with targeted sources, the billing evidence request, someone who stepped aside because of a conflict, and the redaction placeholder. Closed means capacity-limited, not secret.",
     href: "/deliberation/cedar-river-drought-surcharge",
-    linkLabel: "Open deliberation record",
+    linkLabel: "Open policy drafting record",
     presenterNotes:
-      "Distinguish Deliberation Council seats from the later Policy Council recommendation roster.",
+      "Distinguish Policy Drafting Council seats from the later Policy Council recommendation roster.",
   },
   {
     id: "decision",
-    title: "Policy Council decision record",
+    title: "Recommendation & Council Vote",
     summary:
-      "Show the recommendation (not board adoption), Policy Council roll call, equal-prominence minority report, and full proposal history.",
+      "Show the recommendation (not enacted law and not board adoption), Policy Council roll call, equal-prominence minority report, and full proposal history.",
     href: "/decisions/cedar-river-drought-surcharge",
-    linkLabel: "Open decision record",
+    linkLabel: "Open recommendation & council vote",
     presenterNotes:
       "Name Farah Quinn as the minority author on the Policy Council. Dual-seat members keep separate selection paths.",
   },
   {
     id: "transparency",
-    title: "Transparency center",
+    title: "The Public Record",
     summary:
-      "Audit feed, method registry, governance map, and open-by-default vs protected-by-necessity classes. Identity and granular opinion histories stay protected.",
+      "Demonstration activity history, methods and updates, who does what, and what we publish vs what we protect. Identity and granular opinion histories stay protected.",
     href: "/transparency",
-    linkLabel: "Open transparency center",
+    linkLabel: "Open the public record",
     presenterNotes:
-      "Transparency is explainability of institutional action, not total exposure of personal or political-opinion records.",
+      "The public record explains institutional action; it is not total exposure of personal or political-opinion records.",
   },
   {
     id: "questions-legal",
@@ -120,6 +120,6 @@ export const demoSteps: DemoStep[] = [
     summary:
       "End by inviting critique of the institutional design. Use Reset to restore the original synthetic demonstration state in this browser session.",
     presenterNotes:
-      "Reset clears the demo step, presenter-notes toggle, and local Cedar River consultation practice votes only.",
+      "Reset clears the demo step, presenter-notes toggle, and local Cedar River public-input practice votes only.",
   },
 ];
