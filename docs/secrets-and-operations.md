@@ -57,15 +57,52 @@ Live Pol.is, payments, analytics, and AI APIs remain **forbidden** in Phase 2. *
 
 ## First-administrator bootstrap (Package 3.3)
 
-**Status:** Contract for implementation in 3.3. Exact CLI flags and tested runbook land with the bootstrap checkpoints.
+**Status:** Implemented. Command: `npm run operator:bootstrap`.
 
-Ceremony summary:
+### Required environment
 
-1. `APP_MODE=gated` with `DATABASE_URL`, `OPERATOR_BOOTSTRAP_SECRET`, and `OPERATOR_LABEL` set (secret never as a command-line argument).
-2. Operator issues one administrator-bootstrap invitation while zero administrators exist; only the token hash is stored; the raw acceptance link is printed once for out-of-band delivery (email remains capture-only).
-3. Candidate accepts via the existing invite path, completes contact verification and applicable assent.
-4. Operator finalizes: required verification floor may be recorded as structurally tagged `operator_bootstrap` decisions (not independent reviewer decisions); activation uses existing gates; `administrator` is granted with reason; no council seat is granted by bootstrap.
-5. A database singleton/lock prevents two concurrent first-administrator completions. After completion, bootstrap issue/finalize refuse until deliberate alpha datastore reset.
-6. Ordinary later administrators use authenticated `roles.grant_platform`. Ordinary invitations use `invites.issue`.
+| Variable | Notes |
+| --- | --- |
+| `APP_MODE=gated` | Public-demo fails before DB construction |
+| `DATABASE_URL` | Local/ephemeral Postgres only until host addendum |
+| `OPERATOR_BOOTSTRAP_SECRET` | ≥32 characters; **never** pass on CLI argv |
+| `OPERATOR_LABEL` | Non-secret label stored in audit / verification provenance |
 
-**Warnings:** Shell history, CI logs, screenshots, and support tickets must never contain raw invite links or operator secrets. Public-demo must fail before constructing the database if bootstrap is invoked.
+### Commands
+
+```bash
+# 1) Issue bootstrap invitation (zero administrators required)
+npm run operator:bootstrap -- issue --contact=you@example.test --reason="Owner-run alpha first admin"
+
+# One-time stdout includes invitationId, expiresAt, and the acceptance link.
+# Copy the link now — it is not recoverable.
+
+# 2) Candidate: open link → accept → contact verify → assent → submit
+#    verification assertions for bot_resistance, contact_continuity, uniqueness, eligibility
+
+# 3) Finalize (operator_bootstrap decisions + activate + grant administrator)
+npm run operator:bootstrap -- finalize --reason="Complete first administrator" --verification-reason="Owner-run alpha operator_bootstrap attestation"
+```
+
+### Safe delivery
+
+- Deliver the acceptance link out of band (email remains capture-only).
+- Do not paste raw links or `OPERATOR_BOOTSTRAP_SECRET` into CI logs, shell history that is shared, screenshots, or support tickets.
+- Leaving the CLI session does not re-print the link.
+
+### Retry / recovery
+
+- While bootstrap is `invitation_live` and not completed, `issue` may revoke the prior pending bootstrap invitation and reissue (audited).
+- After `completed`, both `issue` and `finalize` refuse until the alpha datastore is deliberately reset (truncates include `operator_bootstrap_state`).
+- Concurrent finalize attempts: singleton row `FOR UPDATE` + re-check zero admins; one winner.
+
+### Verify completion without secrets
+
+- Audit action `operator.bootstrap_administrator` present for the account id.
+- Exactly one non-revoked `administrator` role assignment.
+- Verification cases for the candidate show `decision_source = operator_bootstrap` and null `reviewer_account_id`.
+- No council appointment created by bootstrap.
+
+### Reset implications
+
+Alpha reset (3.12) must clear `operator_bootstrap_state` and bootstrap invitations with other alpha tables. Synthetic seed re-inserts `operator_bootstrap_state` as `not_started`.

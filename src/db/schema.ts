@@ -465,6 +465,11 @@ export const assentPresentations = pgTable(
   ],
 );
 
+export const verificationDecisionSourceEnum = pgEnum(
+  "verification_decision_source",
+  ["account_reviewer", "operator_bootstrap"],
+);
+
 export const verificationCases = pgTable(
   "verification_cases",
   {
@@ -477,6 +482,12 @@ export const verificationCases = pgTable(
     reviewerAccountId: text("reviewer_account_id").references(() => accounts.id, {
       onDelete: "set null",
     }),
+    /** Structurally distinguishes ordinary review from one-time operator bootstrap. */
+    decisionSource: verificationDecisionSourceEnum("decision_source")
+      .notNull()
+      .default("account_reviewer"),
+    /** Non-secret operator label when decision_source = operator_bootstrap. */
+    operatorLabel: text("operator_label"),
     decisionReason: text("decision_reason"),
     assignedAt: timestamp("assigned_at", { withTimezone: true }),
     decidedAt: timestamp("decided_at", { withTimezone: true }),
@@ -502,6 +513,17 @@ export const verificationCases = pgTable(
     check(
       "verification_cases_decided_needs_timestamp",
       sql`(${table.status} IN ('pending', 'appealed')) OR (${table.decidedAt} IS NOT NULL)`,
+    ),
+    check(
+      "verification_cases_operator_bootstrap_provenance",
+      sql`(
+        (${table.decisionSource} <> 'operator_bootstrap')
+        OR (
+          ${table.reviewerAccountId} IS NULL
+          AND ${table.operatorLabel} IS NOT NULL
+          AND char_length(btrim(${table.operatorLabel})) > 0
+        )
+      )`,
     ),
   ],
 );

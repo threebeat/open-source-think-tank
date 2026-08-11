@@ -99,6 +99,13 @@
       "when": 1786435000000,
       "tag": "0013_invitation_bootstrap",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1786436000000,
+      "tag": "0014_bootstrap_verification_provenance",
+      "breakpoints": true
     }
   ]
 }
