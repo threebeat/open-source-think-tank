@@ -1,15 +1,20 @@
 # Phase 2 readiness CI — lint, typecheck, unit, build, security, public E2E, gated E2E.
 # Gated E2E requires Docker (available on GitHub-hosted runners).
+# Secrets in this file are synthetic E2E fixtures only — never production credentials.
 name: CI
 
 on:
   push:
     branches: [main, master]
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
 
 env:
   FORCE_COLOR: "1"
@@ -59,6 +64,15 @@ jobs:
         env:
           CI: true
           APP_MODE: public-demo
+      - name: Upload public Playwright artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
 
   e2e-gated:
     name: Gated Playwright E2E (Docker Postgres)
@@ -67,6 +81,7 @@ jobs:
     timeout-minutes: 60
     env:
       APP_MODE: gated
+      # Synthetic local/CI fixture only — not a production secret.
       DATABASE_URL: postgres://ostt:ostt@127.0.0.1:54329/ostt_dev
       AUTH_SECRET: ostt-synth-auth-secret-e2e-not-production
       AUTH_URL: http://127.0.0.1:3000
@@ -81,26 +96,15 @@ jobs:
       - run: npm ci
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
-      - name: Start Postgres (docker compose)
+      - name: Start Postgres and wait for health
         run: npm run db:up
-      - name: Wait for Postgres healthy
-        run: |
-          set -e
-          for i in $(seq 1 40); do
-            if docker compose exec -T postgres pg_isready -U ostt -d ostt_dev; then
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "Postgres did not become ready" >&2
-          exit 1
       - name: Migrate and seed synthetic foundation
         run: node scripts/gated-e2e-prepare.mjs
       - name: Production build (gated)
         run: npm run build
       - name: Run gated E2E (account/staff axe included)
         run: npx playwright test -c playwright.gated.config.ts
-      - name: Upload gated Playwright report on failure
+      - name: Upload gated Playwright artifacts on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:

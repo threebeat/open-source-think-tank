@@ -1,43 +1,49 @@
 # Phase 2 handoff
 
-**Status:** Implementation complete; readiness blocked on counsel return (gated E2E now green).
+**Status:** Implementation complete; readiness blocked (counsel + Docker/PG16 CI confirmation on tag candidate). **Phase 2 is not complete.**
 
-Engineering packages **2.1–2.12 implementation** are in place. Gated E2E including account/staff axe has passed. **Work package 2.12 is still not complete for the foundation tag** until readiness counsel dispositions are returned and recorded. Phase 3 engineering may proceed under blocking constraints; **real launch and the Phase 2 foundation tag remain stopped**.
+Engineering packages **2.1–2.12 implementation** are in place. **Do not tag** a foundation release and **do not** treat this handoff as Phase 2 done until Lane B blockers below clear.
 
 **Baseline:** Phase 1 tag [`phase-1-demonstration`](https://github.com/threebeat/open-source-think-tank/releases/tag/phase-1-demonstration) at `33ff0cc`.  
 **Plan:** [phase-2-plan.md](./phase-2-plan.md).  
-**Counsel packet:** [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md).
+**Counsel packet:** [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md).  
+**Two-lane sequencing (owner scope, not counsel):** [ADR 0006](./decisions/0006-phase-3-two-lane-sequencing.md).
 
-## Readiness blockers (stop tag / real launch; do not stop Phase 3 engineering)
+## Two-lane rule (project-owner scope)
+
+| Lane | Posture |
+| --- | --- |
+| **A — Phase 3 synthetic / closed engineering** | May proceed under existing permits and blocking counsel constraints (confirm ADR 0006). |
+| **B — Phase 2 readiness / foundation tag / real activation** | **Blocked** until counsel dispositions and Docker Compose PG16 CI (and remaining readiness evidence) clear. |
+
+This is **not** counsel clearance of §7 gates and does **not** authorize real participant data.
+
+## Readiness blockers (Lane B)
 
 | Blocker | Status | Required evidence |
 | --- | --- | --- |
-| Gated E2E on Node 22 | **Cleared (local run)** — see run record below | Green gated suite including `e2e/a11y.gated.spec.ts` |
-| Account/staff axe coverage | **Cleared** with gated suite | Same run |
-| Counsel dispositions for readiness topics | **Packet issued; all gates still blocking** | Returned dispositions in plan §7 **and** `src/lib/counsel/dispositions.ts` (`readinessCounselAllowsFoundationTag() === true`) |
-| GitHub status checks | **Workflow added** — `.github/workflows/ci.yml`; enable as required checks after first remote green run | Branch protection requiring CI |
-| Managed Postgres / production email | **Blocked** pending vendor addenda | Permitted-services register |
-| Foundation release tag | **Not created** | Only after readiness counsel gates non-blocking + human approval |
+| Application-level gated E2E (account/staff axe, mobile account flows) | Prior local pass recorded; **reconfirm on committed candidate SHA** | Green gated suite on the SHA below |
+| Docker Compose PostgreSQL **16** (`docker compose` / `npm run test:e2e:gated`) | **Not confirmed** on this machine’s Docker engine (WSL/engine issues historically) | Green compose-based run or CI `e2e-gated` |
+| CI on GitHub Actions | Workflow present; **run URL pending** on candidate SHA | Green `unit` + `e2e-public` + `e2e-gated` |
+| Counsel dispositions | Packet issued; all readiness gates still **blocking** | §7 + `dispositions.ts`; `readinessCounselAllowsFoundationTag() === true` |
+| Manual NVDA spot-check (account/staff) | **Pending** | Notes in evidence table |
+| Managed Postgres / production email | Blocked pending vendor addenda | Permitted-services register |
+| Foundation release tag | **Not created** | Human approval after Lane B clears |
 
-## Gated suite run record
+## Evidence log (fill on tag candidate)
 
 | Field | Value |
 | --- | --- |
-| Date | 2026-08-10 (local Windows, evening) |
-| Node | v22.17.0 (`.nvmrc` = 22) |
-| Docker Desktop | Installed (4.86.0) but **engine unable to start** — WSL not installed (`wsl --status` reports missing). CLI at `%LocalAppData%\Programs\DockerDesktop\resources\bin` |
-| Postgres used | Local **PostgreSQL 17** service (`postgresql-x64-17` Running) on `127.0.0.1:5432`, database `ostt_dev`, role `ostt` — equivalent gated DB for this readiness run (compose on `:54329` not used because Docker engine down) |
-| Working tree note | Suite run against uncommitted readiness fixes (lifecycle same-state active, frank invite, workers:1, a11y helpers). Record commit SHA after those land on the tag candidate. |
-| Commands | `node scripts/gated-e2e-prepare.mjs` → `npm run build` → `npx playwright test -c playwright.gated.config.ts` with `APP_MODE=gated`, `DATABASE_URL=postgres://ostt:ostt@127.0.0.1:5432/ostt_dev`, synthetic `AUTH_SECRET` / `AUTH_E2E_CAPTURE=1` |
-| Result | **9 passed / 0 failed** (15.0s, 1 worker) |
-| Specs covered | `a11y.gated.spec.ts` (account privacy/onboarding/assent axe + staff onboarding axe), `auth-lifecycle.gated.spec.ts`, `onboarding.gated.spec.ts` (keyboard + axe, declined assent, mobile viewport) |
-| CI path | `.github/workflows/ci.yml` job `e2e-gated` still expected to use Docker Compose on GitHub-hosted runners |
+| Candidate commit SHA | Tip of `readiness/2.12-hardening-pass` at push time (see PR); reconfirm after merge to `main` |
+| Application-level gated E2E | Prior: 2026-08-10 local run against **PostgreSQL 17** host service — **application-level gated E2E only**; **not** validation of Docker Compose or PostgreSQL 16 |
+| Docker Compose PG16 result | _pending_ |
+| GitHub Actions run URL | _pending_ |
+| Manual NVDA result | _pending_ |
+| Counsel §7 readiness gates | All **blocking** — [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md) |
 
-### Follow-ups recommended (not tag blockers if counsel returns)
+### Prior application-level gated note (historical)
 
-1. Install WSL2 (`wsl --install`, reboot) so Docker Desktop engine starts; then prefer `npm run test:e2e:gated` with compose.
-2. Push CI workflow and require status checks on `main`.
-3. After counsel dispositions land, re-run gated suite on the tag commit and refresh the SHA in this table.
+On 2026-08-10, with Docker Desktop engine unavailable (WSL missing), the gated Playwright suite was executed against a local PostgreSQL **17** instance on `127.0.0.1:5432` (`ostt_dev` / `ostt`). Result at that time: **9 passed**. That run validates **application behavior** under a gated `APP_MODE` + migrated/seeded foundation DB. It does **not** substitute for Docker Compose PostgreSQL **16** or CI `e2e-gated` on the committed candidate SHA.
 
 ## Counsel review record
 
@@ -51,8 +57,8 @@ Engineering packages **2.1–2.12 implementation** are in place. Gated E2E inclu
 | Separation of verification and political-opinion data | `political_opinion_verification` | blocking | same |
 | Formation / fiscal sponsorship (readiness framing) | `formation_fiscal` | blocking | same |
 
-Full provenance columns: [phase-2-plan.md](./phase-2-plan.md) §7 and `src/lib/counsel/dispositions.ts`.  
-**No clearance invented.** Owner risk acceptance ≠ `cleared`.
+Full provenance: [phase-2-plan.md](./phase-2-plan.md) §7 and `src/lib/counsel/dispositions.ts`.  
+**No clearance invented.** Owner risk acceptance ≠ `cleared`. Privileged counsel material must not be committed (see packet confidentiality warning).
 
 ## What Phase 2 implementation delivered
 
@@ -60,25 +66,9 @@ Full provenance columns: [phase-2-plan.md](./phase-2-plan.md) §7 and `src/lib/c
 | --- | --- |
 | 2.1–2.2 | Contract, ADRs, `APP_MODE` public-demo vs gated isolation |
 | 2.3 | Drizzle/Postgres schema + synthetic seed (ephemeral/local; managed host still blocked) |
-| 2.4 | Auth.js invite/challenge lifecycle to `pending_onboarding` (+ synthetic staff fixture; active same-state sign-in allowed) |
-| 2.5 | Server-enforced capabilities and role grants |
-| 2.6 | Versioned assent with provisional / not-legally-reviewed posture |
-| 2.7 | Verification ladder scaffolding (no identity-vendor SDK) |
-| 2.8 | Invite-only onboarding; real `active` blocked by counsel gates |
-| 2.9 | Append-only institutional audit ledger + public projections |
-| 2.10 | Conversation-scoped pseudonyms (registry; no live Pol.is) |
-| 2.11 | Export, closure, legal holds, retention job, dual-control, security headers/CSRF |
-| 2.12 (impl) | Hardening, handoff, CI, counsel packet, **gated E2E green locally** |
-
-## Checks last run
-
-| Check | Result |
-| --- | --- |
-| Gated Playwright + account/staff axe | **Pass — 9/9** (2026-08-10 local) |
-| Auth lifecycle unit tests (incl. active same-state) | Pass |
-| Counsel disposition unit tests | Pass (still blocking readiness tag helper) |
-| CI workflow | Added — awaiting first remote green run |
-| Counsel readiness gates | **Outstanding** |
+| 2.4–2.8 | Auth, roles, assent, verification, invite-only onboarding (real `active` counsel-gated) |
+| 2.9–2.11 | Audit ledger, pseudonyms, privacy/ops controls |
+| 2.12 (impl) | Hardening, handoff, CI, counsel packet; readiness tag open |
 
 ## Isolation and non-launch posture
 
@@ -87,28 +77,21 @@ Full provenance columns: [phase-2-plan.md](./phase-2-plan.md) §7 and `src/lib/c
 - Role language: “account holder” / “community participant”; no statutory membership claims.
 - Assent documents remain provisional while `electronic_assent` is **blocking**.
 
-## Phase 3 / pilot blockers (unresolved)
+## Phase 3 / pilot blockers (Lane B / pilot)
 
-Phase 3 engineering may start; do not invent answers. See [open-questions.md](./open-questions.md), [legal-questions.md](./legal-questions.md), plan §7.
+See [open-questions.md](./open-questions.md) (incl. OQ16), [legal-questions.md](./legal-questions.md), plan §7.
 
-1. All readiness counsel gates still **blocking** pending counsel return.
+1. Readiness counsel gates still **blocking**.
 2. Real account activation forbidden until activation counsel gates clear/conditionally clear.
-3. Managed Postgres host and production email vendors blocked pending addenda.
-4. Payments, analytics, AI APIs, live Pol.is, identity-verification SDKs forbidden until register approval.
-5. Production backup/PITR after host approval (PGlite drill insufficient).
-6. Penetration test / formal security review before pilot.
-7. Docker Desktop + WSL2 preferred for compose-based gated runs on this machine.
+3. Docker Compose PG16 + CI green on the tag candidate still required for Lane B.
+4. Managed Postgres host and production email vendors blocked pending addenda.
+5. Payments, analytics, AI APIs, live Pol.is, identity-verification SDKs forbidden until register approval.
+6. Production backup/PITR after host approval (PGlite drill insufficient).
+7. Penetration test / formal security review before pilot.
 
 ## Tagging rule (foundation tag **not** created)
 
-Create a Phase 2 foundation tag **only after all** of the following:
-
-1. Gated E2E green (satisfied locally 2026-08-10; reconfirm on the tag commit).
-2. Counsel dispositions for readiness gates recorded as `cleared` or `conditionally_cleared` (with scope/conditions) in plan §7 and `dispositions.ts`, such that `readinessCounselAllowsFoundationTag()` is true.
-3. Human approval that remaining items are Phase 3 / pilot blockers.
-4. Explicit move of 2.12 status from readiness-blocked to complete in [phase-2-plan.md](./phase-2-plan.md).
-
-Suggested tag name when approved: `phase-2-foundation`.
+Create `phase-2-foundation` **only after** evidence log is filled, counsel readiness gates allow `readinessCounselAllowsFoundationTag()`, and a human explicitly completes 2.12.
 
 ## Commands
 
@@ -122,19 +105,17 @@ npm run security:check
 npm run backup:smoke
 npx playwright install --with-deps
 npx playwright test
-# Prefer Docker Compose when the engine is healthy:
+# Docker Compose PG16 (preferred for Lane B evidence):
+npm run db:up          # waits for health (--wait or wait-for-postgres)
 npm run test:e2e:gated
-# Local Postgres fallback (this readiness run):
-# DATABASE_URL=postgres://ostt:ostt@127.0.0.1:5432/ostt_dev APP_MODE=gated \
-#   AUTH_SECRET=ostt-synth-auth-secret-e2e-not-production AUTH_E2E_CAPTURE=1 \
-#   node scripts/gated-e2e-prepare.mjs && npm run build && \
-#   npx playwright test -c playwright.gated.config.ts
+npm run db:down        # cleanup when finished
 ```
 
 ## Related docs
 
 - [phase-2-plan.md](./phase-2-plan.md)
 - [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md)
+- [decisions/0006-phase-3-two-lane-sequencing.md](./decisions/0006-phase-3-two-lane-sequencing.md)
 - [phase-1-handoff.md](./phase-1-handoff.md)
 - [secrets-and-operations.md](./secrets-and-operations.md)
 - [incident-response.md](./incident-response.md)

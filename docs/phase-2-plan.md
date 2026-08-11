@@ -503,4 +503,6 @@ When Phase 2 work is active:
 3. Prefer “account holder” / “community participant” language; never invent statutory membership.
 4. After each package: report files changed, commands run, failed checks, and unresolved decisions; stop for approval.
 
-Phase 2 implementation through 2.12 is **readiness-blocked** per [phase-2-handoff.md](./phase-2-handoff.md). Do not start Phase 3 work, declare Phase 2 complete, or tag a foundation release until 2.12 readiness blockers clear and a human approves.
+Phase 2 **readiness/tag** remains blocked per [phase-2-handoff.md](./phase-2-handoff.md) until gated/CI confirmation on the tag candidate and counsel dispositions clear. Do **not** declare Phase 2 complete, create a foundation tag, or activate real accounts while those blockers remain.
+
+**Project-owner two-lane sequencing** (not counsel clearance): [ADR 0006](./decisions/0006-phase-3-two-lane-sequencing.md). Lane A — Phase 3 *synthetic/closed* engineering may proceed under blocking counsel constraints. Lane B — Phase 2 readiness tag and real participant activation stay stopped until 2.12 readiness criteria and §7 dispositions allow.

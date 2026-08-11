@@ -3,9 +3,21 @@
 **Status:** Issued for counsel review — **not** a disposition.  
 **Issued date:** 2026-08-10  
 **Issued by:** Phase 2 readiness engineering  
-**Purpose:** Obtain recorded counsel dispositions required before the Phase 2 foundation readiness tag and any real launch. Phase 3 engineering may continue under blocking constraints.
+**Purpose:** Obtain recorded counsel dispositions required before the Phase 2 foundation readiness tag and any real launch. Under the project-owner two-lane rule ([ADR 0006](./decisions/0006-phase-3-two-lane-sequencing.md)), Phase 3 *synthetic/closed* engineering may proceed; readiness tag and real activation remain blocked.
 
 Nothing in this packet invents clearance. Owner risk acceptance must not be recorded as `cleared`.
+
+## Public-repository confidentiality warning
+
+This repository is (or may become) **public**. Do **not** commit privileged counsel advice, private client facts, or non-public legal analysis.
+
+| Allowed in-repo | Not allowed in-repo |
+| --- | --- |
+| Counsel-approved **public summaries** of disposition status/scope | Privileged memoranda, emails, or verbatim counsel advice |
+| Opaque internal decision-record references (e.g. “Counsel memo 2026-…, on file”) | Attachment of private PDFs or paste of confidential reasoning |
+| Updates to plan §7 / `dispositions.ts` using the public vocabulary (`blocking` / `conditionally_cleared` / `cleared`) | Secrets, real participant data, or production credentials |
+
+Return privileged detail through a private channel; record only the approved public summary and opaque citation here.
 
 ## How to return dispositions
 

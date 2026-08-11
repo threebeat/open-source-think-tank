@@ -1,6 +1,12 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
+import {
+  completeInviteSession,
+  expectNoHorizontalOverflow,
+  signInWithCapturedEmail,
+} from "./gated-helpers";
+
 async function expectNoSeriousAxe(page: import("@playwright/test").Page, label: string) {
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa"])
@@ -11,42 +17,6 @@ async function expectNoSeriousAxe(page: import("@playwright/test").Page, label: 
   expect(serious, `${label}: ${serious.map((v) => v.id).join(", ")}`).toEqual(
     [],
   );
-}
-
-async function completeInviteSession(
-  page: import("@playwright/test").Page,
-  inviteToken: string,
-  contactChannel: string,
-) {
-  const accept = await page.request.post("/api/auth/accept-invite", {
-    data: { inviteToken, contactChannel },
-  });
-  expect(accept.ok()).toBeTruthy();
-
-  const capture = await page.request.get("/api/test/last-email");
-  const mail = (await capture.json()) as { textBody?: string };
-  const tokenMatch = mail.textBody!.match(/token=([^&\s]+)/);
-  const token = decodeURIComponent(tokenMatch![1]!);
-  await page.goto(`/auth/complete?token=${encodeURIComponent(token)}`);
-  await expect(page).toHaveURL(/\/account/, { timeout: 30_000 });
-}
-
-async function signInWithCapturedEmail(
-  page: import("@playwright/test").Page,
-  contactChannel: string,
-) {
-  const request = await page.request.post("/api/auth/request-sign-in", {
-    data: { contactChannel },
-  });
-  expect(request.ok(), await request.text()).toBeTruthy();
-  const capture = await page.request.get("/api/test/last-email");
-  expect(capture.ok()).toBeTruthy();
-  const mail = (await capture.json()) as { textBody?: string };
-  const tokenMatch = mail.textBody!.match(/token=([^&\s]+)/);
-  expect(tokenMatch?.[1]).toBeTruthy();
-  const token = decodeURIComponent(tokenMatch![1]!);
-  await page.goto(`/auth/complete?token=${encodeURIComponent(token)}`);
-  await expect(page).toHaveURL(/\/account/, { timeout: 30_000 });
 }
 
 /**
@@ -80,7 +50,7 @@ test.describe("gated account and staff accessibility", () => {
     await expectNoSeriousAxe(page, "/account/assent");
   });
 
-  test("staff onboarding queue has no serious axe violations", async ({
+  test("staff onboarding queue has no serious axe violations and fits narrow width", async ({
     page,
   }) => {
     await signInWithCapturedEmail(page, "staff-admin@ostt.synth.test");
@@ -91,5 +61,17 @@ test.describe("gated account and staff accessibility", () => {
       }),
     ).toBeVisible({ timeout: 15_000 });
     await expectNoSeriousAxe(page, "/staff/onboarding");
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.reload();
+    await expect(
+      page.getByRole("heading", {
+        name: /invitation and onboarding status|onboarding queues/i,
+      }),
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(
+      page.getByRole("heading", { name: /pending onboarding/i }),
+    ).toBeVisible();
+    await expectNoHorizontalOverflow(page);
   });
 });

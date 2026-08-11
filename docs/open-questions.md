@@ -72,6 +72,8 @@ Phase 2 decision register and counsel gates: [phase-2-plan.md](./phase-2-plan.md
 
 15. **Retention and deletion rights** — Unresolved. WP 2.11 ships provisional engineering retention settings and closure that retains assent/audit; counsel must still clear LQ10–11 before treating schedules or anonymization of real accounts as settled.
 
+16. **Phase 3 start while Phase 2 readiness is blocked** — Product/sequencing (not counsel). Draft two-lane rule in [ADR 0006](./decisions/0006-phase-3-two-lane-sequencing.md): Phase 3 synthetic/closed engineering may proceed; Phase 2 readiness tag and real participant activation remain blocked. Confirm as project-owner scope approval; never treat as counsel clearance of §7 gates.
+
 ---
 
 ## How to add questions

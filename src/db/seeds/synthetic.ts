@@ -177,6 +177,15 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
       expiresAt: new Date("2027-01-01T00:00:00.000Z"),
       issuedByLabel: "ostt-synth-seeder",
     },
+    {
+      id: "invite-ostt-synth-gina-pending",
+      tokenHash: hashToken("ostt-synth-invite-token-gina"),
+      intendedContactChannel: "gina@ostt.synth.test",
+      status: "pending",
+      synthetic: true,
+      expiresAt: new Date("2027-01-01T00:00:00.000Z"),
+      issuedByLabel: "ostt-synth-seeder",
+    },
   ]);
 
   await db.insert(roleAssignments).values({
@@ -319,6 +328,9 @@ export const SYNTHETIC_PENDING_INVITE_CONTACT_ELIOT = "eliot@ostt.synth.test";
 export const SYNTHETIC_PENDING_INVITE_TOKEN_FRANK =
   "ostt-synth-invite-token-frank";
 export const SYNTHETIC_PENDING_INVITE_CONTACT_FRANK = "frank@ostt.synth.test";
+export const SYNTHETIC_PENDING_INVITE_TOKEN_GINA =
+  "ostt-synth-invite-token-gina";
+export const SYNTHETIC_PENDING_INVITE_CONTACT_GINA = "gina@ostt.synth.test";
 export const SYNTHETIC_STAFF_ADMIN_CONTACT = "staff-admin@ostt.synth.test";
 export const SYNTHETIC_STAFF_ADMIN_ACCOUNT_ID =
   "account-ostt-synth-staff-admin";

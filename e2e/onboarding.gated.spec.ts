@@ -1,6 +1,11 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, devices } from "@playwright/test";
 
+import {
+  completeInviteSession,
+  expectNoHorizontalOverflow,
+} from "./gated-helpers";
+
 /**
  * Gated onboarding E2E — synthetic fixtures only.
  * Requires playwright.gated.config.ts + prepared DB.
@@ -140,14 +145,43 @@ test.describe("gated onboarding flows (synthetic)", () => {
   });
 });
 
-test("onboarding and verification remain usable on phone width", async ({
+test("account onboarding, assent, and verification usable on phone width", async ({
   page,
 }) => {
-  // Viewport-only (no nested test.use) — gated config runs single-worker.
+  // Independent invite (gina) — not shared with desktop keyboard/a11y or assent drills.
   await page.setViewportSize(devices["iPhone 12"].viewport!);
-  await page.goto("/join");
-  await expect(page.getByRole("heading", { name: /join with an invitation/i })).toBeVisible();
-  const box = await page.getByRole("heading", { name: /join with an invitation/i }).boundingBox();
-  expect(box).toBeTruthy();
-  expect(box!.width).toBeLessThanOrEqual(400);
+  await completeInviteSession(
+    page,
+    "ostt-synth-invite-token-gina",
+    "gina@ostt.synth.test",
+  );
+  await expect(page.getByText(/pending_onboarding/i).first()).toBeVisible({
+    timeout: 15_000,
+  });
+
+  await page.goto("/account/onboarding");
+  await expect(
+    page.getByRole("heading", { name: /onboarding progress/i }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /activate account/i }),
+  ).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  await page.goto("/account/assent");
+  await expect(
+    page.getByRole("link", { name: /review full document/i }).first(),
+  ).toBeVisible();
+  await expect(page.getByText(/assent/i).first()).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  await page.goto("/account/verification");
+  await expect(page.getByRole("heading", { name: /^verification$/i })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: /open a verification case/i }),
+  ).toBeVisible();
+  await expect(page.getByLabel(/assertion kind/i)).toBeVisible();
+  await expect(page.getByLabel(/assertion summary/i)).toBeVisible();
+  await expect(page.getByRole("button", { name: /open case/i })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
 });
