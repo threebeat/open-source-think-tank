@@ -1,6 +1,6 @@
 # Phase 3 architecture — operational alpha
 
-**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2 schema + gated repositories implemented**; **3.3 in progress** (capabilities, invitation issuance, first-administrator bootstrap — not complete)  
+**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2 schema + gated repositories implemented**; **3.3 capabilities, invitations, and first-administrator bootstrap implemented** (topic authoring UI begins in 3.4)  
 **Plan:** [phase-3-plan.md](./phase-3-plan.md)  
 **ADRs:** [0008](./decisions/0008-phase-3-operational-alpha-contract.md), [0009](./decisions/0009-phase-3-operational-slice-corrections.md)  
 **Foundation:** [architecture-phase-2.md](./architecture-phase-2.md), ADRs 0002–0005, capability matrix, audit registry
@@ -160,7 +160,7 @@ Projection builder lives in a pure module testable without React. **Minimal path
 | `/workspace/topics/[slug]/submit` | Claim/evidence submit with basic relationship | `claims.submit`, `evidence.submit` |
 | `/workspace/review` | Claim and evidence review queues | `claims.review`, `evidence.review` |
 | `/workspace/moderation` | Visibility hold/hide/restore-to-visible | `moderation.review_submission` |
-| `/staff/invitations` (or extend existing staff) | Issue invites | `invites.issue` |
+| `/staff/invitations` + `POST/GET /api/staff/invitations` | Issue/list invites (hash-only; one-time raw link; public-demo 404) | `invites.issue` |
 
 Exact paths may align with existing `/account/*` and `/staff/*` trees; do not expose them on public-demo.
 

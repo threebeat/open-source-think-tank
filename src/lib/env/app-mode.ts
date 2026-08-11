@@ -8,6 +8,7 @@ export const GATED_SECRET_ENV_KEYS = [
   "EMAIL_API_KEY",
   "EMAIL_SERVER",
   "VERIFICATION_VENDOR_API_KEY",
+  "OPERATOR_BOOTSTRAP_SECRET",
 ] as const;
 
 export type GatedSecretEnvKey = (typeof GATED_SECRET_ENV_KEYS)[number];

@@ -6,7 +6,6 @@ import {
   accounts,
   auditEvents,
   councilAppointments,
-  invitations,
   operatorBootstrapState,
   roleAssignments,
   verificationCases,
@@ -106,6 +105,29 @@ describe("first-administrator bootstrap (3.3)", () => {
     expect(check.ok).toBe(false);
     if (!check.ok) {
       expect(check.code).toMatch(/PUBLIC_DEMO|ENV_UNSAFE|forbids/);
+    }
+  });
+
+  it("rejects missing or weak operator credentials", () => {
+    const missing = requireOperatorBootstrapEnv({
+      APP_MODE: "gated",
+      DATABASE_URL: "postgres://ostt:ostt@127.0.0.1:54329/ostt",
+      OPERATOR_LABEL: "ops",
+    });
+    expect(missing.ok).toBe(false);
+    if (!missing.ok) {
+      expect(missing.code).toBe("OPERATOR_SECRET_MISSING");
+    }
+
+    const weak = requireOperatorBootstrapEnv({
+      APP_MODE: "gated",
+      DATABASE_URL: "postgres://ostt:ostt@127.0.0.1:54329/ostt",
+      OPERATOR_BOOTSTRAP_SECRET: "too-short",
+      OPERATOR_LABEL: "ops",
+    });
+    expect(weak.ok).toBe(false);
+    if (!weak.ok) {
+      expect(weak.code).toBe("OPERATOR_SECRET_WEAK");
     }
   });
 

@@ -15,10 +15,24 @@ test.describe("auth isolation in public-demo", () => {
 
     const nextAuth = await page.request.get("/api/auth/session");
     expect(nextAuth.status()).toBe(404);
+
+    const invitationsGet = await page.request.get("/api/staff/invitations");
+    expect(invitationsGet.status()).toBe(404);
+
+    const invitationsPost = await page.request.post("/api/staff/invitations", {
+      data: { intendedContactChannel: "nobody@example.test" },
+    });
+    expect(invitationsPost.status()).toBe(404);
   });
 
   test("public join preview still cannot enroll", async ({ page }) => {
     await page.goto("/join");
+    await expect(
+      page.getByText(/does not create an account, issue an invitation/i),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/fixed fixtures, not other current visitors/i),
+    ).toBeVisible();
     await page.getByRole("button", { name: /Stronger verification/i }).click();
     await expect(
       page.getByRole("button", { name: "Create account (disabled)" }),

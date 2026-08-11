@@ -31,7 +31,7 @@ export type OperatorCredentialCheck =
  * Secret must come from the environment — never from CLI argv.
  */
 export function requireOperatorBootstrapEnv(
-  env: NodeJS.ProcessEnv = process.env,
+  env: Record<string, string | undefined> = process.env,
 ): OperatorCredentialCheck {
   try {
     if (assertEnvironmentSafe(env) !== "gated") {

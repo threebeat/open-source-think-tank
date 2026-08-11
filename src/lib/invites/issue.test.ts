@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createTestDatabase } from "@/db/pglite";
-import { auditEvents, invitations } from "@/db/schema";
+import { accounts, auditEvents, invitations } from "@/db/schema";
 import { seedSyntheticFoundation } from "@/db/seeds/synthetic";
 import { hashToken } from "@/lib/auth/tokens";
 import {
@@ -95,6 +95,33 @@ describe("invitation issuance (3.3)", () => {
         listed.value.every((row) => row.contactRedacted.includes("***")),
       ).toBe(true);
     }
+  });
+
+  it("marks real administrator issuance as non-synthetic", async () => {
+    await db
+      .update(accounts)
+      .set({ synthetic: false })
+      .where(eq(accounts.id, "account-ostt-synth-staff-admin"));
+
+    const issued = await issueParticipantInvitation(db, {
+      actorAccountId: "account-ostt-synth-staff-admin",
+      intendedContactChannel: "real-invitee@example.test",
+    });
+    expect(issued.ok).toBe(true);
+    if (!issued.ok) {
+      return;
+    }
+
+    const [row] = await db
+      .select()
+      .from(invitations)
+      .where(eq(invitations.id, issued.value.invitationId));
+    expect(row?.synthetic).toBe(false);
+
+    await db
+      .update(accounts)
+      .set({ synthetic: true })
+      .where(eq(accounts.id, "account-ostt-synth-staff-admin"));
   });
 
   it("revokes prior pending invite for the same contact on reissue", async () => {

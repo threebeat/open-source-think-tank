@@ -1,6 +1,6 @@
 # Capability matrix (Work Packages 2.5 + 3.3)
 
-**Status:** Engineering authorization contract for the gated foundation. Phase 3.3 adds topic/claim/evidence/invite capabilities and documents the operator bootstrap ceremony (implementation in progress).  
+**Status:** Engineering authorization contract for the gated foundation. Phase 3.3 capabilities, invitation issuance, and first-administrator bootstrap are implemented. Topic authoring UI begins in 3.4.  
 **Not legal authority:** Council and administrator capabilities do not invent board-binding or statutory membership powers (counsel gates in [phase-2-plan.md](./phase-2-plan.md) §7 remain blocking).
 
 Three independent axes must all allow an action:

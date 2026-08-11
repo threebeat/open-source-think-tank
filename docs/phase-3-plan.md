@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 3 (packages 3.1–3.12)  
 **Baseline:** Phase 2 foundation at or after `a894317317f3ff1e80d0a3602df69e5b4d8cd589` (tag `phase-2-foundation` recorded in [phase-2-handoff.md](./phase-2-handoff.md))  
-**Current package:** **3.3 — Capabilities, invitation issuance, and first-administrator bootstrap** (in progress). Package 3.2 (durable topic/claim/evidence schema + repositories) is complete. Do not mark 3.3 complete until its checkpoints finish. No topic authoring UI, submissions, evidence review, publication, or live Pol.is in this package.
+**Current package:** **3.3 complete (awaiting human approval before 3.4).** Capabilities, invitation issuance, and first-administrator bootstrap are implemented. No topic authoring UI, submissions, evidence review, publication, or live Pol.is yet.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [phase-2-plan.md](./phase-2-plan.md), [phase-2-handoff.md](./phase-2-handoff.md), [architecture-phase-2.md](./architecture-phase-2.md), [architecture-phase-3.md](./architecture-phase-3.md), [capability-matrix.md](./capability-matrix.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [open-questions.md](./open-questions.md), [decisions/0006-phase-3-two-lane-sequencing.md](./decisions/0006-phase-3-two-lane-sequencing.md), [decisions/0007-alpha-test-interim-council-dispositions.md](./decisions/0007-alpha-test-interim-council-dispositions.md), [decisions/0008-phase-3-operational-alpha-contract.md](./decisions/0008-phase-3-operational-alpha-contract.md), [decisions/0009-phase-3-operational-slice-corrections.md](./decisions/0009-phase-3-operational-slice-corrections.md)
 
@@ -259,7 +259,7 @@ Existing Phase 2 capabilities and rules remain in force ([capability-matrix.md](
 - Active lifecycle and assurance checks still apply via `authorizeCapability`.
 - During alpha, administrator may fall back for reviewer/moderator **operations** where Phase 2 already allows that pattern; audit must record the capability and actor.
 
-### New capabilities (planned — implement in 3.3+)
+### New capabilities (implemented in 3.3; topic UI begins 3.4+)
 
 | Capability | Lifecycle | Platform role | Ownership / seat | Notes |
 | --- | --- | --- | --- | --- |
@@ -312,8 +312,8 @@ Owner-run alpha limitation: operator self-attestation for the first candidate’
 | Item | Current state | Phase 3 handling |
 | --- | --- | --- |
 | Email delivery | **Capture-only** (`CaptureEmailAdapter`) | Keep until vendor addendum; 3.3 must support **operator-delivered single-use links** |
-| Invitation issuance UI/CLI | **Missing** for real operators (seeds only) | **Must** land in **3.3** |
-| First-administrator bootstrap | **Missing** | **Must** land in **3.3** (audited gated operator workflow or CLI) |
+| Invitation issuance UI/CLI | **Implemented in 3.3** (`/staff/invitations`, `invites.issue`) | Operator-delivered single-use links; email remains capture-only |
+| First-administrator bootstrap | **Implemented in 3.3** (`npm run operator:bootstrap`) | Audited operator ceremony; OQ21 for interim self-attestation |
 | Token safety | Phase 2 hashes invite tokens | Raw tokens shown **once**, never persisted unhashed, never written to application logs, never exposed in public-demo |
 | Managed PostgreSQL | Blocked pending addendum | Do **not** select/install in contract packages; a real off-device multi-user alpha still **requires** approved reachable gated deployment + persistent PostgreSQL when that addendum lands |
 | Production email vendor | Blocked pending addendum | Do **not** select/install in contract packages |
@@ -423,26 +423,25 @@ Still **forbidden in Phase 3** unless a future ADR + register update says otherw
 
 ### Work package 3.3 — Capabilities and operator bootstrap
 
-**Status:** In progress (contract locked in Checkpoint 1; implementation follows).
+**Status:** Complete (awaiting human approval before 3.4).
 
 **Objective:** Add planned capabilities to the matrix/authz code; deliver audited first-administrator bootstrap and invitation issuance with operator-delivered single-use links (email remains capture-only unless an addendum lands). Preserve the public-demo single-user invariant.
 
 **Prerequisites:** 3.2 schema available; Phase 2 auth/invite accept paths unchanged in spirit.
 
-**Implementation steps:**
+**Implemented:**
 
-1. Extend `CAPABILITIES`, `authorize`, assurance map, and `docs/capability-matrix.md`.
-2. Implement gated operator bootstrap (CLI or staff-breakglass) that creates the first administrator when none exists; audit `operator.bootstrap_administrator`.
-3. Implement `invites.issue`: generate token, store **hash only**, return raw token once to the issuer; support operator copy-out when email is capture-only.
-4. Forbid raw tokens in logs, audit private payloads, and public-demo mode.
-5. Positive/negative authz tests for every new capability; bootstrap tests for empty vs already-bootstrapped DB.
-6. Document operator runbook in secrets/ops or Phase 3 handoff draft section.
+1. Phase 3 capabilities + L3 assurance + table-driven authz tests; `operator.bootstrap_administrator` kept as a typed operator action (not an account capability).
+2. Migrations `0013_invitation_bootstrap` / `0014_bootstrap_verification_provenance`; `invites.issue` service + `/staff/invitations` + `POST /api/staff/invitations` (hash-only; one-time raw link; no-store).
+3. `npm run operator:bootstrap` issue/finalize ceremony with singleton lock, `operator_bootstrap` verification provenance, activation gates, and single administrator grant (no council seat).
+4. Public-demo single-user copy on How Joining Works; issuance/bootstrap absent in public-demo.
+5. Operator runbook in [secrets-and-operations.md](./secrets-and-operations.md); OQ21 for interim operator self-attestation.
 
-**Expected user-visible outcome:** Gated administrator can obtain a one-time invite link/token to give a participant; public-demo unchanged.
+**Expected user-visible outcome:** Gated administrator can obtain a one-time invite link/token to give a participant; public-demo remains a single-user synthetic walkthrough.
 
 **Authorization and audit:** All issuance/bootstrap paths require capability or operator secret + audit; CSRF on browser forms.
 
-**Privacy/security/accessibility:** Tokens single-use/expiring; no token in URLs on public-demo; staff UI accessible if browser-based.
+**Privacy/security/accessibility:** Tokens single-use/expiring; no token recovery after leave/reload; staff UI keyboard-usable.
 
 **Tests and acceptance criteria:**
 
