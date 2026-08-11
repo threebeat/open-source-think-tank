@@ -1,11 +1,11 @@
 # Phase 3 architecture — operational alpha
 
-**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009 (design only — not implemented)  
+**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2 schema + gated repositories implemented** (no authoring UI / capabilities / publication APIs yet)  
 **Plan:** [phase-3-plan.md](./phase-3-plan.md)  
 **ADRs:** [0008](./decisions/0008-phase-3-operational-alpha-contract.md), [0009](./decisions/0009-phase-3-operational-slice-corrections.md)  
 **Foundation:** [architecture-phase-2.md](./architecture-phase-2.md), ADRs 0002–0005, capability matrix, audit registry
 
-This document proposes service boundaries, table groups, routes, and projections for Phase 3. It does **not** authorize migrations, routes, or vendor installs by itself. Implementing packages own those changes. A real off-device multi-user alpha requires an approved reachable gated deployment and persistent PostgreSQL; do not select a vendor here.
+This document records service boundaries, table groups, routes, and projections for Phase 3. Package 3.2 owns the durable topic/claim/evidence migration and repositories. Later packages own routes, capabilities, and vendor installs. A real off-device multi-user alpha requires an approved reachable gated deployment and persistent PostgreSQL; do not select a vendor here.
 
 ---
 
@@ -77,35 +77,34 @@ Adapter reuse from Phase 2: `PersistenceAdapter`, `AuthAdapter`, `EmailAdapter`,
 
 ---
 
-## 3. Proposed table groups and relationships (no migrations in 3.1)
+## 3. Table groups and relationships (implemented in 3.2)
 
-Conceptual groups to add in **3.2** (names may adjust during migration design):
+Migration: `drizzle/0012_topic_evidence.sql`. Repositories: `src/lib/topics|claims|evidence|conflicts/repository.ts` (gated only).
 
 ### 3.1 Core topic group
 
-- `topics` — id, slug, title, question, background, scope, **`workflow_state`** (`draft` | `open_for_submissions` | `under_review` | `paused` | `archived`), **`publication_status`** (`unpublished` | `published`), timestamps, created_by_account_id, synthetic flag if any seed rows
-- Operational workflow and publication status are independent; pause must not flip publication
-- Optional `topic_changelog` or rely on revisions + audit
+- `topics` — opaque text id, unique slug (not used as FK identity), title, question, background, scope, **`workflow_state`**, **`publication_status`**, `created_by_account_id`, `published_at`, `published_by_account_id`, `synthetic` (default false), timestamps
+- Operational workflow and publication status are independent; pause must not flip publication; published requires publication provenance
+- No Pol.is conversation ID or popularity/consensus columns
 
 ### 3.2 Claims and evidence
 
-- `claims` — topic_id, author_account_id, title, summary, approach_label, workflow_state, moderation_visibility (`visible` | `held` | `hidden`), timestamps
-- `evidence_sources` / `evidence_submissions` — topic_id, submitter_account_id, url, title, organization, author_type, source_type, limitations, workflow_state, quality_status, moderation_visibility (`visible` | `held` | `hidden`), timestamps
-- `claim_evidence_links` — claim_id, evidence_id, relationship (`supporting` | `counterevidence`) — **basic link in 3.2/3.5**; richer comparison in 3.7
+- `claims` — topic_id, author_account_id, title, summary, approach_label, workflow_state, moderation_visibility (`visible` | `held` | `hidden`), synthetic, timestamps
+- `evidence_submissions` — **single** alpha source-submission model: topic_id, submitter_account_id, source_url + metadata (title, organization, author_type, source_type, limitations), workflow_state, quality_status, moderation_visibility, synthetic, timestamps (no remote fetch/scrape columns)
+- `claim_evidence_links` — topic_id + claim_id + evidence_submission_id + relationship (`supporting` | `counterevidence`); unique claim/evidence pair; composite FKs enforce same-topic integrity
 
 ### 3.3 Disclosures
 
-- `conflict_disclosures` — subject_type/id, account_id, public_summary, private_detail, created_at, updated_at
+- `conflict_disclosures` — disclosing_account_id, nullable `claim_id` and `evidence_submission_id` with CHECK requiring exactly one subject, public_summary, optional private_detail, synthetic, timestamps (no unenforced polymorphic subject_type/subject_id)
 
 ### 3.4 Revisions (enriched in 3.7)
 
-- `content_revisions` — subject_type/id, revision_n, snapshot jsonb or normalized columns, edited_by_account_id, reason, created_at  
-  Append-only from application permissions. Schema stubs may appear in 3.2; full history UX is 3.7.
+- `content_revisions` — **not created in 3.2**; full append-only content revision history remains Package 3.7
 
 ### 3.5 Review artifacts
 
-- Claim workflow reviews via `claims.review`; evidence workflow + quality via `evidence.review`
-- Either columns on evidence/claims or review tables — reviewer_account_id, quality_status (evidence), workflow_decision, public_rationale, private_notes, created_at
+- `claim_reviews` — append-only decision rows (changes_requested | accepted | rejected), public_rationale, private_notes, reviewer_account_id, decided_at; UPDATE/DELETE rejected by trigger
+- `evidence_reviews` — append-only workflow and/or quality decisions (`quality_decided` requires quality_status); current claim/evidence row state may be updated separately for filtering; history is never only an overwritten rationale column
 
 ### Relationships (logical)
 
@@ -113,14 +112,14 @@ Conceptual groups to add in **3.2** (names may adjust during migration design):
 accounts 1---* topics.created_by
 topics 1---* claims
 topics 1---* evidence_submissions
-claims *---* evidence_submissions  (via claim_evidence_links)
-claims/evidence 1---* conflict_disclosures
-claims/evidence 1---* content_revisions
-claims/evidence 1---* evidence_reviews
+claims *---* evidence_submissions  (via claim_evidence_links; same topic)
+claims/evidence 1---* conflict_disclosures  (exactly one subject FK)
+claims 1---* claim_reviews
+evidence_submissions 1---* evidence_reviews
 all mutable institutional actions ---> audit_events
 ```
 
-**Non-joins for public APIs:** public projection queries must not require contact_channel, verification artifacts, or assent payloads.
+**Non-joins for public APIs:** public projection queries must not require contact_channel, verification artifacts, assent payloads, or disclosure private_detail.
 
 ---
 

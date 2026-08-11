@@ -53,7 +53,7 @@ test.describe("simulated consultation", () => {
       report.getByText("Not a representative sample", { exact: true }),
     ).toBeVisible();
     await expect(
-      report.getByText("Consensus is not proof", { exact: true }),
+      report.getByText("Agreement is not proof", { exact: true }),
     ).toBeVisible();
     await expect(
       report.getByRole("heading", { name: "All statements and evidence links" }),
