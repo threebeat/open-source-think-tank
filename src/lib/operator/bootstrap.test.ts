@@ -20,8 +20,8 @@ import {
   issueAdministratorBootstrapInvitation,
 } from "@/lib/operator/bootstrap";
 import { requireOperatorBootstrapEnv } from "@/lib/operator/secrets";
+import { L3_KINDS } from "@/lib/verification/assertion-kinds";
 import { openVerificationCase } from "@/lib/verification/cases";
-import { L3_KINDS } from "@/lib/verification/seed-assurance";
 
 const OPERATOR_SECRET = "ostt-synth-operator-bootstrap-secret-32chars!!";
 
@@ -233,8 +233,24 @@ describe("first-administrator bootstrap (3.3)", () => {
           isNull(roleAssignments.revokedAt),
         ),
       );
-    // Ordinary onboarding may grant participant independently.
-    expect(participantRoles.length).toBeGreaterThanOrEqual(0);
+    // Activation may grant participant independently; the administrator grant must not.
+    expect(
+      participantRoles.every(
+        (row) => row.grantedByLabel === "onboarding.activate",
+      ),
+    ).toBe(true);
+    expect(
+      adminRoles.every((row) =>
+        (row.grantedByLabel ?? "").startsWith("operator:"),
+      ),
+    ).toBe(true);
+    expect(
+      adminRoles.every(
+        (row) =>
+          row.role === "administrator" &&
+          !participantRoles.some((p) => p.id === row.id),
+      ),
+    ).toBe(true);
 
     const councils = await db
       .select()

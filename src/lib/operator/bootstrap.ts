@@ -15,7 +15,7 @@ import { appendAuthAudit, type AuthAuditDb } from "@/lib/auth/audit-log";
 import { generateOpaqueToken, hashToken, newEntityId } from "@/lib/auth/tokens";
 import { activateAccount } from "@/lib/onboarding/activate";
 import { requireOperatorBootstrapEnv } from "@/lib/operator/secrets";
-import { L3_KINDS } from "@/lib/verification/seed-assurance";
+import { L3_KINDS } from "@/lib/verification/assertion-kinds";
 
 const BOOTSTRAP_STATE_ID = "default";
 const DEFAULT_TTL_MS = 7 * 24 * 60 * 60 * 1000;

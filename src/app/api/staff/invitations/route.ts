@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { resolveAppMode } from "@/lib/env/app-mode";
+import { assertCsrfSafe, csrfDeniedResponse } from "@/lib/security/csrf";
 
 export async function GET() {
   if (resolveAppMode() !== "gated") {
@@ -43,8 +44,16 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  // Mode check first — public-demo 404 without importing gated runtime.
   if (resolveAppMode() !== "gated") {
     return NextResponse.json({ error: "Not Found" }, { status: 404 });
+  }
+
+  // Explicit CSRF before parsing or acting on the mutation body.
+  try {
+    assertCsrfSafe(request);
+  } catch (error) {
+    return csrfDeniedResponse(error);
   }
 
   let body: { intendedContactChannel?: string; expiresInMs?: number };
@@ -79,7 +88,9 @@ export async function POST(request: Request) {
       result.code === "AUTHZ_ASSURANCE_REQUIRED" ||
       result.code === "AUTHZ_ACCOUNT_DISABLED"
         ? 403
-        : 400;
+        : result.code === "INVITE_ISSUE_CONFLICT"
+          ? 409
+          : 400;
     return NextResponse.json(
       { error: result.error, code: result.code },
       {

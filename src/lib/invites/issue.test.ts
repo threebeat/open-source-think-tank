@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createTestDatabase } from "@/db/pglite";
@@ -149,5 +149,52 @@ describe("invitation issuance (3.3)", () => {
       .from(invitations)
       .where(eq(invitations.id, second.value.invitationId));
     expect(next?.status).toBe("pending");
+  });
+
+  it("leaves at most one pending invitation under concurrent same-contact issuance", async () => {
+    const contact = "concurrent-contact@ostt.synth.test";
+    const results = await Promise.all(
+      Array.from({ length: 8 }, () =>
+        issueParticipantInvitation(db, {
+          actorAccountId: "account-ostt-synth-staff-admin",
+          intendedContactChannel: contact,
+        }),
+      ),
+    );
+
+    const successes = results.filter((row) => row.ok);
+    const failures = results.filter((row) => !row.ok);
+    expect(successes.length).toBeGreaterThanOrEqual(1);
+    expect(successes.length + failures.length).toBe(8);
+    for (const failure of failures) {
+      if (!failure.ok) {
+        expect(failure.code).toMatch(/INVITE_ISSUE_CONFLICT|INVITE_ISSUE_FAILED/);
+        expect(failure.error).not.toContain(contact);
+        expect(JSON.stringify(failure)).not.toMatch(/token|http/i);
+      }
+    }
+
+    const pending = await db
+      .select()
+      .from(invitations)
+      .where(
+        and(
+          eq(invitations.kind, "participant"),
+          eq(invitations.status, "pending"),
+          eq(invitations.intendedContactChannel, contact),
+        ),
+      );
+    expect(pending).toHaveLength(1);
+
+    const historical = await db
+      .select()
+      .from(invitations)
+      .where(eq(invitations.intendedContactChannel, contact));
+    expect(historical.every((row) => row.status !== "pending" || row.id === pending[0]?.id)).toBe(
+      true,
+    );
+    expect(historical.filter((row) => row.status === "revoked").length).toBeGreaterThanOrEqual(
+      Math.max(0, successes.length - 1),
+    );
   });
 });

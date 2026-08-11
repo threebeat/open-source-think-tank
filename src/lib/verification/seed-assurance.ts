@@ -3,9 +3,18 @@ import type { FoundationDb } from "@/db/types";
 import type { VerificationAssertionKind } from "@/lib/adapters/verification";
 import { newEntityId } from "@/lib/auth/tokens";
 
+/** Re-export production-neutral kind sets for test convenience only. */
+export {
+  L2_KINDS,
+  L3_KINDS,
+  L4_KINDS,
+} from "@/lib/verification/assertion-kinds";
+
 /**
  * Test/seed helper: insert approved assertion rows without reviewer workflow.
  * Used to bootstrap assurance for synthetic fixtures (chicken-and-egg).
+ * Operational code must not import this module for kind constants alone —
+ * use `@/lib/verification/assertion-kinds` instead.
  */
 export async function seedApprovedAssertions(
   db: FoundationDb,
@@ -38,21 +47,3 @@ export async function seedApprovedAssertions(
     });
   }
 }
-
-/** Kinds required for L2 (reviewer / auditor floor). */
-export const L2_KINDS: VerificationAssertionKind[] = [
-  "bot_resistance",
-  "contact_continuity",
-];
-
-/** Kinds required for L3 (vote / publish / role changes). */
-export const L3_KINDS: VerificationAssertionKind[] = [
-  ...L2_KINDS,
-  "uniqueness",
-];
-
-/** Kinds required for L4 (council). */
-export const L4_KINDS: VerificationAssertionKind[] = [
-  ...L3_KINDS,
-  "eligibility",
-];

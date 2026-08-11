@@ -183,6 +183,11 @@ export const invitations = pgTable(
       .where(
         sql`${table.kind} = 'administrator_bootstrap' AND ${table.status} = 'pending'`,
       ),
+    uniqueIndex("invitations_one_pending_participant_contact_uidx")
+      .on(sql`lower(${table.intendedContactChannel})`)
+      .where(
+        sql`${table.kind} = 'participant' AND ${table.status} = 'pending'`,
+      ),
     check(
       "invitations_accepted_requires_account_and_timestamp",
       sql`(

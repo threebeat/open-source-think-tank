@@ -1,6 +1,6 @@
 # Phase 3 architecture — operational alpha
 
-**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2 schema + gated repositories implemented**; **3.3 capabilities, invitations, and first-administrator bootstrap implemented** (topic authoring UI begins in 3.4)  
+**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.3 implemented**; **3.4 topic authoring in progress** (publication remains 3.6)  
 **Plan:** [phase-3-plan.md](./phase-3-plan.md)  
 **ADRs:** [0008](./decisions/0008-phase-3-operational-alpha-contract.md), [0009](./decisions/0009-phase-3-operational-slice-corrections.md)  
 **Foundation:** [architecture-phase-2.md](./architecture-phase-2.md), ADRs 0002–0005, capability matrix, audit registry
@@ -284,6 +284,18 @@ Implemented in Package 3.3. Summary (full runbook in [secrets-and-operations.md]
 7. Later administrators use ordinary `roles.grant_platform`. Public-demo never constructs this path.
 
 Owner-run interim limitation: operator self-attestation is not independent third-party verification ([open-questions.md](./open-questions.md) OQ21).
+
+---
+
+## 10b. 3.3 follow-ups closed at start of 3.4
+
+1. **Invitation CSRF:** `POST /api/staff/invitations` calls `assertCsrfSafe` after the public-demo mode check and before body parsing (in addition to the network proxy).
+2. **Pending-contact uniqueness:** migration `0015_pending_participant_invite_unique` enforces at most one `pending` + `participant` invitation per `lower(intended_contact_channel)`; revoke-and-reissue remains; uniqueness races return a safe conflict without leaking contact or token.
+3. **Assurance kinds:** L2/L3/L4 constants live in `src/lib/verification/assertion-kinds.ts`; `seed-assurance.ts` remains seed/test-only (`seedApprovedAssertions`). Operator bootstrap imports kinds from the production-neutral module.
+
+## 10c. Topic authoring service boundary (3.4)
+
+Package 3.4 owns gated administrator create / metadata-update / open / begin-review / reopen / pause / archive over the existing topic schema. Publication remains read-only (`topics.publish` lands in 3.6). Drafts are never exposed on public `/topics` fixture routes. Public-demo `/workspace/topics*` returns 404 before constructing Auth.js or PostgreSQL.
 
 ---
 

@@ -14,7 +14,7 @@ import {
   blockingActivationCounselGates,
 } from "@/lib/counsel/dispositions";
 import { hasCurrentAssentForDocument } from "@/lib/assent/status";
-import { L2_KINDS, L3_KINDS } from "@/lib/verification/seed-assurance";
+import { L2_KINDS, L3_KINDS } from "@/lib/verification/assertion-kinds";
 import type { VerificationAssertionKind } from "@/lib/adapters/verification";
 
 export type ActivationGateSnapshot = {
