@@ -2,9 +2,9 @@
 
 **Status:** Active work-package source for Phase 2  
 **Baseline:** Phase 1 demonstration release tag [`phase-1-demonstration`](https://github.com/threebeat/open-source-think-tank/releases/tag/phase-1-demonstration) at commit `33ff0cc`  
-**Current package:** **2.12 — implementation complete; readiness blocked.** See [phase-2-handoff.md](./phase-2-handoff.md). Do **not** declare 2.12 complete or tag a foundation release until gated E2E (including account/staff axe) is green **and** the documented counsel review of data maps/active documents is recorded in §7. Managed Postgres host and production email vendor remain blocked pending addenda.
+**Current package:** **2.12 — implementation complete; readiness blocked on counsel.** Gated E2E (incl. account/staff axe) recorded green in [phase-2-handoff.md](./phase-2-handoff.md). Do **not** declare 2.12 complete or tag a foundation release until readiness counsel dispositions in §7 / `dispositions.ts` are `cleared` or `conditionally_cleared`. Managed Postgres host and production email vendor remain blocked pending addenda.
 
-Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [open-questions.md](./open-questions.md), [legal-questions.md](./legal-questions.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [phase-1-handoff.md](./phase-1-handoff.md), [phase-2-handoff.md](./phase-2-handoff.md)
+Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [open-questions.md](./open-questions.md), [legal-questions.md](./legal-questions.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [phase-1-handoff.md](./phase-1-handoff.md), [phase-2-handoff.md](./phase-2-handoff.md), [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md)
 
 ---
 
@@ -142,14 +142,17 @@ Production participant data must never be placed in prompts, fixtures, logs, scr
 
 Every change to status must fill: status, scope and conditions, recorded date, recorded by, counsel source or decision-record link (or explicit “none — still blocking”), project-owner approval (name/date or “n/a”), and affected packages. Do not silently change product language first.
 
+Counsel review packet for readiness tag: [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md) (issued 2026-08-10). Rows below remain **blocking** until counsel returns dispositions; server mirror: `src/lib/counsel/dispositions.ts`.
+
 | Gate | Linked questions | Status | Scope and conditions | Recorded date | Recorded by | Counsel source or decision-record link | Project-owner approval | Affected packages |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Statutory membership vs program participation | LQ3, OQ2 | blocking | Full gate; no product claim of statutory membership | 2026-08-09 | Phase 2.1 contract author | none — still blocking | n/a | 2.1, 2.4, 2.5, 2.8 |
-| Formation or fiscal sponsorship | LQ1–2 | blocking | Full gate; no entity/tax claims | 2026-08-09 | Phase 2.1 contract author | none — still blocking | n/a | 2.1–2.2, 2.12 |
-| Account and council authority | LQ4–5, OQ1, OQ3 | blocking | Full gate; recommendations only; no board-binding claims | 2026-08-09 | Phase 2.1 contract author | none — still blocking | n/a | 2.5, 2.8, 2.9 |
-| Electronic assent | LQ8–9 | blocking | Full gate; no “not legally reviewed” doc may become active assent | 2026-08-09 | Phase 2.1 contract author | none — still blocking | n/a | 2.6, 2.8 |
-| Eligibility and geography | LQ12–14 | blocking | Full gate; no national-mandate or settled residency rule | 2026-08-09 | Phase 2.1 contract author | none — still blocking | n/a | 2.7, 2.8 |
-| Political-opinion and verification-data handling | LQ10–11 | blocking | Full gate; keep identity store separated from opinion/pseudonym maps | 2026-08-09 | Phase 2.1 contract author | none — still blocking | n/a | 2.7, 2.9–2.11 |
+| Data map and retention schedule | LQ10–11, OQ15 | blocking | Full gate; data map/retention are planning aids only — not a privacy policy or legal retention schedule | 2026-08-10 | Phase 2 readiness engineering | [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md) — awaiting counsel disposition return | n/a | 2.11, 2.12 |
+| Statutory membership vs program participation | LQ3, OQ2 | blocking | Full gate; no product claim of statutory membership — use account holder / community participant | 2026-08-10 | Phase 2 readiness engineering | [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md) — awaiting counsel disposition return | n/a | 2.1, 2.4, 2.5, 2.8, 2.12 |
+| Formation or fiscal sponsorship | LQ1–2 | blocking | Full gate; no entity/tax claims | 2026-08-10 | Phase 2 readiness engineering | [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md) — awaiting counsel disposition return | n/a | 2.1–2.2, 2.12 |
+| Account and council authority | LQ4–5, OQ1, OQ3 | blocking | Full gate; recommendations only; no board-binding claims | 2026-08-10 | Phase 2 readiness engineering | [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md) — awaiting counsel disposition return | n/a | 2.5, 2.8, 2.9, 2.12 |
+| Electronic assent | LQ8–9 | blocking | Full gate; no “not legally reviewed” doc may become active assent for real accounts | 2026-08-10 | Phase 2 readiness engineering | [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md) — awaiting counsel disposition return | n/a | 2.6, 2.8, 2.12 |
+| Eligibility and geography | LQ12–14 | blocking | Full gate; no national-mandate or settled residency rule | 2026-08-10 | Phase 2 readiness engineering | [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md) — awaiting counsel disposition return | n/a | 2.7, 2.8, 2.12 |
+| Political-opinion and verification-data handling | LQ10–11 | blocking | Full gate; keep identity store separated from opinion/pseudonym maps; no live consultation in Phase 2 | 2026-08-10 | Phase 2 readiness engineering | [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md) — awaiting counsel disposition return | n/a | 2.7, 2.9–2.12 |
 
 ### How gates constrain engineering
 

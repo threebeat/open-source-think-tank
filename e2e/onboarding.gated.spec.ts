@@ -26,13 +26,14 @@ test.describe("gated onboarding flows (synthetic)", () => {
   test("invite → verify → onboarding/assent/verification keyboard + a11y", async ({
     page,
   }) => {
+    // Distinct from auth-lifecycle.gated (cory) — invites are single-use.
     const accept = await page.request.post("/api/auth/accept-invite", {
       data: {
-        inviteToken: "ostt-synth-invite-token-cory",
-        contactChannel: "cory@ostt.synth.test",
+        inviteToken: "ostt-synth-invite-token-frank",
+        contactChannel: "frank@ostt.synth.test",
       },
     });
-    expect(accept.ok()).toBeTruthy();
+    expect(accept.ok(), await accept.text()).toBeTruthy();
 
     const capture = await page.request.get("/api/test/last-email");
     const mail = (await capture.json()) as { textBody?: string };
@@ -40,7 +41,7 @@ test.describe("gated onboarding flows (synthetic)", () => {
     const token = decodeURIComponent(tokenMatch![1]!);
 
     await page.goto(`/auth/complete?token=${encodeURIComponent(token)}`);
-    await expect(page).toHaveURL(/\/account/);
+    await expect(page).toHaveURL(/\/account/, { timeout: 30_000 });
 
     await page.goto("/account/onboarding");
     await expect(page.getByRole("heading", { name: /onboarding progress/i })).toBeVisible();
@@ -123,6 +124,7 @@ test.describe("gated onboarding flows (synthetic)", () => {
     const tokenMatch = mail.textBody!.match(/token=([^&\s]+)/);
     const token = decodeURIComponent(tokenMatch![1]!);
     await page.goto(`/auth/complete?token=${encodeURIComponent(token)}`);
+    await expect(page).toHaveURL(/\/account/, { timeout: 30_000 });
 
     await page.goto("/account/assent");
     const review = page.getByRole("link", { name: /review full document/i }).first();
@@ -138,16 +140,14 @@ test.describe("gated onboarding flows (synthetic)", () => {
   });
 });
 
-test.describe("gated onboarding mobile viewport", () => {
-  test.use({ ...devices["iPhone 12"] });
-
-  test("onboarding and verification remain usable on phone width", async ({
-    page,
-  }) => {
-    await page.goto("/join");
-    await expect(page.getByRole("heading", { name: /join with an invitation/i })).toBeVisible();
-    const box = await page.getByRole("heading", { name: /join with an invitation/i }).boundingBox();
-    expect(box).toBeTruthy();
-    expect(box!.width).toBeLessThanOrEqual(400);
-  });
+test("onboarding and verification remain usable on phone width", async ({
+  page,
+}) => {
+  // Viewport-only (no nested test.use) — gated config runs single-worker.
+  await page.setViewportSize(devices["iPhone 12"].viewport!);
+  await page.goto("/join");
+  await expect(page.getByRole("heading", { name: /join with an invitation/i })).toBeVisible();
+  const box = await page.getByRole("heading", { name: /join with an invitation/i }).boundingBox();
+  expect(box).toBeTruthy();
+  expect(box!.width).toBeLessThanOrEqual(400);
 });

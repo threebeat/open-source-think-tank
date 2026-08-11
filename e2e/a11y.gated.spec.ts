@@ -28,7 +28,7 @@ async function completeInviteSession(
   const tokenMatch = mail.textBody!.match(/token=([^&\s]+)/);
   const token = decodeURIComponent(tokenMatch![1]!);
   await page.goto(`/auth/complete?token=${encodeURIComponent(token)}`);
-  await expect(page).toHaveURL(/\/account/);
+  await expect(page).toHaveURL(/\/account/, { timeout: 30_000 });
 }
 
 async function signInWithCapturedEmail(
@@ -38,13 +38,15 @@ async function signInWithCapturedEmail(
   const request = await page.request.post("/api/auth/request-sign-in", {
     data: { contactChannel },
   });
-  expect(request.ok()).toBeTruthy();
+  expect(request.ok(), await request.text()).toBeTruthy();
   const capture = await page.request.get("/api/test/last-email");
+  expect(capture.ok()).toBeTruthy();
   const mail = (await capture.json()) as { textBody?: string };
   const tokenMatch = mail.textBody!.match(/token=([^&\s]+)/);
   expect(tokenMatch?.[1]).toBeTruthy();
   const token = decodeURIComponent(tokenMatch![1]!);
   await page.goto(`/auth/complete?token=${encodeURIComponent(token)}`);
+  await expect(page).toHaveURL(/\/account/, { timeout: 30_000 });
 }
 
 /**

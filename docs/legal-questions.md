@@ -6,7 +6,7 @@ This document lists decisions that require professional advice on Tennessee nonp
 
 **Related:** [product-charter.md](./product-charter.md), [open-questions.md](./open-questions.md), [phase-2-plan.md](./phase-2-plan.md) (counsel disposition gates)
 
-Phase 2 records disposition (or explicit blocking status) for membership, formation, authority, assent, geography, and political-opinion / verification handling in [phase-2-plan.md](./phase-2-plan.md) §7. Nothing there invents counsel answers.
+Phase 2 records disposition (or explicit blocking status) for membership, formation, authority, assent, geography, political-opinion / verification handling, and data-map/retention in [phase-2-plan.md](./phase-2-plan.md) §7 and `src/lib/counsel/dispositions.ts`. Readiness review packet: [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md). Nothing there invents counsel answers.
 
 ---
 

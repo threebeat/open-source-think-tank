@@ -15,6 +15,7 @@ export default defineConfig({
   testDir: "./e2e",
   testMatch: /\.gated\.spec\.ts$/,
   fullyParallel: false,
+  workers: 1,
   forbidOnly: !!process.env.CI,
   retries: 0,
   use: {

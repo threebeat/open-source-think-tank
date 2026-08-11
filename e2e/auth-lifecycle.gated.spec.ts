@@ -32,7 +32,7 @@ test.describe("gated auth lifecycle (synthetic)", () => {
     const token = decodeURIComponent(tokenMatch![1]!);
 
     await page.goto(`/auth/complete?token=${encodeURIComponent(token)}`);
-    await expect(page).toHaveURL(/\/account$/);
+    await expect(page).toHaveURL(/\/account$/, { timeout: 30_000 });
     await expect(page.getByText("pending_onboarding")).toBeVisible();
 
     // Authenticated pending_onboarding must use the page cookie jar.

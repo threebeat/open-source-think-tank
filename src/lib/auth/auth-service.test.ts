@@ -287,6 +287,12 @@ describe("AuthService lifecycle (synthetic)", () => {
     ).toThrow(/activateAccount \(Work Package 2\.8\)/);
   });
 
+  it("allows same-state active for sign-in session establishment", () => {
+    expect(() =>
+      assertAllowedLifecycleTransition("active", "active"),
+    ).not.toThrow();
+  });
+
   it("does not leave open challenges stranded after successful completion", async () => {
     const open = await db
       .select()
