@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 
 import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { PageHeader } from "@/components/PageHeader";
@@ -7,14 +8,34 @@ import { MainContainer } from "@/components/layout/MainContainer";
 import { TopicsExplorer } from "@/features/topics/TopicsExplorer";
 import { listTopics } from "@/domain/selectors";
 import { fixtureCatalog } from "@/fixtures";
+import { resolveAppMode } from "@/lib/env/app-mode";
 
-export const metadata: Metadata = {
-  title: "Topics",
-  description:
-    "Browse synthetic Tennessee-oriented demonstration topics with local search and filters.",
-};
+// Dual-mode: gated reads use connection()/DB; conditional segment config is
+// not statically analyzable, so keep these routes request-time in both modes.
+export const dynamic = "force-dynamic";
 
-export default function TopicsPage() {
+export async function generateMetadata(): Promise<Metadata> {
+  if (resolveAppMode() === "gated") {
+    await connection();
+    const { gatedTopicsMetadata } = await import("./gated-published-topics");
+    return gatedTopicsMetadata;
+  }
+  return {
+    title: "Topics",
+    description:
+      "Browse synthetic Tennessee-oriented demonstration topics with local search and filters.",
+  };
+}
+
+export default async function TopicsPage() {
+  if (resolveAppMode() === "gated") {
+    await connection();
+    const { default: GatedPublishedTopicsPage } = await import(
+      "./gated-published-topics"
+    );
+    return <GatedPublishedTopicsPage />;
+  }
+
   const topics = listTopics(fixtureCatalog);
 
   return (

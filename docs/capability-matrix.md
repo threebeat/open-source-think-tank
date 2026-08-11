@@ -44,17 +44,17 @@ Default decision: **deny**.
 | `topics.create` | active | administrator | — | Creates draft topic (`publication_status = unpublished`) — 3.3+ |
 | `topics.update` | active | administrator | — | Edit draft/meta; not a substitute for publish |
 | `topics.open` | active | administrator | — | → `open_for_submissions` |
-| `topics.publish` | active | administrator | — | Sets `publication_status = published` (independent of pause) |
+| `topics.publish` | active | administrator | — | Sets `publication_status = published` (independent of pause); readiness in 3.6 |
 | `topics.pause` | active | administrator | — | Operational pause; **does not** change publication status |
 | `topics.archive` | active | administrator | — | → `archived`; reason required |
 | `claims.submit` | active | participant | — | Create/submit own claims |
 | `claims.edit_own` | active | participant | own (service checks) | Authz establishes eligibility only; ownership verified in transaction |
 | `claims.withdraw_own` | active | participant | own (service checks) | History retained |
-| `claims.review` | active | reviewer or administrator | — | Claim workflow decisions |
+| `claims.review` | active | reviewer or administrator | — | Claim workflow decisions (3.6 queues/services) |
 | `evidence.submit` | active | participant | — | Source URL + metadata only |
 | `evidence.edit_own` | active | participant | own (service checks) | No remote fetch |
 | `evidence.withdraw_own` | active | participant | own (service checks) | History retained |
-| `evidence.review` | active | reviewer or administrator | — | Workflow + quality decisions |
+| `evidence.review` | active | reviewer or administrator | — | Workflow + independent quality decisions (3.6) |
 | `conflicts.disclose_own` | active | participant | own (service checks) | Required on submit path in 3.5 |
 | `moderation.review_submission` | active | moderator or administrator | — | Visibility hold/hide/restore-to-visible; moderators do **not** get pseudonym reverse-map |
 | `invites.issue` | active | administrator | — | Hashed token at rest; raw link returned once; never public-demo |

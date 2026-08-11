@@ -13,7 +13,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "npm run build && playwright test",
-    "test:e2e:gated": "npm run db:up && node scripts/gated-e2e-prepare.mjs && npm run build && playwright test -c playwright.gated.config.ts",
+    "test:e2e:gated": "npm run db:up && node scripts/gated-e2e-prepare.mjs && node scripts/gated-e2e-build.mjs && playwright test -c playwright.gated.config.ts",
     "db:seed": "tsx scripts/seed-synthetic.ts",
     "operator:bootstrap": "tsx scripts/operator-bootstrap.ts",
     "capture:screenshots": "node scripts/capture-presentation-backup.mjs",

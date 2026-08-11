@@ -1,6 +1,6 @@
 # Phase 3 architecture — operational alpha
 
-**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.5 implemented** (participant submissions + TN geography + public-demo discovery/evidence inventory; publication remains 3.6)  
+**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.6 implemented** (first operational vertical slice includes staff review, independent evidence quality, publish, and gated anonymous allowlisted projection; public-demo remains fixture-backed)  
 **Plan:** [phase-3-plan.md](./phase-3-plan.md)  
 **ADRs:** [0008](./decisions/0008-phase-3-operational-alpha-contract.md), [0009](./decisions/0009-phase-3-operational-slice-corrections.md)  
 **Foundation:** [architecture-phase-2.md](./architecture-phase-2.md), ADRs 0002–0005, capability matrix, audit registry
@@ -146,7 +146,7 @@ Allowlisted fields for gated anonymous/public topic reads when `publication_stat
 | Revision summaries safe for public (deepened in 3.7/3.10) | Invite tokens, verification cases |
 | Allowlisted audit summaries (existing 2.9 projectors) | Raw privatePayload |
 
-Projection builder lives in a pure module testable without React. **Minimal path wires in 3.6**; **3.10** completes and hardens.
+Projection builder lives in a pure module (`src/lib/topics/public-projection.ts`) testable without React. **Minimal path is wired in 3.6** via mode-branched `/topics` + `src/lib/topics/gated-public-read.ts`; **3.10** completes and hardens.
 
 ---
 
@@ -161,9 +161,13 @@ Projection builder lives in a pure module testable without React. **Minimal path
 | `/workspace/topics/new` | Create topic | `topics.create` |
 | `/workspace/topics` | List topics (workflow + publication columns) | `topics.create` (admin gate) |
 | `/workspace/topics/new` | Create draft | `topics.create` |
-| `/workspace/topics/[slug]` | Edit draft metadata; open/review/reopen/pause/archive | `topics.*` (no publish in 3.4) |
+| `/workspace/topics/[slug]` | Edit draft metadata; open/review/reopen/pause/archive; publish readiness + publish | `topics.*` including `topics.publish` |
 | `/api/workspace/topics*` | Create/list/update/transition APIs | matching `topics.*`; public-demo 404 |
 | `/workspace/topics/[slug]/submit` | Claim/evidence submit with basic relationship | `claims.submit`, `evidence.submit` |
+| `/workspace/submissions*` | Own submissions list/detail; public rationales; edit/resubmit | ownership + submit/edit/withdraw |
+| `/workspace/review*` | Claim/evidence review queues and decisions | `claims.review`, `evidence.review` |
+| `/api/workspace/review*` | Review list/detail/mutations | matching review caps; public-demo 404 |
+| `/api/workspace/topics/[id]/publish` | Publish readiness GET + publish POST | `topics.publish`; public-demo 404 |
 | `/workspace/review` | Claim and evidence review queues | `claims.review`, `evidence.review` |
 | `/workspace/moderation` | Visibility hold/hide/restore-to-visible | `moderation.review_submission` |
 | `/staff/invitations` + `POST/GET /api/staff/invitations` | Issue/list invites (hash-only; one-time raw link; public-demo 404) | `invites.issue` |
@@ -216,7 +220,7 @@ Register in implementing packages (unregistered actions must fail):
 | --- | --- |
 | `operator.*` | `operator.bootstrap_invitation_issued`, `operator.bootstrap_verification_recorded`, `operator.bootstrap_administrator` |
 | `invites.*` | `invites.issued`, `invites.revoked` |
-| `topics.*` | **3.4 registered:** `topics.created`, `topics.updated`, `topics.opened`, `topics.review_started`, `topics.reopened`, `topics.paused`, `topics.archived`. **Later:** `topics.published` (3.6) |
+| `topics.*` | **Registered:** `topics.created`, `topics.updated`, `topics.opened`, `topics.review_started`, `topics.reopened`, `topics.paused`, `topics.archived`, **`topics.published` (3.6)** |
 | `claims.*` | `claims.draft_created`, `claims.submitted`, `claims.changes_requested`, `claims.accepted`, `claims.rejected`, `claims.withdrawn`, `claims.revision_recorded` |
 | `evidence.*` | parallel to claims + `evidence.quality_decided`, `evidence.quality_revised` |
 | `conflicts.*` | `conflicts.disclosed`, `conflicts.updated` |
@@ -310,7 +314,7 @@ Owner-run interim limitation: operator self-attestation is not independent third
 | `/workspace/topics*` | Administrator UI; public-demo `notFound()` before gated imports |
 | `/api/workspace/topics*` | CSRF on mutations; 401/403/404/409; `Cache-Control: no-store` |
 
-Publication remains read-only (`topics.publish` lands in 3.6). Pausing or archiving never changes `publication_status`. Drafts are never exposed on public `/topics` fixture routes. Stale expected-state updates return conflict without emitting audit.
+Publication is available via `topics.publish` (3.6). Pausing or archiving never changes `publication_status`. Drafts and unpublished topics are never exposed on gated anonymous `/topics` reads. Public-demo `/topics` remain fixture-backed and must not static-import gated DB/auth/review modules. Stale expected-state updates return conflict without emitting audit.
 
 ---
 

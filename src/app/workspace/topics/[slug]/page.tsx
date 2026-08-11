@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { PageHeader } from "@/components/PageHeader";
 import { TopicEditForm } from "@/components/workspace/TopicEditForm";
+import { TopicPublishControls } from "@/components/workspace/TopicPublishControls";
 import { TopicTransitionControls } from "@/components/workspace/TopicTransitionControls";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { MainContainer } from "@/components/layout/MainContainer";
@@ -57,6 +58,24 @@ export default async function WorkspaceTopicDetailPage({ params }: PageProps) {
   }
   const topic = topicResult.value;
 
+  const canPublish = (
+    await authorizeCapability(db, principal, "topics.publish")
+  ).ok;
+  let readiness: {
+    ready: boolean;
+    blockers: Array<{ code: string; message: string }>;
+  } = { ready: false, blockers: [] };
+  if (canPublish && topic.publicationStatus === "unpublished") {
+    const { evaluatePublishReadiness } = await import("@/lib/topics/publish");
+    const result = await evaluatePublishReadiness(db, topic.id);
+    if (result.ok) {
+      readiness = {
+        ready: result.value.ready,
+        blockers: result.value.blockers,
+      };
+    }
+  }
+
   return (
     <MainContainer className="space-y-8">
       <Breadcrumbs
@@ -71,9 +90,9 @@ export default async function WorkspaceTopicDetailPage({ params }: PageProps) {
         title={topic.title}
         description="Operational workflow and publication status are separate. This record is not enacted policy, law, or board adoption."
       />
-      <DisclosureNotice title="Publication is read-only in 3.4" tone="caution">
-        Gated publication lands in Package 3.6. There is no Publish button here.
-        Pause and archive never change publication status.
+      <DisclosureNotice title="Publication is independent of pause" tone="neutral">
+        Publishing flips publication status only. Pause and archive never change
+        publication status. Unpublish is out of scope for Package 3.6.
       </DisclosureNotice>
 
       <dl className="grid gap-4 text-sm sm:grid-cols-2">
@@ -142,6 +161,23 @@ export default async function WorkspaceTopicDetailPage({ params }: PageProps) {
           workflowState={topic.workflowState}
         />
       </section>
+
+      {canPublish ? (
+        <section className="space-y-3" aria-labelledby="topic-publish-heading">
+          <h2
+            id="topic-publish-heading"
+            className="font-heading text-xl text-foreground"
+          >
+            Publish
+          </h2>
+          <TopicPublishControls
+            topicId={topic.id}
+            ready={readiness.ready}
+            blockers={readiness.blockers}
+            publicationStatus={topic.publicationStatus}
+          />
+        </section>
+      ) : null}
     </MainContainer>
   );
 }

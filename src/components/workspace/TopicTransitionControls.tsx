@@ -41,8 +41,8 @@ export function TopicTransitionControls({
   if (actions.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        No further operational transitions are available from the current state
-        in Package 3.4. Publication remains a later package.
+        No further operational transitions are available from the current state.
+        Publication is controlled separately on this page when authorized.
       </p>
     );
   }

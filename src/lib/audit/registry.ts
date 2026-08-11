@@ -622,6 +622,152 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
         .strict() as z.ZodType<Record<string, unknown>>,
     },
   ),
+
+  // Staff review + publish (3.6) — no public projectors; no body/private notes
+  "claims.changes_requested": def(
+    "claims.changes_requested",
+    "Claim changes requested by reviewer",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          claimId: z.string(),
+          topicId: z.string(),
+          reviewId: z.string(),
+          capability: z.literal("claims.review"),
+          previousWorkflowState: z.literal("submitted"),
+          nextWorkflowState: z.literal("changes_requested"),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "claims.accepted": def("claims.accepted", "Claim accepted by reviewer", {
+    requireActorAccount: true,
+    payloadSchema: z
+      .object({
+        claimId: z.string(),
+        topicId: z.string(),
+        reviewId: z.string(),
+        capability: z.literal("claims.review"),
+        previousWorkflowState: z.literal("submitted"),
+        nextWorkflowState: z.literal("accepted"),
+        actorAccountId: z.string(),
+      })
+      .strict() as z.ZodType<Record<string, unknown>>,
+  }),
+  "claims.rejected": def("claims.rejected", "Claim rejected by reviewer", {
+    requireActorAccount: true,
+    payloadSchema: z
+      .object({
+        claimId: z.string(),
+        topicId: z.string(),
+        reviewId: z.string(),
+        capability: z.literal("claims.review"),
+        previousWorkflowState: z.literal("submitted"),
+        nextWorkflowState: z.literal("rejected"),
+        actorAccountId: z.string(),
+      })
+      .strict() as z.ZodType<Record<string, unknown>>,
+  }),
+  "evidence.changes_requested": def(
+    "evidence.changes_requested",
+    "Evidence changes requested by reviewer",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          evidenceSubmissionId: z.string(),
+          topicId: z.string(),
+          reviewId: z.string(),
+          capability: z.literal("evidence.review"),
+          previousWorkflowState: z.literal("submitted"),
+          nextWorkflowState: z.literal("changes_requested"),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "evidence.accepted": def(
+    "evidence.accepted",
+    "Evidence workflow accepted by reviewer",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          evidenceSubmissionId: z.string(),
+          topicId: z.string(),
+          reviewId: z.string(),
+          capability: z.literal("evidence.review"),
+          previousWorkflowState: z.literal("submitted"),
+          nextWorkflowState: z.literal("accepted"),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "evidence.rejected": def(
+    "evidence.rejected",
+    "Evidence workflow rejected by reviewer",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          evidenceSubmissionId: z.string(),
+          topicId: z.string(),
+          reviewId: z.string(),
+          capability: z.literal("evidence.review"),
+          previousWorkflowState: z.literal("submitted"),
+          nextWorkflowState: z.literal("rejected"),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "evidence.quality_decided": def(
+    "evidence.quality_decided",
+    "Evidence quality decided by reviewer",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          evidenceSubmissionId: z.string(),
+          topicId: z.string(),
+          reviewId: z.string(),
+          capability: z.literal("evidence.review"),
+          previousQualityStatus: z.string(),
+          nextQualityStatus: z.enum([
+            "accepted",
+            "limited",
+            "disputed",
+            "rejected",
+          ]),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "topics.published": def("topics.published", "Topic published", {
+    requireActorAccount: true,
+    payloadSchema: z
+      .object({
+        topicId: z.string(),
+        capability: z.literal("topics.publish"),
+        previousPublicationStatus: z.literal("unpublished"),
+        nextPublicationStatus: z.literal("published"),
+        unchangedWorkflowState: z.string(),
+        actorAccountId: z.string(),
+        readinessSummary: z
+          .object({
+            acceptedVisibleClaimCount: z.number().int().nonnegative(),
+            linkedAcceptedVisibleEvidenceCount: z.number().int().nonnegative(),
+            includedClaimIds: z.array(z.string()),
+            includedEvidenceIds: z.array(z.string()),
+          })
+          .strict(),
+      })
+      .strict() as z.ZodType<Record<string, unknown>>,
+  }),
 };
 
 export type RegisteredAuditAction = keyof typeof AUDIT_EVENT_REGISTRY;
