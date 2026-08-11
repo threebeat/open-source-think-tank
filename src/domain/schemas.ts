@@ -9,10 +9,12 @@ import {
   PROPOSAL_STATES,
   SOURCE_TYPES,
   COUNCIL_ROLES,
+  TOPIC_DISCOVERY_STATES,
   TOPIC_STAGES,
   TOPIC_STATUSES,
   VOTE_CHOICES,
 } from "@/domain/status";
+import { TENNESSEE_STATE_CODE } from "@/lib/geography/tennessee-counties";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}/, "Expected ISO date");
 
@@ -31,6 +33,11 @@ export const topicSchema = z.object({
   scope: z.string().min(1),
   stage: z.enum(TOPIC_STAGES),
   status: z.enum(TOPIC_STATUSES),
+  /** Public-demo discovery only — not gated workflow_state or publication_status. */
+  discoveryState: z.enum(TOPIC_DISCOVERY_STATES),
+  jurisdictionLevel: z.enum(["statewide", "county"]),
+  stateCode: z.literal(TENNESSEE_STATE_CODE),
+  countyFips: z.string().regex(/^\d{5}$/).nullable(),
   subjectTags: z.array(z.string().min(1)).min(1),
   claimIds: z.array(z.string().min(1)),
   changelog: z.array(topicChangelogEntrySchema),

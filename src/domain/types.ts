@@ -40,6 +40,7 @@ export type {
   DecisionOutcome,
   EvidenceReviewStatus,
   ProposalState,
+  TopicDiscoveryState,
   TopicStage,
   TopicStatus,
   VoteChoice,

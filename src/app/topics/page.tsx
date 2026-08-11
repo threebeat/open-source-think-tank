@@ -11,7 +11,7 @@ import { fixtureCatalog } from "@/fixtures";
 export const metadata: Metadata = {
   title: "Topics",
   description:
-    "Browse synthetic demonstration topics with local stage, subject, and status filters.",
+    "Browse synthetic Tennessee-oriented demonstration topics with local search and filters.",
 };
 
 export default function TopicsPage() {
@@ -25,12 +25,13 @@ export default function TopicsPage() {
       <PageHeader
         eyebrow="Synthetic fixtures only"
         title="Topics"
-        description="Searchable and filterable demonstration topics. Evidence quality stays separate from participant popularity."
+        description="Searchable Tennessee-oriented demonstration topics. Geography is a classification label only. Evidence quality stays separate from participant popularity."
       />
       <DisclosureNotice title="Not a live submissions inbox">
-        These topics are fixed synthetic fixtures for the Phase 1 demonstration.
-        Nothing here accepts real membership, real political-opinion data, or live
-        evidence uploads.
+        These topics are fixed synthetic fixtures. Real Tennessee and county names
+        are geographic labels only — the records are hypothetical and do not
+        describe actual Tennessee government action. Nothing here accepts real
+        membership, real political-opinion data, or live evidence uploads.
       </DisclosureNotice>
       <TopicsExplorer topics={topics} />
     </MainContainer>

@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 3 (packages 3.1–3.12)  
 **Baseline:** Phase 2 foundation at or after `a894317317f3ff1e80d0a3602df69e5b4d8cd589` (tag `phase-2-foundation` recorded in [phase-2-handoff.md](./phase-2-handoff.md))  
-**Current package:** **3.4 complete (awaiting human approval before 3.5).** Gated topic authoring (create/update/open/review/reopen/pause/archive) is implemented. Publication, participant submissions, review queues, moderation, and live Pol.is are not in this package.
+**Current package:** **3.5 complete (awaiting human approval before 3.6).** Gated participant claim/evidence submissions, Tennessee topic geography classification, and public-demo Tennessee discovery / evidence inventory interactivity are implemented. Review queues, publication, revision history, moderation UI, and gated workspace search/export remain later packages.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [phase-2-plan.md](./phase-2-plan.md), [phase-2-handoff.md](./phase-2-handoff.md), [architecture-phase-2.md](./architecture-phase-2.md), [architecture-phase-3.md](./architecture-phase-3.md), [capability-matrix.md](./capability-matrix.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [open-questions.md](./open-questions.md), [decisions/0006-phase-3-two-lane-sequencing.md](./decisions/0006-phase-3-two-lane-sequencing.md), [decisions/0007-alpha-test-interim-council-dispositions.md](./decisions/0007-alpha-test-interim-council-dispositions.md), [decisions/0008-phase-3-operational-alpha-contract.md](./decisions/0008-phase-3-operational-alpha-contract.md), [decisions/0009-phase-3-operational-slice-corrections.md](./decisions/0009-phase-3-operational-slice-corrections.md)
 
@@ -488,30 +488,32 @@ Still **forbidden in Phase 3** unless a future ADR + register update says otherw
 
 ### Work package 3.5 — Participant claim/evidence submissions
 
-**Status:** Not started.
+**Status:** Complete (awaiting human approval before 3.6).
 
-**Objective:** Active participants submit claims and evidence source URLs with **basic** supporting/counterevidence relationship, limitations, and conflict disclosure.
+**Objective:** Active participants submit claims and evidence source URLs with **basic** supporting/counterevidence relationship, limitations, and conflict disclosure. Owner-approved amendment also delivers Tennessee topic geography classification (not eligibility) and public-demo Tennessee discovery / evidence inventory interactivity over fixtures.
 
 **Prerequisites:** 3.4 topics can be `open_for_submissions`.
 
 **Implementation steps:**
 
-1. Submission forms in gated workspace for own claims/evidence.
-2. Persist URL + metadata only (title, organization, authorType, sourceType, limitations) and `claim_evidence_links.relationship` (`supporting` | `counterevidence`).
-3. Require `conflicts.disclose_own` fields on submit path.
-4. Enforce edit/withdraw ownership rules and workflow transitions in §5.2.
-5. Transaction: submission row + link + disclosure + audit.
-6. Tests for ownership, topic-state gates, relationship integrity, and Zod URL validation (syntax only).
+1. Submission forms in gated workspace for own claims/evidence (`/workspace/topics/[slug]/submit`, `/workspace/submissions`).
+2. Persist URL + metadata only (title, organization, authorType, sourceType, limitations) and `claim_evidence_links.relationship` (`supporting` | `counterevidence`). Never fetch URLs.
+3. Require `conflicts.disclose_own` on submit; attach one disclosure to the **claim** only (exactly-one-subject). “No known conflict” still stores a meaningful public summary.
+4. Enforce edit/withdraw ownership rules and workflow transitions in §5.2 (content edit in draft/changes_requested; withdraw retains rows).
+5. Transaction: claim + evidence + link + disclosure + allowlisted audits; fail closed on audit failure.
+6. Topic geography: `jurisdiction_level` / `state_code` / `county_fips` with TN-only authoring, checked-in 95-county FIPS reference, draft-only geography edits, statewide backfill in migration `0016`.
+7. Public-demo: `discoveryState` active|proposed; TopicsExplorer advanced search with URL query state; EvidenceInventory local sort/filter. Not gated DB search (3.11).
+8. Tests for ownership, topic-state gates, relationship integrity, Zod URL validation (syntax only), geography invariants, discovery filters, and evidence inventory.
 
-**Expected user-visible outcome:** Participant submits a claim with a source URL, supporting or counterevidence relationship, and disclosure while topic is open.
+**Expected user-visible outcome:** Participant submits a claim with a source URL, supporting or counterevidence relationship, and disclosure while topic is open. Public-demo visitors explore Tennessee-labeled synthetic topics and filter evidence inventories locally.
 
-**Authorization and audit:** `claims.submit` / `edit_own` / `withdraw_own`, `evidence.*` submit/edit/withdraw, `conflicts.disclose_own`.
+**Authorization and audit:** `claims.submit` / `edit_own` / `withdraw_own`, `evidence.*` submit/edit/withdraw, `conflicts.disclose_own`; audits `claims.submitted` / `evidence.submitted` / `conflicts.disclosed` / update / resubmit / withdraw variants.
 
-**Privacy/security/accessibility:** Submissions staff-visible; not visitor-public until published projection; accessible forms.
+**Privacy/security/accessibility:** Submissions staff-visible; not visitor-public until published projection; private disclosure detail never projected publicly; accessible forms; public-demo never loads gated runtime.
 
-**Tests and acceptance criteria:** Cannot submit on `draft`/`archived`/`paused`; cannot edit others’ drafts; no HTTP fetch of URL; relationship required when linking evidence to a claim.
+**Tests and acceptance criteria:** Cannot submit on `draft`/`archived`/`paused`/`under_review`; cannot edit others’ drafts; no HTTP fetch of URL; relationship required when linking evidence to a claim; proposed fixtures excluded until advanced opt-in; geography is classification only.
 
-**Non-goals:** Review rubric UI (3.6); richer comparison/revision history (3.7); moderation visibility UI (3.8).
+**Non-goals:** Review rubric UI (3.6); richer comparison/revision history (3.7); moderation visibility UI (3.8); ACL-protected gated workspace search/export (3.11).
 
 **Stop condition:** Human review before **3.6**.
 

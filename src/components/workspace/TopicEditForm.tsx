@@ -1,7 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useId, useState } from "react";
+
+import { TENNESSEE_COUNTIES } from "@/lib/geography/tennessee-counties";
 
 type TopicEditFormProps = {
   topicId: string;
@@ -9,6 +11,8 @@ type TopicEditFormProps = {
   initialQuestion: string;
   initialBackground: string;
   initialScope: string;
+  initialJurisdictionLevel: "statewide" | "county";
+  initialCountyFips: string | null;
   expectedUpdatedAt: string;
   editable: boolean;
 };
@@ -19,22 +23,30 @@ export function TopicEditForm({
   initialQuestion,
   initialBackground,
   initialScope,
+  initialJurisdictionLevel,
+  initialCountyFips,
   expectedUpdatedAt,
   editable,
 }: TopicEditFormProps) {
   const router = useRouter();
+  const errorSummaryId = useId();
   const [title, setTitle] = useState(initialTitle);
   const [question, setQuestion] = useState(initialQuestion);
   const [background, setBackground] = useState(initialBackground);
   const [scope, setScope] = useState(initialScope);
+  const [jurisdictionLevel, setJurisdictionLevel] = useState<
+    "statewide" | "county"
+  >(initialJurisdictionLevel);
+  const [countyFips, setCountyFips] = useState(initialCountyFips ?? "");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
   if (!editable) {
     return (
       <p className="text-sm text-muted-foreground">
-        Metadata editing is limited to draft topics in this package. Workflow
-        transitions do not edit title, question, background, or scope.
+        Metadata editing (including geography) is limited to draft topics.
+        Workflow transitions do not edit title, question, background, scope, or
+        geography.
       </p>
     );
   }
@@ -52,6 +64,9 @@ export function TopicEditForm({
           question,
           background,
           scope,
+          jurisdictionLevel,
+          stateCode: "TN",
+          countyFips: jurisdictionLevel === "county" ? countyFips : null,
           expectedUpdatedAt,
         }),
       });
@@ -64,11 +79,13 @@ export function TopicEditForm({
         } else {
           setError(data.error ?? "Could not update topic");
         }
+        document.getElementById(errorSummaryId)?.focus();
         return;
       }
       router.refresh();
     } catch {
       setError("Could not update topic");
+      document.getElementById(errorSummaryId)?.focus();
     } finally {
       setPending(false);
     }
@@ -78,6 +95,8 @@ export function TopicEditForm({
     <form onSubmit={onSubmit} className="max-w-2xl space-y-4" noValidate>
       {error ? (
         <div
+          id={errorSummaryId}
+          tabIndex={-1}
           className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
           role="alert"
         >
@@ -128,6 +147,50 @@ export function TopicEditForm({
           onChange={(event) => setScope(event.target.value)}
         />
       </label>
+
+      <fieldset className="space-y-3 rounded-md border border-border p-4">
+        <legend className="px-1 text-sm font-medium">
+          Topic geography (classification only)
+        </legend>
+        <p className="text-xs text-muted-foreground">
+          Changing geography does not change workflow or publication status, and
+          does not grant or deny any account capability.
+        </p>
+        <label className="block space-y-2 text-sm">
+          <span>Jurisdiction</span>
+          <select
+            className="w-full rounded-md border border-border bg-background px-3 py-2"
+            value={jurisdictionLevel}
+            onChange={(event) => {
+              const next = event.target.value as "statewide" | "county";
+              setJurisdictionLevel(next);
+              if (next === "statewide") setCountyFips("");
+            }}
+          >
+            <option value="statewide">Tennessee statewide</option>
+            <option value="county">Tennessee county</option>
+          </select>
+        </label>
+        {jurisdictionLevel === "county" ? (
+          <label className="block space-y-2 text-sm">
+            <span>County</span>
+            <select
+              className="w-full rounded-md border border-border bg-background px-3 py-2"
+              value={countyFips}
+              required
+              onChange={(event) => setCountyFips(event.target.value)}
+            >
+              <option value="">Select a county</option>
+              {TENNESSEE_COUNTIES.map((county) => (
+                <option key={county.fips} value={county.fips}>
+                  {county.name} County ({county.fips})
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+      </fieldset>
+
       <button
         type="submit"
         disabled={pending}

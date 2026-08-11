@@ -75,6 +75,8 @@ describe("topic authoring services (3.4)", () => {
       question: "What should change?",
       background: "Background for the draft.",
       scope: "Alpha test scope.",
+      jurisdictionLevel: "statewide",
+      countyFips: null,
     });
     expect(created.ok).toBe(true);
     if (!created.ok) return;
@@ -102,6 +104,8 @@ describe("topic authoring services (3.4)", () => {
       question: "Nope?",
       background: "Nope",
       scope: "Nope",
+      jurisdictionLevel: "statewide",
+      countyFips: null,
     });
     expect(denied.ok).toBe(false);
     if (!denied.ok) {
@@ -117,6 +121,8 @@ describe("topic authoring services (3.4)", () => {
       question: "q",
       background: "b",
       scope: "s",
+      jurisdictionLevel: "statewide",
+      countyFips: null,
     });
     expect(bad.ok).toBe(false);
 
@@ -127,6 +133,8 @@ describe("topic authoring services (3.4)", () => {
       question: "Q",
       background: "B",
       scope: "S",
+      jurisdictionLevel: "statewide",
+      countyFips: null,
     });
     expect(first.ok).toBe(true);
     const dup = await createTopic(db, {
@@ -136,6 +144,8 @@ describe("topic authoring services (3.4)", () => {
       question: "Q",
       background: "B",
       scope: "S",
+      jurisdictionLevel: "statewide",
+      countyFips: null,
     });
     expect(dup.ok).toBe(false);
     if (!dup.ok) {
@@ -152,6 +162,8 @@ describe("topic authoring services (3.4)", () => {
       question: "How do transitions work?",
       background: "Background",
       scope: "Scope",
+      jurisdictionLevel: "statewide",
+      countyFips: null,
     });
     expect(created.ok).toBe(true);
     if (!created.ok) return;
@@ -254,6 +266,8 @@ describe("topic authoring services (3.4)", () => {
       question: "Q",
       background: "B",
       scope: "S",
+      jurisdictionLevel: "statewide",
+      countyFips: null,
     });
     expect(created.ok).toBe(true);
     if (!created.ok) return;
@@ -307,6 +321,8 @@ describe("topic authoring services (3.4)", () => {
       question: "Q",
       background: "B",
       scope: "S",
+      jurisdictionLevel: "statewide",
+      countyFips: null,
     });
     expect(created.ok).toBe(true);
     if (!created.ok) return;
@@ -348,6 +364,8 @@ describe("topic authoring services (3.4)", () => {
       question: "Before?",
       background: "Before background",
       scope: "Before scope",
+      jurisdictionLevel: "statewide",
+      countyFips: null,
     });
     expect(created.ok).toBe(true);
     if (!created.ok) return;
@@ -359,6 +377,8 @@ describe("topic authoring services (3.4)", () => {
       question: "After?",
       background: "After background",
       scope: "After scope",
+      jurisdictionLevel: "statewide",
+      countyFips: null,
       expectedUpdatedAt: created.value.updatedAt.toISOString(),
     });
     expect(updated.ok).toBe(true);
@@ -380,6 +400,8 @@ describe("topic authoring services (3.4)", () => {
       question: "Nope",
       background: "Nope",
       scope: "Nope",
+      jurisdictionLevel: "statewide",
+      countyFips: null,
       expectedUpdatedAt: updated.value.updatedAt.toISOString(),
     });
     expect(blocked.ok).toBe(false);

@@ -167,6 +167,9 @@ describe("Phase 3.2 topic/claim/evidence model (PGlite)", () => {
       background: "Synthetic independence check.",
       scope: "Schema drill",
       createdByAccountId: "account-ostt-synth-staff-admin",
+      jurisdictionLevel: "statewide",
+      stateCode: "TN",
+      countyFips: null,
       synthetic: true,
       workflowState: "paused",
       publicationStatus: "published",
@@ -189,6 +192,9 @@ describe("Phase 3.2 topic/claim/evidence model (PGlite)", () => {
       background: "b",
       scope: "s",
       createdByAccountId: "account-ostt-synth-staff-admin",
+      jurisdictionLevel: "statewide",
+      stateCode: "TN",
+      countyFips: null,
       synthetic: true,
       workflowState: "open_for_submissions",
       publicationStatus: "published",
@@ -239,6 +245,9 @@ describe("Phase 3.2 topic/claim/evidence model (PGlite)", () => {
       background: "b",
       scope: "s",
       createdByAccountId: "account-ostt-synth-staff-admin",
+      jurisdictionLevel: "statewide",
+      stateCode: "TN",
+      countyFips: null,
       synthetic: true,
     });
     const topicB = await insertTopic(db, {
@@ -248,6 +257,9 @@ describe("Phase 3.2 topic/claim/evidence model (PGlite)", () => {
       background: "b",
       scope: "s",
       createdByAccountId: "account-ostt-synth-staff-admin",
+      jurisdictionLevel: "statewide",
+      stateCode: "TN",
+      countyFips: null,
       synthetic: true,
     });
     expect(topicA.ok && topicB.ok).toBe(true);
@@ -368,6 +380,9 @@ describe("Phase 3.2 topic/claim/evidence model (PGlite)", () => {
       background: "b",
       scope: "s",
       createdByAccountId: "account-ostt-synth-staff-admin",
+      jurisdictionLevel: "statewide",
+      stateCode: "TN",
+      countyFips: null,
       synthetic: true,
     });
     expect(topic.ok).toBe(true);
@@ -501,6 +516,9 @@ describe("Phase 3.2 topic/claim/evidence model (PGlite)", () => {
       background: "b",
       scope: "s",
       createdByAccountId: "account-ostt-synth-staff-admin",
+      jurisdictionLevel: "statewide",
+      stateCode: "TN",
+      countyFips: null,
       synthetic: true,
       workflowState: "under_review",
       publicationStatus: "unpublished",

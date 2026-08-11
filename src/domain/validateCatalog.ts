@@ -1,5 +1,6 @@
 import { fixtureCatalogSchema } from "@/domain/schemas";
 import type { FixtureCatalog } from "@/domain/types";
+import { validateTopicGeography } from "@/lib/geography/tennessee-counties";
 
 function assertId(
   collection: string,
@@ -153,6 +154,15 @@ export function collectRelationshipErrors(catalog: FixtureCatalog): string[] {
   );
 
   for (const topic of catalog.topics) {
+    const geography = validateTopicGeography({
+      jurisdictionLevel: topic.jurisdictionLevel,
+      stateCode: topic.stateCode,
+      countyFips: topic.countyFips,
+    });
+    if (!geography.ok) {
+      errors.push(`Topic ${topic.id} geography: ${geography.error}`);
+    }
+
     for (const claimId of topic.claimIds) {
       const claim = claimsById.get(claimId);
       if (!claim) {

@@ -951,6 +951,12 @@ export const topicPublicationStatusEnum = pgEnum("topic_publication_status", [
   "published",
 ]);
 
+/** Topic content geography — not eligibility, residency, or voting. */
+export const topicJurisdictionLevelEnum = pgEnum("topic_jurisdiction_level", [
+  "statewide",
+  "county",
+]);
+
 export const submissionWorkflowStateEnum = pgEnum("submission_workflow_state", [
   "draft",
   "submitted",
@@ -1026,6 +1032,15 @@ export const topics = pgTable(
     publicationStatus: topicPublicationStatusEnum("publication_status")
       .notNull()
       .default("unpublished"),
+    /**
+     * Content/jurisdiction taxonomy for the Tennessee release.
+     * Not an eligibility, residency, representation, or voting rule.
+     */
+    jurisdictionLevel: topicJurisdictionLevelEnum("jurisdiction_level")
+      .notNull()
+      .default("statewide"),
+    stateCode: text("state_code").notNull().default("TN"),
+    countyFips: text("county_fips"),
     createdByAccountId: text("created_by_account_id")
       .notNull()
       .references(() => accounts.id, { onDelete: "restrict" }),
@@ -1043,6 +1058,8 @@ export const topics = pgTable(
     uniqueIndex("topics_id_uidx").on(table.id),
     index("topics_workflow_idx").on(table.workflowState),
     index("topics_publication_idx").on(table.publicationStatus),
+    index("topics_jurisdiction_idx").on(table.jurisdictionLevel),
+    index("topics_county_fips_idx").on(table.countyFips),
     index("topics_created_by_idx").on(table.createdByAccountId),
     check(
       "topics_title_nonblank",
@@ -1063,6 +1080,18 @@ export const topics = pgTable(
     check(
       "topics_scope_nonblank",
       sql`char_length(btrim(${table.scope})) > 0`,
+    ),
+    check("topics_state_code_tn_only", sql`${table.stateCode} = 'TN'`),
+    check(
+      "topics_geography_county_requires_fips",
+      sql`(
+        (${table.jurisdictionLevel} = 'statewide' AND ${table.countyFips} IS NULL)
+        OR (
+          ${table.jurisdictionLevel} = 'county'
+          AND ${table.countyFips} IS NOT NULL
+          AND ${table.countyFips} ~ '^47[0-9]{3}$'
+        )
+      )`,
     ),
     check(
       "topics_published_requires_provenance",

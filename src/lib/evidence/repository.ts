@@ -166,6 +166,47 @@ export async function insertEvidenceSubmission(
   return { ok: true, value: mapEvidence(row) };
 }
 
+/**
+ * Expected-state content update. Does not change workflow or quality.
+ */
+export async function updateEvidenceContent(
+  db: GatedDb,
+  input: {
+    evidenceId: string;
+    expectedUpdatedAt: Date;
+    sourceUrl: string;
+    title: string;
+    organization: string;
+    authorType: EvidenceAuthorType;
+    sourceType: EvidenceSourceType;
+    limitations: string;
+  },
+): Promise<AdapterResult<EvidenceSubmissionRecord | null>> {
+  const denied = requireGatedPersistence();
+  if (denied) {
+    return denied;
+  }
+  const [row] = await db
+    .update(evidenceSubmissions)
+    .set({
+      sourceUrl: input.sourceUrl,
+      title: input.title,
+      organization: input.organization,
+      authorType: input.authorType,
+      sourceType: input.sourceType,
+      limitations: input.limitations,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(evidenceSubmissions.id, input.evidenceId),
+        eq(evidenceSubmissions.updatedAt, input.expectedUpdatedAt),
+      ),
+    )
+    .returning();
+  return { ok: true, value: row ? mapEvidence(row) : null };
+}
+
 export async function getEvidenceSubmissionById(
   db: GatedDb,
   id: string,

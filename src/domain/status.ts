@@ -15,6 +15,13 @@ export type TopicStage = (typeof TOPIC_STAGES)[number];
 export const TOPIC_STATUSES = ["open", "paused", "closed"] as const;
 export type TopicStatus = (typeof TOPIC_STATUSES)[number];
 
+/**
+ * Public-demo discovery visibility only.
+ * Not gated workflow_state and not publication_status.
+ */
+export const TOPIC_DISCOVERY_STATES = ["active", "proposed"] as const;
+export type TopicDiscoveryState = (typeof TOPIC_DISCOVERY_STATES)[number];
+
 export const EVIDENCE_REVIEW_STATUSES = [
   "pending",
   "accepted",

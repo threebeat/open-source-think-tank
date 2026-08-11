@@ -1,19 +1,36 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useId, useState } from "react";
+
+import { TENNESSEE_COUNTIES } from "@/lib/geography/tennessee-counties";
 
 type FieldErrors = Partial<
-  Record<"slug" | "title" | "question" | "background" | "scope" | "form", string>
+  Record<
+    | "slug"
+    | "title"
+    | "question"
+    | "background"
+    | "scope"
+    | "jurisdictionLevel"
+    | "countyFips"
+    | "form",
+    string
+  >
 >;
 
 export function TopicCreateForm() {
   const router = useRouter();
+  const errorSummaryId = useId();
   const [slug, setSlug] = useState("");
   const [title, setTitle] = useState("");
   const [question, setQuestion] = useState("");
   const [background, setBackground] = useState("");
   const [scope, setScope] = useState("");
+  const [jurisdictionLevel, setJurisdictionLevel] = useState<
+    "statewide" | "county"
+  >("statewide");
+  const [countyFips, setCountyFips] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [pending, setPending] = useState(false);
 
@@ -25,7 +42,16 @@ export function TopicCreateForm() {
       const response = await fetch("/api/workspace/topics", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ slug, title, question, background, scope }),
+        body: JSON.stringify({
+          slug,
+          title,
+          question,
+          background,
+          scope,
+          jurisdictionLevel,
+          stateCode: "TN",
+          countyFips: jurisdictionLevel === "county" ? countyFips : null,
+        }),
       });
       const data = (await response.json()) as {
         error?: string;
@@ -34,12 +60,14 @@ export function TopicCreateForm() {
       };
       if (!response.ok) {
         setErrors({ form: data.error ?? "Could not create topic" });
+        document.getElementById(errorSummaryId)?.focus();
         return;
       }
       router.push(`/workspace/topics/${data.slug}`);
       router.refresh();
     } catch {
       setErrors({ form: "Could not create topic" });
+      document.getElementById(errorSummaryId)?.focus();
     } finally {
       setPending(false);
     }
@@ -47,14 +75,12 @@ export function TopicCreateForm() {
 
   return (
     <form onSubmit={onSubmit} className="max-w-2xl space-y-4" noValidate>
-      <p id="topic-create-errors" className="sr-only" aria-live="polite">
-        {errors.form ?? ""}
-      </p>
       {errors.form ? (
         <div
+          id={errorSummaryId}
+          tabIndex={-1}
           className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
           role="alert"
-          aria-describedby="topic-create-errors"
         >
           {errors.form}
         </div>
@@ -149,6 +175,56 @@ export function TopicCreateForm() {
           {scope.length}/4000
         </span>
       </div>
+
+      <fieldset className="space-y-3 rounded-md border border-border p-4">
+        <legend className="px-1 text-sm font-medium">
+          Topic geography (classification only)
+        </legend>
+        <p className="text-xs text-muted-foreground">
+          Geography labels Tennessee jurisdiction for the topic content. It does
+          not set participant eligibility, residency, representation, or voting
+          rules.
+        </p>
+        <div className="space-y-2 text-sm">
+          <label htmlFor="topic-jurisdiction" className="block">
+            Jurisdiction
+          </label>
+          <select
+            id="topic-jurisdiction"
+            className="w-full rounded-md border border-border bg-background px-3 py-2"
+            value={jurisdictionLevel}
+            onChange={(event) => {
+              const next = event.target.value as "statewide" | "county";
+              setJurisdictionLevel(next);
+              if (next === "statewide") setCountyFips("");
+            }}
+          >
+            <option value="statewide">Tennessee statewide</option>
+            <option value="county">Tennessee county</option>
+          </select>
+        </div>
+        {jurisdictionLevel === "county" ? (
+          <div className="space-y-2 text-sm">
+            <label htmlFor="topic-county" className="block">
+              County
+            </label>
+            <select
+              id="topic-county"
+              className="w-full rounded-md border border-border bg-background px-3 py-2"
+              value={countyFips}
+              required
+              onChange={(event) => setCountyFips(event.target.value)}
+            >
+              <option value="">Select a county</option>
+              {TENNESSEE_COUNTIES.map((county) => (
+                <option key={county.fips} value={county.fips}>
+                  {county.name} County ({county.fips})
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
+      </fieldset>
 
       <p className="text-sm text-muted-foreground">
         New topics always start as Draft and Not published. Actor, creator, and
