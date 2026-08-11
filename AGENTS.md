@@ -28,6 +28,7 @@ While editing:
 
 - Complete only the approved work package.
 - Keep the public Phase 1 / demo paths synthetic and operational; they must not connect to a production participant datastore.
+- **Public-demo single-user invariant:** one unauthenticated visitor; no public-demo accounts/sessions; no shared server-side visitor state; no cross-visitor mutations; no PostgreSQL/Auth.js/invitation/bootstrap/role/audit writes; no claim that other visitors are live; interactive state is local, ephemeral, and resettable. Fixed synthetic fixtures may depict multiple example participants to explain a multi-user process—they are not live users. Mirror gated improvements into the demo only via fixtures, labels, fixture-backed projections, and shared presentation components—never via gated runtime imports, invitation tokens, fake operational admin controls, audit writes, or gated secrets.
 - Do not invent governance authority or settled membership status. Prefer “account holder” or “community participant”; never call someone a statutory member without recorded counsel approval in `docs/phase-2-plan.md`.
 - Do not silently resolve authority, retention, verification, or privacy questions—update `docs/open-questions.md` / counsel gates instead.
 - Do not write legal language as approved fact.
@@ -58,6 +59,7 @@ Additional rules:
 - Do not weaken a test, type, access boundary, or acceptance criterion merely to make a check pass.
 - Keep changes small enough for a human to review.
 - Honor Phase 2 stop conditions in `docs/phase-2-plan.md` §8 and Phase 3 stop conditions in `docs/phase-3-plan.md` §14.
-- Phase 3 targets an operational invite-only multi-user alpha on the gated foundation; it is not a single-user alpha and not merely another synthetic demonstration. Preserve separately deployable public-demo fixtures. Alpha-test accounts and topic workflow data must remain fully resettable.
+- Phase 3 targets an operational invite-only multi-user alpha on the gated foundation; it is not a single-user alpha and not merely another synthetic demonstration. Preserve separately deployable public-demo fixtures under the single-user invariant above. Alpha-test accounts and topic workflow data must remain fully resettable.
+- **First-administrator bootstrap** (`operator.bootstrap_administrator`) is an environment-operator ceremony (operator secret), not a normal account capability. Ordinary invitation issuance uses `invites.issue` for active administrators. Gaining administrator does not itself grant participant voting rights or a council seat.
 - Do not claim unimplemented Phase 3 runtime behavior already exists. Complete only the approved Phase 3 package; stop for human approval before the next.
 - **Assigned branch workflow:** When a work package or checkpoint names a required git branch, fetch and work on that branch (never commit or push directly to `main`). After completing the approved package or checkpoint, create the requested commit on that branch, push it to the matching `origin` remote branch (no force-push), and report the branch name and resulting commit SHA. Stop if the push is rejected or the remote branch contains unexpected work.

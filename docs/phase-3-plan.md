@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 3 (packages 3.1–3.12)  
 **Baseline:** Phase 2 foundation at or after `a894317317f3ff1e80d0a3602df69e5b4d8cd589` (tag `phase-2-foundation` recorded in [phase-2-handoff.md](./phase-2-handoff.md))  
-**Current package:** **3.2 complete (awaiting human approval before 3.3).** Durable PostgreSQL topic/claim/evidence schema + gated repositories are implemented. No Phase 3 authoring routes, public mutation APIs, capabilities, or live publication yet.
+**Current package:** **3.3 — Capabilities, invitation issuance, and first-administrator bootstrap** (in progress). Package 3.2 (durable topic/claim/evidence schema + repositories) is complete. Do not mark 3.3 complete until its checkpoints finish. No topic authoring UI, submissions, evidence review, publication, or live Pol.is in this package.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [phase-2-plan.md](./phase-2-plan.md), [phase-2-handoff.md](./phase-2-handoff.md), [architecture-phase-2.md](./architecture-phase-2.md), [architecture-phase-3.md](./architecture-phase-3.md), [capability-matrix.md](./capability-matrix.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [open-questions.md](./open-questions.md), [decisions/0006-phase-3-two-lane-sequencing.md](./decisions/0006-phase-3-two-lane-sequencing.md), [decisions/0007-alpha-test-interim-council-dispositions.md](./decisions/0007-alpha-test-interim-council-dispositions.md), [decisions/0008-phase-3-operational-alpha-contract.md](./decisions/0008-phase-3-operational-alpha-contract.md), [decisions/0009-phase-3-operational-slice-corrections.md](./decisions/0009-phase-3-operational-slice-corrections.md)
 
@@ -32,6 +32,23 @@ Someone reviewing Phase 3 should be able to answer:
 | --- | --- | --- |
 | **Public demo** (`APP_MODE` unset or `public-demo`) | Synthetic institutional walkthrough | Fixture catalog only; **never** constructs gated DB or Auth.js runtime |
 | **Gated alpha** (`APP_MODE=gated`) | Invite-only multi-user operational workflow | PostgreSQL 16 + Drizzle; resettable alpha data; no carry-over into a later production system |
+
+### Public-demo single-user invariant
+
+The public demo remains a **single-user synthetic walkthrough**:
+
+- one unauthenticated browser visitor
+- no public-demo accounts or login sessions
+- no shared server-side visitor state
+- no cross-browser or cross-visitor mutations
+- no PostgreSQL, Auth.js, invitation, bootstrap, role, or audit writes
+- no claim that another visitor’s activity is live
+- interactive state is local, ephemeral, and safely resettable
+- refreshing or restarting may return the demonstration to its fixture state
+
+Fixed synthetic fixtures may depict **multiple example participants**, viewpoints, reviews, and institutional actions to explain a multi-user process. Those records are not live users.
+
+Future gated improvements may be mirrored into the demo only through updated fixtures, clearer labels, fixture-backed projections of later workflow states, and shared presentation components that receive mode-specific data. The demo must **never** import gated repositories/services, issue invitation tokens, create fake operational administrator controls, write audit events, persist visitor actions on the server, simulate other current visitors, or require gated secrets at build or runtime.
 
 ### Hard rules for agents and collaborators
 
@@ -263,14 +280,30 @@ Existing Phase 2 capabilities and rules remain in force ([capability-matrix.md](
 | `conflicts.disclose_own` | active | participant (any role that submits) | own disclosure | Required on submit path in 3.5 |
 | `moderation.review_submission` | active | moderator **or** administrator | — | Visibility hold/hide/restore-to-visible with reason |
 
-### Operator / invite capabilities (planned for 3.3)
+### Operator / invite capabilities (3.3)
 
-| Capability | Lifecycle | Role | Notes |
+| Action | Lifecycle | Actor | Notes |
 | --- | --- | --- | --- |
-| `operator.bootstrap_administrator` | n/a (CLI / break-glass gated env) | environment operator secret / empty-admin bootstrap | One-time or dual-control style; audited; never public-demo |
-| `invites.issue` | active | administrator | Creates invitation with hashed token; raw token returned once |
+| `operator.bootstrap_administrator` | n/a | **Environment operator** (operator-only secret + label; not a normal account capability) | First-administrator ceremony only; audited; never public-demo; permanently refused after completion until alpha datastore reset |
+| `invites.issue` | active | **administrator** (ordinary capability) | Creates invitation with hashed token; raw token/link returned once for operator delivery while email remains capture-only |
 
-Exact assurance ladder rows for new capabilities are set in 3.3 without weakening Phase 2 assurance tests.
+Gaining `administrator` does **not** itself grant participant voting rights or a council seat. Exact assurance ladder rows for new Phase 3 capabilities are set in 3.3 without weakening Phase 2 assurance tests.
+
+### First-administrator bootstrap ceremony (3.3 contract)
+
+Documented before implementation. The ceremony must:
+
+1. Authenticate the environment operator through `OPERATOR_BOOTSTRAP_SECRET` (or equally strong operator-only mechanism)—never as a CLI argument.
+2. Create one administrator-bootstrap invitation only while the database has **no** administrator.
+3. Persist **only** the token hash; display the raw acceptance link **once** for operator delivery.
+4. Have the candidate accept via the existing invitation path and complete contact verification plus applicable assent.
+5. Explicitly resolve the zero-administrator verification loop: ordinary review requires a reviewer/administrator, but none exist yet. Any one-time operator attestation is structurally identified as `operator_bootstrap` (not an independent reviewer decision), scoped to the first-administrator candidate, audited with a non-secret operator label and substantive reason, and permanently disabled after bootstrap completion.
+6. Activate the candidate only after required bootstrap gates pass (contact, assent, verification/eligibility floor, counsel activation gates).
+7. Grant the `administrator` role with recorded reason and provenance; do **not** grant a council seat; do **not** grant participant merely because administrator was granted (ordinary onboarding may already have granted participant independently).
+8. Enforce a persistent singleton/lock (or equivalent DB invariant) so concurrent finalize attempts cannot create two first administrators.
+9. After completion, further first-admin bootstrap issuance/finalization refuses until deliberate alpha reset; later administrators use ordinary `roles.grant_platform`.
+
+Owner-run alpha limitation: operator self-attestation for the first candidate’s verification floor is an interim engineering path, not third-party or government-ID verification. See [open-questions.md](./open-questions.md) OQ21.
 
 ---
 
@@ -390,9 +423,9 @@ Still **forbidden in Phase 3** unless a future ADR + register update says otherw
 
 ### Work package 3.3 — Capabilities and operator bootstrap
 
-**Status:** Not started.
+**Status:** In progress (contract locked in Checkpoint 1; implementation follows).
 
-**Objective:** Add planned capabilities to the matrix/authz code; deliver audited first-administrator bootstrap and invitation issuance with operator-delivered single-use links (email remains capture-only unless an addendum lands).
+**Objective:** Add planned capabilities to the matrix/authz code; deliver audited first-administrator bootstrap and invitation issuance with operator-delivered single-use links (email remains capture-only unless an addendum lands). Preserve the public-demo single-user invariant.
 
 **Prerequisites:** 3.2 schema available; Phase 2 auth/invite accept paths unchanged in spirit.
 

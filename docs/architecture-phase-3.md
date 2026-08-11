@@ -1,11 +1,11 @@
 # Phase 3 architecture — operational alpha
 
-**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2 schema + gated repositories implemented** (no authoring UI / capabilities / publication APIs yet)  
+**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2 schema + gated repositories implemented**; **3.3 in progress** (capabilities, invitation issuance, first-administrator bootstrap — not complete)  
 **Plan:** [phase-3-plan.md](./phase-3-plan.md)  
 **ADRs:** [0008](./decisions/0008-phase-3-operational-alpha-contract.md), [0009](./decisions/0009-phase-3-operational-slice-corrections.md)  
 **Foundation:** [architecture-phase-2.md](./architecture-phase-2.md), ADRs 0002–0005, capability matrix, audit registry
 
-This document records service boundaries, table groups, routes, and projections for Phase 3. Package 3.2 owns the durable topic/claim/evidence migration and repositories. Later packages own routes, capabilities, and vendor installs. A real off-device multi-user alpha requires an approved reachable gated deployment and persistent PostgreSQL; do not select a vendor here.
+This document records service boundaries, table groups, routes, and projections for Phase 3. Package 3.2 owns the durable topic/claim/evidence migration and repositories. Package 3.3 owns capability/assurance contracts, audited invitation issuance, and the operator bootstrap ceremony. Later packages own topic authoring UI, submissions, and vendor installs. A real off-device multi-user alpha requires an approved reachable gated deployment and persistent PostgreSQL; do not select a vendor here.
 
 ---
 
@@ -51,8 +51,15 @@ flowchart TB
 | Mutations | None for real accounts | Capability-gated services |
 | Email | N/A | Capture-only until vendor addendum |
 | Alpha reset | N/A (fixtures in repo) | Wipes accounts + topic workflow tables |
+| Visitors | **Single-user** synthetic walkthrough (see below) | Invite-only multi-user |
 
 **Invariant:** Server components, route handlers, and gated services/repositories must not import the synthetic fixture catalog for gated mutations.
+
+### Public-demo single-user contract
+
+Public-demo means one unauthenticated browser visitor with local, ephemeral, resettable interaction state. It has no accounts, login sessions, shared server-side visitor state, cross-visitor mutations, PostgreSQL/Auth.js/invitation/bootstrap/role/audit writes, or claims that other visitors are live.
+
+Fixed synthetic records may depict multiple example participants and institutional actions to explain the process; they are demonstration fixtures, not live users. Gated improvements may appear in the demo only via fixtures, labels, fixture-backed projections, and shared presentation components with mode-specific data—never via gated repository/service imports, real or demo invitation tokens, fake operational admin controls, audit writes, server-persisted visitor actions, or gated secrets at build/runtime.
 
 ---
 
@@ -186,7 +193,8 @@ Exact paths may align with existing `/account/*` and `/staff/*` trees; do not ex
 | Evidence workflow / quality decision | `evidence.review` + audit; must not rewrite unrelated popularity fields |
 | Moderation visibility | visibility ∈ {visible,held,hidden} + audit; restore action → visible + `moderation.submission_restored`; never delete revisions |
 | Invite issue | invitation row (hash) + audit; raw token only in response memory |
-| Bootstrap admin | person/account/role (+ assurance seed if required) + audit |
+| Bootstrap invitation | singleton lock + zero-admin check + bootstrap invitation (hash) + operator audit |
+| Bootstrap finalize | singleton lock + re-check gates + operator_bootstrap verification provenance + activation + administrator grant + completion mark + audit |
 | Publish | `publication_status` → published + projection stamp + audit (minimal in 3.6) |
 | Alpha reset | documented ordered deletes/truncates in one operator procedure; audited |
 
@@ -200,7 +208,7 @@ Register in implementing packages (unregistered actions must fail):
 
 | Family | Examples |
 | --- | --- |
-| `operator.*` | `operator.bootstrap_administrator` |
+| `operator.*` | `operator.bootstrap_invitation_issued`, `operator.bootstrap_verification_recorded`, `operator.bootstrap_administrator` |
 | `invites.*` | `invites.issued`, `invites.revoked` |
 | `topics.*` | `topics.created`, `topics.updated`, `topics.opened`, `topics.paused`, `topics.published`, `topics.archived`, `topics.reopened`, `topics.review_started` |
 | `claims.*` | `claims.draft_created`, `claims.submitted`, `claims.changes_requested`, `claims.accepted`, `claims.rejected`, `claims.withdrawn`, `claims.revision_recorded` |
@@ -257,7 +265,25 @@ sequenceDiagram
 - Administrator ≠ participant voter.
 - Council seats ≠ platform roles.
 - Active lifecycle + assurance ladder still wrap new capabilities.
+- `invites.issue` is an ordinary active-administrator capability.
+- `operator.bootstrap_administrator` is an **environment-operator** action (operator secret + label), not a normal authenticated principal capability.
 - Alpha staff duty concentration in the project owner is allowed operationally; capability checks and actor audit remain mandatory ([ADR 0008](./decisions/0008-phase-3-operational-alpha-contract.md)).
+
+---
+
+## 10a. First-administrator bootstrap ceremony (3.3)
+
+Implemented in Package 3.3. Summary (full runbook in [secrets-and-operations.md](./secrets-and-operations.md)):
+
+1. Operator authenticates with gated env + `OPERATOR_BOOTSTRAP_SECRET` + non-secret `OPERATOR_LABEL` (secret never on CLI argv).
+2. While zero administrators exist, issue at most one live administrator-bootstrap invitation under a DB singleton lock; store token hash only; print raw acceptance link once.
+3. Candidate uses the existing accept → contact verification → assent path.
+4. **Zero-administrator verification loop:** ordinary `verification.review_case` needs a reviewer/administrator. Finalize may record required alpha attestations only as structurally tagged `operator_bootstrap` decisions (operator label + reason; no fake `reviewer_account_id` as independent review). Exception is scoped to the first-administrator candidate and disabled permanently after completion.
+5. Finalize re-locks singleton state, re-checks zero administrators and gates, activates via existing activation rules, grants `administrator` with reason, does not grant a council seat, does not grant participant solely from the admin grant, audits `operator.bootstrap_administrator`, marks bootstrap completed.
+6. Concurrent issue/finalize attempts yield one winner; retries after completion fail closed until deliberate alpha reset.
+7. Later administrators use ordinary `roles.grant_platform`. Public-demo never constructs this path.
+
+Owner-run interim limitation: operator self-attestation is not independent third-party verification ([open-questions.md](./open-questions.md) OQ21).
 
 ---
 
