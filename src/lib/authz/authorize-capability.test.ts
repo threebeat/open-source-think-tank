@@ -99,7 +99,7 @@ describe("authorizeCapability assurance gate", () => {
   });
 
   it("denies every mapped capability when assertions are missing", async () => {
-    const roleFor: Record<Capability, string> = {
+    const roleFor: Partial<Record<Capability, string>> = {
       "institutional.vote": "account-ostt-synth-ac-participant",
       "institutional.council_deliberation": "account-ostt-synth-ac-delib",
       "institutional.council_policy": "account-ostt-synth-ac-policy",
@@ -118,6 +118,23 @@ describe("authorizeCapability assurance gate", () => {
       "privacy.execute_closure": "account-ostt-synth-ac-admin",
       "privacy.dual_control_request": "account-ostt-synth-ac-admin",
       "privacy.dual_control_approve": "account-ostt-synth-ac-admin",
+      "topics.create": "account-ostt-synth-ac-admin",
+      "topics.update": "account-ostt-synth-ac-admin",
+      "topics.open": "account-ostt-synth-ac-admin",
+      "topics.publish": "account-ostt-synth-ac-admin",
+      "topics.pause": "account-ostt-synth-ac-admin",
+      "topics.archive": "account-ostt-synth-ac-admin",
+      "invites.issue": "account-ostt-synth-ac-admin",
+      "claims.submit": "account-ostt-synth-ac-participant",
+      "claims.edit_own": "account-ostt-synth-ac-participant",
+      "claims.withdraw_own": "account-ostt-synth-ac-participant",
+      "claims.review": "account-ostt-synth-ac-reviewer",
+      "evidence.submit": "account-ostt-synth-ac-participant",
+      "evidence.edit_own": "account-ostt-synth-ac-participant",
+      "evidence.withdraw_own": "account-ostt-synth-ac-participant",
+      "evidence.review": "account-ostt-synth-ac-reviewer",
+      "conflicts.disclose_own": "account-ostt-synth-ac-participant",
+      "moderation.review_submission": "account-ostt-synth-ac-moderator",
       "account.read_own": "account-ostt-synth-ac-participant",
       "account.sign_out": "account-ostt-synth-ac-participant",
       "account.revoke_all_sessions": "account-ostt-synth-ac-participant",
@@ -126,7 +143,9 @@ describe("authorizeCapability assurance gate", () => {
     };
 
     for (const capability of MAPPED) {
-      const principal = await loadPrincipal(db, roleFor[capability]);
+      const accountId = roleFor[capability];
+      expect(accountId, `role mapping for ${capability}`).toBeTruthy();
+      const principal = await loadPrincipal(db, accountId!);
       const decision = await authorizeCapability(db, principal, capability);
       expect(decision.ok, capability).toBe(false);
       if (!decision.ok) {
@@ -142,7 +161,7 @@ describe("authorizeCapability assurance gate", () => {
       "account-ostt-synth-ac-participant",
       L3_KINDS,
     );
-    await seedApprovedAssertions(db, "account-ostt-synth-ac-reviewer", L2_KINDS);
+    await seedApprovedAssertions(db, "account-ostt-synth-ac-reviewer", L3_KINDS);
     await seedApprovedAssertions(db, "account-ostt-synth-ac-moderator", L3_KINDS);
     await seedApprovedAssertions(db, "account-ostt-synth-ac-admin", L3_KINDS);
     await seedApprovedAssertions(db, "account-ostt-synth-ac-auditor", L3_KINDS);
@@ -205,6 +224,26 @@ describe("authorizeCapability assurance gate", () => {
       {
         accountId: "account-ostt-synth-ac-policy",
         capability: "institutional.publish_decision",
+      },
+      {
+        accountId: "account-ostt-synth-ac-admin",
+        capability: "invites.issue",
+      },
+      {
+        accountId: "account-ostt-synth-ac-admin",
+        capability: "topics.create",
+      },
+      {
+        accountId: "account-ostt-synth-ac-participant",
+        capability: "claims.submit",
+      },
+      {
+        accountId: "account-ostt-synth-ac-reviewer",
+        capability: "claims.review",
+      },
+      {
+        accountId: "account-ostt-synth-ac-moderator",
+        capability: "moderation.review_submission",
       },
     ];
 

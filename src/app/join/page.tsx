@@ -66,14 +66,16 @@ export default async function JoinPage() {
         items={[{ href: "/", label: "Home" }, { label: "How Joining Works" }]}
       />
       <PageHeader
-        eyebrow="Nonfunctional preview"
+        eyebrow="Demonstration only"
         title="How Joining Works"
-        description="A walkthrough of the intended eligibility, assurance, conduct, and privacy steps. Community participant status is not a settled legal membership category. Identification documents are not assumed to be required for every role."
+        description="A single-user synthetic walkthrough of the intended eligibility, assurance, conduct, and privacy steps. You are exploring fixed demonstration records—not creating an account or seeing other live visitors."
       />
       <DisclosureNotice title="Not accepting members" tone="caution">
-        This demonstration does not enroll anyone, collect personal information, or
-        record legally binding assent. Placeholder conduct and privacy text is not
-        legally reviewed.
+        This demonstration does not create an account, issue an invitation, or
+        collect personal information. In the gated alpha, administrators issue
+        single-use invitation links; enrollment is invite-only. Example people
+        and actions in this walkthrough are fixed fixtures, not other current
+        visitors. Placeholder conduct and privacy text is not legally reviewed.
       </DisclosureNotice>
       <JoinWalkthrough />
     </MainContainer>

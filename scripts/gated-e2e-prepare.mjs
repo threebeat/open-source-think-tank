@@ -43,6 +43,7 @@ await client`
     evidence_submissions,
     claims,
     topics,
+    operator_bootstrap_state,
     audit_events,
     verification_artifact_payloads,
     verification_artifact_holds,

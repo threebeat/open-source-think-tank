@@ -86,6 +86,8 @@ Phase 2 decision register and counsel gates: [phase-2-plan.md](./phase-2-plan.md
 
 20. **Pre-publication visibility of others’ in-flight submissions** — Unresolved. Visitors must not see drafts/rejected/held material. Whether **other active participants** (not staff) may see peers’ submitted-but-unpublished claims in the gated workspace before topic publication remains open (architecture D16).
 
+21. **Operator self-attestation for first-administrator verification (owner-run alpha)** — Unresolved as a lasting governance posture. Package 3.3 requires a concurrency-safe bootstrap path when no reviewer/administrator yet exists. The engineering ceremony may record required alpha verification floor decisions with explicit `operator_bootstrap` provenance (operator label + reason; not represented as independent account review). Whether that interim owner-run attestation is acceptable beyond the resettable alpha test, and what independent review should replace it afterward, remains open for the post-alpha report ([phase-3-plan.md](./phase-3-plan.md), [architecture-phase-3.md](./architecture-phase-3.md) §10a).
+
 ---
 
 ## How to add questions

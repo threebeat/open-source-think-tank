@@ -1,6 +1,6 @@
-# Capability matrix (Work Package 2.5)
+# Capability matrix (Work Packages 2.5 + 3.3)
 
-**Status:** Engineering authorization contract for the gated foundation.  
+**Status:** Engineering authorization contract for the gated foundation. Phase 3.3 capabilities, invitation issuance, and first-administrator bootstrap are implemented. Topic authoring UI begins in 3.4.  
 **Not legal authority:** Council and administrator capabilities do not invent board-binding or statutory membership powers (counsel gates in [phase-2-plan.md](./phase-2-plan.md) §7 remain blocking).
 
 Three independent axes must all allow an action:
@@ -41,6 +41,29 @@ Default decision: **deny**.
 | `institutional.council_deliberation` | **active only** | — | deliberation_council | Does **not** imply policy council |
 | `institutional.council_policy` | **active only** | — | policy_council | Does **not** imply deliberation council |
 | `institutional.publish_decision` | **active only** | — | policy_council | Recommendation publication only; not board adoption |
+| `topics.create` | active | administrator | — | Creates draft topic (`publication_status = unpublished`) — 3.3+ |
+| `topics.update` | active | administrator | — | Edit draft/meta; not a substitute for publish |
+| `topics.open` | active | administrator | — | → `open_for_submissions` |
+| `topics.publish` | active | administrator | — | Sets `publication_status = published` (independent of pause) |
+| `topics.pause` | active | administrator | — | Operational pause; **does not** change publication status |
+| `topics.archive` | active | administrator | — | → `archived`; reason required |
+| `claims.submit` | active | participant | — | Create/submit own claims |
+| `claims.edit_own` | active | participant | own (service checks) | Authz establishes eligibility only; ownership verified in transaction |
+| `claims.withdraw_own` | active | participant | own (service checks) | History retained |
+| `claims.review` | active | reviewer or administrator | — | Claim workflow decisions |
+| `evidence.submit` | active | participant | — | Source URL + metadata only |
+| `evidence.edit_own` | active | participant | own (service checks) | No remote fetch |
+| `evidence.withdraw_own` | active | participant | own (service checks) | History retained |
+| `evidence.review` | active | reviewer or administrator | — | Workflow + quality decisions |
+| `conflicts.disclose_own` | active | participant | own (service checks) | Required on submit path in 3.5 |
+| `moderation.review_submission` | active | moderator or administrator | — | Visibility hold/hide/restore-to-visible; moderators do **not** get pseudonym reverse-map |
+| `invites.issue` | active | administrator | — | Hashed token at rest; raw link returned once; never public-demo |
+
+### Operator actions (not account capabilities)
+
+| Action | Actor | Notes |
+| --- | --- | --- |
+| `operator.bootstrap_administrator` | Environment operator (`OPERATOR_BOOTSTRAP_SECRET` + `OPERATOR_LABEL`) | First-administrator ceremony only; not exercised by a normal authenticated principal; never public-demo; see [phase-3-plan.md](./phase-3-plan.md) bootstrap ceremony |
 
 ## Self-elevation rules
 

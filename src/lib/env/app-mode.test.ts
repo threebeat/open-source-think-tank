@@ -48,6 +48,15 @@ describe("assertEnvironmentSafe", () => {
     ).toThrow(/AUTH_SECRET/);
   });
 
+  it("fails when public-demo has OPERATOR_BOOTSTRAP_SECRET", () => {
+    expect(() =>
+      assertEnvironmentSafe({
+        APP_MODE: "public-demo",
+        OPERATOR_BOOTSTRAP_SECRET: "ostt-synth-operator-bootstrap-secret-32chars!!",
+      }),
+    ).toThrow(/OPERATOR_BOOTSTRAP_SECRET/);
+  });
+
   it("fails when gated mode lacks DATABASE_URL", () => {
     expect(() => assertEnvironmentSafe({ APP_MODE: "gated" })).toThrow(
       /requires DATABASE_URL/,

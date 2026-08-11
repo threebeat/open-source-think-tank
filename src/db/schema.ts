@@ -43,6 +43,19 @@ export const invitationStatusEnum = pgEnum("invitation_status", [
   "revoked",
 ]);
 
+/** Ordinary participant invites vs first-administrator bootstrap invite (3.3). */
+export const invitationKindEnum = pgEnum("invitation_kind", [
+  "participant",
+  "administrator_bootstrap",
+]);
+
+/** Singleton first-administrator bootstrap lifecycle (3.3/3.4). */
+export const operatorBootstrapStatusEnum = pgEnum("operator_bootstrap_status", [
+  "not_started",
+  "invitation_live",
+  "completed",
+]);
+
 export const documentKindEnum = pgEnum("document_kind", [
   "conduct",
   "participation",
@@ -143,17 +156,33 @@ export const invitations = pgTable(
     tokenHash: text("token_hash").notNull(),
     intendedContactChannel: text("intended_contact_channel").notNull(),
     status: invitationStatusEnum("status").notNull().default("pending"),
-    synthetic: boolean("synthetic").notNull().default(true),
+    kind: invitationKindEnum("kind").notNull().default("participant"),
+    /**
+     * Explicit value required for operational rows. Default false so real
+     * issuance cannot silently inherit synthetic=true (seeds set true).
+     */
+    synthetic: boolean("synthetic").notNull().default(false),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     acceptedAt: timestamp("accepted_at", { withTimezone: true }),
     acceptedAccountId: text("accepted_account_id").references(() => accounts.id, {
       onDelete: "set null",
     }),
     issuedByLabel: text("issued_by_label").notNull(),
+    /** Null for historical synthetic seeder rows; set for administrator-issued invites. */
+    issuedByAccountId: text("issued_by_account_id").references(() => accounts.id, {
+      onDelete: "restrict",
+    }),
     ...timestamps,
   },
   (table) => [
     uniqueIndex("invitations_token_hash_uidx").on(table.tokenHash),
+    index("invitations_kind_status_idx").on(table.kind, table.status),
+    index("invitations_issued_by_account_idx").on(table.issuedByAccountId),
+    uniqueIndex("invitations_one_live_bootstrap_uidx")
+      .on(table.kind)
+      .where(
+        sql`${table.kind} = 'administrator_bootstrap' AND ${table.status} = 'pending'`,
+      ),
     check(
       "invitations_accepted_requires_account_and_timestamp",
       sql`(
@@ -176,6 +205,26 @@ export const invitations = pgTable(
     ),
   ],
 );
+
+/**
+ * Singleton row (`id = 'default'`) guarding first-administrator bootstrap.
+ * Prevents concurrent first-admin completions.
+ */
+export const operatorBootstrapState = pgTable("operator_bootstrap_state", {
+  id: text("id").primaryKey(),
+  status: operatorBootstrapStatusEnum("status").notNull().default("not_started"),
+  liveInvitationId: text("live_invitation_id").references(() => invitations.id, {
+    onDelete: "set null",
+  }),
+  completedAccountId: text("completed_account_id").references(() => accounts.id, {
+    onDelete: "restrict",
+  }),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  lastOperatorLabel: text("last_operator_label"),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
 
 /** Platform capabilities — not institutional council seats. */
 export const roleAssignments = pgTable(
@@ -416,6 +465,11 @@ export const assentPresentations = pgTable(
   ],
 );
 
+export const verificationDecisionSourceEnum = pgEnum(
+  "verification_decision_source",
+  ["account_reviewer", "operator_bootstrap"],
+);
+
 export const verificationCases = pgTable(
   "verification_cases",
   {
@@ -428,6 +482,12 @@ export const verificationCases = pgTable(
     reviewerAccountId: text("reviewer_account_id").references(() => accounts.id, {
       onDelete: "set null",
     }),
+    /** Structurally distinguishes ordinary review from one-time operator bootstrap. */
+    decisionSource: verificationDecisionSourceEnum("decision_source")
+      .notNull()
+      .default("account_reviewer"),
+    /** Non-secret operator label when decision_source = operator_bootstrap. */
+    operatorLabel: text("operator_label"),
     decisionReason: text("decision_reason"),
     assignedAt: timestamp("assigned_at", { withTimezone: true }),
     decidedAt: timestamp("decided_at", { withTimezone: true }),
@@ -453,6 +513,17 @@ export const verificationCases = pgTable(
     check(
       "verification_cases_decided_needs_timestamp",
       sql`(${table.status} IN ('pending', 'appealed')) OR (${table.decidedAt} IS NOT NULL)`,
+    ),
+    check(
+      "verification_cases_operator_bootstrap_provenance",
+      sql`(
+        (${table.decisionSource} <> 'operator_bootstrap')
+        OR (
+          ${table.reviewerAccountId} IS NULL
+          AND ${table.operatorLabel} IS NOT NULL
+          AND char_length(btrim(${table.operatorLabel})) > 0
+        )
+      )`,
     ),
   ],
 );
@@ -1277,6 +1348,7 @@ export const foundationTables = {
   authSessions,
   authChallenges,
   schemaMeta,
+  operatorBootstrapState,
   topics,
   claims,
   evidenceSubmissions,

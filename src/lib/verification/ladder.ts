@@ -148,6 +148,24 @@ export const CAPABILITY_ASSURANCE: Partial<
   "privacy.execute_closure": "L3_uniqueness",
   "privacy.dual_control_request": "L3_uniqueness",
   "privacy.dual_control_approve": "L3_uniqueness",
+  // Phase 3.3 institutional mutations — L3 uniqueness (no legal_identity default)
+  "topics.create": "L3_uniqueness",
+  "topics.update": "L3_uniqueness",
+  "topics.open": "L3_uniqueness",
+  "topics.publish": "L3_uniqueness",
+  "topics.pause": "L3_uniqueness",
+  "topics.archive": "L3_uniqueness",
+  "claims.submit": "L3_uniqueness",
+  "claims.edit_own": "L3_uniqueness",
+  "claims.withdraw_own": "L3_uniqueness",
+  "claims.review": "L3_uniqueness",
+  "evidence.submit": "L3_uniqueness",
+  "evidence.edit_own": "L3_uniqueness",
+  "evidence.withdraw_own": "L3_uniqueness",
+  "evidence.review": "L3_uniqueness",
+  "conflicts.disclose_own": "L3_uniqueness",
+  "moderation.review_submission": "L3_uniqueness",
+  "invites.issue": "L3_uniqueness",
 };
 
 export function assuranceForCapability(

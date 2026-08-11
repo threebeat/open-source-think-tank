@@ -34,6 +34,7 @@ Source of truth: `src/lib/verification/ladder.ts`.
 | `institutional.council_*` / `institutional.publish_decision` | L4_eligibility | Higher-impact institutional seats |
 | `documents.publish` / role grants/revokes / `moderation.act` | L3_uniqueness | Staff/admin impact |
 | `verification.review_case` / `audit.read_restricted` | L2_contact_continuity | Staff continuity |
+| Phase 3 `topics.*` / `claims.*` / `evidence.*` / `conflicts.disclose_own` / `moderation.review_submission` / `invites.issue` | L3_uniqueness | Institutional mutations (3.3); no legal_identity default |
 
 Protected actions must call `authorizeCapability` (role/lifecycle **and** `evaluateAssurance`). Production activation into `active` is owned by package **2.8** and requires published-document assent plus L3 + eligibility approvals.
 

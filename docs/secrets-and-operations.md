@@ -14,6 +14,8 @@ This is an engineering policy, not a privacy policy or DPA.
 | Auth secrets (`AUTH_SECRET`, etc.) | **must be unset** | required |
 | Email provider keys | unset | required in staging/production; optional local stub |
 | Verification vendor keys | unset | only if a vendor is later approved |
+| `OPERATOR_BOOTSTRAP_SECRET` | **must be unset** | required only for first-administrator operator ceremony (3.3); never pass on CLI argv |
+| `OPERATOR_LABEL` | unset | non-secret operator label recorded in bootstrap audit (3.3) |
 
 Rules:
 
@@ -51,4 +53,56 @@ Candidates below are **not** all approved. See permitted-services register in [p
 | Transactional email (TBD) | Email address, invite/magic-link content | Provider region in DPA | Provider logs minimized; no verification artifacts in email body | Provider tools / support export | Provider DPA + IR |
 | Verification vendor | None selected in 2.2 | — | Prefer no raw artifact storage | — | — |
 
-Live Pol.is, payments, analytics, and AI APIs remain **forbidden** in Phase 2.
+Live Pol.is, payments, analytics, and AI APIs remain **forbidden** in Phase 2. **Pol.is-powered Public Input** remains planned for Phase 4 of the alpha and is not installed or called in Phase 3.
+
+## First-administrator bootstrap (Package 3.3)
+
+**Status:** Implemented. Command: `npm run operator:bootstrap`.
+
+### Required environment
+
+| Variable | Notes |
+| --- | --- |
+| `APP_MODE=gated` | Public-demo fails before DB construction |
+| `DATABASE_URL` | Local/ephemeral Postgres only until host addendum |
+| `OPERATOR_BOOTSTRAP_SECRET` | ≥32 characters; **never** pass on CLI argv |
+| `OPERATOR_LABEL` | Non-secret label stored in audit / verification provenance |
+
+### Commands
+
+```bash
+# 1) Issue bootstrap invitation (zero administrators required)
+npm run operator:bootstrap -- issue --contact=you@example.test --reason="Owner-run alpha first admin"
+
+# One-time stdout includes invitationId, expiresAt, and the acceptance link.
+# Copy the link now — it is not recoverable.
+
+# 2) Candidate: open link → accept → contact verify → assent → submit
+#    verification assertions for bot_resistance, contact_continuity, uniqueness, eligibility
+
+# 3) Finalize (operator_bootstrap decisions + activate + grant administrator)
+npm run operator:bootstrap -- finalize --reason="Complete first administrator" --verification-reason="Owner-run alpha operator_bootstrap attestation"
+```
+
+### Safe delivery
+
+- Deliver the acceptance link out of band (email remains capture-only).
+- Do not paste raw links or `OPERATOR_BOOTSTRAP_SECRET` into CI logs, shell history that is shared, screenshots, or support tickets.
+- Leaving the CLI session does not re-print the link.
+
+### Retry / recovery
+
+- While bootstrap is `invitation_live` and not completed, `issue` may revoke the prior pending bootstrap invitation and reissue (audited).
+- After `completed`, both `issue` and `finalize` refuse until the alpha datastore is deliberately reset (truncates include `operator_bootstrap_state`).
+- Concurrent finalize attempts: singleton row `FOR UPDATE` + re-check zero admins; one winner.
+
+### Verify completion without secrets
+
+- Audit action `operator.bootstrap_administrator` present for the account id.
+- Exactly one non-revoked `administrator` role assignment.
+- Verification cases for the candidate show `decision_source = operator_bootstrap` and null `reviewer_account_id`.
+- No council appointment created by bootstrap.
+
+### Reset implications
+
+Alpha reset (3.12) must clear `operator_bootstrap_state` and bootstrap invitations with other alpha tables. Synthetic seed re-inserts `operator_bootstrap_state` as `not_started`.

@@ -30,6 +30,8 @@ Nothing here is a privacy policy, retention schedule, or legal basis determinati
 | Agenda calculation inputs/outputs | Reproducible thresholds | Public traces and method versions | Snapshot + code version retained | Algorithm accountability vs personal data |
 | Deliberation and decision records | Institutional memory | Public observation + published decisions | Long-lived public record | Board authority overlays |
 | Audit events | Tamper-evident institutional action | Public feed of actions (not private payloads) | Append-only with legal hold exceptions | What actor detail is published |
+| Invitation issuance records | Invite-only enrollment (3.3) | Staff-restricted; contact redacted in lists; token **hash** only at rest | Alpha-resettable with accounts | Raw tokens shown once; never in public audit |
+| Operator bootstrap state / `operator_bootstrap` verification provenance | First-administrator ceremony (3.3) | Staff/operator only; not public projections | Cleared on alpha reset | Not independent third-party verification (OQ21) |
 | Moderation / safety reports | Abuse response | Restricted staff | Incident-driven | Staff abuse, doxxing response |
 | Donation / payment records | If fundraising begins | Finance staff; not in deliberation UI | Tax and charity rules | Multistate solicitation; separate systems |
 

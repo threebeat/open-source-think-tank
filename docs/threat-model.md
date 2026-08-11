@@ -89,6 +89,9 @@ Controls below are **implemented** through 2.11 unless noted as still blocked.
 | Silent destruction on closure | Closure retains assent/audit; legal holds block closure/purge (2.11) |
 | Single-admin high-impact mistakes | Dual-control request/approve/claim for hold release and closure; execution consumes an approved unexpired matching request in the same transaction; self-approve denied ([incident-response.md](./incident-response.md)) |
 | Email / DB vendor abuse | DPA/region/retention checklist before production keys; managed DB host still blocked pending addendum |
+| Operator secret / bootstrap race (3.3) | `OPERATOR_BOOTSTRAP_SECRET` env-only (never CLI argv); timing-safe compare helper; singleton `operator_bootstrap_state` `FOR UPDATE`; refuse after completion |
+| Invitation token replay / leakage (3.3) | Hash at rest; single-use accept; one-time raw link display; no-store responses; forbidSecrets on audit; public-demo 404 for issuance |
+| Bootstrap disguised as independent review | `decision_source = operator_bootstrap` + null `reviewer_account_id` + operator label; dedicated audit actions |
 
 ## Explicit non-goals for Phase 1 / Phase 2 public-demo
 

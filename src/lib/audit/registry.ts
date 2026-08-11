@@ -151,6 +151,62 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
     },
   ),
 
+  // Phase 3.3 invitations / operator bootstrap (no public projectors — staff-restricted)
+  "invites.issued": def("invites.issued", "Invitation issued", {
+    requireActorAccount: true,
+    payloadSchema: z
+      .object({
+        invitationId: z.string(),
+        kind: z.string(),
+        expiresAt: z.string(),
+        issuerAccountId: z.string().optional(),
+      })
+      .passthrough() as z.ZodType<Record<string, unknown>>,
+  }),
+  "operator.bootstrap_invitation_issued": def(
+    "operator.bootstrap_invitation_issued",
+    "First-administrator bootstrap invitation issued",
+    {
+      requireReason: true,
+      payloadSchema: z
+        .object({
+          invitationId: z.string(),
+          operatorLabel: z.string(),
+          expiresAt: z.string(),
+        })
+        .passthrough() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "operator.bootstrap_verification_recorded": def(
+    "operator.bootstrap_verification_recorded",
+    "Operator bootstrap verification decision recorded",
+    {
+      requireReason: true,
+      payloadSchema: z
+        .object({
+          operatorLabel: z.string(),
+          decisionSource: z.literal("operator_bootstrap"),
+          kind: z.string(),
+          accountId: z.string(),
+        })
+        .passthrough() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "operator.bootstrap_administrator": def(
+    "operator.bootstrap_administrator",
+    "First administrator bootstrap completed",
+    {
+      requireReason: true,
+      payloadSchema: z
+        .object({
+          operatorLabel: z.string(),
+          accountId: z.string(),
+          invitationId: z.string(),
+        })
+        .passthrough() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+
   // Assent / documents
   "assent.document_draft_created": def(
     "assent.document_draft_created",
