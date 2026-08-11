@@ -11,6 +11,7 @@ import {
   closedTestConversations,
   conflictDisclosures,
   councilAppointments,
+  operatorBootstrapState,
   retentionPolicySettings,
   documentVersions,
   evidenceReviews,
@@ -51,8 +52,16 @@ function hashToken(token: string): string {
 export async function seedSyntheticFoundation(db: FoundationDb) {
   await db.insert(schemaMeta).values({
     key: "migration_label",
-    value: "3.2-topic-evidence",
+    value: "3.3-capabilities-bootstrap",
   });
+
+  await db
+    .insert(operatorBootstrapState)
+    .values({
+      id: "default",
+      status: "not_started",
+    })
+    .onConflictDoNothing();
 
   await db
     .insert(closedTestConversations)
@@ -411,8 +420,9 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
     actorRole: "ostt-synth-seeder",
     action: "foundation.seeded",
     subjectType: "schema",
-    subjectId: "3.2-topic-evidence",
-    summary: "Synthetic foundation seed applied (includes Phase 3.2 topic model).",
+    subjectId: "3.3-capabilities-bootstrap",
+    summary:
+      "Synthetic foundation seed applied (includes Phase 3.2 topic model + 3.3 bootstrap state).",
     synthetic: true,
   });
 }

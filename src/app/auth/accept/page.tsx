@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
 import { AcceptInviteForm } from "@/components/auth/AcceptInviteForm";
@@ -33,7 +34,9 @@ export default function AcceptInvitePage() {
         After accepting, you must complete the emailed one-time link before the
         account leaves the invited state for pending_onboarding.
       </DisclosureNotice>
-      <AcceptInviteForm />
+      <Suspense fallback={<p className="text-sm text-muted-foreground">Loading form…</p>}>
+        <AcceptInviteForm />
+      </Suspense>
     </MainContainer>
   );
 }

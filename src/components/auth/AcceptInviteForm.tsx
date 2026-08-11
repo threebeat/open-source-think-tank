@@ -1,9 +1,12 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export function AcceptInviteForm() {
-  const [inviteToken, setInviteToken] = useState("");
+  const searchParams = useSearchParams();
+  const initialToken = searchParams.get("token")?.trim() ?? "";
+  const [inviteToken, setInviteToken] = useState(initialToken);
   const [contactChannel, setContactChannel] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

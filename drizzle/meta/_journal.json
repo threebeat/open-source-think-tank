@@ -92,6 +92,13 @@
       "when": 1786432494999,
       "tag": "0012_topic_evidence",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1786435000000,
+      "tag": "0013_invitation_bootstrap",
+      "breakpoints": true
     }
   ]
 }
