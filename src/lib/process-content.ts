@@ -37,9 +37,9 @@ export const processStages: ProcessStageContent[] = [
     whoParticipates:
       "Eligible, invited community participants (not open self-registration in this demonstration).",
     whatHappens:
-      "Participants respond to short statements. Areas of agreement and disagreement organize preference and cross-group overlap without deciding the institution’s position.",
+      "This demonstration shows Public Input with synthetic practice votes. A later alpha phase is planned to use Pol.is for live Public Input (copy may then say “Public Input, powered by Pol.is”). Pol.is is not connected now. Areas of agreement and disagreement organize preference without deciding factual truth or the institution’s recommendation.",
     whatIsProduced:
-      "Public-input report with neutrally labeled groups, consensus statements, and high-disagreement statements.",
+      "Public-input report with neutrally labeled groups, statements people agreed on across groups, and statements with the most disagreement.",
     whatBecomesPublic:
       "Aggregate report and method version. Granular political-opinion histories stay protected.",
   },

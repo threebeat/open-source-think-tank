@@ -90,12 +90,12 @@ describe("ConsultationSimulator", () => {
     await user.click(openReport);
 
     const report = screen.getByRole("region", {
-      name: "Fixed synthetic consultation report",
+      name: "Sample Public Input Report",
     });
     expect(
       within(report).getByText("Not a representative sample"),
     ).toBeInTheDocument();
-    expect(within(report).getByText("Consensus is not proof")).toBeInTheDocument();
+    expect(within(report).getByText("Agreement is not proof")).toBeInTheDocument();
     expect(within(report).getByText("Group A, Group B, Group C")).toBeInTheDocument();
     const allStatements = within(report).getByRole("heading", {
       name: "All statements and evidence links",

@@ -41,11 +41,11 @@ export const demoSteps: DemoStep[] = [
     id: "consultation",
     title: "Public Input (simulated)",
     summary:
-      "Practice Agree / Disagree / Pass locally, then open the sealed synthetic report. Input comes from eligible/invited participants in the intended product; groups stay neutrally labeled; the cohort is not a population sample.",
+      "Practice Agree / Disagree / Pass locally, then open the sample Public Input report. This demonstration is not connected to Pol.is; a later alpha phase is planned to use Pol.is for live Public Input from eligible/invited participants. Groups stay neutrally labeled; the cohort is not a population sample.",
     href: "/topics/cedar-river-drought-surcharge/consult",
     linkLabel: "Open public input simulation",
     presenterNotes:
-      "Remind viewers that local practice votes do not personalize the fixture report and that this is not a live Pol.is conversation.",
+      "Remind viewers that local practice votes do not personalize the fixture report, Pol.is is not live yet, and preference/agreement stay separate from research quality.",
   },
   {
     id: "agenda",

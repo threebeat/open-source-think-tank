@@ -5,15 +5,22 @@ import { eq } from "drizzle-orm";
 import {
   accounts,
   assentRecords,
+  claimEvidenceLinks,
+  claimReviews,
+  claims,
   closedTestConversations,
+  conflictDisclosures,
   councilAppointments,
   retentionPolicySettings,
   documentVersions,
+  evidenceReviews,
+  evidenceSubmissions,
   invitations,
   persons,
   profiles,
   roleAssignments,
   schemaMeta,
+  topics,
   verificationAssertions,
   verificationCases,
 } from "../schema";
@@ -44,7 +51,7 @@ function hashToken(token: string): string {
 export async function seedSyntheticFoundation(db: FoundationDb) {
   await db.insert(schemaMeta).values({
     key: "migration_label",
-    value: "2.4-auth-foundation",
+    value: "3.2-topic-evidence",
   });
 
   await db
@@ -307,12 +314,105 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
     L3_KINDS,
   );
 
+  // Phase 3.2 synthetic topic/claim/evidence smoke rows (clearly labeled).
+  await db.insert(topics).values({
+    id: "topic-ostt-synth-cedar-billing",
+    slug: "ostt-synth-cedar-billing-ops",
+    title: "ostt-synth Cedar River billing operations gap",
+    question:
+      "Should the synthetic Cedar River utility publish a clearer billing operations timeline?",
+    background:
+      "Synthetic background for schema smoke tests. Not a real jurisdiction topic.",
+    scope:
+      "Synthetic alpha seed scope only — fixture catalog topics remain unchanged for public-demo.",
+    workflowState: "open_for_submissions",
+    publicationStatus: "published",
+    createdByAccountId: "account-ostt-synth-staff-admin",
+    publishedAt: new Date("2026-08-05T00:00:00.000Z"),
+    publishedByAccountId: "account-ostt-synth-staff-admin",
+    synthetic: true,
+  });
+
+  await db.insert(claims).values({
+    id: "claim-ostt-synth-billing-timeline",
+    topicId: "topic-ostt-synth-cedar-billing",
+    authorAccountId: "account-ostt-synth-ada",
+    title: "ostt-synth Clearer billing timeline reduces call volume",
+    summary:
+      "Synthetic claim summary for repository and constraint smoke tests.",
+    approachLabel: "Operational transparency",
+    workflowState: "submitted",
+    moderationVisibility: "visible",
+    synthetic: true,
+  });
+
+  await db.insert(evidenceSubmissions).values({
+    id: "evsub-ostt-synth-billing-memo",
+    topicId: "topic-ostt-synth-cedar-billing",
+    submitterAccountId: "account-ostt-synth-ada",
+    sourceUrl: "https://example.ostt.synth.test/billing-ops-memo",
+    title: "ostt-synth Billing operations memo",
+    organization: "ostt-synth Cedar River Research Desk",
+    authorType: "agency",
+    sourceType: "memo",
+    limitations:
+      "Synthetic source metadata only — no remote fetch; not a real document.",
+    workflowState: "submitted",
+    qualityStatus: "pending",
+    moderationVisibility: "visible",
+    synthetic: true,
+  });
+
+  await db.insert(claimEvidenceLinks).values({
+    id: "celink-ostt-synth-billing-support",
+    topicId: "topic-ostt-synth-cedar-billing",
+    claimId: "claim-ostt-synth-billing-timeline",
+    evidenceSubmissionId: "evsub-ostt-synth-billing-memo",
+    relationship: "supporting",
+  });
+
+  await db.insert(conflictDisclosures).values({
+    id: "cdisc-ostt-synth-ada-claim",
+    disclosingAccountId: "account-ostt-synth-ada",
+    claimId: "claim-ostt-synth-billing-timeline",
+    evidenceSubmissionId: null,
+    publicSummary:
+      "ostt-synth Ada discloses a fictional prior volunteer role with a billing advisory group.",
+    privateDetail:
+      "Synthetic private detail for staff-only drill — must not appear in public projections.",
+    synthetic: true,
+  });
+
+  await db.insert(claimReviews).values({
+    id: "crev-ostt-synth-claim-submitted",
+    claimId: "claim-ostt-synth-billing-timeline",
+    reviewerAccountId: "account-ostt-synth-staff-admin",
+    decision: "changes_requested",
+    publicRationale:
+      "Synthetic review note: please attach stronger source limitations language.",
+    privateNotes: "Synthetic private reviewer note — staff drill only.",
+    synthetic: true,
+  });
+
+  await db.insert(evidenceReviews).values({
+    id: "erev-ostt-synth-evidence-pending",
+    evidenceSubmissionId: "evsub-ostt-synth-billing-memo",
+    reviewerAccountId: "account-ostt-synth-staff-admin",
+    decision: "quality_decided",
+    qualityStatus: "limited",
+    workflowDecision: null,
+    publicRationale:
+      "Synthetic quality decision: useful for process drill; limited for institutional recommendation.",
+    privateNotes: "Synthetic private evidence note — staff drill only.",
+    synthetic: true,
+  });
+
   await appendAuthAudit(db, {
     actorRole: "ostt-synth-seeder",
     action: "foundation.seeded",
     subjectType: "schema",
-    subjectId: "2.4-auth-foundation",
-    summary: "Synthetic foundation seed applied.",
+    subjectId: "3.2-topic-evidence",
+    summary: "Synthetic foundation seed applied (includes Phase 3.2 topic model).",
     synthetic: true,
   });
 }

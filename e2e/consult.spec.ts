@@ -43,7 +43,7 @@ test.describe("simulated consultation", () => {
 
     await page.getByRole("button", { name: "Open synthetic report" }).click();
     const report = page.getByRole("region", {
-      name: "Fixed synthetic consultation report",
+      name: "Sample Public Input Report",
     });
     await expect(report).toBeVisible();
     await expect(
@@ -53,7 +53,7 @@ test.describe("simulated consultation", () => {
       report.getByText("Not a representative sample", { exact: true }),
     ).toBeVisible();
     await expect(
-      report.getByText("Consensus is not proof", { exact: true }),
+      report.getByText("Agreement is not proof", { exact: true }),
     ).toBeVisible();
     await expect(
       report.getByRole("heading", { name: "All statements and evidence links" }),

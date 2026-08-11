@@ -659,7 +659,7 @@ export const fixtureCatalog = {
         "Loaded consultation snapshot consult-cedar-river-2026-03.",
         "Scoped question: whether hardship-rebate design should be a separate agenda item.",
         "Salience gate failed: statement is not in the high-disagreement set.",
-        "Enough research to move forward incomplete while billing-ops estimate is pending.",
+        "There is not yet enough research to move forward while the billing-ops estimate is pending.",
         "Default recommendation: remain proposed pending human review.",
       ],
       sensitivityNote:
@@ -790,7 +790,7 @@ export const fixtureCatalog = {
         "Loaded consultation snapshot consult-cedar-river-2026-03.",
         "Measured agree share on device-subsidy statement: high popularity.",
         "Cross-group consensus gate failed for this framing.",
-        "Enough research to move forward failed because the linked vendor whitepaper is rejected.",
+        "There is not enough research to move forward because the linked vendor whitepaper is rejected.",
         "Default recommendation: reject agenda qualification for this framing.",
       ],
       sensitivityNote:

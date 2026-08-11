@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 3 (packages 3.1–3.12)  
 **Baseline:** Phase 2 foundation at or after `a894317317f3ff1e80d0a3602df69e5b4d8cd589` (tag `phase-2-foundation` recorded in [phase-2-handoff.md](./phase-2-handoff.md))  
-**Current package:** **3.1.1 — Operational-contract corrections and plain-language UI.** No Phase 3 topic/evidence runtime routes, migrations, or capabilities are implemented yet. Contract corrections in Checkpoint 1 amend ADR 0008 via [ADR 0009](./decisions/0009-phase-3-operational-slice-corrections.md).
+**Current package:** **3.2 complete (awaiting human approval before 3.3).** Durable PostgreSQL topic/claim/evidence schema + gated repositories are implemented. No Phase 3 authoring routes, public mutation APIs, capabilities, or live publication yet.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [phase-2-plan.md](./phase-2-plan.md), [phase-2-handoff.md](./phase-2-handoff.md), [architecture-phase-2.md](./architecture-phase-2.md), [architecture-phase-3.md](./architecture-phase-3.md), [capability-matrix.md](./capability-matrix.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [open-questions.md](./open-questions.md), [decisions/0006-phase-3-two-lane-sequencing.md](./decisions/0006-phase-3-two-lane-sequencing.md), [decisions/0007-alpha-test-interim-council-dispositions.md](./decisions/0007-alpha-test-interim-council-dispositions.md), [decisions/0008-phase-3-operational-alpha-contract.md](./decisions/0008-phase-3-operational-alpha-contract.md), [decisions/0009-phase-3-operational-slice-corrections.md](./decisions/0009-phase-3-operational-slice-corrections.md)
 
@@ -59,7 +59,7 @@ These are binding for packages 3.2–3.12 (recorded in [ADR 0008](./decisions/00
 7. **Gated public read model exposes only published projections** (`publication_status = published`). Drafts, rejected material, private moderation notes, contact channels, verification records, and account identifiers are not public.
 8. **All mutations** use server-side `authorizeCapability` checks, Zod validation, transactions where multiple records change, CSRF protection, and registered audit events.
 9. **Store source URLs and submitter-provided metadata initially.** Do not fetch, scrape, preview, or download remote source content in the initial slice.
-10. **Do not add** file uploads, rich-text dependencies, AI APIs, analytics, payments, live Pol.is, notifications, or new external services in the initial slice.
+10. **Do not add** file uploads, rich-text dependencies, AI APIs, analytics, payments, notifications, or new external services in the Phase 3 operational slice. **Pol.is-powered Public Input** is planned for **Phase 4 of the alpha**; it is **not installed or called in Phase 3**.
 11. **Evidence-review status** remains independent from submission workflow status, participant popularity, and later consultation consensus.
 12. **Revisions are preserved.** Withdrawal, rejection, or moderation does not erase institutional history.
 13. **Alpha-test data remains fully resettable** (no alpha users or topic discussions carried into a later production system).
@@ -292,7 +292,7 @@ Exact assurance ladder rows for new capabilities are set in 3.3 without weakenin
 
 Phase 3 **inherits** [phase-2-plan.md](./phase-2-plan.md) §4. No new vendor classes are approved by this contract.
 
-Still **forbidden** unless a future ADR + register update says otherwise: payments, analytics, AI APIs, live Pol.is, identity-verification SDKs, remote source fetching services, file-storage vendors.
+Still **forbidden in Phase 3** unless a future ADR + register update says otherwise: payments, analytics, AI APIs, identity-verification SDKs, remote source fetching services, file-storage vendors. **Pol.is:** planned for Phase 4 of the alpha; not installed or called in Phase 3. Hosted versus self-hosted Pol.is remains a future permitted-service, privacy, deployment, and operational decision.
 
 ---
 
@@ -355,26 +355,25 @@ Still **forbidden** unless a future ADR + register update says otherwise: paymen
 
 ### Work package 3.2 — Durable topic/evidence model
 
-**Status:** Not started.
+**Status:** Complete (schema + repositories; awaiting human approval before 3.3).
 
 **Objective:** Add gated Drizzle tables and repositories for topics (separate `workflow_state` and `publication_status`), claims, evidence submissions, basic `claim_evidence_links` (`supporting` | `counterevidence`), disclosures, moderation visibility (`visible`/`held`/`hidden`), and quality axes—without authoring UI. Rich revision history remains **3.7**.
 
 **Prerequisites:** 3.1 and 3.1.1 Checkpoint 1 approved.
 
-**Implementation steps:**
+**Implemented decisions (3.2):**
 
-1. Design migrations for planned table groups in [architecture-phase-3.md](./architecture-phase-3.md), including independent topic workflow and publication columns and basic claim↔evidence relationship links.
-2. Enforce enums/checks for operational workflow, publication status, quality, and visibility states (`visible`/`held`/`hidden` only).
-3. Implement repository modules under gated persistence only; call `assertEnvironmentSafe()` before DB access.
-4. Ensure repositories never import `@/fixtures` / fixture catalog.
-5. Add unit/integration tests for constraints, ownership FKs, and pause-does-not-unpublish invariants.
-6. Extend synthetic seed only if needed for schema smoke tests—label synthetic; do not invent real people.
+1. Migration `drizzle/0012_topic_evidence.sql` adds enums and tables: `topics`, `claims`, `evidence_submissions` (single source-submission model; URL + metadata only), `claim_evidence_links` (composite same-topic FKs), `conflict_disclosures` (exactly one of `claim_id` / `evidence_submission_id`), append-only `claim_reviews` / `evidence_reviews` (DB immutability triggers).
+2. Topic `workflow_state` and `publication_status` are independent; `paused` + `published` allowed; published requires `published_at` + `published_by_account_id`; no Pol.is / popularity columns.
+3. Moderation visibility enum is `visible` | `held` | `hidden` only (no stored `restored`).
+4. Gated repositories: `src/lib/topics|claims|evidence|conflicts/repository.ts` with `assertEnvironmentSafe()` via `src/lib/persistence/gated.ts`; expected-state updates for workflow/publication/quality; no fixture imports; no public mutation APIs.
+5. Synthetic seed + gated E2E truncate lists include the new tables; public-demo fixtures unchanged.
 
 **Expected user-visible outcome:** None in UI. Migrations apply in gated local/CI DB.
 
-**Authorization and audit:** No public mutation APIs yet; repository tests may simulate actors. Register draft audit action names if append paths are exercised in tests.
+**Authorization and audit:** No public mutation APIs yet; repository tests may simulate actors. Capability enforcement remains **3.3**.
 
-**Privacy/security/accessibility:** No public projection yet; no contact/verification joins on topic tables.
+**Privacy/security/accessibility:** No public projection yet; repository types do not join contact/verification/assent/pseudonym tables. Disclosure `private_detail` is structurally separate from `public_summary`.
 
 **Tests and acceptance criteria:**
 
@@ -691,7 +690,7 @@ Still **forbidden** unless a future ADR + register update says otherwise: paymen
 
 **Tests and acceptance criteria:** End-to-end journey §4 demonstrable; reset leaves DB without alpha users/topics; deferred items listed not marked done.
 
-**Non-goals:** Production launch; managed host selection; penetration-test certification; Phase 4 Pol.is.
+**Non-goals:** Production launch; managed host selection; penetration-test certification; installing Pol.is (that is the Phase 4 alpha Public Input package).
 
 **Stop condition:** Human review before any Phase 4 package.
 
@@ -730,7 +729,8 @@ UI hiding is never sufficient.
 Do **not** introduce during Phase 3 initial packages:
 
 - Public self-registration or recruitment CTAs
-- Donations, payments, analytics, AI APIs, live Pol.is, notifications
+- Donations, payments, analytics, AI APIs, notifications
+- Live Pol.is install/call (planned for Phase 4 of the alpha; not Phase 3)
 - File uploads or rich-text editor dependencies
 - Remote fetch/scrape/preview/download of source URLs
 - New external services outside the Phase 2 register
