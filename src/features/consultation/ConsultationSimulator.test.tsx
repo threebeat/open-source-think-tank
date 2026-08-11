@@ -90,7 +90,7 @@ describe("ConsultationSimulator", () => {
     await user.click(openReport);
 
     const report = screen.getByRole("region", {
-      name: "Fixed synthetic consultation report",
+      name: "Sample Public Input Report",
     });
     expect(
       within(report).getByText("Not a representative sample"),

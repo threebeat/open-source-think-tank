@@ -163,7 +163,7 @@ Exact paths may align with existing `/account/*` and `/staff/*` trees; do not ex
 | Route | Public-demo | Gated |
 | --- | --- | --- |
 | `/topics`, `/topics/[slug]` | Fixtures (unchanged behavior) | Published projection only |
-| `/topics/[slug]/consult` | Synthetic consultation | Remains out of Phase 3 operational scope (fixture or gated stub—**no live Pol.is**) |
+| `/topics/[slug]/consult` | Demonstration Public Input (fixture) | Remains out of Phase 3 operational scope; **Pol.is planned for Phase 4 of the alpha — not installed or called in Phase 3** |
 | Agenda/deliberation/decision | Fixtures | Unchanged unless a later package explicitly says otherwise |
 
 ### Mutation / API boundaries
@@ -276,7 +276,7 @@ Items below may be completed later **without** silently weakening core authoriza
 | D6 | Rich-text authoring dependencies | Plain text / Markdown-as-text TBD later without inventing legal HTML policy |
 | D7 | Full-text search engine vendor | 3.11 may use SQL `ILIKE`/simple indexes first |
 | D8 | Notifications (email/push) beyond invite/auth | Forbidden until designed |
-| D9 | Live Pol.is / consultation ops | Phase 4 |
+| D9 | Pol.is-powered Public Input | **Planned Phase 4 alpha integration** — not installed or called in Phase 3; hosted vs self-hosted remains an open permitted-service decision |
 | D10 | AI APIs, analytics, payments | Forbidden |
 | D11 | Penetration test / formal security review | Before later pilot—not Phase 3 exit fiction |
 | D12 | Manual NVDA sign-off on new workspace UI | Track in handoff |
@@ -286,3 +286,22 @@ Items below may be completed later **without** silently weakening core authoriza
 | D16 | Participant visibility into others’ in-flight submissions pre-publish | See OQ20 |
 
 Completing a deferred item requires its own package or ADR touch; do not mark it done inside an unrelated package.
+
+---
+
+## 12. Future Pol.is integration boundary
+
+**Public-facing name:** Public Input. When live, copy may say “Public Input, powered by Pol.is.” Pol.is results represent participant preferences, agreement, and disagreement. They do **not** determine factual truth, research quality, agenda qualification, or the institution’s recommendation.
+
+**Phase 3.2 schema boundary (binding now):**
+
+- Internal topic IDs remain the institutional source of truth.
+- Future provider conversation IDs must live in a **separate mapping table**, not on `topics`, `claims`, or `evidence_submissions`.
+- Provider-specific fields must **not** be added to topic/claim/evidence tables in 3.2.
+- Conversation-scoped pseudonyms remain isolated from accounts.
+- No public or moderator API may reverse-map opinion activity to contact details or legal identity.
+- Imported Pol.is reports will be versioned aggregate snapshots.
+- Pol.is outcomes must **never** update evidence-quality fields.
+- The future Phase 4 package must define provider approval, authentication, retention, reset, export, outage, moderation, and audit behavior before install.
+
+**Phase 2 registry caution:** The synthetic-only `closed_test_conversations` registry is **not** the production Pol.is registry and must **not** be relaxed or repurposed for live Pol.is.

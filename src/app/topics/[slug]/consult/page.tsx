@@ -67,7 +67,7 @@ export default async function ConsultPage({ params }: ConsultPageProps) {
       <PageHeader
         eyebrow="Simulated public input"
         title={`Public Input · ${topic.title}`}
-        description="Practice responding to short statements, then open the sealed synthetic report. In the intended product, input comes from eligible/invited participants. Preference signals stay separate from research quality."
+        description="This is a demonstration of Public Input. Practice responding to short statements, then open the sample report. A later alpha phase is planned to use Pol.is for live Public Input from eligible/invited participants — Pol.is is not connected now. Preference signals stay separate from research quality."
       />
       <ConsultationSimulator
         topicId={topic.id}

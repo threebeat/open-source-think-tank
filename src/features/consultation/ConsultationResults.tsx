@@ -82,7 +82,7 @@ function metricLabelFor(
       .filter((part): part is string => part != null)
       .join(" · ");
   }
-  return `Synthetic agree share: ${Math.round(metric.agreeShare * 100)}%`;
+  return `Share who agreed in this demonstration: ${Math.round(metric.agreeShare * 100)}%`;
 }
 
 export function ConsultationResults({
@@ -116,25 +116,28 @@ export function ConsultationResults({
           id="consult-report-heading"
           className="font-heading text-2xl text-foreground"
         >
-          Fixed synthetic consultation report
+          Sample Public Input Report
         </h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-          This report is a sealed fixture snapshot ({result.methodVersion}). Your
-          local practice votes do not change these numbers or rearrange the
-          content.
+          This is a demonstration report ({result.methodVersion}) — not a live
+          Public Input session. A later alpha phase is planned to use Pol.is for
+          live Public Input from eligible/invited participants. Your local
+          practice votes do not change these numbers or rearrange the content.
         </p>
       </div>
 
       <DisclosureNotice title="Not a representative sample" tone="caution">
         {result.notRepresentativeNotice} Neutrally labeled groups (for example,{" "}
         {groups.map((group) => group.label).join(", ")}) are not ideology labels
-        and do not imply a population mandate.
+        and do not imply a population mandate. This demonstration does not
+        connect to Pol.is and does not offer unrestricted public
+        self-registration.
       </DisclosureNotice>
 
-      <DisclosureNotice title="Consensus is not proof">
-        Cross-group agreement organizes preference. It is not evidence that a
-        claim is true. Disagreement is not evidence of equal factual support.
-        Evidence-review status stays separate on the topic page.
+      <DisclosureNotice title="Agreement is not proof">
+        Areas of agreement and disagreement organize preference. They are not
+        evidence that a claim is true, and they do not set research review
+        status. Research quality stays separate on the topic page.
       </DisclosureNotice>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -157,7 +160,7 @@ export function ConsultationResults({
 
       <section className="space-y-3">
         <h3 className="font-heading text-xl text-foreground">
-          Cross-group consensus statements
+          Statements people agreed on across groups
         </h3>
         <ul className="space-y-3">
           {consensus.map((statement) => (
@@ -175,7 +178,7 @@ export function ConsultationResults({
 
       <section className="space-y-3">
         <h3 className="font-heading text-xl text-foreground">
-          High-disagreement statements
+          Statements with the most disagreement
         </h3>
         <ul className="space-y-3">
           {disagreement.map((statement) => (

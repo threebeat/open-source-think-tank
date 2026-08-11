@@ -43,7 +43,7 @@ test.describe("simulated consultation", () => {
 
     await page.getByRole("button", { name: "Open synthetic report" }).click();
     const report = page.getByRole("region", {
-      name: "Fixed synthetic consultation report",
+      name: "Sample Public Input Report",
     });
     await expect(report).toBeVisible();
     await expect(
