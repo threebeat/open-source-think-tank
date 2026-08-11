@@ -34,7 +34,7 @@ Engineering packages **2.1–2.12** are in place. Alpha-test data must remain **
 | Field | Value |
 | --- | --- |
 | Candidate commit SHA (Docker PG16 suite) | `7f3fd53caac421ebe2b8737a5d6e1f703b84dee7` |
-| Disposition / tag commit SHA | _filled at tag time_ |
+| Disposition / tag commit SHA | `eef9166dfd4d170ab55abe1f5811f0f4085e8f65` (`phase-2-foundation`) |
 | Docker / Compose | Client+Engine **29.7.2** (Docker Desktop 4.86.0); Compose **v5.3.1**; context `desktop-linux` |
 | Command | `npm run test:e2e:gated` (`db:up` with compose `--wait` → `gated-e2e-prepare.mjs` → `npm run build` → `playwright test -c playwright.gated.config.ts`) |
 | PostgreSQL image / version | Image **`postgres:16-alpine`** (`sha256:57c72fd2a128…`); server reports **`postgres (PostgreSQL) 16.14`** on Alpine 3.24; host port **54329→5432**; container healthy |
