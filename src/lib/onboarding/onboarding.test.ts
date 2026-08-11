@@ -85,9 +85,9 @@ describe("invite-only onboarding (2.8)", () => {
     await client.close();
   });
 
-  it("blocks real accounts with ONBOARD_COUNSEL_GATE_BLOCKED while counsel gates block", async () => {
+  it("activates real accounts when engineering gates pass under alpha-test counsel clearances", async () => {
     const personId = newEntityId("person");
-    const accountId = "account-real-onboard-blocked";
+    const accountId = "account-real-onboard-allowed";
     await db.insert(persons).values({
       id: personId,
       synthetic: false,
@@ -121,14 +121,17 @@ describe("invite-only onboarding (2.8)", () => {
 
     const progress = await getOnboardingProgress(db, accountId);
     expect(progress?.engineeringReady).toBe(true);
-    expect(progress?.counselBlocksReal).toBe(true);
-    expect(progress?.canActivate).toBe(false);
+    expect(progress?.counselBlocksReal).toBe(false);
+    expect(progress?.canActivate).toBe(true);
 
-    const blocked = await activateAccount(db, { accountId });
-    expect(blocked.ok).toBe(false);
-    if (!blocked.ok) {
-      expect(blocked.code).toBe("ONBOARD_COUNSEL_GATE_BLOCKED");
-    }
+    const activated = await activateAccount(db, { accountId });
+    expect(activated.ok).toBe(true);
+
+    const [account] = await db
+      .select()
+      .from(accounts)
+      .where(eq(accounts.id, accountId));
+    expect(account?.lifecycleState).toBe("active");
   });
 
   it("activates synthetic accounts when engineering gates pass", async () => {

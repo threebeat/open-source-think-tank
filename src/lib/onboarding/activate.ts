@@ -23,7 +23,7 @@ export type ActivateAccountInput = {
 /**
  * Sole production path: pending_onboarding → active after assent + verification
  * gates, re-checked inside one transaction. Real accounts are blocked while
- * applicable counsel dispositions remain blocking.
+ * applicable counsel dispositions remain blocking (alpha-test clearances in dispositions.ts).
  */
 export async function activateAccount(
   db: FoundationDb,
@@ -120,7 +120,7 @@ export async function activateAccount(
           role: "participant",
           grantedByLabel: "onboarding.activate",
           reason:
-            "Granted on activation as community participant (not a statutory membership claim).",
+            "Granted on activation as delegate / account holder for the alpha-test foundation (ADR 0007).",
         });
       }
 
@@ -131,7 +131,7 @@ export async function activateAccount(
         subjectType: "account",
         subjectId: input.accountId,
         summary:
-          "Account activated after transactional assent, verification, and counsel checks (community participant / account holder).",
+          "Account activated after transactional assent, verification, and counsel checks (alpha-test delegate / account holder).",
         privatePayload: {
           evaluatedAt: gates.evaluatedAt,
           synthetic: updated.synthetic,

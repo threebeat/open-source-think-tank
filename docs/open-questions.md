@@ -12,11 +12,11 @@ Phase 2 decision register and counsel gates: [phase-2-plan.md](./phase-2-plan.md
 
 ## Roles and authority
 
-1. **Authority boundaries (product framing)** — Unresolved. How should the UI describe the exact powers of Community participants, the Deliberation council, the Policy council, and the Governing board without inventing legal answers? The charter uses advisory/recommend language for councils and marks board authority as pending counsel. See legal questions 4–5.
+1. **Authority boundaries (product framing)** — Alpha-test scoped clearance in [ADR 0007](./decisions/0007-alpha-test-interim-council-dispositions.md) (continual communication sufficient until the test ends). Lasting post-alpha authority wording remains open for the post-alpha report. See legal questions 4–5.
 
-2. **“Community participant” vs statutory member** — Unresolved. The prototype avoids calling every account a legal “member.” Product copy must keep showing this as unresolved until counsel advises. See legal question 3.
+2. **“Community participant” / member / delegate** — Alpha-test scoped clearance in ADR 0007: “member” OK if test purpose is communicated at assent and continually; preferred synonym **delegate**. Permanent statutory membership remains open for the post-alpha report. See legal question 3.
 
-3. **When a crowd or council outcome binds (or does not bind) the board** — Unresolved for product messaging. Phase 1 must show the question, not invent a binding rule. See legal question 5.
+3. **When a crowd or council outcome binds (or does not bind) the board** — Alpha-test scoped clearance (communication sufficient). Lasting binding rules remain open for the post-alpha report. See legal question 5.
 
 3a. **Decision-record outcome labels** — Unresolved. Phase 1 fixtures use `recommended` for Policy Council outputs so the demo does not invent board adoption. Whether a later board action becomes a separate `adopted` record, an overlay status, or another model remains open.
 
@@ -28,7 +28,7 @@ Phase 2 decision register and counsel gates: [phase-2-plan.md](./phase-2-plan.md
 
 4. **Representation diagnostics in the demo** — Unresolved. How strongly should Phase 1 warn that synthetic consultation participants are not a representative sample, and what representation metrics (if any) appear as placeholders versus omitted until later phases?
 
-5. **Production sampling claims** — Unresolved. What claims about Tennessee-first vs national participation may appear after a real pilot? Do not imply a U.S.-wide mandate in Phase 1.
+5. **Production sampling claims** — Alpha-test: no geographical eligibility requirements until the test ends ([ADR 0007](./decisions/0007-alpha-test-interim-council-dispositions.md)). Post-alpha residency/national claims remain open for the report.
 
 ---
 
@@ -70,9 +70,11 @@ Phase 2 decision register and counsel gates: [phase-2-plan.md](./phase-2-plan.md
 
 14. **Distributed auth rate limiting** — Unresolved for staging/production. Work Package 2.4 ships an in-process limiter suitable for local/ephemeral use. Multi-instance deployments need a shared limiter before real enrollment.
 
-15. **Retention and deletion rights** — Unresolved. WP 2.11 ships provisional engineering retention settings and closure that retains assent/audit; counsel must still clear LQ10–11 before treating schedules or anonymization of real accounts as settled.
+15. **Retention and deletion rights** — Alpha-test scoped clearance in [ADR 0007](./decisions/0007-alpha-test-interim-council-dispositions.md): proposed postures may run to prove efficacy; **must** reset all included alpha-test data (no user/topic carry-over). Permanent post-alpha schedules remain open for the report.
 
-16. **Phase 3 start while Phase 2 readiness is blocked** — Product/sequencing (not counsel). Draft two-lane rule in [ADR 0006](./decisions/0006-phase-3-two-lane-sequencing.md): Phase 3 synthetic/closed engineering may proceed; Phase 2 readiness tag and real participant activation remain blocked. Confirm as project-owner scope approval; never treat as counsel clearance of §7 gates.
+16. **Phase 3 start while Phase 2 readiness was blocked** — Product/sequencing (not counsel). [ADR 0006](./decisions/0006-phase-3-two-lane-sequencing.md): Phase 3 synthetic/closed engineering may proceed. Lane B alpha-test foundation now authorized under ADR 0007 scopes.
+
+17. **Post-alpha report contents** — Required by interim council. After the alpha test, retain the product and a report covering the full plan, achievements, and **lasting open questions / decisions** that must be made once the alpha test is over. Do not carry alpha-test users or topic discussion forward.
 
 ---
 

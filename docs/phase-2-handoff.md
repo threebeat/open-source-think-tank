@@ -1,40 +1,40 @@
 # Phase 2 handoff
 
-**Status:** Implementation complete; readiness blocked (counsel dispositions + GitHub Actions CI confirmation on tag candidate). Local Docker Compose PG16 gated E2E is now green. **Phase 2 is not complete.**
+**Status:** Phase 2 foundation readiness authorized for the **alpha-test** window. Interim council dispositions recorded ([ADR 0007](./decisions/0007-alpha-test-interim-council-dispositions.md)); local Docker Compose PG16 gated E2E green. Tag: `phase-2-foundation` (see Tagging below).
 
-Engineering packages **2.1–2.12 implementation** are in place. **Do not tag** a foundation release and **do not** treat this handoff as Phase 2 done until Lane B blockers below clear.
+Engineering packages **2.1–2.12** are in place. Alpha-test data must remain **resettable**; lasting open questions ship in the post-alpha report (product + report retained; no user/topic carry-over).
 
 **Baseline:** Phase 1 tag [`phase-1-demonstration`](https://github.com/threebeat/open-source-think-tank/releases/tag/phase-1-demonstration) at `33ff0cc`.  
 **Plan:** [phase-2-plan.md](./phase-2-plan.md).  
 **Counsel packet:** [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md).  
-**Two-lane sequencing (owner scope, not counsel):** [ADR 0006](./decisions/0006-phase-3-two-lane-sequencing.md).
+**Interim council dispositions:** [ADR 0007](./decisions/0007-alpha-test-interim-council-dispositions.md).  
+**Two-lane sequencing:** [ADR 0006](./decisions/0006-phase-3-two-lane-sequencing.md).
 
 ## Two-lane rule (project-owner scope)
 
 | Lane | Posture |
 | --- | --- |
-| **A — Phase 3 synthetic / closed engineering** | May proceed under existing permits and blocking counsel constraints (confirm ADR 0006). |
-| **B — Phase 2 readiness / foundation tag / real activation** | **Blocked** until counsel dispositions, GitHub Actions CI on the candidate SHA, and remaining readiness evidence clear. |
-
-This is **not** counsel clearance of §7 gates and does **not** authorize real participant data.
+| **A — Phase 3 synthetic / closed engineering** | May proceed under existing permits and alpha-test counsel scopes. |
+| **B — Phase 2 readiness / foundation tag / alpha-test activation** | Counsel readiness gates **cleared** (alpha-test scopes); foundation tag authorized. Real `active` accounts allowed when engineering onboarding gates also pass. |
 
 ## Readiness blockers (Lane B)
 
 | Blocker | Status | Required evidence |
 | --- | --- | --- |
-| Application-level gated E2E (account/staff axe, mobile account flows) | Covered by Docker Compose PG16 run below on candidate SHA | Green gated suite on the SHA below |
+| Application-level gated E2E (account/staff axe, mobile account flows) | Covered by Docker Compose PG16 run below | Green gated suite on the SHA below |
 | Docker Compose PostgreSQL **16** (`npm run test:e2e:gated`) | **Cleared locally** 2026-08-10 — see evidence log | Green compose-based run (also reconfirm via CI `e2e-gated`) |
-| CI on GitHub Actions | Workflow present; **run URL pending** on candidate SHA | Green `unit` + `e2e-public` + `e2e-gated` |
-| Counsel dispositions | Packet issued; all readiness gates still **blocking** | §7 + `dispositions.ts`; `readinessCounselAllowsFoundationTag() === true` |
-| Manual NVDA spot-check (account/staff) | **Pending** | Notes in evidence table |
+| CI on GitHub Actions | Workflow present; **run URL still pending** on candidate SHA | Green `unit` + `e2e-public` + `e2e-gated` (non-blocking for interim council tag authorization) |
+| Counsel dispositions | **Cleared** (alpha-test interim council) | §7 + `dispositions.ts`; `readinessCounselAllowsFoundationTag() === true` |
+| Manual NVDA spot-check (account/staff) | **Pending** (non-blocking for interim council tag authorization) | Notes in evidence table |
 | Managed Postgres / production email | Blocked pending vendor addenda | Permitted-services register |
-| Foundation release tag | **Not created** | Human approval after Lane B clears |
+| Foundation release tag | **Authorized** — create/update `phase-2-foundation` on the disposition commit | Human + interim council authorization 2026-08-10 |
 
 ## Evidence log (fill on tag candidate)
 
 | Field | Value |
 | --- | --- |
-| Candidate commit SHA | `7f3fd53caac421ebe2b8737a5d6e1f703b84dee7` (`readiness/2.12-hardening-pass`; reconfirm after merge to `main`) |
+| Candidate commit SHA (Docker PG16 suite) | `7f3fd53caac421ebe2b8737a5d6e1f703b84dee7` |
+| Disposition / tag commit SHA | _filled at tag time_ |
 | Docker / Compose | Client+Engine **29.7.2** (Docker Desktop 4.86.0); Compose **v5.3.1**; context `desktop-linux` |
 | Command | `npm run test:e2e:gated` (`db:up` with compose `--wait` → `gated-e2e-prepare.mjs` → `npm run build` → `playwright test -c playwright.gated.config.ts`) |
 | PostgreSQL image / version | Image **`postgres:16-alpine`** (`sha256:57c72fd2a128…`); server reports **`postgres (PostgreSQL) 16.14`** on Alpine 3.24; host port **54329→5432**; container healthy |
@@ -43,7 +43,7 @@ This is **not** counsel clearance of §7 gates and does **not** authorize real p
 | Specs covered | `a11y.gated.spec.ts`, `auth-lifecycle.gated.spec.ts`, `onboarding.gated.spec.ts` (incl. phone account flows + staff narrow viewport) |
 | GitHub Actions run URL | _pending_ |
 | Manual NVDA result | _pending_ |
-| Counsel §7 readiness gates | All **blocking** — [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md) |
+| Counsel §7 readiness gates | **cleared** (alpha-test scopes) — [ADR 0007](./decisions/0007-alpha-test-interim-council-dispositions.md) |
 
 ### Prior application-level gated note (historical)
 
@@ -53,16 +53,16 @@ Earlier the same day, with Docker Desktop engine unavailable (WSL missing), the 
 
 | Topic | Gate id | Disposition status | Source |
 | --- | --- | --- | --- |
-| Data map and retention schedule | `data_map_retention` | blocking | [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md) |
-| Electronic assent documents | `electronic_assent` | blocking | same |
-| Account-holder vs statutory-member terminology | `statutory_membership` | blocking | same |
-| Eligibility and geographic assertions | `eligibility_geography` | blocking | same |
-| Council and board authority | `account_council_authority` | blocking | same |
-| Separation of verification and political-opinion data | `political_opinion_verification` | blocking | same |
-| Formation / fiscal sponsorship (readiness framing) | `formation_fiscal` | blocking | same |
+| Data map and retention schedule | `data_map_retention` | cleared | [ADR 0007](./decisions/0007-alpha-test-interim-council-dispositions.md) |
+| Electronic assent documents | `electronic_assent` | cleared | same |
+| Account-holder vs statutory-member terminology | `statutory_membership` | cleared (prefer **delegate**; “member” OK with continual test-purpose communication) | same |
+| Eligibility and geographic assertions | `eligibility_geography` | cleared (no geo requirements until alpha test ends) | same |
+| Council and board authority | `account_council_authority` | cleared | same |
+| Separation of verification and political-opinion data | `political_opinion_verification` | cleared | same |
+| Formation / fiscal sponsorship (readiness framing) | `formation_fiscal` | cleared | same |
 
 Full provenance: [phase-2-plan.md](./phase-2-plan.md) §7 and `src/lib/counsel/dispositions.ts`.  
-**No clearance invented.** Owner risk acceptance ≠ `cleared`. Privileged counsel material must not be committed (see packet confidentiality warning).
+Interim council = project owner acting as council until alpha test; formal council/board forms during the test. Privileged counsel material must not be committed.
 
 ## What Phase 2 implementation delivered
 
@@ -70,32 +70,33 @@ Full provenance: [phase-2-plan.md](./phase-2-plan.md) §7 and `src/lib/counsel/d
 | --- | --- |
 | 2.1–2.2 | Contract, ADRs, `APP_MODE` public-demo vs gated isolation |
 | 2.3 | Drizzle/Postgres schema + synthetic seed (ephemeral/local; managed host still blocked) |
-| 2.4–2.8 | Auth, roles, assent, verification, invite-only onboarding (real `active` counsel-gated) |
+| 2.4–2.8 | Auth, roles, assent, verification, invite-only onboarding (real `active` allowed under alpha-test counsel scopes) |
 | 2.9–2.11 | Audit ledger, pseudonyms, privacy/ops controls |
-| 2.12 (impl) | Hardening, handoff, CI, counsel packet; readiness tag open |
+| 2.12 | Hardening, handoff, CI, counsel packet, interim council dispositions, foundation tag |
 
-## Isolation and non-launch posture
+## Isolation and alpha-test posture
 
 - Public-demo defaults when `APP_MODE` unset; gated secrets fail closed.
 - No public signup, recruitment, donation, or live consultation path.
-- Role language: “account holder” / “community participant”; no statutory membership claims.
-- Assent documents remain provisional while `electronic_assent` is **blocking**.
+- Preferred account synonym for the alpha test: **delegate** (member language OK only with clear continual test-purpose communication).
+- Assent documents may be used for alpha-test invite-only accounts under the electronic_assent clearance; findings may inform later auth.
+- Alpha-test participant and topic data must be **fully resettable**; retained outputs are the product and the post-alpha report.
 
-## Phase 3 / pilot blockers (Lane B / pilot)
+## Phase 3 / pilot blockers (remaining)
 
-See [open-questions.md](./open-questions.md) (incl. OQ16), [legal-questions.md](./legal-questions.md), plan §7.
+See [open-questions.md](./open-questions.md) (incl. OQ16–OQ17), [legal-questions.md](./legal-questions.md), plan §7 scopes.
 
-1. Readiness counsel gates still **blocking**.
-2. Real account activation forbidden until activation counsel gates clear/conditionally clear.
-3. GitHub Actions CI green on the tag candidate still required for Lane B (local Docker Compose PG16 gated E2E recorded 2026-08-10).
+1. Post-alpha report must capture lasting open questions and decisions (OQ17).
+2. GitHub Actions CI green URL still desirable on the tagged SHA.
+3. Manual NVDA spot-check still pending.
 4. Managed Postgres host and production email vendors blocked pending addenda.
 5. Payments, analytics, AI APIs, live Pol.is, identity-verification SDKs forbidden until register approval.
 6. Production backup/PITR after host approval (PGlite drill insufficient).
-7. Penetration test / formal security review before pilot.
+7. Penetration test / formal security review before a later pilot.
 
-## Tagging rule (foundation tag **not** created)
+## Tagging rule
 
-Create `phase-2-foundation` **only after** evidence log is filled, counsel readiness gates allow `readinessCounselAllowsFoundationTag()`, and a human explicitly completes 2.12.
+Create/update `phase-2-foundation` after interim council dispositions allow `readinessCounselAllowsFoundationTag()`, gated E2E evidence is recorded, and a human explicitly authorizes the tag (authorized 2026-08-10).
 
 ## Commands
 
@@ -120,6 +121,7 @@ npm run db:down        # cleanup when finished
 - [phase-2-plan.md](./phase-2-plan.md)
 - [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md)
 - [decisions/0006-phase-3-two-lane-sequencing.md](./decisions/0006-phase-3-two-lane-sequencing.md)
+- [decisions/0007-alpha-test-interim-council-dispositions.md](./decisions/0007-alpha-test-interim-council-dispositions.md)
 - [phase-1-handoff.md](./phase-1-handoff.md)
 - [secrets-and-operations.md](./secrets-and-operations.md)
 - [incident-response.md](./incident-response.md)

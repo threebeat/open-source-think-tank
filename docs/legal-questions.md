@@ -6,7 +6,7 @@ This document lists decisions that require professional advice on Tennessee nonp
 
 **Related:** [product-charter.md](./product-charter.md), [open-questions.md](./open-questions.md), [phase-2-plan.md](./phase-2-plan.md) (counsel disposition gates)
 
-Phase 2 records disposition (or explicit blocking status) for membership, formation, authority, assent, geography, political-opinion / verification handling, and data-map/retention in [phase-2-plan.md](./phase-2-plan.md) §7 and `src/lib/counsel/dispositions.ts`. Readiness review packet: [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md). Nothing there invents counsel answers.
+Phase 2 records disposition (or explicit blocking status) for membership, formation, authority, assent, geography, political-opinion / verification handling, and data-map/retention in [phase-2-plan.md](./phase-2-plan.md) §7 and `src/lib/counsel/dispositions.ts`. Readiness review packet: [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md). Alpha-test interim council public summary: [ADR 0007](./decisions/0007-alpha-test-interim-council-dispositions.md). Those clearances are alpha-test scoped; lasting post-alpha questions remain for the post-alpha report.
 
 ---
 

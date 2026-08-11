@@ -137,7 +137,7 @@ export async function getOnboardingProgress(
             : "blocked",
       detail:
         gates.lifecycleState === "active"
-          ? "Account is active (account holder / community participant — not a statutory membership claim)."
+          ? "Account is active (preferred alpha-test synonym: delegate; continually communicate test purpose if using member language)."
           : gates.canActivate
             ? "All engineering and counsel constraints passed for this account."
             : gates.blockingReasons[0] ?? "Complete prior steps.",

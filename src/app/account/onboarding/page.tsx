@@ -48,11 +48,13 @@ export default async function OnboardingPage() {
       <PageHeader
         eyebrow="Invite-only"
         title="Onboarding progress"
-        description="Complete assent and verification gates before activation. This path creates an account holder / community participant record — not a statutory membership claim."
+        description="Complete assent and verification gates before activation. Preferred alpha-test synonym: delegate. “Member” language is allowed only when the alpha-test purpose is communicated clearly and continually."
       />
-      <DisclosureNotice title="Counsel gates" tone="caution">
-        Eligibility geography rules and electronic assent production claims remain
-        counsel-blocked. Declining required documents blocks activation.
+      <DisclosureNotice title="Alpha-test gates" tone="caution">
+        Interim council clearances apply for the alpha test (ADR 0007): no
+        geographical eligibility requirements; keep current electronic assent.
+        Declining required documents blocks activation. Alpha-test data must be
+        resettable after the test.
       </DisclosureNotice>
 
       <ol className="space-y-4">

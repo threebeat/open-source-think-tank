@@ -2,10 +2,11 @@
  * Server-readable counsel disposition configuration (phase-2-plan §7).
  *
  * Status vocabulary matches the plan. Owner risk acceptance must never appear
- * here as `cleared`. Updates require provenance in docs/phase-2-plan.md §7.
+ * here as `cleared` without an interim-council / counsel public summary.
+ * Updates require provenance in docs/phase-2-plan.md §7.
  *
  * Review packet: docs/counsel-review-packet-2.12.md (issued 2026-08-10).
- * Dispositions remain blocking until counsel returns recorded outcomes.
+ * Alpha-test interim council return: docs/decisions/0007-alpha-test-interim-council-dispositions.md
  */
 
 export type CounselDispositionStatus =
@@ -56,82 +57,91 @@ export const READINESS_COUNSEL_GATE_IDS = [
 export type ReadinessCounselGateId =
   (typeof READINESS_COUNSEL_GATE_IDS)[number];
 
-const PACKET =
-  "docs/counsel-review-packet-2.12.md — issued 2026-08-10; awaiting counsel disposition return";
+const INTERIM_COUNCIL =
+  "docs/decisions/0007-alpha-test-interim-council-dispositions.md — public summary of interim council return to counsel-review-packet-2.12.md (2026-08-10)";
+
+const RECORDED_BY =
+  "Interim council (project owner acting as council until alpha test)";
+
+const OWNER_APPROVAL =
+  "Project owner / 2026-08-10 (sole builder until alpha test; same actor as interim council)";
 
 export const COUNSEL_DISPOSITIONS: Record<string, CounselDisposition> = {
   data_map_retention: {
     id: "data_map_retention",
-    status: "blocking",
+    status: "cleared",
     scope:
-      "Full gate; data map and retention postures are planning aids only until counsel disposition — not a privacy policy or legal retention schedule",
+      "Alpha-test foundation: proposed retention postures may run to prove efficacy; project must be able to reset all included alpha-test data — no users or topic discussion carry over after the test. Not a permanent post-alpha privacy schedule.",
     recordedDate: "2026-08-10",
-    recordedBy: "Phase 2 readiness engineering",
-    counselSource: PACKET,
-    projectOwnerApproval: "n/a",
+    recordedBy: RECORDED_BY,
+    counselSource: INTERIM_COUNCIL,
+    projectOwnerApproval: OWNER_APPROVAL,
     affectedPackages: ["2.11", "2.12"],
   },
   statutory_membership: {
     id: "statutory_membership",
-    status: "blocking",
+    status: "cleared",
     scope:
-      "Full gate; no product claim of statutory membership — use account holder / community participant",
+      "Alpha-test foundation: “member” may appear if test purpose is communicated clearly at assent and continually during the test; preferred synonym is “delegate”. Does not settle permanent statutory membership.",
     recordedDate: "2026-08-10",
-    recordedBy: "Phase 2 readiness engineering",
-    counselSource: PACKET,
-    projectOwnerApproval: "n/a",
+    recordedBy: RECORDED_BY,
+    counselSource: INTERIM_COUNCIL,
+    projectOwnerApproval: OWNER_APPROVAL,
     affectedPackages: ["2.1", "2.4", "2.5", "2.8", "2.12"],
   },
   electronic_assent: {
     id: "electronic_assent",
-    status: "blocking",
+    status: "cleared",
     scope:
-      "Full gate; no “not legally reviewed” doc may become active assent for real accounts",
+      "Alpha-test foundation: keep current electronic assent; bot/activity metrics and engineering discretion may inform later authentication strategy. Not a permanent post-alpha legal assent determination.",
     recordedDate: "2026-08-10",
-    recordedBy: "Phase 2 readiness engineering",
-    counselSource: PACKET,
-    projectOwnerApproval: "n/a",
+    recordedBy: RECORDED_BY,
+    counselSource: INTERIM_COUNCIL,
+    projectOwnerApproval: OWNER_APPROVAL,
     affectedPackages: ["2.6", "2.8", "2.12"],
   },
   eligibility_geography: {
     id: "eligibility_geography",
-    status: "blocking",
-    scope: "Full gate; no national-mandate or settled residency rule",
+    status: "cleared",
+    scope:
+      "Alpha-test foundation: implement no geographical eligibility requirements until the test ends; keep eligibility open for travel/demo; use the test to learn later eligibility design.",
     recordedDate: "2026-08-10",
-    recordedBy: "Phase 2 readiness engineering",
-    counselSource: PACKET,
-    projectOwnerApproval: "n/a",
+    recordedBy: RECORDED_BY,
+    counselSource: INTERIM_COUNCIL,
+    projectOwnerApproval: OWNER_APPROVAL,
     affectedPackages: ["2.7", "2.8", "2.12"],
   },
   political_opinion_verification: {
     id: "political_opinion_verification",
-    status: "blocking",
+    status: "cleared",
     scope:
-      "Full gate; keep identity store separated from opinion/pseudonym maps; no live consultation participation in Phase 2",
+      "Alpha-test foundation: existing separation of identity/verification from opinion/pseudonym maps is adequate for now; no further action required before the test ends.",
     recordedDate: "2026-08-10",
-    recordedBy: "Phase 2 readiness engineering",
-    counselSource: PACKET,
-    projectOwnerApproval: "n/a",
+    recordedBy: RECORDED_BY,
+    counselSource: INTERIM_COUNCIL,
+    projectOwnerApproval: OWNER_APPROVAL,
     affectedPackages: ["2.7", "2.9", "2.10", "2.11", "2.12"],
   },
   account_council_authority: {
     id: "account_council_authority",
-    status: "blocking",
-    scope: "Full gate; recommendations only; no board-binding claims",
+    status: "cleared",
+    scope:
+      "Alpha-test foundation: continual communication of test purpose/authority limits is sufficient; no additional authority steps until after the alpha test. Formal council/board forms during the test.",
     recordedDate: "2026-08-10",
-    recordedBy: "Phase 2 readiness engineering",
-    counselSource: PACKET,
-    projectOwnerApproval: "n/a",
+    recordedBy: RECORDED_BY,
+    counselSource: INTERIM_COUNCIL,
+    projectOwnerApproval: OWNER_APPROVAL,
     affectedPackages: ["2.5", "2.8", "2.9", "2.12"],
   },
   formation_fiscal: {
     id: "formation_fiscal",
-    status: "blocking",
-    scope: "Full gate; no entity/tax claims",
+    status: "cleared",
+    scope:
+      "Alpha-test foundation: existing proposed-project / not-incorporated framing is adequate for now; no entity/tax claims beyond that framing.",
     recordedDate: "2026-08-10",
-    recordedBy: "Phase 2 readiness engineering",
-    counselSource: PACKET,
-    projectOwnerApproval: "n/a",
+    recordedBy: RECORDED_BY,
+    counselSource: INTERIM_COUNCIL,
+    projectOwnerApproval: OWNER_APPROVAL,
     affectedPackages: ["2.1", "2.2", "2.12"],
   },
 };

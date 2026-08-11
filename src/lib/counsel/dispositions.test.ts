@@ -10,21 +10,20 @@ import {
 } from "@/lib/counsel/dispositions";
 
 describe("counsel dispositions", () => {
-  it("keeps readiness and activation gates blocking until counsel returns", () => {
+  it("records alpha-test interim council clearances for readiness and activation", () => {
     for (const id of READINESS_COUNSEL_GATE_IDS) {
-      expect(COUNSEL_DISPOSITIONS[id]?.status).toBe("blocking");
+      expect(COUNSEL_DISPOSITIONS[id]?.status).toBe("cleared");
       expect(COUNSEL_DISPOSITIONS[id]?.counselSource).toMatch(
-        /counsel-review-packet-2\.12/,
+        /0007-alpha-test-interim-council-dispositions/,
       );
+      expect(COUNSEL_DISPOSITIONS[id]?.scope.toLowerCase()).toMatch(/alpha-test/);
     }
     for (const id of ACTIVATION_COUNSEL_GATE_IDS) {
-      expect(COUNSEL_DISPOSITIONS[id]?.status).toBe("blocking");
+      expect(COUNSEL_DISPOSITIONS[id]?.status).toBe("cleared");
     }
-    expect(activationCounselAllowsRealAccounts()).toBe(false);
-    expect(readinessCounselAllowsFoundationTag()).toBe(false);
-    expect(blockingReadinessCounselGates().length).toBe(
-      READINESS_COUNSEL_GATE_IDS.length,
-    );
+    expect(activationCounselAllowsRealAccounts()).toBe(true);
+    expect(readinessCounselAllowsFoundationTag()).toBe(true);
+    expect(blockingReadinessCounselGates()).toHaveLength(0);
   });
 
   it("includes data map / retention as a readiness gate", () => {

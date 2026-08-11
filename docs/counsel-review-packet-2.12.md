@@ -1,11 +1,11 @@
 # Counsel review packet — Phase 2 readiness (2.12)
 
-**Status:** Issued for counsel review — **not** a disposition.  
+**Status:** Disposition return recorded — alpha-test interim council (2026-08-10).  
 **Issued date:** 2026-08-10  
 **Issued by:** Phase 2 readiness engineering  
-**Purpose:** Obtain recorded counsel dispositions required before the Phase 2 foundation readiness tag and any real launch. Under the project-owner two-lane rule ([ADR 0006](./decisions/0006-phase-3-two-lane-sequencing.md)), Phase 3 *synthetic/closed* engineering may proceed; readiness tag and real activation remain blocked.
+**Purpose:** Obtain recorded counsel dispositions required before the Phase 2 foundation readiness tag and any real launch. Under the project-owner two-lane rule ([ADR 0006](./decisions/0006-phase-3-two-lane-sequencing.md)), Phase 3 *synthetic/closed* engineering may proceed. Public summary of returned dispositions: [ADR 0007](./decisions/0007-alpha-test-interim-council-dispositions.md).
 
-Nothing in this packet invents clearance. Owner risk acceptance must not be recorded as `cleared`.
+Nothing in this packet invents clearance beyond the recorded public summary. Privileged counsel material must not be committed.
 
 ## Public-repository confidentiality warning
 
@@ -19,9 +19,7 @@ This repository is (or may become) **public**. Do **not** commit privileged coun
 
 Return privileged detail through a private channel; record only the approved public summary and opaque citation here.
 
-## How to return dispositions
-
-For each topic below, counsel (or a linked decision record) should return:
+## How dispositions were returned
 
 | Field | Required |
 | --- | --- |
@@ -38,7 +36,7 @@ Update **both**:
 1. Disposition table in [phase-2-plan.md](./phase-2-plan.md) §7  
 2. Server-readable rows in `src/lib/counsel/dispositions.ts`
 
-## Topics under review
+## Topics and recorded dispositions
 
 ### 1. Data map and retention schedule
 
@@ -47,8 +45,9 @@ Update **both**:
 | Gate id | `data_map_retention` |
 | Materials | [data-map.md](./data-map.md), provisional retention rules in `src/lib/privacy/retention-rules.ts`, retention job notes in [incident-response.md](./incident-response.md) / handoff |
 | Linked questions | LQ10–11, OQ15 (deletion/retention), open questions on political-opinion retention |
-| Current status | **blocking** — planning aid only; not a privacy policy or legal retention schedule |
-| Ask | May the proposed retention postures proceed for a closed synthetic/gated foundation? What must remain provisional before real participant data? |
+| Recorded status | **cleared** (alpha-test scope) |
+| Scope | Proposed retention postures may run to prove efficacy; project **must** reset all included alpha-test data — no users or topic discussion carry over |
+| Provenance | [ADR 0007](./decisions/0007-alpha-test-interim-council-dispositions.md) |
 
 ### 2. Electronic assent documents
 
@@ -56,8 +55,9 @@ Update **both**:
 | --- | --- |
 | Gate id | `electronic_assent` |
 | Materials | Seeded provisional privacy/conduct docs (synthetic), assent flows under `/account/assent`, LQ8–9 |
-| Current status | **blocking** — no “not legally reviewed” doc may become active assent for real accounts |
-| Ask | What form of electronic assent is acceptable for invite-only foundation accounts? Which documents may move from provisional to active assent, and under what conditions? |
+| Recorded status | **cleared** (alpha-test scope) |
+| Scope | Keep current electronic assent; bot/activity metrics and engineering discretion may inform later authentication |
+| Provenance | [ADR 0007](./decisions/0007-alpha-test-interim-council-dispositions.md) |
 
 ### 3. Account-holder versus statutory-member terminology
 
@@ -65,8 +65,9 @@ Update **both**:
 | --- | --- |
 | Gate id | `statutory_membership` |
 | Materials | [product-charter.md](./product-charter.md), LQ3, OQ2, UI copy using “account holder” / “community participant” |
-| Current status | **blocking** — no product claim of statutory membership |
-| Ask | Confirm product language must avoid statutory “member” until formation/membership counsel settles; any allowed synonyms or required disclaimers? |
+| Recorded status | **cleared** (alpha-test scope) |
+| Scope | “Member” OK if test purpose communicated at assent and continually; preferred synonym **delegate**; not permanent statutory membership |
+| Provenance | [ADR 0007](./decisions/0007-alpha-test-interim-council-dispositions.md) |
 
 ### 4. Eligibility and geographic assertions
 
@@ -74,8 +75,9 @@ Update **both**:
 | --- | --- |
 | Gate id | `eligibility_geography` |
 | Materials | Verification ladder (2.7), LQ12–14, eligibility assertion kinds |
-| Current status | **blocking** — no national-mandate or settled residency rule |
-| Ask | What eligibility/geography assertions are permitted for a closed pilot, and what must remain unset? |
+| Recorded status | **cleared** (alpha-test scope) |
+| Scope | **No geographical eligibility requirements** until the alpha test ends; keep eligibility open for travel/demo |
+| Provenance | [ADR 0007](./decisions/0007-alpha-test-interim-council-dispositions.md) |
 
 ### 5. Council and board authority
 
@@ -83,8 +85,9 @@ Update **both**:
 | --- | --- |
 | Gate id | `account_council_authority` |
 | Materials | LQ4–5, OQ1, OQ3; recommendation-only decision records in Phase 1 demo |
-| Current status | **blocking** — recommendations only; no board-binding claims |
-| Ask | Confirm Policy Council / Deliberation outputs remain non-binding pending board authority design; any required on-product disclaimers? |
+| Recorded status | **cleared** (alpha-test scope) |
+| Scope | Continual communication of test purpose/limits sufficient; formal council/board forms during the alpha test |
+| Provenance | [ADR 0007](./decisions/0007-alpha-test-interim-council-dispositions.md) |
 
 ### 6. Separation of verification data and political-opinion data
 
@@ -92,8 +95,9 @@ Update **both**:
 | --- | --- |
 | Gate id | `political_opinion_verification` |
 | Materials | LQ10–11; identity store vs pseudonym maps (2.10); consultation participation forbidden in Phase 2 |
-| Current status | **blocking** — keep identity store separated from opinion/pseudonym maps |
-| Ask | Confirm architectural separation is adequate for foundation work; conditions before any live consultation or opinion join? |
+| Recorded status | **cleared** (alpha-test scope) |
+| Scope | Existing separation adequate for now; no further action for the alpha-test foundation |
+| Provenance | [ADR 0007](./decisions/0007-alpha-test-interim-council-dispositions.md) |
 
 ### 7. Formation or fiscal sponsorship (related readiness)
 
@@ -101,24 +105,25 @@ Update **both**:
 | --- | --- |
 | Gate id | `formation_fiscal` |
 | Materials | LQ1–2 |
-| Current status | **blocking** — no entity/tax claims |
-| Ask | Any change to public “proposed project / not incorporated” framing before readiness tag? |
+| Recorded status | **cleared** (alpha-test scope) |
+| Scope | Existing proposed-project / not-incorporated framing adequate for now |
+| Provenance | [ADR 0007](./decisions/0007-alpha-test-interim-council-dispositions.md) |
 
 ## Return checklist (counsel)
 
-- [ ] Disposition returned for `data_map_retention`
-- [ ] Disposition returned for `electronic_assent`
-- [ ] Disposition returned for `statutory_membership`
-- [ ] Disposition returned for `eligibility_geography`
-- [ ] Disposition returned for `account_council_authority`
-- [ ] Disposition returned for `political_opinion_verification`
-- [ ] Disposition returned for `formation_fiscal` (if affecting readiness claims)
-- [ ] Plan §7 table updated with full provenance
-- [ ] `src/lib/counsel/dispositions.ts` updated to match
-- [ ] Handoff updated; foundation tag still withheld until gated E2E is also green
+- [x] Disposition returned for `data_map_retention`
+- [x] Disposition returned for `electronic_assent`
+- [x] Disposition returned for `statutory_membership`
+- [x] Disposition returned for `eligibility_geography`
+- [x] Disposition returned for `account_council_authority`
+- [x] Disposition returned for `political_opinion_verification`
+- [x] Disposition returned for `formation_fiscal` (if affecting readiness claims)
+- [x] Plan §7 table updated with full provenance
+- [x] `src/lib/counsel/dispositions.ts` updated to match
+- [x] Handoff updated; foundation tag authorized after interim council return + gated E2E evidence
 
 ## Explicit non-outcomes
 
-- This packet does **not** authorize real `active` accounts.
-- This packet does **not** authorize public launch, recruitment, donations, or live consultation.
-- This packet does **not** approve managed Postgres or production email vendors.
+- These dispositions authorize the **alpha-test invite-only foundation** under the scopes above — not a public launch, recruitment, donations, or live consultation.
+- Alpha-test participant/topic data must remain **resettable**; post-alpha lasting questions go in the report.
+- These dispositions do **not** approve managed Postgres or production email vendors.

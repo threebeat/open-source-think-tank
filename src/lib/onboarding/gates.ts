@@ -195,7 +195,7 @@ export async function evaluateActivationGates(
     }
     if (!hasEligibility) {
       blockingReasons.push(
-        "Eligibility assertion must be approved before activation (engineering gate; counsel geography rules remain open).",
+        "Eligibility assertion must be approved before activation (engineering gate; alpha-test counsel: no geographical eligibility requirements).",
       );
     }
     if (counselBlocksReal) {

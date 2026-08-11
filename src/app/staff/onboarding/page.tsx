@@ -78,7 +78,7 @@ export default async function StaffOnboardingPage() {
         description="Redacted queues only. Contact channels are masked; verification artifacts are never shown."
       />
       <DisclosureNotice title="Not a membership register" tone="caution">
-        Rows describe account holders in onboarding — not statutory members.
+        Rows describe delegates / account holders in onboarding (alpha-test preferred synonym: delegate).
       </DisclosureNotice>
 
       <section className="space-y-3">

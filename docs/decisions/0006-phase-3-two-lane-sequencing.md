@@ -1,8 +1,8 @@
 # ADR 0006 — Phase 3 two-lane sequencing (project-owner scope)
 
-**Status:** Drafted for project-owner confirmation (this readiness-hardening pass).  
+**Status:** Confirmed by project owner (2026-08-10), alongside interim council dispositions in [ADR 0007](./0007-alpha-test-interim-council-dispositions.md).  
 **Date:** 2026-08-10  
-**Not counsel clearance.** Owner risk acceptance / sequencing approval must never be recorded as counsel `cleared` in [phase-2-plan.md](../phase-2-plan.md) §7 or `src/lib/counsel/dispositions.ts`.
+**Not counsel clearance by itself.** Sequencing approval is separate from §7 disposition rows; those rows are updated only via a recorded counsel / interim-council public summary (ADR 0007).
 
 ## Context
 
@@ -13,14 +13,14 @@ Phase 2.12 engineering is largely implemented, but readiness for a foundation ta
 | Lane | Allowed? | Scope |
 | --- | --- | --- |
 | **Lane A — Phase 3 synthetic / closed engineering** | Yes, once the project owner confirms this ADR | Synthetic fixtures, adapters, docs, and closed-environment design under existing permits; no real participant data; no new vendors outside the permitted-services register |
-| **Lane B — Phase 2 readiness / tag / real activation** | **Blocked** until 2.12 readiness criteria and counsel gates clear | Foundation tag, public launch posture, real (non-synthetic) `active` accounts, production participant data |
+| **Lane B — Phase 2 readiness / tag / alpha-test activation** | **Authorized** for alpha-test scopes after ADR 0007 + gated E2E evidence | Foundation tag and invite-only alpha-test `active` accounts under resettable-data rules; not a public launch |
 
 ## Consequences
 
-- Agents may start Phase 3 *synthetic/closed* packages after owner confirmation of this ADR, without inventing counsel answers.
-- Agents must **not** tag `phase-2-foundation`, clear counsel rows, or activate real accounts under this ADR alone.
-- Handoff and plan wording must keep Lane B blockers explicit.
+- Agents may start Phase 3 *synthetic/closed* packages under this ADR.
+- Foundation tag and alpha-test real activation follow [ADR 0007](./0007-alpha-test-interim-council-dispositions.md) scopes plus engineering gates — not this ADR alone.
+- Handoff must keep resettable-data and post-alpha report obligations explicit.
 
 ## Confirmation
 
-Project-owner confirmation is recorded by approving/merging the readiness-hardening change that introduces this ADR (or a follow-up note with name/date). Until then, treat the rule as the drafted reconciliation target already reflected in [phase-2-handoff.md](../phase-2-handoff.md).
+Project-owner confirmation recorded 2026-08-10 with the interim council disposition return (ADR 0007) and foundation-tag authorization.

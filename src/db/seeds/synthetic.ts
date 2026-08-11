@@ -214,7 +214,7 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
   ]);
 
   const privacyBody =
-    "Synthetic privacy notice for foundation tests. Provisional engineering text — counsel disposition still blocking for production legal claims.";
+    "Synthetic privacy notice for foundation tests. Alpha-test interim council clearance (ADR 0007) allows current assent for the invite-only test; not a permanent post-alpha legal settlement.";
   const contentHash = createHash("sha256").update(privacyBody).digest("hex");
   const reviewedAt = new Date("2026-08-01T00:00:00.000Z");
   const publishedAt = new Date("2026-08-01T01:00:00.000Z");

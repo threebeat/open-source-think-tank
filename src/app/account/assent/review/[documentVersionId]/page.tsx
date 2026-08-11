@@ -41,9 +41,10 @@ export default async function DocumentReviewPage({
         title="Review document"
         description="Present the complete published document, acknowledge required notices, then assent or decline. This flow uses assent vocabulary and does not characterize every privacy basis as consent."
       />
-      <DisclosureNotice title="Counsel gate" tone="caution">
-        Electronic assent counsel disposition remains blocking for production
-        legal claims. Synthetic fixtures are for engineering only.
+      <DisclosureNotice title="Alpha-test assent" tone="caution">
+        Electronic assent is cleared for the invite-only alpha test (interim
+        council, ADR 0007). Test purpose must stay clear; findings may inform
+        later authentication. This is not a permanent post-alpha legal settlement.
       </DisclosureNotice>
       <DocumentReviewClient documentVersionId={documentVersionId} />
     </MainContainer>
