@@ -54,7 +54,7 @@ export default async function WorkspaceSubmissionDetailPage({
   const { getGatedDb } = await import("@/lib/auth/runtime");
   const { getClaimById, listClaimEvidenceLinks, listClaimReviews } =
     await import("@/lib/claims/repository");
-  const { getEvidenceSubmissionById, listEvidenceReviews } = await import(
+  const { getEvidenceSubmissionById } = await import(
     "@/lib/evidence/repository"
   );
   const { listConflictDisclosuresForClaim } = await import(

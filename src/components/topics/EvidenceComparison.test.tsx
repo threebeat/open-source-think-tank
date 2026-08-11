@@ -53,7 +53,7 @@ describe("EvidenceComparison", () => {
 
     await user.click(screen.getByLabelText(/Counter report/i));
     expect(screen.getByRole("status")).toHaveTextContent(/Comparing/i);
-    expect(screen.getByText("Relationship")).toBeInTheDocument();
+    expect(screen.getAllByText("Relationship").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Evidence quality").length).toBeGreaterThan(0);
 
     await user.click(

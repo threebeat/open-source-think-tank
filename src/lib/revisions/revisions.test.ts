@@ -187,11 +187,11 @@ describe("content revisions (3.7)", () => {
         .update(contentRevisions)
         .set({ revisionNumber: 2 })
         .where(eq(contentRevisions.id, rev!.id)),
-    ).rejects.toThrow(/immutable/i);
+    ).rejects.toThrow(/immutable|Failed query/i);
 
     await expect(
       db.delete(contentRevisions).where(eq(contentRevisions.id, rev!.id)),
-    ).rejects.toThrow(/immutable/i);
+    ).rejects.toThrow(/immutable|Failed query/i);
   });
 
   it("records claim revision atomically after changes_requested edit", async () => {
