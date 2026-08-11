@@ -19,6 +19,23 @@ const ACTIVE_ONLY = new Set<Capability>([
   "institutional.council_deliberation",
   "institutional.council_policy",
   "institutional.publish_decision",
+  "topics.create",
+  "topics.update",
+  "topics.open",
+  "topics.publish",
+  "topics.pause",
+  "topics.archive",
+  "claims.submit",
+  "claims.edit_own",
+  "claims.withdraw_own",
+  "claims.review",
+  "evidence.submit",
+  "evidence.edit_own",
+  "evidence.withdraw_own",
+  "evidence.review",
+  "conflicts.disclose_own",
+  "moderation.review_submission",
+  "invites.issue",
 ]);
 
 function hasPlatform(
@@ -160,6 +177,45 @@ export function authorize(
     case "institutional.council_policy":
     case "institutional.publish_decision":
       if (!hasCouncil(principal, "policy_council")) {
+        return deny(capability);
+      }
+      return { ok: true, principal };
+
+    case "topics.create":
+    case "topics.update":
+    case "topics.open":
+    case "topics.publish":
+    case "topics.pause":
+    case "topics.archive":
+    case "invites.issue":
+      if (!hasPlatform(principal, ["administrator"])) {
+        return deny(capability);
+      }
+      return { ok: true, principal };
+
+    case "claims.submit":
+    case "claims.edit_own":
+    case "claims.withdraw_own":
+    case "evidence.submit":
+    case "evidence.edit_own":
+    case "evidence.withdraw_own":
+    case "conflicts.disclose_own":
+      // Administrator does not imply participant. Ownership (edit/withdraw/disclose)
+      // is re-verified inside the mutating service transaction.
+      if (!hasPlatform(principal, ["participant"])) {
+        return deny(capability);
+      }
+      return { ok: true, principal };
+
+    case "claims.review":
+    case "evidence.review":
+      if (!hasPlatform(principal, ["reviewer", "administrator"])) {
+        return deny(capability);
+      }
+      return { ok: true, principal };
+
+    case "moderation.review_submission":
+      if (!hasPlatform(principal, ["moderator", "administrator"])) {
         return deny(capability);
       }
       return { ok: true, principal };

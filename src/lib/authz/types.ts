@@ -41,9 +41,46 @@ export const CAPABILITIES = [
   "institutional.council_deliberation",
   "institutional.council_policy",
   "institutional.publish_decision",
+  // Phase 3.3 — topic / claim / evidence / invite (mutations land in later packages)
+  "topics.create",
+  "topics.update",
+  "topics.open",
+  "topics.publish",
+  "topics.pause",
+  "topics.archive",
+  "claims.submit",
+  "claims.edit_own",
+  "claims.withdraw_own",
+  "claims.review",
+  "evidence.submit",
+  "evidence.edit_own",
+  "evidence.withdraw_own",
+  "evidence.review",
+  "conflicts.disclose_own",
+  "moderation.review_submission",
+  "invites.issue",
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
+
+/**
+ * Environment-operator actions — not account capabilities.
+ * Authenticated by OPERATOR_BOOTSTRAP_SECRET (+ label), never by authorizeCapability.
+ */
+export const OPERATOR_ACTIONS = [
+  "operator.bootstrap_administrator",
+] as const;
+
+export type OperatorAction = (typeof OPERATOR_ACTIONS)[number];
+
+/** Capabilities whose authorize() decision is role/lifecycle only; ownership is re-checked in the service transaction. */
+export const OWNERSHIP_ELIGIBILITY_CAPABILITIES = [
+  "claims.edit_own",
+  "claims.withdraw_own",
+  "evidence.edit_own",
+  "evidence.withdraw_own",
+  "conflicts.disclose_own",
+] as const satisfies readonly Capability[];
 
 export type AuthzPrincipal = {
   accountId: string;
