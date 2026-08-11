@@ -31,13 +31,29 @@ test.describe("auth isolation in public-demo", () => {
       data: { slug: "demo-should-404" },
     });
     expect(workspaceCreate.status()).toBe(404);
+
+    const workspaceSubmissions = await page.request.post(
+      "/api/workspace/topics/x/submissions",
+      { data: { claimTitle: "demo-should-404" } },
+    );
+    expect(workspaceSubmissions.status()).toBe(404);
+
+    const ownSubmission = await page.request.patch(
+      "/api/workspace/submissions/claim-x",
+      { data: { action: "withdraw" } },
+    );
+    expect(ownSubmission.status()).toBe(404);
   });
 
-  test("workspace topic pages are not found in public-demo", async ({
+  test("workspace topic and submission pages are not found in public-demo", async ({
     page,
   }) => {
     const response = await page.goto("/workspace/topics");
     expect(response?.status()).toBe(404);
+    const submit = await page.goto("/workspace/topics/any/submit");
+    expect(submit?.status()).toBe(404);
+    const submissions = await page.goto("/workspace/submissions");
+    expect(submissions?.status()).toBe(404);
   });
 
   test("public join preview still cannot enroll", async ({ page }) => {

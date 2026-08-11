@@ -96,6 +96,11 @@ Controls below are **implemented** through 2.11 unless noted as still blocked.
 | Draft topic leakage / slug enumeration (3.4) | Authoring behind `topics.create`; public-demo workspace 404; public `/topics` remain fixtures; safe slug conflict messages |
 | Stale topic transitions / lost updates (3.4) | Expected-state workflow/`updatedAt` checks; conflict without audit emit |
 | Topic mutation without audit (3.4) | Single transaction: mutate then append; audit failure rolls back |
+| Cross-participant draft enumeration / mutation (3.5) | Own-submission lists/detail only; ownership re-checked server-side; public-demo workspace 404 |
+| Remote evidence fetch / scrape (3.5) | Syntax-only URL validation (`http:`/`https:`); no server or browser fetch of source URLs |
+| Private disclosure leakage (3.5) | Disclosure attaches to claim only; private_detail never in public projections or audit private payloads |
+| Geography-as-eligibility confusion (3.5) | Documented classification-only fields; no capability grants from FIPS; alpha still has no geographic eligibility rule |
+| Public-demo proposed-topic bleed (3.5) | `discoveryState` fixture field; default listing excludes proposed; not reused for gated unpublished rows |
 | Bootstrap disguised as independent review | `decision_source = operator_bootstrap` + null `reviewer_account_id` + operator label; dedicated audit actions |
 
 ## Explicit non-goals for Phase 1 / Phase 2 public-demo

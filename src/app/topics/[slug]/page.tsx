@@ -9,8 +9,9 @@ import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { MainContainer } from "@/components/layout/MainContainer";
 import { buttonVariants } from "@/components/ui/button";
 import { ClaimCard } from "@/features/topics/ClaimCard";
+import { EvidenceInventory } from "@/features/topics/EvidenceInventory";
 import { EvidenceReviewExplainer } from "@/features/topics/EvidenceReviewExplainer";
-import { EvidenceSourceCard } from "@/features/topics/EvidenceSourceCard";
+import { topicGeographyLabel } from "@/features/topics/topics-search";
 import {
   getEvidenceForTopic,
   getScenarioBundle,
@@ -72,6 +73,14 @@ export default async function TopicDetailPage({ params }: TopicPageProps) {
         actions={
           <>
             <StageBadge stage={topic.stage} />
+            <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+              {topicGeographyLabel(topic)}
+            </span>
+            {topic.discoveryState === "proposed" ? (
+              <span className="rounded-md bg-amber/40 px-2 py-1 text-xs font-medium text-amber-foreground">
+                Proposed topic — not yet opened for participation
+              </span>
+            ) : null}
             {bundle.consultationResult ? (
               <Link
                 href={`/topics/${topic.slug}/consult`}
@@ -83,6 +92,12 @@ export default async function TopicDetailPage({ params }: TopicPageProps) {
           </>
         }
       />
+
+      <DisclosureNotice title="Hypothetical Tennessee scenario" tone="caution">
+        This synthetic topic uses Tennessee geography labels only. It does not
+        describe an actual Tennessee government action, agency, or live
+        participation process.
+      </DisclosureNotice>
 
       <DisclosureNotice title="Popularity is not evidence quality" tone="caution">
         Participant support and cross-group agreement do not change whether a
@@ -150,25 +165,7 @@ export default async function TopicDetailPage({ params }: TopicPageProps) {
         >
           Evidence inventory
         </h2>
-        {evidenceSources.length > 0 ? (
-          <>
-            <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-              All sources attached to this topic, including pending, limited,
-              disputed, and rejected states. Source quality is shown independently
-              from any public-input popularity.
-            </p>
-            <div className="grid gap-4 lg:grid-cols-2">
-              {evidenceSources.map((source) => (
-                <EvidenceSourceCard key={source.id} source={source} />
-              ))}
-            </div>
-          </>
-        ) : (
-          <p className="rounded-md border border-dashed border-border bg-surface p-5 text-sm text-muted-foreground">
-            No evidence sources are attached yet for this synthetic topic. Missing
-            evidence is an intentional brief-stage state, not a hidden section.
-          </p>
-        )}
+        <EvidenceInventory sources={evidenceSources} claims={claims} />
       </section>
 
       <EvidenceReviewExplainer />

@@ -97,6 +97,14 @@ export default async function WorkspaceTopicDetailPage({ params }: PageProps) {
           </dd>
         </div>
         <div>
+          <dt className="font-medium">Geography</dt>
+          <dd>
+            {topic.jurisdictionLevel === "statewide"
+              ? "Tennessee statewide"
+              : `Tennessee county ${topic.countyFips ?? "(missing)"}`}
+          </dd>
+        </div>
+        <div>
           <dt className="font-medium">Synthetic classification</dt>
           <dd>{topic.synthetic ? "synthetic" : "operational"}</dd>
         </div>
@@ -115,6 +123,8 @@ export default async function WorkspaceTopicDetailPage({ params }: PageProps) {
           initialQuestion={topic.question}
           initialBackground={topic.background}
           initialScope={topic.scope}
+          initialJurisdictionLevel={topic.jurisdictionLevel}
+          initialCountyFips={topic.countyFips}
           expectedUpdatedAt={topic.updatedAt.toISOString()}
           editable={topic.workflowState === "draft"}
         />

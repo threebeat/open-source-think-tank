@@ -15,10 +15,10 @@ function statusFor(code: string): number {
   ) {
     return 403;
   }
-  if (code === "TOPIC_STATE_CONFLICT" || code === "TOPIC_SLUG_CONFLICT") {
+  if (code === "SUBMISSION_STATE_CONFLICT" || code === "TOPIC_STATE_CONFLICT") {
     return 409;
   }
-  if (code === "TOPIC_NOT_FOUND") {
+  if (code === "TOPIC_NOT_FOUND" || code === "CLAIM_NOT_FOUND") {
     return 404;
   }
   return 400;
@@ -40,35 +40,27 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   const { getGatedDb } = await import("@/lib/auth/runtime");
-  const { authorizeCapability } = await import(
-    "@/lib/authz/authorize-capability"
-  );
-  const { loadPrincipal } = await import("@/lib/authz/load-principal");
-  const db = getGatedDb();
-  const principal = await loadPrincipal(db, gated.session.accountId);
-  const decision = await authorizeCapability(db, principal, "topics.create");
-  if (!decision.ok) {
+  const { listOwnClaimsForTopic } = await import("@/lib/submissions/submit");
+  const result = await listOwnClaimsForTopic(getGatedDb(), {
+    actorAccountId: gated.session.accountId,
+    topicId: id,
+  });
+  if (!result.ok) {
     return NextResponse.json(
-      { error: decision.error, code: decision.code },
-      { status: 403 },
+      { error: result.error, code: result.code },
+      {
+        status: statusFor(result.code),
+        headers: { "Cache-Control": "no-store" },
+      },
     );
   }
 
-  const { getTopicById } = await import("@/lib/topics/repository");
-  const topic = await getTopicById(db, id);
-  if (!topic.ok || !topic.value) {
-    return NextResponse.json(
-      { error: "Topic not found", code: "TOPIC_NOT_FOUND" },
-      { status: 404 },
-    );
-  }
-
-  return NextResponse.json(topic.value, {
+  return NextResponse.json(result.value, {
     headers: { "Cache-Control": "no-store" },
   });
 }
 
-export async function PATCH(request: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext) {
   if (resolveAppMode() !== "gated") {
     return NextResponse.json({ error: "Not Found" }, { status: 404 });
   }
@@ -97,22 +89,44 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const { getGatedDb } = await import("@/lib/auth/runtime");
-  const { updateDraftTopicMetadata } = await import("@/lib/topics/authoring");
-  const result = await updateDraftTopicMetadata(getGatedDb(), {
+  const { createAndSubmitClaimEvidence } = await import(
+    "@/lib/submissions/submit"
+  );
+  const result = await createAndSubmitClaimEvidence(getGatedDb(), {
     actorAccountId: gated.session.accountId,
     topicId: id,
-    title: String(body.title ?? ""),
-    question: String(body.question ?? ""),
-    background: String(body.background ?? ""),
-    scope: String(body.scope ?? ""),
-    jurisdictionLevel:
-      body.jurisdictionLevel === "county" ? "county" : "statewide",
-    stateCode: typeof body.stateCode === "string" ? body.stateCode : "TN",
-    countyFips:
-      body.countyFips === null || body.countyFips === undefined
-        ? null
-        : String(body.countyFips),
-    expectedUpdatedAt: String(body.expectedUpdatedAt ?? ""),
+    claimTitle: String(body.claimTitle ?? ""),
+    claimSummary: String(body.claimSummary ?? ""),
+    approachLabel: String(body.approachLabel ?? ""),
+    sourceUrl: String(body.sourceUrl ?? ""),
+    evidenceTitle: String(body.evidenceTitle ?? ""),
+    organization: String(body.organization ?? ""),
+    authorType: body.authorType as
+      | "agency"
+      | "researcher"
+      | "journalist"
+      | "civil_society"
+      | "industry"
+      | "other",
+    sourceType: body.sourceType as
+      | "report"
+      | "dataset"
+      | "peer_reviewed"
+      | "news"
+      | "memo"
+      | "other",
+    limitations: String(body.limitations ?? ""),
+    relationship: body.relationship as "supporting" | "counterevidence",
+    disclosureChoice:
+      body.disclosureChoice === "disclose" ? "disclose" : "none",
+    disclosurePublicSummary:
+      typeof body.disclosurePublicSummary === "string"
+        ? body.disclosurePublicSummary
+        : undefined,
+    disclosurePrivateDetail:
+      typeof body.disclosurePrivateDetail === "string"
+        ? body.disclosurePrivateDetail
+        : null,
   });
 
   if (!result.ok) {
@@ -126,6 +140,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   return NextResponse.json(result.value, {
+    status: 201,
     headers: { "Cache-Control": "no-store" },
   });
 }

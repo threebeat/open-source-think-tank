@@ -101,6 +101,13 @@ export async function POST(request: Request) {
     question: String(body.question ?? ""),
     background: String(body.background ?? ""),
     scope: String(body.scope ?? ""),
+    jurisdictionLevel:
+      body.jurisdictionLevel === "county" ? "county" : "statewide",
+    stateCode: typeof body.stateCode === "string" ? body.stateCode : "TN",
+    countyFips:
+      body.countyFips === null || body.countyFips === undefined
+        ? null
+        : String(body.countyFips),
   });
 
   if (!result.ok) {

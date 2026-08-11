@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { topics } from "@/db/schema";
 import type { AdapterResult } from "@/lib/adapters/types";
 import { newEntityId } from "@/lib/auth/tokens";
+import type { JurisdictionLevel } from "@/lib/geography/tennessee-counties";
 import {
   type GatedDb,
   requireGatedPersistence,
@@ -27,6 +28,9 @@ export type TopicRecord = {
   scope: string;
   workflowState: TopicWorkflowState;
   publicationStatus: TopicPublicationStatus;
+  jurisdictionLevel: JurisdictionLevel;
+  stateCode: string;
+  countyFips: string | null;
   createdByAccountId: string;
   publishedAt: Date | null;
   publishedByAccountId: string | null;
@@ -45,6 +49,9 @@ function mapTopic(row: typeof topics.$inferSelect): TopicRecord {
     scope: row.scope,
     workflowState: row.workflowState,
     publicationStatus: row.publicationStatus,
+    jurisdictionLevel: row.jurisdictionLevel,
+    stateCode: row.stateCode,
+    countyFips: row.countyFips,
     createdByAccountId: row.createdByAccountId,
     publishedAt: row.publishedAt,
     publishedByAccountId: row.publishedByAccountId,
@@ -62,6 +69,9 @@ export async function insertTopic(
     question: string;
     background: string;
     scope: string;
+    jurisdictionLevel: JurisdictionLevel;
+    stateCode: string;
+    countyFips: string | null;
     createdByAccountId: string;
     synthetic: boolean;
     workflowState?: TopicWorkflowState;
@@ -85,6 +95,9 @@ export async function insertTopic(
       question: input.question,
       background: input.background,
       scope: input.scope,
+      jurisdictionLevel: input.jurisdictionLevel,
+      stateCode: input.stateCode,
+      countyFips: input.countyFips,
       createdByAccountId: input.createdByAccountId,
       synthetic: input.synthetic,
       workflowState: input.workflowState ?? "draft",
@@ -132,10 +145,13 @@ export async function getTopicBySlug(
   return { ok: true, value: row ? mapTopic(row) : null };
 }
 
-export async function listTopics(db: GatedDb, filters?: {
-  workflowState?: TopicWorkflowState;
-  publicationStatus?: TopicPublicationStatus;
-}): Promise<AdapterResult<TopicRecord[]>> {
+export async function listTopics(
+  db: GatedDb,
+  filters?: {
+    workflowState?: TopicWorkflowState;
+    publicationStatus?: TopicPublicationStatus;
+  },
+): Promise<AdapterResult<TopicRecord[]>> {
   const denied = requireGatedPersistence();
   if (denied) {
     return denied;
@@ -163,7 +179,6 @@ export async function listTopics(db: GatedDb, filters?: {
 /**
  * Expected-state metadata update for draft topics only (enforced by caller).
  * Does not touch workflow_state or publication fields.
- * Returns null value when expectedUpdatedAt no longer matches (stale write).
  */
 export async function updateTopicMetadata(
   db: GatedDb,
@@ -174,6 +189,9 @@ export async function updateTopicMetadata(
     question: string;
     background: string;
     scope: string;
+    jurisdictionLevel: JurisdictionLevel;
+    stateCode: string;
+    countyFips: string | null;
   },
 ): Promise<AdapterResult<TopicRecord | null>> {
   const denied = requireGatedPersistence();
@@ -188,6 +206,9 @@ export async function updateTopicMetadata(
       question: input.question,
       background: input.background,
       scope: input.scope,
+      jurisdictionLevel: input.jurisdictionLevel,
+      stateCode: input.stateCode,
+      countyFips: input.countyFips,
       updatedAt: new Date(),
     })
     .where(
@@ -203,7 +224,6 @@ export async function updateTopicMetadata(
 
 /**
  * Expected-state workflow update. Does not touch publication_status.
- * Returns null value when the expected workflow no longer matches (lost update).
  */
 export async function updateTopicWorkflow(
   db: GatedDb,

@@ -55,8 +55,8 @@ describe("fixture catalog", () => {
     );
   });
 
-  it("includes one complete scenario and two earlier-stage topics", () => {
-    expect(fixtureCatalog.topics).toHaveLength(3);
+  it("includes a Tennessee-oriented catalog with a complete scenario and proposed topics", () => {
+    expect(fixtureCatalog.topics.length).toBeGreaterThanOrEqual(6);
 
     const complete = getTopicBySlug(
       fixtureCatalog,
@@ -67,10 +67,37 @@ describe("fixture catalog", () => {
       fixtureCatalog,
       "northline-secondary-start-times",
     );
+    const proposed = fixtureCatalog.topics.filter(
+      (topic) => topic.discoveryState === "proposed",
+    );
+    const statewide = fixtureCatalog.topics.filter(
+      (topic) =>
+        topic.jurisdictionLevel === "statewide" &&
+        topic.discoveryState === "active",
+    );
+    const countyFips = new Set(
+      fixtureCatalog.topics
+        .filter((topic) => topic.jurisdictionLevel === "county")
+        .map((topic) => topic.countyFips),
+    );
 
     expect(complete?.stage).toBe("decision");
+    expect(complete?.jurisdictionLevel).toBe("statewide");
+    expect(complete?.stateCode).toBe("TN");
     expect(brief?.stage).toBe("brief");
+    expect(brief?.countyFips).toBe("47157");
     expect(evidence?.stage).toBe("evidence");
+    expect(evidence?.countyFips).toBe("47093");
+    expect(statewide.length).toBeGreaterThanOrEqual(2);
+    expect(proposed.length).toBeGreaterThanOrEqual(2);
+    expect(countyFips.size).toBeGreaterThanOrEqual(4);
+    expect(
+      fixtureCatalog.topics.every(
+        (topic) =>
+          topic.background.includes("not an actual Tennessee government action") ||
+          topic.background.includes("Hypothetical"),
+      ),
+    ).toBe(true);
   });
 
   it("meets Section 7 completeness checks for the Cedar River scenario", () => {

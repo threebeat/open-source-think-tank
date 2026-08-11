@@ -16,10 +16,15 @@ test.describe("topics and evidence", () => {
       "href",
       "/topics/cedar-river-drought-surcharge",
     );
+    await expect(
+      page.getByRole("link", { name: /Blount County greenway/i }),
+    ).toHaveCount(0);
+
     await page.goto("/topics/cedar-river-drought-surcharge");
     await expect(
       page.getByText("Popularity is not evidence quality"),
     ).toBeVisible();
+    await expect(page.getByText("Tennessee statewide").first()).toBeVisible();
     await expect(page.getByText("Review: Pending").first()).toBeVisible();
     await expect(page.getByText("Review: Disputed").first()).toBeVisible();
     await expect(page.getByText("Review: Accepted").first()).toBeVisible();
@@ -27,6 +32,7 @@ test.describe("topics and evidence", () => {
       page.getByRole("heading", { name: "Research Review Status" }),
     ).toBeVisible();
     await expect(page.locator("#evidence-basin-storage-note")).toBeVisible();
+    await expect(page.getByLabel(/Sort inventory/i)).toBeVisible();
   });
 
   test("shows an explicit missing-evidence state on brief-stage topics", async ({
@@ -35,9 +41,10 @@ test.describe("topics and evidence", () => {
     await page.goto("/topics/millbrook-ems-open-data");
     await expect(
       page.getByRole("heading", {
-        name: "Millbrook County EMS response-time open data",
+        name: "Shelby County EMS response-time open data",
       }),
     ).toBeVisible();
+    await expect(page.getByText("Shelby County").first()).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Evidence inventory" }),
     ).toBeVisible();
@@ -46,24 +53,31 @@ test.describe("topics and evidence", () => {
     ).toBeVisible();
   });
 
-  test("filters by subject and independent status", async ({ page }) => {
+  test("supports advanced search, proposed opt-in, and URL state", async ({
+    page,
+  }) => {
     await page.goto("/topics");
+    await page.getByRole("button", { name: /Advanced search/i }).click();
     await page.locator("#topic-subject-filter").selectOption("education");
+    await expect(page).toHaveURL(/subject=education/);
     await expect(
       page.getByRole("link", {
-        name: "Northline secondary-school start times",
+        name: "Knox County secondary-school start times",
         exact: true,
       }),
     ).toBeVisible();
     await expect(
       page.getByRole("link", {
-        name: "Millbrook County EMS response-time open data",
+        name: "Shelby County EMS response-time open data",
         exact: true,
       }),
     ).toHaveCount(0);
 
     await page.locator("#topic-subject-filter").selectOption("all");
+    await expect(page).not.toHaveURL(/subject=education/);
     await page.locator("#topic-status-filter").selectOption("closed");
+    await expect(page).toHaveURL(/status=closed/);
+    await expect(page).not.toHaveURL(/subject=/);
     await expect(
       page.getByRole("link", {
         name: "Cedar River residential drought surcharge",
@@ -72,9 +86,20 @@ test.describe("topics and evidence", () => {
     ).toBeVisible();
     await expect(
       page.getByRole("link", {
-        name: "Northline secondary-school start times",
+        name: "Knox County secondary-school start times",
         exact: true,
       }),
     ).toHaveCount(0);
+
+    await page.getByRole("button", { name: /Clear all/i }).click();
+    await page.getByRole("button", { name: /Advanced search/i }).click();
+    await page.locator("#topic-proposed-filter").selectOption("include");
+    await expect(page).toHaveURL(/proposed=include/);
+    await expect(
+      page.getByRole("link", { name: /Blount County greenway/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Proposed topic — not yet opened for participation").first(),
+    ).toBeVisible();
   });
 });

@@ -5,6 +5,10 @@ import { appendAuthAudit } from "@/lib/auth/audit-log";
 import { authorizeCapability } from "@/lib/authz/authorize-capability";
 import { loadPrincipal } from "@/lib/authz/load-principal";
 import { assertEnvironmentSafe } from "@/lib/env/app-mode";
+import {
+  TENNESSEE_STATE_CODE,
+  validateTopicGeography,
+} from "@/lib/geography/tennessee-counties";
 import type { GatedDb } from "@/lib/persistence/gated";
 import {
   getTopicById,
@@ -31,27 +35,66 @@ const MAX_BACKGROUND = 8000;
 const MAX_SCOPE = 4000;
 const MIN_REASON = 8;
 
-export const createTopicInputSchema = z.object({
-  slug: z
+const geographyFieldsSchema = z.object({
+  jurisdictionLevel: z.enum(["statewide", "county"]),
+  stateCode: z
     .string()
     .trim()
-    .toLowerCase()
-    .min(2)
-    .max(MAX_SLUG)
-    .regex(SLUG_RE, "Slug must be lowercase ASCII letters, digits, and hyphens"),
-  title: z.string().trim().min(1).max(MAX_TITLE),
-  question: z.string().trim().min(1).max(MAX_QUESTION),
-  background: z.string().trim().min(1).max(MAX_BACKGROUND),
-  scope: z.string().trim().min(1).max(MAX_SCOPE),
+    .toUpperCase()
+    .length(2)
+    .optional()
+    .default(TENNESSEE_STATE_CODE),
+  countyFips: z.string().trim().nullable().optional(),
 });
 
-export const updateTopicMetadataInputSchema = z.object({
-  title: z.string().trim().min(1).max(MAX_TITLE),
-  question: z.string().trim().min(1).max(MAX_QUESTION),
-  background: z.string().trim().min(1).max(MAX_BACKGROUND),
-  scope: z.string().trim().min(1).max(MAX_SCOPE),
-  expectedUpdatedAt: z.string().datetime({ offset: true }),
-});
+export const createTopicInputSchema = z
+  .object({
+    slug: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .min(2)
+      .max(MAX_SLUG)
+      .regex(
+        SLUG_RE,
+        "Slug must be lowercase ASCII letters, digits, and hyphens",
+      ),
+    title: z.string().trim().min(1).max(MAX_TITLE),
+    question: z.string().trim().min(1).max(MAX_QUESTION),
+    background: z.string().trim().min(1).max(MAX_BACKGROUND),
+    scope: z.string().trim().min(1).max(MAX_SCOPE),
+  })
+  .merge(geographyFieldsSchema)
+  .superRefine((value, ctx) => {
+    const geo = validateTopicGeography(value);
+    if (!geo.ok) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: geo.error,
+        path: ["jurisdictionLevel"],
+      });
+    }
+  });
+
+export const updateTopicMetadataInputSchema = z
+  .object({
+    title: z.string().trim().min(1).max(MAX_TITLE),
+    question: z.string().trim().min(1).max(MAX_QUESTION),
+    background: z.string().trim().min(1).max(MAX_BACKGROUND),
+    scope: z.string().trim().min(1).max(MAX_SCOPE),
+    expectedUpdatedAt: z.string().datetime({ offset: true }),
+  })
+  .merge(geographyFieldsSchema)
+  .superRefine((value, ctx) => {
+    const geo = validateTopicGeography(value);
+    if (!geo.ok) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: geo.error,
+        path: ["jurisdictionLevel"],
+      });
+    }
+  });
 
 export const topicTransitionInputSchema = z.object({
   expectedWorkflowState: z.enum([
@@ -88,6 +131,9 @@ function changedFieldNames(
     question: string;
     background: string;
     scope: string;
+    jurisdictionLevel: TopicRecord["jurisdictionLevel"];
+    stateCode: string;
+    countyFips: string | null;
   },
 ): string[] {
   const names: string[] = [];
@@ -95,6 +141,11 @@ function changedFieldNames(
   if (before.question !== after.question) names.push("question");
   if (before.background !== after.background) names.push("background");
   if (before.scope !== after.scope) names.push("scope");
+  if (before.jurisdictionLevel !== after.jurisdictionLevel) {
+    names.push("jurisdictionLevel");
+  }
+  if (before.stateCode !== after.stateCode) names.push("stateCode");
+  if (before.countyFips !== after.countyFips) names.push("countyFips");
   return names;
 }
 
@@ -110,6 +161,9 @@ export async function createTopic(
     question: string;
     background: string;
     scope: string;
+    jurisdictionLevel: "statewide" | "county";
+    stateCode?: string;
+    countyFips?: string | null;
   },
 ): Promise<AdapterResult<TopicRecord>> {
   const denied = gatedOrDeny();
@@ -122,6 +176,10 @@ export async function createTopic(
       error: "Invalid topic input",
       code: "TOPIC_INPUT_INVALID",
     };
+  }
+  const geo = validateTopicGeography(parsed.data);
+  if (!geo.ok) {
+    return { ok: false, error: geo.error, code: geo.code };
   }
 
   try {
@@ -138,6 +196,9 @@ export async function createTopic(
         question: parsed.data.question,
         background: parsed.data.background,
         scope: parsed.data.scope,
+        jurisdictionLevel: geo.value.jurisdictionLevel,
+        stateCode: geo.value.stateCode,
+        countyFips: geo.value.countyFips,
         createdByAccountId: decision.principal.accountId,
         synthetic: decision.principal.synthetic,
         workflowState: "draft",
@@ -209,6 +270,9 @@ export async function updateDraftTopicMetadata(
     question: string;
     background: string;
     scope: string;
+    jurisdictionLevel: "statewide" | "county";
+    stateCode?: string;
+    countyFips?: string | null;
     expectedUpdatedAt: string;
   },
 ): Promise<AdapterResult<TopicRecord>> {
@@ -220,6 +284,9 @@ export async function updateDraftTopicMetadata(
     question: input.question,
     background: input.background,
     scope: input.scope,
+    jurisdictionLevel: input.jurisdictionLevel,
+    stateCode: input.stateCode,
+    countyFips: input.countyFips,
     expectedUpdatedAt: input.expectedUpdatedAt,
   });
   if (!parsed.success) {
@@ -228,6 +295,10 @@ export async function updateDraftTopicMetadata(
       error: "Invalid topic metadata",
       code: "TOPIC_INPUT_INVALID",
     };
+  }
+  const geo = validateTopicGeography(parsed.data);
+  if (!geo.ok) {
+    return { ok: false, error: geo.error, code: geo.code };
   }
 
   try {
@@ -252,6 +323,9 @@ export async function updateDraftTopicMetadata(
         question: parsed.data.question,
         background: parsed.data.background,
         scope: parsed.data.scope,
+        jurisdictionLevel: geo.value.jurisdictionLevel,
+        stateCode: geo.value.stateCode,
+        countyFips: geo.value.countyFips,
       };
       const changed = changedFieldNames(current.value, fields);
       if (changed.length === 0) {

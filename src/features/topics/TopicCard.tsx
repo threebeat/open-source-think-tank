@@ -6,9 +6,10 @@ import { topicStatusLabels } from "@/lib/evidence-labels";
 
 type TopicCardProps = {
   topic: Topic;
+  geographyLabel?: string;
 };
 
-export function TopicCard({ topic }: TopicCardProps) {
+export function TopicCard({ topic, geographyLabel }: TopicCardProps) {
   return (
     <article className="flex h-full flex-col rounded-md border border-border bg-surface p-5">
       <div className="flex flex-wrap items-center gap-2">
@@ -16,6 +17,16 @@ export function TopicCard({ topic }: TopicCardProps) {
         <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
           Status: {topicStatusLabels[topic.status]}
         </span>
+        {geographyLabel ? (
+          <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+            {geographyLabel}
+          </span>
+        ) : null}
+        {topic.discoveryState === "proposed" ? (
+          <span className="rounded-md bg-amber/40 px-2 py-1 text-xs font-medium text-amber-foreground">
+            Proposed topic — not yet opened for participation
+          </span>
+        ) : null}
         <ul className="flex flex-wrap gap-2" aria-label="Topic subject tags">
           {topic.subjectTags.map((tag) => (
             <li

@@ -3,7 +3,9 @@ import type { FixtureCatalog } from "@/domain/types";
 /**
  * All Phase 1 demonstration data. Every person, organization, source, vote,
  * and decision is fictional and marked synthetic at the catalog and top-level
- * entity layers.
+ * entity layers. Real Tennessee / county names are geographic labels only;
+ * topics and records are hypothetical and do not describe actual Tennessee
+ * government action.
  */
 export const fixtureCatalog = {
   synthetic: true,
@@ -14,13 +16,17 @@ export const fixtureCatalog = {
       synthetic: true,
       title: "Cedar River residential drought surcharge",
       question:
-        "Should the fictional Cedar River Water District adopt a graduated residential drought-surcharge schedule when reservoir storage falls below published thresholds?",
+        "Should a fictional Tennessee water utility adopt a graduated residential drought-surcharge schedule when reservoir storage falls below published thresholds?",
       background:
-        "The fictional Cedar River Water District serves about 180,000 accounts in a temperate river basin. After two dry winters in the synthetic scenario, reservoir storage declined faster than the ten-year median. The district already uses voluntary conservation messaging. Staff prepared options for a temporary, published surcharge that rises with shortage stage. No real utility or jurisdiction is depicted.",
+        "Hypothetical Tennessee statewide scenario only — not an actual Tennessee government action. The fictional Cedar River Water District serves about 180,000 accounts in a temperate river basin labeled for Tennessee geography. After two dry winters in the synthetic scenario, reservoir storage declined faster than the ten-year median. Staff prepared options for a temporary, published surcharge that rises with shortage stage. No real utility or agency is depicted.",
       scope:
-        "Residential meter accounts inside the district boundary during declared shortage stages only. Commercial and industrial tariffs, wholesale contracts, and permanent rate redesign are out of scope for this demonstration topic.",
+        "Residential meter accounts inside the fictional district boundary during declared shortage stages only. Commercial and industrial tariffs, wholesale contracts, and permanent rate redesign are out of scope for this demonstration topic.",
       stage: "decision",
       status: "closed",
+      discoveryState: "active",
+      jurisdictionLevel: "statewide",
+      stateCode: "TN",
+      countyFips: null,
       subjectTags: ["water", "pricing", "conservation", "local-services"],
       claimIds: [
         "claim-graduated-surcharge",
@@ -56,18 +62,55 @@ export const fixtureCatalog = {
         "Synthetic consultation: 1,240 participants; not a representative sample.",
     },
     {
+      id: "topic-tn-broadband-mapping",
+      slug: "tn-broadband-mapping-refresh",
+      synthetic: true,
+      title: "Tennessee broadband coverage map refresh",
+      question:
+        "Should a fictional statewide mapping desk publish a quarterly refresh of unserved and underserved broadband locations using a single open methodology?",
+      background:
+        "Hypothetical Tennessee statewide scenario only — not an actual Tennessee government action. A fictional mapping desk is weighing a published quarterly refresh so community participants can compare coverage claims against a fixed method note. No real agency dataset is depicted.",
+      scope:
+        "Statewide location-level coverage classifications and methodology notes. Grant scoring, provider contracts, and individual household contact data are out of scope.",
+      stage: "consultation",
+      status: "open",
+      discoveryState: "active",
+      jurisdictionLevel: "statewide",
+      stateCode: "TN",
+      countyFips: null,
+      subjectTags: ["broadband", "open-data", "infrastructure"],
+      claimIds: ["claim-broadband-quarterly", "claim-broadband-annual"],
+      changelog: [
+        {
+          at: "2026-05-10",
+          summary: "Synthetic brief and claims posted for demonstration.",
+        },
+        {
+          at: "2026-05-28",
+          summary: "Synthetic public-input window opened with fixed statements.",
+        },
+      ],
+      nextStep: "Close the synthetic public-input window and publish mock results.",
+      participationSummary:
+        "Synthetic consultation in progress; not a representative sample.",
+    },
+    {
       id: "topic-millbrook-ems-open-data",
       slug: "millbrook-ems-open-data",
       synthetic: true,
-      title: "Millbrook County EMS response-time open data",
+      title: "Shelby County EMS response-time open data",
       question:
-        "Should the fictional Millbrook County publish anonymized monthly EMS response-time summaries by service zone?",
+        "Should a fictional EMS office labeled for Shelby County publish anonymized monthly response-time summaries by service zone?",
       background:
-        "Fictional Millbrook County operates a mixed career and volunteer EMS system. Advocacy groups in the scenario asked for zone-level response-time transparency. Privacy staff flagged re-identification risks for sparsely populated zones. This topic is early in the demonstration pipeline.",
+        "Hypothetical Shelby County scenario only — not an actual Tennessee government action. A fictional mixed career and volunteer EMS office is considering zone-level response-time transparency. Privacy staff in the scenario flagged re-identification risks for sparsely populated zones. This topic is early in the demonstration pipeline.",
       scope:
         "Monthly aggregated response-time statistics by service zone. Individual incident records, patient information, and staff identities are out of scope.",
       stage: "brief",
       status: "open",
+      discoveryState: "active",
+      jurisdictionLevel: "county",
+      stateCode: "TN",
+      countyFips: "47157",
       subjectTags: ["public-safety", "open-data", "privacy"],
       claimIds: [],
       changelog: [
@@ -82,15 +125,19 @@ export const fixtureCatalog = {
       id: "topic-northline-start-times",
       slug: "northline-secondary-start-times",
       synthetic: true,
-      title: "Northline secondary-school start times",
+      title: "Knox County secondary-school start times",
       question:
-        "Should the fictional Northline School District pilot later start times for secondary schools?",
+        "Should a fictional school district labeled for Knox County pilot later start times for secondary schools?",
       background:
-        "Fictional Northline School District is weighing a two-school pilot of later secondary start times. Transportation routing, athletics schedules, and household childcare constraints appear in early claims. Research review has started but public input has not.",
+        "Hypothetical Knox County scenario only — not an actual Tennessee government action. A fictional district is weighing a two-school pilot of later secondary start times. Transportation routing, athletics schedules, and household childcare constraints appear in early claims. Research review has started but public input has not.",
       scope:
         "A one-year pilot at two secondary campuses. Elementary schedules and permanent district-wide adoption are out of scope until pilot evaluation.",
       stage: "evidence",
       status: "paused",
+      discoveryState: "active",
+      jurisdictionLevel: "county",
+      stateCode: "TN",
+      countyFips: "47093",
       subjectTags: ["education", "health", "transportation"],
       claimIds: [
         "claim-northline-later-start",
@@ -107,6 +154,122 @@ export const fixtureCatalog = {
         },
       ],
       nextStep: "Complete evidence review before opening consultation.",
+    },
+    {
+      id: "topic-davidson-transit-fare",
+      slug: "davidson-transit-fare-caps",
+      synthetic: true,
+      title: "Davidson County transit fare caps",
+      question:
+        "Should a fictional transit authority labeled for Davidson County trial monthly fare caps for frequent riders?",
+      background:
+        "Hypothetical Davidson County scenario only — not an actual Tennessee government action. A fictional transit authority is comparing a monthly fare-cap pilot with the current pay-per-ride structure. Ridership vignettes and farebox notes in the scenario are synthetic.",
+      scope:
+        "A six-month fare-cap pilot on existing local routes. Paratransit redesign and regional rail fares are out of scope.",
+      stage: "agenda",
+      status: "open",
+      discoveryState: "active",
+      jurisdictionLevel: "county",
+      stateCode: "TN",
+      countyFips: "47037",
+      subjectTags: ["transportation", "pricing", "equity"],
+      claimIds: ["claim-davidson-fare-cap", "claim-davidson-keep-payg"],
+      changelog: [
+        {
+          at: "2026-03-08",
+          summary: "Synthetic brief and claims posted.",
+        },
+        {
+          at: "2026-04-15",
+          summary: "Synthetic public input closed; agenda packet prepared.",
+        },
+      ],
+      nextStep: "Complete human agenda review for the synthetic fare-cap item.",
+    },
+    {
+      id: "topic-hamilton-air-monitors",
+      slug: "hamilton-neighborhood-air-monitors",
+      synthetic: true,
+      title: "Hamilton County neighborhood air monitors",
+      question:
+        "Should a fictional environmental desk labeled for Hamilton County place additional neighborhood air-quality monitors near industrial corridors?",
+      background:
+        "Hypothetical Hamilton County scenario only — not an actual Tennessee government action. Community groups in the synthetic record asked for denser monitor placement. Staff notes weigh siting criteria, maintenance cost, and data publication cadence.",
+      scope:
+        "Siting and publishing additional neighborhood monitors. Enforcement actions and permitting decisions are out of scope.",
+      stage: "deliberation",
+      status: "open",
+      discoveryState: "active",
+      jurisdictionLevel: "county",
+      stateCode: "TN",
+      countyFips: "47065",
+      subjectTags: ["environment", "public-health", "open-data"],
+      claimIds: ["claim-hamilton-add-monitors", "claim-hamilton-model-only"],
+      changelog: [
+        {
+          at: "2026-02-20",
+          summary: "Synthetic brief opened with competing monitor approaches.",
+        },
+        {
+          at: "2026-05-01",
+          summary: "Synthetic item advanced to deliberation for demonstration.",
+        },
+      ],
+      nextStep: "Publish a synthetic deliberation observer packet.",
+    },
+    {
+      id: "topic-blount-greenway",
+      slug: "blount-greenway-priority-spurs",
+      synthetic: true,
+      title: "Blount County greenway priority spurs",
+      question:
+        "Should a fictional parks desk labeled for Blount County prioritize two greenway spur connectors in the next capital planning cycle?",
+      background:
+        "Proposed topic — not yet opened for participation. Hypothetical Blount County scenario only — not an actual Tennessee government action. Early synthetic notes outline spur options near schools and a river corridor; no claims or evidence pack yet.",
+      scope:
+        "Capital prioritization language for two spur connectors. Land acquisition and construction contracts are out of scope until a later opened topic.",
+      stage: "brief",
+      status: "open",
+      discoveryState: "proposed",
+      jurisdictionLevel: "county",
+      stateCode: "TN",
+      countyFips: "47009",
+      subjectTags: ["recreation", "transportation", "local-services"],
+      claimIds: [],
+      changelog: [
+        {
+          at: "2026-06-01",
+          summary: "Synthetic proposed topic recorded for discovery demo.",
+        },
+      ],
+      nextStep: "If opened later, invite competing claims and evidence.",
+    },
+    {
+      id: "topic-tn-school-nutrition",
+      slug: "tn-school-nutrition-standards",
+      synthetic: true,
+      title: "Tennessee school nutrition standards refresh",
+      question:
+        "Should a fictional statewide education support desk propose refreshed school nutrition purchasing standards for demonstration districts?",
+      background:
+        "Proposed topic — not yet opened for participation. Hypothetical Tennessee statewide scenario only — not an actual Tennessee government action. Early synthetic notes describe competing procurement approaches; no claims or evidence pack yet.",
+      scope:
+        "Purchasing-standard language for demonstration districts. Menu design at individual schools and vendor contract awards are out of scope.",
+      stage: "brief",
+      status: "paused",
+      discoveryState: "proposed",
+      jurisdictionLevel: "statewide",
+      stateCode: "TN",
+      countyFips: null,
+      subjectTags: ["education", "public-health", "procurement"],
+      claimIds: [],
+      changelog: [
+        {
+          at: "2026-06-04",
+          summary: "Synthetic proposed statewide topic recorded for discovery demo.",
+        },
+      ],
+      nextStep: "If opened later, publish a brief and invite claims.",
     },
   ],
   claims: [
@@ -158,7 +321,7 @@ export const fixtureCatalog = {
       topicId: "topic-northline-start-times",
       title: "Pilot later secondary start times",
       summary:
-        "A limited pilot could test effects on attendance and student sleep while documenting transportation tradeoffs.",
+        "A limited pilot could test effects on attendance and student sleep while documenting transportation tradeoffs in this hypothetical Knox County scenario.",
       approachLabel: "Approach A — later-start pilot",
       supportingEvidenceIds: ["evidence-northline-sleep-review"],
       counterEvidenceIds: ["evidence-northline-bus-constraint"],
@@ -173,6 +336,72 @@ export const fixtureCatalog = {
       approachLabel: "Approach B — maintain current schedule",
       supportingEvidenceIds: ["evidence-northline-bus-constraint"],
       counterEvidenceIds: ["evidence-northline-sleep-review"],
+    },
+    {
+      id: "claim-broadband-quarterly",
+      synthetic: true,
+      topicId: "topic-tn-broadband-mapping",
+      title: "Publish a quarterly statewide refresh",
+      summary:
+        "A fixed quarterly refresh with an open methodology note can make coverage claims comparable across Tennessee-labeled regions in this hypothetical scenario.",
+      approachLabel: "Approach A — quarterly refresh",
+      supportingEvidenceIds: ["evidence-broadband-method-note"],
+      counterEvidenceIds: ["evidence-broadband-cost-memo"],
+    },
+    {
+      id: "claim-broadband-annual",
+      synthetic: true,
+      topicId: "topic-tn-broadband-mapping",
+      title: "Keep an annual refresh only",
+      summary:
+        "Annual publication may reduce staff cost while still giving community participants a stable reference map.",
+      approachLabel: "Approach B — annual refresh",
+      supportingEvidenceIds: ["evidence-broadband-cost-memo"],
+      counterEvidenceIds: ["evidence-broadband-method-note"],
+    },
+    {
+      id: "claim-davidson-fare-cap",
+      synthetic: true,
+      topicId: "topic-davidson-transit-fare",
+      title: "Trial a monthly fare cap",
+      summary:
+        "A monthly cap could reduce unpredictability for frequent riders in this hypothetical Davidson County scenario.",
+      approachLabel: "Approach A — monthly fare cap",
+      supportingEvidenceIds: ["evidence-davidson-rider-vignettes"],
+      counterEvidenceIds: ["evidence-davidson-farebox-note"],
+    },
+    {
+      id: "claim-davidson-keep-payg",
+      synthetic: true,
+      topicId: "topic-davidson-transit-fare",
+      title: "Keep pay-as-you-go fares",
+      summary:
+        "Preserving pay-as-you-go avoids farebox shortfalls while staff study ridership elasticity.",
+      approachLabel: "Approach B — pay-as-you-go",
+      supportingEvidenceIds: ["evidence-davidson-farebox-note"],
+      counterEvidenceIds: ["evidence-davidson-rider-vignettes"],
+    },
+    {
+      id: "claim-hamilton-add-monitors",
+      synthetic: true,
+      topicId: "topic-hamilton-air-monitors",
+      title: "Add neighborhood monitors",
+      summary:
+        "Additional monitors near industrial corridors could improve local air-quality visibility in this hypothetical Hamilton County scenario.",
+      approachLabel: "Approach A — add monitors",
+      supportingEvidenceIds: ["evidence-hamilton-siting-criteria"],
+      counterEvidenceIds: ["evidence-hamilton-maintenance-cost"],
+    },
+    {
+      id: "claim-hamilton-model-only",
+      synthetic: true,
+      topicId: "topic-hamilton-air-monitors",
+      title: "Rely on modeled estimates",
+      summary:
+        "Modeled estimates with published uncertainty bands may stretch limited maintenance budgets further than new hardware.",
+      approachLabel: "Approach B — modeled estimates",
+      supportingEvidenceIds: ["evidence-hamilton-maintenance-cost"],
+      counterEvidenceIds: ["evidence-hamilton-siting-criteria"],
     },
   ],
   evidenceSources: [
@@ -190,7 +419,7 @@ export const fixtureCatalog = {
       limitations:
         "Internal projection using district models; not an external audit.",
       summary:
-        "States that storage fell below the district’s published Stage 2 threshold earlier than the ten-year median.",
+        "States that storage fell below the fictional district’s published Stage 2 threshold earlier than the ten-year median in this hypothetical Tennessee scenario.",
     },
     {
       id: "evidence-meter-elasticity-study",
@@ -205,7 +434,7 @@ export const fixtureCatalog = {
       conflicts:
         "Lab previously held a training contract with another fictional utility consortium; disclosed.",
       limitations:
-        "Based on three fictional peer utilities; climate and housing stock differ from Cedar River.",
+        "Based on three fictional peer utilities; climate and housing stock differ from the Cedar River scenario.",
       summary:
         "Finds larger peak-use reductions under graduated stage prices than under flat emergency fees in the studied sample.",
     },
@@ -306,7 +535,7 @@ export const fixtureCatalog = {
       synthetic: true,
       topicId: "topic-northline-start-times",
       title: "Adolescent sleep and start-time evidence scan",
-      organization: "Northline Instructional Research Cell (fictional)",
+      organization: "Ridgeview Instructional Research Cell (fictional)",
       authorType: "researcher",
       sourceType: "report",
       publishedOn: "2026-03-15",
@@ -321,7 +550,7 @@ export const fixtureCatalog = {
       synthetic: true,
       topicId: "topic-northline-start-times",
       title: "Transportation wave capacity memo",
-      organization: "Northline Pupil Transportation (fictional)",
+      organization: "Ridgeview Pupil Transportation (fictional)",
       authorType: "agency",
       sourceType: "memo",
       publishedOn: "2026-04-01",
@@ -329,7 +558,97 @@ export const fixtureCatalog = {
       conflicts: "None disclosed in the synthetic record.",
       limitations: "Assumes current fleet size and driver availability.",
       summary:
-        "States that a 40-minute secondary shift would require an additional bus wave or route consolidation.",
+        "States that a 40-minute secondary shift would require an additional bus wave or route consolidation in this hypothetical Knox County scenario.",
+    },
+    {
+      id: "evidence-broadband-method-note",
+      synthetic: true,
+      topicId: "topic-tn-broadband-mapping",
+      title: "Open methodology note for coverage refresh",
+      organization: "Clearspan Mapping Desk (fictional)",
+      authorType: "agency",
+      sourceType: "memo",
+      publishedOn: "2026-05-12",
+      reviewStatus: "accepted",
+      conflicts: "None disclosed in the synthetic record.",
+      limitations: "Method note only; does not validate provider filings.",
+      summary:
+        "Describes a fixed classification rule set for unserved and underserved locations in the hypothetical statewide map.",
+    },
+    {
+      id: "evidence-broadband-cost-memo",
+      synthetic: true,
+      topicId: "topic-tn-broadband-mapping",
+      title: "Staff-hour estimate for quarterly refresh",
+      organization: "Clearspan Operations Cell (fictional)",
+      authorType: "agency",
+      sourceType: "memo",
+      publishedOn: "2026-05-18",
+      reviewStatus: "limited",
+      conflicts: "None disclosed in the synthetic record.",
+      limitations: "Internal estimate; no vendor quote attached.",
+      summary:
+        "Estimates higher recurring staff hours for quarterly refreshes than for an annual cycle.",
+    },
+    {
+      id: "evidence-davidson-rider-vignettes",
+      synthetic: true,
+      topicId: "topic-davidson-transit-fare",
+      title: "Frequent-rider bill vignettes",
+      organization: "Cumberland Rider Advocacy Desk (fictional)",
+      authorType: "civil_society",
+      sourceType: "report",
+      publishedOn: "2026-03-20",
+      reviewStatus: "limited",
+      conflicts: "Advocacy organization; foundation-funded (fictional).",
+      limitations: "Illustrative vignettes; not a representative rider survey.",
+      summary:
+        "Argues monthly caps would reduce bill volatility for frequent local-route riders in the hypothetical Davidson County scenario.",
+    },
+    {
+      id: "evidence-davidson-farebox-note",
+      synthetic: true,
+      topicId: "topic-davidson-transit-fare",
+      title: "Farebox recovery sensitivity note",
+      organization: "Metroloop Finance Cell (fictional)",
+      authorType: "agency",
+      sourceType: "memo",
+      publishedOn: "2026-04-02",
+      reviewStatus: "pending",
+      conflicts: "None disclosed in the synthetic record.",
+      limitations: "Sensitivity table only; not a full budget forecast.",
+      summary:
+        "Shows farebox recovery declines under several fare-cap uptake assumptions.",
+    },
+    {
+      id: "evidence-hamilton-siting-criteria",
+      synthetic: true,
+      topicId: "topic-hamilton-air-monitors",
+      title: "Neighborhood monitor siting criteria draft",
+      organization: "Valley Air Methods Desk (fictional)",
+      authorType: "researcher",
+      sourceType: "report",
+      publishedOn: "2026-02-28",
+      reviewStatus: "accepted",
+      conflicts: "None disclosed in the synthetic record.",
+      limitations: "Draft criteria; not a deployed network design.",
+      summary:
+        "Proposes distance-to-corridor and population-weighted siting rules for additional monitors.",
+    },
+    {
+      id: "evidence-hamilton-maintenance-cost",
+      synthetic: true,
+      topicId: "topic-hamilton-air-monitors",
+      title: "Monitor maintenance cost sketch",
+      organization: "Valley Air Operations Cell (fictional)",
+      authorType: "agency",
+      sourceType: "memo",
+      publishedOn: "2026-03-12",
+      reviewStatus: "disputed",
+      conflicts: "None disclosed in the synthetic record.",
+      limitations: "Cost sketch without competitive bids.",
+      summary:
+        "Estimates multi-year maintenance obligations that could exceed modeled-estimate publication costs.",
     },
   ],
   consultationStatements: [

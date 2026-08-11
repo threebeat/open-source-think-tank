@@ -152,6 +152,42 @@ export async function insertClaim(
   return { ok: true, value: mapClaim(row) };
 }
 
+/**
+ * Expected-state content update. Does not change workflow.
+ * Returns null when expectedUpdatedAt no longer matches.
+ */
+export async function updateClaimContent(
+  db: GatedDb,
+  input: {
+    claimId: string;
+    expectedUpdatedAt: Date;
+    title: string;
+    summary: string;
+    approachLabel: string;
+  },
+): Promise<AdapterResult<ClaimRecord | null>> {
+  const denied = requireGatedPersistence();
+  if (denied) {
+    return denied;
+  }
+  const [row] = await db
+    .update(claims)
+    .set({
+      title: input.title,
+      summary: input.summary,
+      approachLabel: input.approachLabel,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(claims.id, input.claimId),
+        eq(claims.updatedAt, input.expectedUpdatedAt),
+      ),
+    )
+    .returning();
+  return { ok: true, value: row ? mapClaim(row) : null };
+}
+
 export async function getClaimById(
   db: GatedDb,
   id: string,

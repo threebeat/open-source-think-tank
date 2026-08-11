@@ -55,6 +55,15 @@ describe("workspace topic API public-demo isolation", () => {
     );
     expect(detailGet.status).toBe(404);
 
+    const submissions = await import(
+      "@/app/api/workspace/topics/[id]/submissions/route"
+    );
+    const submissionsGet = await submissions.GET(
+      new Request("http://localhost/api/workspace/topics/x/submissions"),
+      { params: Promise.resolve({ id: "x" }) },
+    );
+    expect(submissionsGet.status).toBe(404);
+
     const transition = await import(
       "@/app/api/workspace/topics/[id]/transition/route"
     );

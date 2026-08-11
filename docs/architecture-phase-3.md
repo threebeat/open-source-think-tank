@@ -1,6 +1,6 @@
 # Phase 3 architecture — operational alpha
 
-**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.4 implemented** (topic authoring workspace; publication remains 3.6)  
+**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.5 implemented** (participant submissions + TN geography + public-demo discovery/evidence inventory; publication remains 3.6)  
 **Plan:** [phase-3-plan.md](./phase-3-plan.md)  
 **ADRs:** [0008](./decisions/0008-phase-3-operational-alpha-contract.md), [0009](./decisions/0009-phase-3-operational-slice-corrections.md)  
 **Foundation:** [architecture-phase-2.md](./architecture-phase-2.md), ADRs 0002–0005, capability matrix, audit registry
@@ -46,12 +46,13 @@ flowchart TB
 
 | Concern | Public-demo | Gated alpha |
 | --- | --- | --- |
-| Topic pages | `fixtureCatalog` selectors | Published projection from DB only |
+| Topic pages | `fixtureCatalog` selectors; local TopicsExplorer / EvidenceInventory query state; `discoveryState` active\|proposed | Published projection from DB only |
 | Auth / DB | Refused (`assertEnvironmentSafe` / noop adapters) | Auth.js + Drizzle after safe assert |
-| Mutations | None for real accounts | Capability-gated services |
+| Mutations | None for real accounts; local URL/filter state only | Capability-gated services |
 | Email | N/A | Capture-only until vendor addendum |
 | Alpha reset | N/A (fixtures in repo) | Wipes accounts + topic workflow tables |
 | Visitors | **Single-user** synthetic walkthrough (see below) | Invite-only multi-user |
+| Geography | Fixture `jurisdictionLevel` / `countyFips` labels | DB columns + TN authoring validation |
 
 **Invariant:** Server components, route handlers, and gated services/repositories must not import the synthetic fixture catalog for gated mutations.
 
@@ -70,8 +71,9 @@ Keep domain rules independent of React. Suggested modules (names indicative):
 | Layer | Responsibility | Must not |
 | --- | --- | --- |
 | `src/domain/*` | Shared types/enums/schemas for topic/claim/evidence workflow | Import Next.js, DB clients, fixtures for writes |
-| `src/lib/topics/*` services | Topic lifecycle transitions | Touch React; skip authz |
-| `src/lib/claims/*`, `src/lib/evidence/*` | Submission workflow + quality axis | Fetch remote URLs |
+| `src/lib/topics/*` services | Topic lifecycle transitions + draft geography metadata | Touch React; skip authz; treat geography as eligibility |
+| `src/lib/claims/*`, `src/lib/evidence/*`, `src/lib/submissions/*` | Submission envelope (claim + evidence + link + claim disclosure) | Fetch remote URLs; attach disclosure to both subjects |
+| `src/lib/geography/*` | Checked-in TN county FIPS reference + validation | Call external geography APIs |
 | `src/lib/moderation/*` | Visibility transitions | Hard-delete history |
 | `src/lib/conflicts/*` | Disclosure capture | Publish private detail |
 | `src/lib/*/repository.ts` | SQL via Drizzle | Import `@/fixtures` |
@@ -90,8 +92,9 @@ Migration: `drizzle/0012_topic_evidence.sql`. Repositories: `src/lib/topics|clai
 
 ### 3.1 Core topic group
 
-- `topics` — opaque text id, unique slug (not used as FK identity), title, question, background, scope, **`workflow_state`**, **`publication_status`**, `created_by_account_id`, `published_at`, `published_by_account_id`, `synthetic` (default false), timestamps
+- `topics` — opaque text id, unique slug (not used as FK identity), title, question, background, scope, **`workflow_state`**, **`publication_status`**, **`jurisdiction_level`** (`statewide` | `county`), **`state_code`** (TN-only in this release), **`county_fips`** (required iff county; derived display names from checked-in FIPS reference), `created_by_account_id`, `published_at`, `published_by_account_id`, `synthetic` (default false), timestamps
 - Operational workflow and publication status are independent; pause must not flip publication; published requires publication provenance
+- Topic geography is **content/jurisdiction taxonomy only** — not eligibility, residency, representation, or voting; geography edits remain draft-only metadata (3.5)
 - No Pol.is conversation ID or popularity/consensus columns
 
 ### 3.2 Claims and evidence

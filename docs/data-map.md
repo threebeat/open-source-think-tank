@@ -26,6 +26,8 @@ Nothing here is a privacy policy, retention schedule, or legal basis determinati
 | Legal holds | Preserve subjects from closure/purge during incidents | Staff-restricted only; never public | Until released by administrator (dual-control claim required for release) | Counsel scope of holds |
 | Closure / deletion requests | Account-holder exit workflow | Account holder + administrators | Closure retains assent/audit; anonymization of real accounts blocked while counsel gates blocking | Deletion rights unsettled (OQ15) |
 | Evidence submissions and claims | Topic briefs and review | Public with conflict/moderation labels | Long-lived public record with revision history | Copyright, defamation, moderation |
+| Topic geography classification (3.5) | Tennessee statewide/county taxonomy for topic content | Public labels when topic is published/demo fixtures | With topic record | Not eligibility/residency/voting; FIPS checked-in locally |
+| Public-demo discovery query state | Shareable advanced search filters | Local URL only; no accounts | Ephemeral browser | Never used for gated draft search (3.11) |
 | Conflict disclosures | Deliberation / Policy Council integrity | Public summaries; private detail unpublished | Term of service + appeal window | What must be public vs redacted |
 | Agenda calculation inputs/outputs | Reproducible thresholds | Public traces and method versions | Snapshot + code version retained | Algorithm accountability vs personal data |
 | Deliberation and decision records | Institutional memory | Public observation + published decisions | Long-lived public record | Board authority overlays |

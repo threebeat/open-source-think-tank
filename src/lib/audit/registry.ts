@@ -480,6 +480,148 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
       })
       .strict() as z.ZodType<Record<string, unknown>>,
   }),
+
+  // Participant submissions (3.5) — no public projectors for drafts/private disclosure
+  "claims.submitted": def("claims.submitted", "Claim submitted", {
+    requireActorAccount: true,
+    payloadSchema: z
+      .object({
+        claimId: z.string(),
+        topicId: z.string(),
+        evidenceSubmissionId: z.string(),
+        capability: z.literal("claims.submit"),
+        previousWorkflowState: z.null(),
+        nextWorkflowState: z.literal("submitted"),
+        actorAccountId: z.string(),
+        relationship: z.enum(["supporting", "counterevidence"]),
+      })
+      .strict() as z.ZodType<Record<string, unknown>>,
+  }),
+  "claims.updated": def("claims.updated", "Own claim content updated", {
+    requireActorAccount: true,
+    payloadSchema: z
+      .object({
+        claimId: z.string(),
+        topicId: z.string(),
+        capability: z.literal("claims.edit_own"),
+        previousWorkflowState: z.string(),
+        nextWorkflowState: z.string(),
+        actorAccountId: z.string(),
+      })
+      .strict() as z.ZodType<Record<string, unknown>>,
+  }),
+  "claims.resubmitted": def("claims.resubmitted", "Claim resubmitted", {
+    requireActorAccount: true,
+    payloadSchema: z
+      .object({
+        claimId: z.string(),
+        topicId: z.string(),
+        evidenceSubmissionId: z.string(),
+        capability: z.literal("claims.submit"),
+        previousWorkflowState: z.literal("changes_requested"),
+        nextWorkflowState: z.literal("submitted"),
+        actorAccountId: z.string(),
+      })
+      .strict() as z.ZodType<Record<string, unknown>>,
+  }),
+  "claims.withdrawn": def("claims.withdrawn", "Claim withdrawn", {
+    requireActorAccount: true,
+    payloadSchema: z
+      .object({
+        claimId: z.string(),
+        topicId: z.string(),
+        evidenceSubmissionId: z.string(),
+        capability: z.literal("claims.withdraw_own"),
+        previousWorkflowState: z.string(),
+        nextWorkflowState: z.literal("withdrawn"),
+        actorAccountId: z.string(),
+      })
+      .strict() as z.ZodType<Record<string, unknown>>,
+  }),
+  "evidence.submitted": def(
+    "evidence.submitted",
+    "Evidence source URL submitted",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          evidenceSubmissionId: z.string(),
+          topicId: z.string(),
+          claimId: z.string(),
+          capability: z.literal("evidence.submit"),
+          previousWorkflowState: z.null(),
+          nextWorkflowState: z.literal("submitted"),
+          actorAccountId: z.string(),
+          sourceUrlHost: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "evidence.updated": def("evidence.updated", "Own evidence content updated", {
+    requireActorAccount: true,
+    payloadSchema: z
+      .object({
+        evidenceSubmissionId: z.string(),
+        topicId: z.string(),
+        claimId: z.string(),
+        capability: z.literal("evidence.edit_own"),
+        previousWorkflowState: z.string(),
+        nextWorkflowState: z.string(),
+        actorAccountId: z.string(),
+        sourceUrlHost: z.string(),
+      })
+      .strict() as z.ZodType<Record<string, unknown>>,
+  }),
+  "evidence.resubmitted": def(
+    "evidence.resubmitted",
+    "Evidence resubmitted",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          evidenceSubmissionId: z.string(),
+          topicId: z.string(),
+          claimId: z.string(),
+          capability: z.literal("evidence.submit"),
+          previousWorkflowState: z.literal("changes_requested"),
+          nextWorkflowState: z.literal("submitted"),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "evidence.withdrawn": def("evidence.withdrawn", "Evidence withdrawn", {
+    requireActorAccount: true,
+    payloadSchema: z
+      .object({
+        evidenceSubmissionId: z.string(),
+        topicId: z.string(),
+        claimId: z.string(),
+        capability: z.literal("evidence.withdraw_own"),
+        previousWorkflowState: z.string(),
+        nextWorkflowState: z.literal("withdrawn"),
+        actorAccountId: z.string(),
+      })
+      .strict() as z.ZodType<Record<string, unknown>>,
+  }),
+  "conflicts.disclosed": def(
+    "conflicts.disclosed",
+    "Conflict disclosure recorded",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          disclosureId: z.string(),
+          claimId: z.string(),
+          topicId: z.string(),
+          capability: z.literal("conflicts.disclose_own"),
+          actorAccountId: z.string(),
+          disclosureChoice: z.enum(["none", "disclose"]),
+          attachedTo: z.literal("claim"),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
 };
 
 export type RegisteredAuditAction = keyof typeof AUDIT_EVENT_REGISTRY;
