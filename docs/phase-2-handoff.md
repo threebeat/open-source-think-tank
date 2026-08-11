@@ -1,6 +1,6 @@
 # Phase 2 handoff
 
-**Status:** Implementation complete; readiness blocked (counsel + Docker/PG16 CI confirmation on tag candidate). **Phase 2 is not complete.**
+**Status:** Implementation complete; readiness blocked (counsel dispositions + GitHub Actions CI confirmation on tag candidate). Local Docker Compose PG16 gated E2E is now green. **Phase 2 is not complete.**
 
 Engineering packages **2.1–2.12 implementation** are in place. **Do not tag** a foundation release and **do not** treat this handoff as Phase 2 done until Lane B blockers below clear.
 
@@ -14,7 +14,7 @@ Engineering packages **2.1–2.12 implementation** are in place. **Do not tag** 
 | Lane | Posture |
 | --- | --- |
 | **A — Phase 3 synthetic / closed engineering** | May proceed under existing permits and blocking counsel constraints (confirm ADR 0006). |
-| **B — Phase 2 readiness / foundation tag / real activation** | **Blocked** until counsel dispositions and Docker Compose PG16 CI (and remaining readiness evidence) clear. |
+| **B — Phase 2 readiness / foundation tag / real activation** | **Blocked** until counsel dispositions, GitHub Actions CI on the candidate SHA, and remaining readiness evidence clear. |
 
 This is **not** counsel clearance of §7 gates and does **not** authorize real participant data.
 
@@ -22,8 +22,8 @@ This is **not** counsel clearance of §7 gates and does **not** authorize real p
 
 | Blocker | Status | Required evidence |
 | --- | --- | --- |
-| Application-level gated E2E (account/staff axe, mobile account flows) | Prior local pass recorded; **reconfirm on committed candidate SHA** | Green gated suite on the SHA below |
-| Docker Compose PostgreSQL **16** (`docker compose` / `npm run test:e2e:gated`) | **Not confirmed** on this machine’s Docker engine (WSL/engine issues historically) | Green compose-based run or CI `e2e-gated` |
+| Application-level gated E2E (account/staff axe, mobile account flows) | Covered by Docker Compose PG16 run below on candidate SHA | Green gated suite on the SHA below |
+| Docker Compose PostgreSQL **16** (`npm run test:e2e:gated`) | **Cleared locally** 2026-08-10 — see evidence log | Green compose-based run (also reconfirm via CI `e2e-gated`) |
 | CI on GitHub Actions | Workflow present; **run URL pending** on candidate SHA | Green `unit` + `e2e-public` + `e2e-gated` |
 | Counsel dispositions | Packet issued; all readiness gates still **blocking** | §7 + `dispositions.ts`; `readinessCounselAllowsFoundationTag() === true` |
 | Manual NVDA spot-check (account/staff) | **Pending** | Notes in evidence table |
@@ -34,16 +34,20 @@ This is **not** counsel clearance of §7 gates and does **not** authorize real p
 
 | Field | Value |
 | --- | --- |
-| Candidate commit SHA | Tip of `readiness/2.12-hardening-pass` at push time (see PR); reconfirm after merge to `main` |
-| Application-level gated E2E | Prior: 2026-08-10 local run against **PostgreSQL 17** host service — **application-level gated E2E only**; **not** validation of Docker Compose or PostgreSQL 16 |
-| Docker Compose PG16 result | _pending_ |
+| Candidate commit SHA | `7f3fd53caac421ebe2b8737a5d6e1f703b84dee7` (`readiness/2.12-hardening-pass`; reconfirm after merge to `main`) |
+| Docker / Compose | Client+Engine **29.7.2** (Docker Desktop 4.86.0); Compose **v5.3.1**; context `desktop-linux` |
+| Command | `npm run test:e2e:gated` (`db:up` with compose `--wait` → `gated-e2e-prepare.mjs` → `npm run build` → `playwright test -c playwright.gated.config.ts`) |
+| PostgreSQL image / version | Image **`postgres:16-alpine`** (`sha256:57c72fd2a128…`); server reports **`postgres (PostgreSQL) 16.14`** on Alpine 3.24; host port **54329→5432**; container healthy |
+| Date / host | 2026-08-10 (local Windows, Docker Desktop + WSL2) |
+| Test count / result | **9 passed / 0 failed** (16.6s, 1 worker) — Pass |
+| Specs covered | `a11y.gated.spec.ts`, `auth-lifecycle.gated.spec.ts`, `onboarding.gated.spec.ts` (incl. phone account flows + staff narrow viewport) |
 | GitHub Actions run URL | _pending_ |
 | Manual NVDA result | _pending_ |
 | Counsel §7 readiness gates | All **blocking** — [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md) |
 
 ### Prior application-level gated note (historical)
 
-On 2026-08-10, with Docker Desktop engine unavailable (WSL missing), the gated Playwright suite was executed against a local PostgreSQL **17** instance on `127.0.0.1:5432` (`ostt_dev` / `ostt`). Result at that time: **9 passed**. That run validates **application behavior** under a gated `APP_MODE` + migrated/seeded foundation DB. It does **not** substitute for Docker Compose PostgreSQL **16** or CI `e2e-gated` on the committed candidate SHA.
+Earlier the same day, with Docker Desktop engine unavailable (WSL missing), the gated Playwright suite was also executed against a local PostgreSQL **17** host service. That was **application-level only** and is superseded for Docker/PG16 evidence by the Compose run above.
 
 ## Counsel review record
 
@@ -83,7 +87,7 @@ See [open-questions.md](./open-questions.md) (incl. OQ16), [legal-questions.md](
 
 1. Readiness counsel gates still **blocking**.
 2. Real account activation forbidden until activation counsel gates clear/conditionally clear.
-3. Docker Compose PG16 + CI green on the tag candidate still required for Lane B.
+3. GitHub Actions CI green on the tag candidate still required for Lane B (local Docker Compose PG16 gated E2E recorded 2026-08-10).
 4. Managed Postgres host and production email vendors blocked pending addenda.
 5. Payments, analytics, AI APIs, live Pol.is, identity-verification SDKs forbidden until register approval.
 6. Production backup/PITR after host approval (PGlite drill insufficient).
