@@ -343,6 +343,12 @@ export async function upsertOwnClaimDisclosure(
         throw new Error("DISCLOSURE_EXPECTED_UPDATED_AT_REQUIRED");
       }
 
+      // Compare at JS millisecond precision. Postgres `now()` may store
+      // microseconds that ISO tokens cannot round-trip for SQL equality.
+      if (existing.value.updatedAt.getTime() !== expectedUpdatedAt.getTime()) {
+        throw new Error("DISCLOSURE_STATE_CONFLICT");
+      }
+
       const changedFieldLabels: string[] = [];
       if (existing.value.publicSummary !== publicSummary) {
         changedFieldLabels.push("publicSummary");
@@ -353,7 +359,7 @@ export async function upsertOwnClaimDisclosure(
 
       const updated = await updateConflictDisclosure(tx, {
         disclosureId: existing.value.id,
-        expectedUpdatedAt,
+        expectedUpdatedAt: existing.value.updatedAt,
         publicSummary,
         privateDetail,
       });
@@ -518,6 +524,12 @@ export async function upsertOwnEvidenceDisclosure(
         throw new Error("DISCLOSURE_EXPECTED_UPDATED_AT_REQUIRED");
       }
 
+      // Compare at JS millisecond precision. Postgres `now()` may store
+      // microseconds that ISO tokens cannot round-trip for SQL equality.
+      if (existing.value.updatedAt.getTime() !== expectedUpdatedAt.getTime()) {
+        throw new Error("DISCLOSURE_STATE_CONFLICT");
+      }
+
       const changedFieldLabels: string[] = [];
       if (existing.value.publicSummary !== publicSummary) {
         changedFieldLabels.push("publicSummary");
@@ -528,7 +540,7 @@ export async function upsertOwnEvidenceDisclosure(
 
       const updated = await updateConflictDisclosure(tx, {
         disclosureId: existing.value.id,
-        expectedUpdatedAt,
+        expectedUpdatedAt: existing.value.updatedAt,
         publicSummary,
         privateDetail,
       });

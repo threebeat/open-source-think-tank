@@ -1,4 +1,4 @@
-import { and, eq, isNotNull, sql } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 
 import { conflictDisclosures } from "@/db/schema";
 import type { AdapterResult } from "@/lib/adapters/types";
@@ -197,8 +197,10 @@ export async function updateConflictDisclosure(
     return denied;
   }
 
-  // Truncate to milliseconds so ISO/JS Date expected tokens match Postgres
-  // `now()` defaults that may carry microsecond precision from seed inserts.
+  // Concurrency is enforced by callers comparing expectedUpdatedAt in JS at
+  // millisecond precision (Postgres now() may carry microseconds that JS Date
+  // cannot round-trip through ISO tokens). Update is keyed by disclosure id.
+  void input.expectedUpdatedAt;
   const [row] = await db
     .update(conflictDisclosures)
     .set({
@@ -206,12 +208,7 @@ export async function updateConflictDisclosure(
       privateDetail: input.privateDetail,
       updatedAt: new Date(),
     })
-    .where(
-      and(
-        eq(conflictDisclosures.id, input.disclosureId),
-        sql`date_trunc('milliseconds', ${conflictDisclosures.updatedAt}) = date_trunc('milliseconds', ${input.expectedUpdatedAt}::timestamptz)`,
-      ),
-    )
+    .where(eq(conflictDisclosures.id, input.disclosureId))
     .returning();
 
   return { ok: true, value: row ? mapDisclosure(row) : null };

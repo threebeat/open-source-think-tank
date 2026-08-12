@@ -59,12 +59,12 @@ test.describe("moderation and disclosure (gated)", () => {
       .getByRole("button", { name: /Save conflict disclosure/i })
       .click();
 
-    await expect(disclosureSection.getByRole("alert")).toHaveCount(0, {
-      timeout: 15_000,
-    });
+    // Wait for the saved summary first — checking alert count immediately after
+    // click races the in-flight request (count is 0 before an error can appear).
     await expect(
       currentCard.getByText(updatedSummary, { exact: true }),
     ).toBeVisible({ timeout: 30_000 });
+    await expect(disclosureSection.getByRole("alert")).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
   });
 

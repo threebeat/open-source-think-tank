@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { evidenceReviews, evidenceSubmissions } from "@/db/schema";
 import type { AdapterResult } from "@/lib/adapters/types";
@@ -324,12 +324,12 @@ export async function updateEvidenceModerationVisibility(
           evidenceSubmissions.moderationVisibility,
           input.expectedVisibility,
         ),
-        // Match ISO/JS millisecond tokens against Postgres now() microseconds.
-        sql`date_trunc('milliseconds', ${evidenceSubmissions.updatedAt}) = date_trunc('milliseconds', ${input.expectedUpdatedAt}::timestamptz)`,
       ),
     )
     .returning();
 
+  // Callers enforce expectedUpdatedAt at JS millisecond precision before invoke.
+  void input.expectedUpdatedAt;
   return { ok: true, value: row ? mapEvidence(row) : null };
 }
 

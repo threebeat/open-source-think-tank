@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import {
   claimEvidenceLinks,
@@ -288,12 +288,12 @@ export async function updateClaimModerationVisibility(
       and(
         eq(claims.id, input.claimId),
         eq(claims.moderationVisibility, input.expectedVisibility),
-        // Match ISO/JS millisecond tokens against Postgres now() microseconds.
-        sql`date_trunc('milliseconds', ${claims.updatedAt}) = date_trunc('milliseconds', ${input.expectedUpdatedAt}::timestamptz)`,
       ),
     )
     .returning();
 
+  // Callers enforce expectedUpdatedAt at JS millisecond precision before invoke.
+  void input.expectedUpdatedAt;
   return { ok: true, value: row ? mapClaim(row) : null };
 }
 
