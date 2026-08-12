@@ -44,8 +44,11 @@ test.describe("moderation and disclosure (gated)", () => {
         name: "Claim conflict disclosure",
       }),
     ).toBeVisible({ timeout: 30_000 });
+    const currentCard = disclosureSection.locator(
+      "section[aria-labelledby='conflict-disclosure-card-heading']",
+    );
     await expect(
-      disclosureSection.getByText(PUBLIC_SUMMARY, { exact: false }),
+      currentCard.getByText(PUBLIC_SUMMARY, { exact: true }),
     ).toBeVisible();
 
     const updatedSummary =
@@ -57,7 +60,7 @@ test.describe("moderation and disclosure (gated)", () => {
       .click();
 
     await expect(
-      disclosureSection.getByText(updatedSummary, { exact: false }),
+      currentCard.getByText(updatedSummary, { exact: true }),
     ).toBeVisible({ timeout: 30_000 });
     await expectNoHorizontalOverflow(page);
   });
