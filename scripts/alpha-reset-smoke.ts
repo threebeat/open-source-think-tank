@@ -18,6 +18,7 @@ import postgres from "postgres";
 
 import * as schema from "../src/db/schema";
 import { seedSyntheticFoundation } from "../src/db/seeds/synthetic";
+import type { FoundationDb } from "../src/db/types";
 import { CaptureEmailAdapter } from "../src/lib/email/capture-email-adapter";
 import { AuthService } from "../src/lib/auth/auth-service";
 import { openDocumentPresentation } from "../src/lib/assent/presentation";
@@ -133,7 +134,7 @@ async function wipeDisposableForReseed(client: postgres.Sql): Promise<void> {
   `;
 }
 
-async function plantSentinels(db: ReturnType<typeof drizzle>): Promise<void> {
+async function plantSentinels(db: FoundationDb): Promise<void> {
   const persons = await db.select().from(schema.persons).limit(1);
   const accounts = await db.select().from(schema.accounts).limit(1);
   assert(persons[0] && accounts[0], "seed must create persons/accounts");
@@ -173,7 +174,7 @@ async function plantSentinels(db: ReturnType<typeof drizzle>): Promise<void> {
 }
 
 async function proveBootstrapWithoutSyntheticSeed(
-  db: ReturnType<typeof drizzle>,
+  db: FoundationDb,
 ): Promise<void> {
   const opsDocs = await db
     .select()
@@ -299,10 +300,10 @@ async function main() {
   delete process.env.OSTT_ALLOW_DEV_RESET;
 
   const client = postgres(RESET_URL, { max: 1 });
-  const db = drizzle(client, { schema });
+  const db = drizzle(client, { schema }) as unknown as FoundationDb
 
   try {
-    await migrate(db, { migrationsFolder: path.join(root, "drizzle") });
+    await migrate(db as never, { migrationsFolder: path.join(root, "drizzle") });
     await wipeDisposableForReseed(client);
     await seedSyntheticFoundation(db);
     await plantSentinels(db);

@@ -138,31 +138,38 @@ Relevant open questions remain open in [open-questions.md](./open-questions.md).
 
 ## 8. Local / CI verification (closure candidate)
 
-Fill exact counts after the closure PR verification run. Distinguish:
-
 | Check | Result |
 | --- | --- |
 | Baseline `origin/main` | `33874e8a9ea9d3ddc690dc69de4d015861e41fcb` |
-| Candidate head | *(set after push)* |
-| Closure PR | *(set after open)* |
-| `npm ci` | *(pending)* |
-| `npm run lint` | *(pending)* |
-| `npm run typecheck` | *(pending)* |
-| `npm test` (database-free unit job equivalent) | *(pending — report passed/skipped exactly; do not claim unqualified “all passed” if any skipped)* |
-| `npm run test:pg:invites` | *(pending — mandatory PostgreSQL evidence)* |
-| `npm run test:pg:alpha-reset` | *(pending)* |
-| `npm run phase3:acceptance` | *(pending)* |
-| `npm run security:check` | *(pending)* |
-| `npm run backup:smoke` | *(pending)* |
-| `npm run alpha:reset:smoke` | *(pending)* |
-| `APP_MODE=public-demo npm run build` | *(pending)* |
-| Public-demo Playwright | *(pending)* |
-| Gated production build | *(pending)* |
-| Gated Playwright | *(pending)* |
-| `git diff --check` | *(pending)* |
+| Closure PR | https://github.com/threebeat/open-source-think-tank/pull/16 |
+| Candidate head | *(see latest commit on `cursor/phase-3-closure-signoff-0ee2`)* |
+| `npm ci` | pass |
+| `npm run lint` | pass (16 pre-existing unused-adapter warnings; 0 errors) |
+| `npm run typecheck` | pass |
+| `npm test` with local Postgres available | **433 passed**, 0 skipped (includes `*.pg.test.ts`) |
+| `npm test` database-free equivalent (unit CI job, no Postgres) | **428 passed**, **5 skipped** (`issue.pg.test.ts` ×1 + `alpha-reset.pg.test.ts` ×4) — not unqualified “433/all passed” |
+| `npm run test:pg:invites` | **1 passed** (mandatory; disposable `ostt_invite_concurrency`) |
+| `npm run test:pg:alpha-reset` | **4 passed** |
+| `npm run phase3:acceptance` | pass (steps 1–15) |
+| `npm run security:check` | pass (`npm audit` reports 4 moderate esbuild/drizzle-kit transitive findings; high audit gate passed) |
+| `npm run backup:smoke` | pass |
+| `npm run alpha:reset:smoke` | pass (includes bootstrap recovery without synthetic reseed) |
+| `APP_MODE=public-demo npm run build` | pass |
+| Public-demo Playwright | **53 passed** |
+| Gated production build | pass |
+| Gated Playwright | **37 passed** (includes deterministic revisions E2E; no conditional skip) |
+| `git diff --check` | pass |
 | Migrations | none |
-| Dependency/vendor diff vs `33874e8` | scripts/docs/tests + operator reset hardening only; no new runtime deps |
+| Dependency/vendor diff vs `33874e8` | scripts/docs/tests + operator reset hardening + db-up/wait fallbacks only; no new runtime deps |
 | Real/shared DB reset | **none** — disposable drills only |
 | Sensitive dump committed | **none** |
+| UI inspection | No new branded marketing UI; revisions E2E covers phone + desktop + axe on affected review/public surfaces |
+
+**CI evidence (must be green on latest head):**
+
+- Job `Lint, typecheck, unit, security, build`
+- Job `Gated Playwright E2E (Docker Postgres)` steps: `PostgreSQL invitation concurrency proof`, `PostgreSQL alpha-reset concurrency proof`, `Alpha reset smoke`, `Phase 3 acceptance journey`, gated E2E
+- Job `Public Playwright E2E`
+- Vercel preview for the PR
 
 **Intentionally deferred manual evidence:** D12 NVDA sign-off; D11 penetration test; real off-device alpha deployment.

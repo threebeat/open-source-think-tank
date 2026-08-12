@@ -14,6 +14,7 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 
 import * as schema from "../src/db/schema";
+import type { FoundationDb } from "../src/db/types";
 import { CaptureEmailAdapter } from "../src/lib/email/capture-email-adapter";
 import { AuthService } from "../src/lib/auth/auth-service";
 import { openDocumentPresentation } from "../src/lib/assent/presentation";
@@ -114,7 +115,7 @@ async function wipeSchema(client: postgres.Sql): Promise<void> {
 }
 
 async function assentPublishedDocuments(
-  db: ReturnType<typeof drizzle>,
+  db: FoundationDb,
   accountId: string,
   method: string,
 ): Promise<void> {
@@ -141,7 +142,7 @@ async function assentPublishedDocuments(
 }
 
 async function openRequiredVerification(
-  db: ReturnType<typeof drizzle>,
+  db: FoundationDb,
   accountId: string,
 ): Promise<string[]> {
   const caseIds: string[] = [];
@@ -179,11 +180,11 @@ async function main() {
   delete process.env.OSTT_ALLOW_DEV_RESET;
 
   const client = postgres(JOURNEY_URL, { max: 4 });
-  const db = drizzle(client, { schema });
+  const db = drizzle(client, { schema }) as unknown as FoundationDb
 
   try {
     await wipeSchema(client);
-    await migrate(db, { migrationsFolder: path.join(root, "drizzle") });
+    await migrate(db as never, { migrationsFolder: path.join(root, "drizzle") });
 
     // 1) Start from post-reset operational configuration (no synthetic seed).
     const fingerprint = computeDatabaseFingerprint(JOURNEY_URL);

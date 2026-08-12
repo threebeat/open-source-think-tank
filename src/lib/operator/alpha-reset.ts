@@ -290,17 +290,26 @@ export async function acquireAlphaResetProtection(
 }
 
 function isLockContentionError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error);
-  const code =
-    error && typeof error === "object" && "code" in error
-      ? String((error as { code?: unknown }).code ?? "")
-      : "";
-  return (
-    code === "55P03" ||
-    /lock timeout|canceling statement due to lock timeout|could not obtain lock|deadlock detected/i.test(
-      message,
-    )
-  );
+  const chain: unknown[] = [error];
+  if (error instanceof Error && "cause" in error && error.cause) {
+    chain.push(error.cause);
+  }
+  for (const entry of chain) {
+    const message = entry instanceof Error ? entry.message : String(entry);
+    const code =
+      entry && typeof entry === "object" && "code" in entry
+        ? String((entry as { code?: unknown }).code ?? "")
+        : "";
+    if (
+      code === "55P03" ||
+      /lock timeout|canceling statement due to lock timeout|could not obtain lock|deadlock detected/i.test(
+        message,
+      )
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function sanitizeResetFailure(error: unknown): AdapterResult<never> {

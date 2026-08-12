@@ -82,6 +82,52 @@ describe.skipIf(!reachable)("alpha reset concurrency (PostgreSQL 16)", () => {
   let db: FoundationDb;
   let previousEnv: Record<string, string | undefined>;
 
+  async function reseedFresh(): Promise<void> {
+    await sqlClient.unsafe(`
+      TRUNCATE TABLE
+        auth_challenges,
+        auth_sessions,
+        conversation_pseudonyms,
+        closed_test_conversations,
+        dual_control_requests,
+        legal_holds,
+        account_deletion_requests,
+        retention_policy_settings,
+        evidence_reviews,
+        claim_reviews,
+        moderation_actions,
+        content_revisions,
+        conflict_disclosures,
+        claim_evidence_links,
+        evidence_submissions,
+        claims,
+        topics,
+        operator_bootstrap_state,
+        audit_events,
+        verification_artifact_payloads,
+        verification_artifact_holds,
+        verification_assertions,
+        verification_cases,
+        assent_presentations,
+        assent_outcomes,
+        assent_records,
+        document_versions,
+        council_appointments,
+        role_assignments,
+        invitations,
+        profiles,
+        accounts,
+        persons
+      CASCADE
+    `);
+    await sqlClient`
+      UPDATE audit_ledger_head
+      SET head_event_id = NULL, head_hash = NULL, updated_at = now()
+      WHERE id = 'default'
+    `;
+    await seedSyntheticFoundation(db);
+  }
+
   beforeAll(async () => {
     expect(parseDatabaseName(PG_URL)).toBe(RESET_DB);
     expect(parseDatabaseName(PG_URL)).not.toBe("ostt_dev");
@@ -111,7 +157,7 @@ describe.skipIf(!reachable)("alpha reset concurrency (PostgreSQL 16)", () => {
     `);
     db = drizzle(sqlClient, { schema });
     await migrate(db, { migrationsFolder: path.join(process.cwd(), "drizzle") });
-    await seedSyntheticFoundation(db);
+    await reseedFresh();
   }, 180_000);
 
   afterAll(async () => {
@@ -126,7 +172,7 @@ describe.skipIf(!reachable)("alpha reset concurrency (PostgreSQL 16)", () => {
   });
 
   it("concurrent reset attempts leave a clean database with one receipt", async () => {
-    await seedSyntheticFoundation(db);
+    await reseedFresh();
     const fingerprint = computeDatabaseFingerprint(PG_URL);
     const results = await Promise.all([
       executeAlphaReset(db, {
@@ -162,7 +208,7 @@ describe.skipIf(!reachable)("alpha reset concurrency (PostgreSQL 16)", () => {
   }, 120_000);
 
   it("ordinary write during protected window fails closed without partial wipe", async () => {
-    await seedSyntheticFoundation(db);
+    await reseedFresh();
     const beforeAccounts = await db.select().from(accounts);
     expect(beforeAccounts.length).toBeGreaterThan(0);
 
@@ -226,7 +272,7 @@ describe.skipIf(!reachable)("alpha reset concurrency (PostgreSQL 16)", () => {
   }, 60_000);
 
   it("lock acquisition failure changes nothing", async () => {
-    await seedSyntheticFoundation(db);
+    await reseedFresh();
     const beforeAccounts = await db.select().from(accounts);
     const fingerprint = computeDatabaseFingerprint(PG_URL);
 
@@ -236,16 +282,23 @@ describe.skipIf(!reachable)("alpha reset concurrency (PostgreSQL 16)", () => {
     const held = new Promise<void>((resolve) => {
       release = resolve;
     });
-    const holdPromise = holderDb.transaction(async (tx) => {
-      await tx.execute(
-        sql`SELECT pg_advisory_xact_lock(${ALPHA_RESET_ADVISORY_LOCK_KEY})`,
-      );
-      await new Promise<void>((resolve) => {
-        release();
-        setTimeout(resolve, 3_000);
+    // Hold longer than ALPHA_RESET_LOCK_TIMEOUT (5s) so the reset fails closed.
+    const holdPromise = holderDb
+      .transaction(async (tx) => {
+        await tx.execute(
+          sql`SELECT pg_advisory_xact_lock(${ALPHA_RESET_ADVISORY_LOCK_KEY})`,
+        );
+        await new Promise<void>((resolve) => {
+          release();
+          setTimeout(resolve, 8_000);
+        });
+        throw new Error("HOLD_RELEASE");
+      })
+      .catch((error) => {
+        if (!(error instanceof Error && error.message === "HOLD_RELEASE")) {
+          throw error;
+        }
       });
-      throw new Error("HOLD_RELEASE");
-    });
     await held;
 
     const failed = await executeAlphaReset(db, {
@@ -267,16 +320,12 @@ describe.skipIf(!reachable)("alpha reset concurrency (PostgreSQL 16)", () => {
       .where(eq(auditEvents.action, "alpha.reset_executed"));
     expect(receipts).toHaveLength(0);
 
-    await holdPromise.catch((error) => {
-      if (!(error instanceof Error && error.message === "HOLD_RELEASE")) {
-        throw error;
-      }
-    });
+    await holdPromise;
     await holder.end({ timeout: 5 });
   }, 60_000);
 
   it("successful commit reports ok with authoritative counts (no unlock step)", async () => {
-    await seedSyntheticFoundation(db);
+    await reseedFresh();
     const fingerprint = computeDatabaseFingerprint(PG_URL);
     const executed = await executeAlphaReset(db, {
       reason: "pg success reporting after commit",
