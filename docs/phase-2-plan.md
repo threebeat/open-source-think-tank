@@ -440,7 +440,7 @@ Stop Phase 2 implementation and escalate to humans if:
 
 ### Work package 2.11 — Add privacy and operational controls
 
-**Status:** Complete for provisional (counsel-gated) privacy ops: own-account export, closure/deletion-request workflow that retains assent/audit, configurable retention job settings, staff-restricted legal holds, structured `securityLog` redaction, CSRF + security headers middleware, `scripts/security-checks.mjs` (headers/CSRF wiring, secret patterns, `npm audit`), PGlite backup/restore smoke, incident/privileged-access procedures, dual-control request/approve for high-impact ops, and updated data-map/threat-model. Destructive anonymization of real accounts remains blocked while LQ10–11 are blocking.
+**Status:** Complete for provisional (counsel-gated) privacy ops: own-account export, closure/deletion-request workflow that retains assent/audit, configurable retention job settings, staff-restricted legal holds, structured `securityLog` redaction, CSRF + security headers middleware, `scripts/security-checks.mjs` (headers/CSRF wiring, secret patterns, `npm audit`), PGlite backup/restore smoke, incident/privileged-access procedures, dual-control request/approve for high-impact ops, and updated data-map/threat-model. Post-merge hardening adds export `Cache-Control: no-store` / download headers, account privacy closure-request form with error-summary focus, and sentinel/audit-failure export tests. Destructive anonymization of real accounts remains blocked while LQ10–11 are blocking.
 
 1. Implement account data viewing and export.
 2. Implement closure and deletion-request workflows using counsel-approved retention rules.
