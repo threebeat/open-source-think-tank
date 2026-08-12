@@ -11,7 +11,10 @@ import {
   type GatedDb,
   requireGatedPersistence,
 } from "@/lib/persistence/gated";
-import { nextUpdatedAt } from "@/lib/persistence/optimistic";
+import {
+  nextUpdatedAt,
+  updatedAtEqualsMs,
+} from "@/lib/persistence/optimistic";
 
 export type SubmissionWorkflowState =
   | "draft"
@@ -290,7 +293,7 @@ export async function updateClaimModerationVisibility(
       and(
         eq(claims.id, input.claimId),
         eq(claims.moderationVisibility, input.expectedVisibility),
-        eq(claims.updatedAt, input.expectedUpdatedAt),
+        updatedAtEqualsMs(claims.updatedAt, input.expectedUpdatedAt),
       ),
     )
     .returning();

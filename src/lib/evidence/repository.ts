@@ -11,7 +11,10 @@ import {
   type GatedDb,
   requireGatedPersistence,
 } from "@/lib/persistence/gated";
-import { nextUpdatedAt } from "@/lib/persistence/optimistic";
+import {
+  nextUpdatedAt,
+  updatedAtEqualsMs,
+} from "@/lib/persistence/optimistic";
 
 export type EvidenceQualityStatus =
   | "pending"
@@ -326,7 +329,10 @@ export async function updateEvidenceModerationVisibility(
           evidenceSubmissions.moderationVisibility,
           input.expectedVisibility,
         ),
-        eq(evidenceSubmissions.updatedAt, input.expectedUpdatedAt),
+        updatedAtEqualsMs(
+          evidenceSubmissions.updatedAt,
+          input.expectedUpdatedAt,
+        ),
       ),
     )
     .returning();

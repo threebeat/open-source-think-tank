@@ -7,7 +7,10 @@ import {
   type GatedDb,
   requireGatedPersistence,
 } from "@/lib/persistence/gated";
-import { nextUpdatedAt } from "@/lib/persistence/optimistic";
+import {
+  nextUpdatedAt,
+  updatedAtEqualsMs,
+} from "@/lib/persistence/optimistic";
 
 /**
  * Full gated disclosure record. Private detail must never be required by
@@ -212,7 +215,10 @@ export async function updateConflictDisclosure(
     .where(
       and(
         eq(conflictDisclosures.id, input.disclosureId),
-        eq(conflictDisclosures.updatedAt, input.expectedUpdatedAt),
+        updatedAtEqualsMs(
+          conflictDisclosures.updatedAt,
+          input.expectedUpdatedAt,
+        ),
       ),
     )
     .returning();
