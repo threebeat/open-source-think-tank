@@ -288,7 +288,8 @@ export async function updateClaimModerationVisibility(
       and(
         eq(claims.id, input.claimId),
         eq(claims.moderationVisibility, input.expectedVisibility),
-        eq(claims.updatedAt, input.expectedUpdatedAt),
+        // Match ISO/JS millisecond tokens against Postgres now() microseconds.
+        sql`date_trunc('milliseconds', ${claims.updatedAt}) = date_trunc('milliseconds', ${input.expectedUpdatedAt}::timestamptz)`,
       ),
     )
     .returning();
