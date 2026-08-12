@@ -43,20 +43,17 @@ export default async function ClaimReviewDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  const { getStaffClaimRevisionHistory } = await import(
-    "@/lib/revisions/history"
-  );
+  const { getStaffClaimRevisionHistory } =
+    await import("@/lib/revisions/history");
   const claimHistory = await getStaffClaimRevisionHistory(db, {
     actorAccountId: gated.session.accountId,
     claimId,
   });
 
-  const { getConflictDisclosureForClaim } = await import(
-    "@/lib/conflicts/repository"
-  );
-  const { toOwnerOrReviewerConflictDisclosure } = await import(
-    "@/lib/conflicts/audiences"
-  );
+  const { getConflictDisclosureForClaim } =
+    await import("@/lib/conflicts/repository");
+  const { toOwnerOrReviewerConflictDisclosure } =
+    await import("@/lib/conflicts/audiences");
   const disclosureRow = await getConflictDisclosureForClaim(db, claimId);
   const ownerDisclosure =
     disclosureRow.ok && disclosureRow.value
@@ -66,8 +63,9 @@ export default async function ClaimReviewDetailPage({ params }: PageProps) {
   const { claim, topic, links, reviews } = detail.value;
   const canReview = claim.workflowState === "submitted";
   const latestReviewAt = reviews.at(-1)?.decidedAt ?? null;
-  const claimLatestRevisionAt =
-    claimHistory.ok ? claimHistory.value.latestRevisionAt : null;
+  const claimLatestRevisionAt = claimHistory.ok
+    ? claimHistory.value.latestRevisionAt
+    : null;
   const reviewPredates =
     Boolean(latestReviewAt) &&
     Boolean(claimLatestRevisionAt) &&
@@ -105,8 +103,8 @@ export default async function ClaimReviewDetailPage({ params }: PageProps) {
         description={`${topic.title} · submitter ${claim.submitterDisplayLabel}`}
       />
       <DisclosureNotice title="Do not fetch source URLs" tone="caution">
-        Linked evidence URLs are shown for reference only. This application never
-        fetches, scrapes, or previews remote sources.
+        Linked evidence URLs are shown for reference only. This application
+        never fetches, scrapes, or previews remote sources.
       </DisclosureNotice>
 
       <dl className="grid gap-4 text-sm sm:grid-cols-2">
@@ -156,9 +154,10 @@ export default async function ClaimReviewDetailPage({ params }: PageProps) {
                       {link.evidenceTitle}
                     </p>
                     <p className="text-muted-foreground break-words">
-                      {link.organization} · {link.authorType} · {link.sourceType}{" "}
-                      · quality {link.qualityStatus.replaceAll("_", " ")} ·
-                      workflow {link.workflowState.replaceAll("_", " ")}
+                      {link.organization} · {link.authorType} ·{" "}
+                      {link.sourceType} · quality{" "}
+                      {link.qualityStatus.replaceAll("_", " ")} · workflow{" "}
+                      {link.workflowState.replaceAll("_", " ")}
                     </p>
                     <p className="mt-1 break-all font-mono text-xs">
                       {link.sourceUrl}
@@ -186,9 +185,10 @@ export default async function ClaimReviewDetailPage({ params }: PageProps) {
                       {link.evidenceTitle}
                     </p>
                     <p className="text-muted-foreground break-words">
-                      {link.organization} · {link.authorType} · {link.sourceType}{" "}
-                      · quality {link.qualityStatus.replaceAll("_", " ")} ·
-                      workflow {link.workflowState.replaceAll("_", " ")}
+                      {link.organization} · {link.authorType} ·{" "}
+                      {link.sourceType} · quality{" "}
+                      {link.qualityStatus.replaceAll("_", " ")} · workflow{" "}
+                      {link.workflowState.replaceAll("_", " ")}
                     </p>
                     <p className="mt-1 break-all font-mono text-xs">
                       {link.sourceUrl}

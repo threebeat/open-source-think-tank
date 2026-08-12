@@ -43,9 +43,8 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   const { getGatedDb } = await import("@/lib/auth/runtime");
-  const { getEvidenceModerationDetail } = await import(
-    "@/lib/moderation/queues"
-  );
+  const { getEvidenceModerationDetail } =
+    await import("@/lib/moderation/queues");
   const result = await getEvidenceModerationDetail(getGatedDb(), {
     actorAccountId: gated.session.accountId,
     evidenceSubmissionId: id,
@@ -104,12 +103,9 @@ export async function POST(request: Request, context: RouteContext) {
     evidenceSubmissionId: id,
     action: String(body.action ?? "") as "hold" | "hide" | "restore",
     publicRationale: String(body.publicRationale ?? ""),
-    privateNotes:
-      body.privateNotes == null ? null : String(body.privateNotes),
+    privateNotes: body.privateNotes == null ? null : String(body.privateNotes),
     expectedVisibility: String(body.expectedVisibility ?? "") as
-      | "visible"
-      | "held"
-      | "hidden",
+      "visible" | "held" | "hidden",
     expectedUpdatedAt: String(body.expectedUpdatedAt ?? ""),
   });
 

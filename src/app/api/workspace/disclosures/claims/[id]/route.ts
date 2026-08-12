@@ -58,7 +58,8 @@ export async function GET(_request: Request, context: RouteContext) {
       {
         error:
           result.code === "DISCLOSURE_NOT_OWNED" ? "Not Found" : result.error,
-        code: result.code === "DISCLOSURE_NOT_OWNED" ? "NOT_FOUND" : result.code,
+        code:
+          result.code === "DISCLOSURE_NOT_OWNED" ? "NOT_FOUND" : result.code,
       },
       {
         status: statusFor(result.code),
@@ -104,12 +105,9 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const { getGatedDb } = await import("@/lib/auth/runtime");
-  const { upsertOwnClaimDisclosure } = await import(
-    "@/lib/conflicts/disclose"
-  );
-  const { toOwnerOrReviewerConflictDisclosure } = await import(
-    "@/lib/conflicts/audiences"
-  );
+  const { upsertOwnClaimDisclosure } = await import("@/lib/conflicts/disclose");
+  const { toOwnerOrReviewerConflictDisclosure } =
+    await import("@/lib/conflicts/audiences");
   const result = await upsertOwnClaimDisclosure(getGatedDb(), {
     actorAccountId: gated.session.accountId,
     claimId: id,
@@ -130,7 +128,8 @@ export async function PATCH(request: Request, context: RouteContext) {
       {
         error:
           result.code === "DISCLOSURE_NOT_OWNED" ? "Not Found" : result.error,
-        code: result.code === "DISCLOSURE_NOT_OWNED" ? "NOT_FOUND" : result.code,
+        code:
+          result.code === "DISCLOSURE_NOT_OWNED" ? "NOT_FOUND" : result.code,
       },
       {
         status: statusFor(result.code),

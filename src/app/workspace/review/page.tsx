@@ -22,9 +22,8 @@ export default async function WorkspaceReviewPage() {
   }
 
   const { getGatedDb } = await import("@/lib/auth/runtime");
-  const { listClaimReviewQueue, listEvidenceReviewQueue } = await import(
-    "@/lib/review/queues"
-  );
+  const { listClaimReviewQueue, listEvidenceReviewQueue } =
+    await import("@/lib/review/queues");
   const db = getGatedDb();
 
   const claims = await listClaimReviewQueue(db, {
@@ -47,10 +46,7 @@ export default async function WorkspaceReviewPage() {
   return (
     <MainContainer className="space-y-8">
       <Breadcrumbs
-        items={[
-          { href: "/", label: "Home" },
-          { label: "Review queues" },
-        ]}
+        items={[{ href: "/", label: "Home" }, { label: "Review queues" }]}
       />
       <PageHeader
         eyebrow="Staff review"

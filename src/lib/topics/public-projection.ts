@@ -275,6 +275,10 @@ export function buildPublicTopicProjection(
       if (!isProjectionEligibleEvidence(evidence)) {
         continue;
       }
+      // Narrow qualityStatus for the public DTO (eligibility already checked).
+      if (!isNonPendingQuality(evidence.qualityStatus)) {
+        continue;
+      }
 
       if (
         evidence.moderationVisibility === "held" ||

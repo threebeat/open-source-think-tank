@@ -28,9 +28,7 @@ export default async function ClaimModerationDetailPage({ params }: PageProps) {
   }
 
   const { getGatedDb } = await import("@/lib/auth/runtime");
-  const { getClaimModerationDetail } = await import(
-    "@/lib/moderation/queues"
-  );
+  const { getClaimModerationDetail } = await import("@/lib/moderation/queues");
   const db = getGatedDb();
   const detail = await getClaimModerationDetail(db, {
     actorAccountId: gated.session.accountId,
@@ -64,7 +62,10 @@ export default async function ClaimModerationDetailPage({ params }: PageProps) {
         title={claim.title}
         description={`${topic.title} · ${claim.moderationVisibility} · submitter ${claim.submitterDisplayLabel}`}
       />
-      <DisclosureNotice title="Visibility actions retain history" tone="caution">
+      <DisclosureNotice
+        title="Visibility actions retain history"
+        tone="caution"
+      >
         Hold and hide withhold this claim from public projection without
         deleting content or changing workflow acceptance. Restore returns it to
         visible and is not approval or truth certification.
@@ -101,7 +102,10 @@ export default async function ClaimModerationDetailPage({ params }: PageProps) {
         </p>
       )}
 
-      <section className="space-y-3" aria-labelledby="moderation-action-heading">
+      <section
+        className="space-y-3"
+        aria-labelledby="moderation-action-heading"
+      >
         <h2 id="moderation-action-heading" className="font-heading text-xl">
           Record visibility action
         </h2>

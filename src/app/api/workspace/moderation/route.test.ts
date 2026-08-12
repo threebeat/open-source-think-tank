@@ -35,9 +35,8 @@ describe("moderation and disclosure API public-demo isolation", () => {
     const queueGet = await queue.GET();
     expect(queueGet.status).toBe(404);
 
-    const claimDetail = await import(
-      "@/app/api/workspace/moderation/claims/[id]/route"
-    );
+    const claimDetail =
+      await import("@/app/api/workspace/moderation/claims/[id]/route");
     const claimGet = await claimDetail.GET(
       new Request("http://localhost/api/workspace/moderation/claims/x"),
       { params: Promise.resolve({ id: "x" }) },
@@ -57,9 +56,8 @@ describe("moderation and disclosure API public-demo isolation", () => {
     );
     expect(claimPost.status).toBe(404);
 
-    const evidenceDetail = await import(
-      "@/app/api/workspace/moderation/evidence/[id]/route"
-    );
+    const evidenceDetail =
+      await import("@/app/api/workspace/moderation/evidence/[id]/route");
     const evidenceGet = await evidenceDetail.GET(
       new Request("http://localhost/api/workspace/moderation/evidence/x"),
       { params: Promise.resolve({ id: "x" }) },
@@ -79,9 +77,8 @@ describe("moderation and disclosure API public-demo isolation", () => {
     );
     expect(evidencePost.status).toBe(404);
 
-    const claimDisclosure = await import(
-      "@/app/api/workspace/disclosures/claims/[id]/route"
-    );
+    const claimDisclosure =
+      await import("@/app/api/workspace/disclosures/claims/[id]/route");
     const claimDisclosureGet = await claimDisclosure.GET(
       new Request("http://localhost/api/workspace/disclosures/claims/x"),
       { params: Promise.resolve({ id: "x" }) },
@@ -101,9 +98,8 @@ describe("moderation and disclosure API public-demo isolation", () => {
     );
     expect(claimDisclosurePatch.status).toBe(404);
 
-    const evidenceDisclosure = await import(
-      "@/app/api/workspace/disclosures/evidence/[id]/route"
-    );
+    const evidenceDisclosure =
+      await import("@/app/api/workspace/disclosures/evidence/[id]/route");
     const evidenceDisclosureGet = await evidenceDisclosure.GET(
       new Request("http://localhost/api/workspace/disclosures/evidence/x"),
       { params: Promise.resolve({ id: "x" }) },

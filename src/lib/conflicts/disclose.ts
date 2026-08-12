@@ -200,9 +200,7 @@ export async function getOwnEvidenceDisclosure(
     if (!evidence.ok || !evidence.value) {
       return mapServiceError("DISCLOSURE_NOT_OWNED");
     }
-    if (
-      evidence.value.submitterAccountId !== decision.principal.accountId
-    ) {
+    if (evidence.value.submitterAccountId !== decision.principal.accountId) {
       return mapServiceError("DISCLOSURE_NOT_OWNED");
     }
 
@@ -243,7 +241,9 @@ export async function upsertOwnClaimDisclosure(
     privateDetail?: string | null;
     expectedUpdatedAt?: Date | string;
   },
-): Promise<AdapterResult<{ disclosure: ConflictDisclosureRecord; created: boolean }>> {
+): Promise<
+  AdapterResult<{ disclosure: ConflictDisclosureRecord; created: boolean }>
+> {
   const denied = gatedOrDeny();
   if (denied) return denied;
 
@@ -287,10 +287,7 @@ export async function upsertOwnClaimDisclosure(
         throw new Error("TOPIC_NOT_FOUND");
       }
 
-      const existing = await getConflictDisclosureForClaim(
-        tx,
-        claim.value.id,
-      );
+      const existing = await getConflictDisclosureForClaim(tx, claim.value.id);
       if (!existing.ok) {
         throw new Error(existing.code);
       }
@@ -333,7 +330,9 @@ export async function upsertOwnClaimDisclosure(
         };
       }
 
-      if (sameDisclosureContent(existing.value, { publicSummary, privateDetail })) {
+      if (
+        sameDisclosureContent(existing.value, { publicSummary, privateDetail })
+      ) {
         return {
           ok: true as const,
           value: { disclosure: existing.value, created: false },
@@ -411,7 +410,9 @@ export async function upsertOwnEvidenceDisclosure(
     privateDetail?: string | null;
     expectedUpdatedAt?: Date | string;
   },
-): Promise<AdapterResult<{ disclosure: ConflictDisclosureRecord; created: boolean }>> {
+): Promise<
+  AdapterResult<{ disclosure: ConflictDisclosureRecord; created: boolean }>
+> {
   const denied = gatedOrDeny();
   if (denied) return denied;
 
@@ -449,9 +450,7 @@ export async function upsertOwnEvidenceDisclosure(
       if (!evidence.ok || !evidence.value) {
         throw new Error("EVIDENCE_NOT_FOUND");
       }
-      if (
-        evidence.value.submitterAccountId !== decision.principal.accountId
-      ) {
+      if (evidence.value.submitterAccountId !== decision.principal.accountId) {
         throw new Error("DISCLOSURE_NOT_OWNED");
       }
 
@@ -506,7 +505,9 @@ export async function upsertOwnEvidenceDisclosure(
         };
       }
 
-      if (sameDisclosureContent(existing.value, { publicSummary, privateDetail })) {
+      if (
+        sameDisclosureContent(existing.value, { publicSummary, privateDetail })
+      ) {
         return {
           ok: true as const,
           value: { disclosure: existing.value, created: false },

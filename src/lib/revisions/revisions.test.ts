@@ -535,6 +535,7 @@ describe("content revisions (3.7)", () => {
           workflowPublicRationale: null,
           conflictPublicSummary: null,
           revisionSummary: summary,
+          latestModerationNotice: null,
         },
       ],
       evidence: [],

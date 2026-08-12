@@ -65,7 +65,9 @@ export function ModerationActionForm({
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!available.includes(action)) {
-      setError("That moderation action is not allowed from the current visibility.");
+      setError(
+        "That moderation action is not allowed from the current visibility.",
+      );
       document.getElementById(errorSummaryId)?.focus();
       return;
     }
@@ -127,7 +129,11 @@ export function ModerationActionForm({
         </div>
       ) : null}
 
-      <input type="hidden" name="expectedVisibility" value={currentVisibility} />
+      <input
+        type="hidden"
+        name="expectedVisibility"
+        value={currentVisibility}
+      />
       <input type="hidden" name="expectedUpdatedAt" value={expectedUpdatedAt} />
 
       <fieldset className="space-y-3">
@@ -160,7 +166,10 @@ export function ModerationActionForm({
           minLength={8}
           maxLength={4000}
         />
-        <span id={rationaleHelpId} className="block text-xs text-muted-foreground">
+        <span
+          id={rationaleHelpId}
+          className="block text-xs text-muted-foreground"
+        >
           Explain the visibility action in plain language. Do not include
           contact, verification, or private disclosure detail.
         </span>
@@ -175,7 +184,10 @@ export function ModerationActionForm({
           aria-describedby={privateHelpId}
           maxLength={4000}
         />
-        <span id={privateHelpId} className="block text-xs text-muted-foreground">
+        <span
+          id={privateHelpId}
+          className="block text-xs text-muted-foreground"
+        >
           Never shown to participants or visitors.
         </span>
       </label>

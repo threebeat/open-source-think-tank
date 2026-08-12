@@ -38,24 +38,18 @@ export default async function EvidenceReviewDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  const { getStaffEvidenceRevisionHistory } = await import(
-    "@/lib/revisions/history"
-  );
+  const { getStaffEvidenceRevisionHistory } =
+    await import("@/lib/revisions/history");
   const evidenceHistory = await getStaffEvidenceRevisionHistory(db, {
     actorAccountId: gated.session.accountId,
     evidenceSubmissionId: evidenceId,
   });
 
-  const { getConflictDisclosureForEvidence } = await import(
-    "@/lib/conflicts/repository"
-  );
-  const { toOwnerOrReviewerConflictDisclosure } = await import(
-    "@/lib/conflicts/audiences"
-  );
-  const disclosureRow = await getConflictDisclosureForEvidence(
-    db,
-    evidenceId,
-  );
+  const { getConflictDisclosureForEvidence } =
+    await import("@/lib/conflicts/repository");
+  const { toOwnerOrReviewerConflictDisclosure } =
+    await import("@/lib/conflicts/audiences");
+  const disclosureRow = await getConflictDisclosureForEvidence(db, evidenceId);
   const ownerDisclosure =
     disclosureRow.ok && disclosureRow.value
       ? toOwnerOrReviewerConflictDisclosure(disclosureRow.value)
@@ -63,8 +57,9 @@ export default async function EvidenceReviewDetailPage({ params }: PageProps) {
 
   const { evidence, topic, linkedClaims, reviews } = detail.value;
   const latestReviewAt = reviews.at(-1)?.decidedAt ?? null;
-  const evidenceLatestRevisionAt =
-    evidenceHistory.ok ? evidenceHistory.value.latestRevisionAt : null;
+  const evidenceLatestRevisionAt = evidenceHistory.ok
+    ? evidenceHistory.value.latestRevisionAt
+    : null;
   const reviewPredates =
     Boolean(latestReviewAt) &&
     Boolean(evidenceLatestRevisionAt) &&

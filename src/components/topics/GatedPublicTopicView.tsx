@@ -49,8 +49,11 @@ function EvidenceBlock({
         {evidence.title}
       </p>
       <p className="mt-1 text-muted-foreground break-words">
-        {relationship === "supporting" ? "Supporting evidence" : "Counterevidence"}{" "}
-        · {evidence.organization} · {evidence.authorType} · {evidence.sourceType}
+        {relationship === "supporting"
+          ? "Supporting evidence"
+          : "Counterevidence"}{" "}
+        · {evidence.organization} · {evidence.authorType} ·{" "}
+        {evidence.sourceType}
       </p>
       <p className="mt-2 text-muted-foreground break-words">
         <span className="font-medium text-foreground">Evidence quality: </span>
@@ -109,7 +112,9 @@ type GatedPublicTopicViewProps = {
   projection: PublicTopicProjection;
 };
 
-export function GatedPublicTopicView({ projection }: GatedPublicTopicViewProps) {
+export function GatedPublicTopicView({
+  projection,
+}: GatedPublicTopicViewProps) {
   const evidenceByKey = new Map(
     projection.evidence.map((row) => [row.key, row]),
   );
@@ -139,8 +144,8 @@ export function GatedPublicTopicView({ projection }: GatedPublicTopicViewProps) 
         This is a resettable alpha publication from the gated environment. It is
         not government adoption, legal authority, or truth certification.
         Evidence quality labels are independent of popularity and consultation
-        agreement. Supporting and counterevidence are shown for comparison; neither
-        side is ranked.
+        agreement. Supporting and counterevidence are shown for comparison;
+        neither side is ranked.
       </DisclosureNotice>
 
       {projection.withheldModerationNotices.length > 0 ? (
@@ -161,9 +166,7 @@ export function GatedPublicTopicView({ projection }: GatedPublicTopicViewProps) 
           </p>
           <ul className="space-y-3">
             {projection.withheldModerationNotices.map((notice, index) => (
-              <li
-                key={`${notice.subjectKind}-${notice.recordedAt}-${index}`}
-              >
+              <li key={`${notice.subjectKind}-${notice.recordedAt}-${index}`}>
                 <PublicModerationNotice
                   action={notice.action}
                   publicRationale={notice.publicRationale}
@@ -256,7 +259,9 @@ export function GatedPublicTopicView({ projection }: GatedPublicTopicViewProps) 
                   {claim.summary}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  <span className="font-medium text-foreground">Approach: </span>
+                  <span className="font-medium text-foreground">
+                    Approach:{" "}
+                  </span>
                   {claim.approachLabel}
                 </p>
                 {claim.workflowPublicRationale ? (

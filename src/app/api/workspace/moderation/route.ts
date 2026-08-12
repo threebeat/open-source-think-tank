@@ -29,9 +29,10 @@ export async function GET() {
     return NextResponse.json(
       { error: result.error, code: result.code },
       {
-        status: result.code.startsWith("AUTHZ") || result.code === "AUTH_REQUIRED"
-          ? 403
-          : 400,
+        status:
+          result.code.startsWith("AUTHZ") || result.code === "AUTH_REQUIRED"
+            ? 403
+            : 400,
         headers: { "Cache-Control": "no-store" },
       },
     );

@@ -41,8 +41,8 @@ export function ModerationHistoryTimeline({
               className="rounded-md border border-border bg-surface px-4 py-3 text-sm"
             >
               <p className="font-medium">
-                {actionLabel(entry.action)} ·{" "}
-                {entry.fromVisibility} → {entry.toVisibility} ·{" "}
+                {actionLabel(entry.action)} · {entry.fromVisibility} →{" "}
+                {entry.toVisibility} ·{" "}
                 {new Date(entry.createdAt).toLocaleString()}
               </p>
               <p className="mt-1 text-muted-foreground">

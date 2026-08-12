@@ -30,9 +30,8 @@ export default async function EvidenceModerationDetailPage({
   }
 
   const { getGatedDb } = await import("@/lib/auth/runtime");
-  const { getEvidenceModerationDetail } = await import(
-    "@/lib/moderation/queues"
-  );
+  const { getEvidenceModerationDetail } =
+    await import("@/lib/moderation/queues");
   const db = getGatedDb();
   const detail = await getEvidenceModerationDetail(db, {
     actorAccountId: gated.session.accountId,
@@ -114,7 +113,10 @@ export default async function EvidenceModerationDetailPage({
         </p>
       )}
 
-      <section className="space-y-3" aria-labelledby="moderation-action-heading">
+      <section
+        className="space-y-3"
+        aria-labelledby="moderation-action-heading"
+      >
         <h2 id="moderation-action-heading" className="font-heading text-xl">
           Record visibility action
         </h2>

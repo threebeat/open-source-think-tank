@@ -43,9 +43,7 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   const { getGatedDb } = await import("@/lib/auth/runtime");
-  const { getClaimModerationDetail } = await import(
-    "@/lib/moderation/queues"
-  );
+  const { getClaimModerationDetail } = await import("@/lib/moderation/queues");
   const result = await getClaimModerationDetail(getGatedDb(), {
     actorAccountId: gated.session.accountId,
     claimId: id,
@@ -104,12 +102,9 @@ export async function POST(request: Request, context: RouteContext) {
     claimId: id,
     action: String(body.action ?? "") as "hold" | "hide" | "restore",
     publicRationale: String(body.publicRationale ?? ""),
-    privateNotes:
-      body.privateNotes == null ? null : String(body.privateNotes),
+    privateNotes: body.privateNotes == null ? null : String(body.privateNotes),
     expectedVisibility: String(body.expectedVisibility ?? "") as
-      | "visible"
-      | "held"
-      | "hidden",
+      "visible" | "held" | "hidden",
     expectedUpdatedAt: String(body.expectedUpdatedAt ?? ""),
   });
 

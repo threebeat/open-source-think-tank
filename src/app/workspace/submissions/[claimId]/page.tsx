@@ -56,18 +56,13 @@ export default async function WorkspaceSubmissionDetailPage({
   const { getGatedDb } = await import("@/lib/auth/runtime");
   const { getClaimById, listClaimEvidenceLinks, listClaimReviews } =
     await import("@/lib/claims/repository");
-  const { getEvidenceSubmissionById } = await import(
-    "@/lib/evidence/repository"
-  );
+  const { getEvidenceSubmissionById } =
+    await import("@/lib/evidence/repository");
   const { getTopicById } = await import("@/lib/topics/repository");
-  const {
-    getOwnClaimRevisionHistory,
-    getOwnEvidenceRevisionHistory,
-  } = await import("@/lib/revisions/history");
-  const {
-    getOwnClaimDisclosure,
-    getOwnEvidenceDisclosure,
-  } = await import("@/lib/conflicts/disclose");
+  const { getOwnClaimRevisionHistory, getOwnEvidenceRevisionHistory } =
+    await import("@/lib/revisions/history");
+  const { getOwnClaimDisclosure, getOwnEvidenceDisclosure } =
+    await import("@/lib/conflicts/disclose");
   const db = getGatedDb();
 
   const claim = await getClaimById(db, claimId);
@@ -111,8 +106,9 @@ export default async function WorkspaceSubmissionDetailPage({
     actorAccountId: gated.session.accountId,
     claimId: claim.value.id,
   });
-  const claimDisclosureDto =
-    claimDisclosure.ok ? claimDisclosure.value.disclosure : null;
+  const claimDisclosureDto = claimDisclosure.ok
+    ? claimDisclosure.value.disclosure
+    : null;
 
   const ownedEvidenceDisclosures = [];
   for (const row of evidenceRows) {
@@ -164,8 +160,9 @@ export default async function WorkspaceSubmissionDetailPage({
     }));
 
   const latestClaimReviewAt = publicClaimReviews.at(-1)?.decidedAt ?? null;
-  const claimLatestRevisionAt =
-    claimHistory.ok ? claimHistory.value.latestRevisionAt : null;
+  const claimLatestRevisionAt = claimHistory.ok
+    ? claimHistory.value.latestRevisionAt
+    : null;
   const claimReviewPredates =
     Boolean(latestClaimReviewAt) &&
     Boolean(claimLatestRevisionAt) &&
@@ -221,9 +218,9 @@ export default async function WorkspaceSubmissionDetailPage({
         description="Private drafts belonging to other community participants are never shown here."
       />
       <DisclosureNotice title="Public review outcomes" tone="neutral">
-        You can see current statuses and public rationales for your own subjects.
-        Private reviewer notes and staff queue controls are never shown here.
-        Claim and evidence workflow decisions are independent.
+        You can see current statuses and public rationales for your own
+        subjects. Private reviewer notes and staff queue controls are never
+        shown here. Claim and evidence workflow decisions are independent.
       </DisclosureNotice>
 
       {(claimEditable || evidenceEditable) && primaryOwned ? (

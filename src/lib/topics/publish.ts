@@ -244,16 +244,14 @@ async function computeReadiness(
       if (!qualityRationale) {
         blockers.push({
           code: "EVIDENCE_MISSING_QUALITY_RATIONALE",
-          message:
-            "Linked evidence is missing a public quality rationale.",
+          message: "Linked evidence is missing a public quality rationale.",
         });
         continue;
       }
       if (!isHttpUrl(row.sourceUrl)) {
         blockers.push({
           code: "EVIDENCE_URL_INVALID",
-          message:
-            "Linked evidence source URL is not a valid http(s) URL.",
+          message: "Linked evidence source URL is not a valid http(s) URL.",
         });
         continue;
       }
@@ -387,8 +385,7 @@ export async function publishTopic(
           unchangedWorkflowState: priorWorkflow,
           actorAccountId: decision.principal.accountId,
           readinessSummary: {
-            acceptedVisibleClaimCount:
-              readiness.acceptedVisibleClaimIds.length,
+            acceptedVisibleClaimCount: readiness.acceptedVisibleClaimIds.length,
             linkedAcceptedVisibleEvidenceCount:
               readiness.linkedAcceptedVisibleEvidenceIds.length,
             includedClaimIds: readiness.acceptedVisibleClaimIds,
@@ -419,12 +416,12 @@ export async function publishTopic(
       };
     }
     if (message === "TOPIC_NOT_READY") {
-      const readiness = (
-        error as { readiness?: PublishReadinessResult }
-      ).readiness;
+      const readiness = (error as { readiness?: PublishReadinessResult })
+        .readiness;
       return {
         ok: false,
-        error: readiness?.blockers[0]?.message ?? "Topic is not ready to publish",
+        error:
+          readiness?.blockers[0]?.message ?? "Topic is not ready to publish",
         code: "TOPIC_NOT_READY",
       };
     }

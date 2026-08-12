@@ -3,19 +3,13 @@ import { asc, eq } from "drizzle-orm";
 import { topics } from "@/db/schema";
 import type { AdapterResult } from "@/lib/adapters/types";
 import { assertEnvironmentSafe } from "@/lib/env/app-mode";
-import {
-  type GatedDb,
-  requireGatedPersistence,
-} from "@/lib/persistence/gated";
+import { type GatedDb, requireGatedPersistence } from "@/lib/persistence/gated";
 import { loadProjectionInputs } from "@/lib/topics/publish";
 import {
   buildPublicTopicProjection,
   type PublicTopicProjection,
 } from "@/lib/topics/public-projection";
-import {
-  getTopicBySlug,
-  type TopicRecord,
-} from "@/lib/topics/repository";
+import { getTopicBySlug, type TopicRecord } from "@/lib/topics/repository";
 
 export type PublishedTopicListItem = {
   slug: string;

@@ -73,9 +73,7 @@ export type ClaimModerationDetail = {
   expectedUpdatedAt: string;
   history: StaffModerationActionDto[];
   conflictDisclosure:
-    | OwnerOrReviewerConflictDisclosure
-    | PublicSummaryConflictDisclosure
-    | null;
+    OwnerOrReviewerConflictDisclosure | PublicSummaryConflictDisclosure | null;
   canSeePrivateDetail: boolean;
 };
 
@@ -96,9 +94,7 @@ export type EvidenceModerationDetail = {
   expectedUpdatedAt: string;
   history: StaffModerationActionDto[];
   conflictDisclosure:
-    | OwnerOrReviewerConflictDisclosure
-    | PublicSummaryConflictDisclosure
-    | null;
+    OwnerOrReviewerConflictDisclosure | PublicSummaryConflictDisclosure | null;
   canSeePrivateDetail: boolean;
 };
 
@@ -136,10 +132,7 @@ async function requireModerator(
   return { ok: true, value: decision.principal };
 }
 
-async function submitterLabel(
-  db: GatedDb,
-  accountId: string,
-): Promise<string> {
+async function submitterLabel(db: GatedDb, accountId: string): Promise<string> {
   const [row] = await db
     .select({ displayLabel: persons.displayLabel })
     .from(accounts)
@@ -292,11 +285,7 @@ export async function getClaimModerationDetail(
   const history = await listModerationActionsForClaim(db, claim.value.id);
   const disclosure = await getConflictDisclosureForClaim(db, claim.value.id);
 
-  const reviewCap = await authorizeCapability(
-    db,
-    authz.value,
-    "claims.review",
-  );
+  const reviewCap = await authorizeCapability(db, authz.value, "claims.review");
   const canSeePrivateDetail = reviewCap.ok;
   const disclosureRow = disclosure.ok ? disclosure.value : null;
 
@@ -338,9 +327,7 @@ export async function getClaimModerationDetail(
         publicationStatus: topic.value.publicationStatus,
       },
       expectedUpdatedAt: claim.value.updatedAt.toISOString(),
-      history: history.ok
-        ? history.value.map(toStaffModerationActionDto)
-        : [],
+      history: history.ok ? history.value.map(toStaffModerationActionDto) : [],
       conflictDisclosure: disclosureRow
         ? canSeePrivateDetail
           ? toOwnerOrReviewerConflictDisclosure(disclosureRow)
@@ -378,10 +365,7 @@ export async function getEvidenceModerationDetail(
     return { ok: false, error: "Topic not found", code: "TOPIC_NOT_FOUND" };
   }
 
-  const history = await listModerationActionsForEvidence(
-    db,
-    evidence.value.id,
-  );
+  const history = await listModerationActionsForEvidence(db, evidence.value.id);
   const disclosure = await getConflictDisclosureForEvidence(
     db,
     evidence.value.id,
@@ -435,9 +419,7 @@ export async function getEvidenceModerationDetail(
         publicationStatus: topic.value.publicationStatus,
       },
       expectedUpdatedAt: evidence.value.updatedAt.toISOString(),
-      history: history.ok
-        ? history.value.map(toStaffModerationActionDto)
-        : [],
+      history: history.ok ? history.value.map(toStaffModerationActionDto) : [],
       conflictDisclosure: disclosureRow
         ? canSeePrivateDetail
           ? toOwnerOrReviewerConflictDisclosure(disclosureRow)

@@ -105,7 +105,8 @@ export function DisclosureUpsertForm({
       <p className="text-sm text-muted-foreground">
         Public summary may appear on published topics. Private detail is for
         staff reviewers with the matching review capability and is never shown
-        on visitor projections. Do not include unnecessary sensitive information.
+        on visitor projections. Do not include unnecessary sensitive
+        information.
       </p>
 
       {error ? (
@@ -155,7 +156,10 @@ export function DisclosureUpsertForm({
               required
               maxLength={1000}
             />
-            <span id={publicHelpId} className="block text-xs text-muted-foreground">
+            <span
+              id={publicHelpId}
+              className="block text-xs text-muted-foreground"
+            >
               Shown to visitors if this subject is later published. Keep it
               factual and brief.
             </span>
