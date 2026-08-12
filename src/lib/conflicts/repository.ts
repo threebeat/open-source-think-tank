@@ -1,4 +1,4 @@
-import { and, eq, isNotNull } from "drizzle-orm";
+import { and, eq, isNotNull, sql } from "drizzle-orm";
 
 import { conflictDisclosures } from "@/db/schema";
 import type { AdapterResult } from "@/lib/adapters/types";
