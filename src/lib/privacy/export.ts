@@ -187,6 +187,28 @@ export async function exportOwnAccountData(
   db: FoundationDb,
   actorAccountId: string,
 ): Promise<AdapterResult<AccountExportBundle>> {
+  if (process.env.APP_MODE === "public-demo") {
+    return {
+      ok: false,
+      error: "Account export is unavailable in public-demo mode",
+      code: "PUBLIC_DEMO_NO_EXPORT",
+    };
+  }
+  try {
+    return await exportOwnAccountDataInner(db, actorAccountId);
+  } catch {
+    return {
+      ok: false,
+      error: "Account export temporarily unavailable",
+      code: "ACCOUNT_EXPORT_UNAVAILABLE",
+    };
+  }
+}
+
+async function exportOwnAccountDataInner(
+  db: FoundationDb,
+  actorAccountId: string,
+): Promise<AdapterResult<AccountExportBundle>> {
   if (assertEnvironmentSafe() !== "gated") {
     return {
       ok: false,

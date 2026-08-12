@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
 import { resolveAppMode } from "@/lib/env/app-mode";
-import { exportOwnAccountData } from "@/lib/privacy/export";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +11,17 @@ const EXPORT_HEADERS = {
   "X-Content-Type-Options": "nosniff",
 } as const;
 
+function sanitizedUnavailable() {
+  return NextResponse.json(
+    {
+      ok: false,
+      error: "Account export temporarily unavailable",
+      code: "ACCOUNT_EXPORT_UNAVAILABLE",
+    },
+    { status: 503, headers: { "Cache-Control": "no-store" } },
+  );
+}
+
 export async function GET() {
   if (resolveAppMode() !== "gated") {
     return NextResponse.json(
@@ -20,25 +30,47 @@ export async function GET() {
     );
   }
 
-  const { requireGatedSession } = await import("@/lib/auth/guard");
-  const { getGatedDb } = await import("@/lib/auth/runtime");
-  const gated = await requireGatedSession();
-  if (!gated.ok) {
-    return NextResponse.json(
-      { ok: false, error: gated.error, code: gated.code },
-      { status: gated.status, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  try {
+    const { requireGatedSession } = await import("@/lib/auth/guard");
+    const { getGatedDb } = await import("@/lib/auth/runtime");
+    const { exportOwnAccountData } = await import("@/lib/privacy/export");
 
-  const result = await exportOwnAccountData(getGatedDb(), gated.session.accountId);
-  if (!result.ok) {
-    return NextResponse.json(result, {
-      status: 403,
-      headers: { "Cache-Control": "no-store" },
-    });
+    const gated = await requireGatedSession();
+    if (!gated.ok) {
+      return NextResponse.json(
+        { ok: false, error: gated.error, code: gated.code },
+        { status: gated.status, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+
+    const result = await exportOwnAccountData(
+      getGatedDb(),
+      gated.session.accountId,
+    );
+    if (!result.ok) {
+      const status =
+        result.code === "ACCOUNT_EXPORT_UNAVAILABLE"
+          ? 503
+          : result.code === "EXPORT_CROSS_ACCOUNT_BLOCKED"
+            ? 500
+            : 403;
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            result.code === "ACCOUNT_EXPORT_UNAVAILABLE"
+              ? "Account export temporarily unavailable"
+              : result.error,
+          code: result.code,
+        },
+        { status, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    return NextResponse.json(
+      { ok: true, value: result.value },
+      { headers: EXPORT_HEADERS },
+    );
+  } catch {
+    return sanitizedUnavailable();
   }
-  return NextResponse.json(
-    { ok: true, value: result.value },
-    { headers: EXPORT_HEADERS },
-  );
 }

@@ -946,6 +946,32 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
         .strict() as z.ZodType<Record<string, unknown>>,
     },
   ),
+
+  // Phase 3.12 operator alpha reset (CLI-only; no public projector)
+  "alpha.reset_executed": def(
+    "alpha.reset_executed",
+    "Operator alpha datastore reset executed",
+    {
+      requireReason: true,
+      highImpact: true,
+      payloadSchema: z
+        .object({
+          operatorLabel: z.string().min(2),
+          databaseFingerprint: z.string().min(8),
+          schemaVersion: z.string().min(1),
+          sourceCommitSha: z.string().min(1),
+          manifestVersion: z.string().min(1),
+          manifestHash: z.string().min(16),
+          counts: z
+            .object({
+              before: z.record(z.string(), z.number().int().nonnegative()),
+              after: z.record(z.string(), z.number().int().nonnegative()),
+            })
+            .strict(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
 };
 
 export type RegisteredAuditAction = keyof typeof AUDIT_EVENT_REGISTRY;

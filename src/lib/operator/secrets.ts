@@ -30,15 +30,20 @@ export type OperatorCredentialCheck =
  * Public-demo fails inside assertEnvironmentSafe before DB construction.
  * Secret must come from the environment — never from CLI argv.
  */
-export function requireOperatorBootstrapEnv(
-  env: Record<string, string | undefined> = process.env,
+function requireOperatorSecretEnv(
+  env: Record<string, string | undefined>,
+  options: {
+    secretKey: "OPERATOR_BOOTSTRAP_SECRET" | "OPERATOR_RESET_SECRET";
+    publicDemoCode: string;
+    publicDemoError: string;
+  },
 ): OperatorCredentialCheck {
   try {
     if (assertEnvironmentSafe(env) !== "gated") {
       return {
         ok: false,
-        code: "PUBLIC_DEMO_NO_BOOTSTRAP",
-        error: "Operator bootstrap unavailable in public-demo mode",
+        code: options.publicDemoCode,
+        error: options.publicDemoError,
       };
     }
   } catch (error) {
@@ -49,20 +54,20 @@ export function requireOperatorBootstrapEnv(
     };
   }
 
-  const secret = env.OPERATOR_BOOTSTRAP_SECRET?.trim() ?? "";
+  const secret = env[options.secretKey]?.trim() ?? "";
   const label = env.OPERATOR_LABEL?.trim() ?? "";
   if (!secret) {
     return {
       ok: false,
       code: "OPERATOR_SECRET_MISSING",
-      error: "OPERATOR_BOOTSTRAP_SECRET is required",
+      error: `${options.secretKey} is required`,
     };
   }
   if (secret.length < 32) {
     return {
       ok: false,
       code: "OPERATOR_SECRET_WEAK",
-      error: "OPERATOR_BOOTSTRAP_SECRET must be at least 32 characters",
+      error: `${options.secretKey} must be at least 32 characters`,
     };
   }
   if (!label || label.length < 2) {
@@ -74,12 +79,36 @@ export function requireOperatorBootstrapEnv(
   }
   // Confirm the process secret matches itself via timing-safe compare helper
   // (guards against accidental plain-equality usage in call sites).
-  if (!secretsEqual(secret, env.OPERATOR_BOOTSTRAP_SECRET?.trim() ?? "")) {
+  if (!secretsEqual(secret, env[options.secretKey]?.trim() ?? "")) {
     return {
       ok: false,
       code: "OPERATOR_SECRET_INVALID",
-      error: "Operator bootstrap secret mismatch",
+      error: `${options.secretKey} mismatch`,
     };
   }
   return { ok: true, label, secret };
+}
+
+export function requireOperatorBootstrapEnv(
+  env: Record<string, string | undefined> = process.env,
+): OperatorCredentialCheck {
+  return requireOperatorSecretEnv(env, {
+    secretKey: "OPERATOR_BOOTSTRAP_SECRET",
+    publicDemoCode: "PUBLIC_DEMO_NO_BOOTSTRAP",
+    publicDemoError: "Operator bootstrap unavailable in public-demo mode",
+  });
+}
+
+/**
+ * Fail closed unless gated mode + DATABASE_URL + strong reset secret + label.
+ * OPERATOR_RESET_SECRET is distinct from OPERATOR_BOOTSTRAP_SECRET.
+ */
+export function requireOperatorResetEnv(
+  env: Record<string, string | undefined> = process.env,
+): OperatorCredentialCheck {
+  return requireOperatorSecretEnv(env, {
+    secretKey: "OPERATOR_RESET_SECRET",
+    publicDemoCode: "PUBLIC_DEMO_NO_RESET",
+    publicDemoError: "Operator alpha reset unavailable in public-demo mode",
+  });
 }

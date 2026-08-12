@@ -191,9 +191,12 @@ describe("privacy and operational controls (2.11/2.12 hardening)", () => {
     const auditSpy = vi
       .spyOn(auditLog, "appendAuthAudit")
       .mockRejectedValue(new Error("forced export audit failure"));
-    await expect(
-      exportOwnAccountData(db, "account-ostt-synth-ada"),
-    ).rejects.toThrow(/forced export audit failure/);
+    const blocked = await exportOwnAccountData(db, "account-ostt-synth-ada");
+    expect(blocked.ok).toBe(false);
+    if (!blocked.ok) {
+      expect(blocked.code).toBe("ACCOUNT_EXPORT_UNAVAILABLE");
+      expect(blocked.error).not.toMatch(/forced export audit failure/i);
+    }
     auditSpy.mockRestore();
   });
 

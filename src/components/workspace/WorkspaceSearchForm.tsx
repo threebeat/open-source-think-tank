@@ -23,6 +23,10 @@ type SearchPage = {
   page: number;
   pageSize: number;
   total: number;
+  rangeFrom: number;
+  rangeTo: number;
+  hasPrevious: boolean;
+  hasNext: boolean;
   results: SearchResult[];
 };
 
@@ -55,6 +59,22 @@ export function WorkspaceSearchForm({
       ? initialEntities
       : ["topics", "claims", "evidence"],
   );
+
+  function buildHref(page: number) {
+    const params = new URLSearchParams();
+    params.set("q", initial?.query ?? query.trim());
+    params.set(
+      "entities",
+      (initial?.entities ?? entities).join(","),
+    );
+    if (initial?.pageSize) {
+      params.set("pageSize", String(initial.pageSize));
+    }
+    if (page > 1) {
+      params.set("page", String(page));
+    }
+    return `/workspace/search?${params.toString()}`;
+  }
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -152,17 +172,24 @@ export function WorkspaceSearchForm({
       ) : null}
 
       {initial ? (
-        <section aria-labelledby="workspace-search-results-heading" className="space-y-3">
+        <section
+          aria-labelledby="workspace-search-results-heading"
+          className="space-y-3"
+        >
           <h2
             id="workspace-search-results-heading"
             className="font-heading text-xl"
           >
             Results
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p
+            className="text-sm text-muted-foreground"
+            aria-live="polite"
+            data-testid="search-result-range"
+          >
             {initial.total === 0
               ? `No matches for “${initial.query}”.`
-              : `${initial.total} match${initial.total === 1 ? "" : "es"} for “${initial.query}” (page ${initial.page}).`}
+              : `Showing ${initial.rangeFrom}–${initial.rangeTo} of ${initial.total} match${initial.total === 1 ? "" : "es"} for “${initial.query}”.`}
           </p>
           {initial.results.length === 0 ? (
             <p className="text-sm text-muted-foreground">
@@ -198,6 +225,39 @@ export function WorkspaceSearchForm({
               ))}
             </ul>
           )}
+
+          <nav
+            aria-label="Search results pagination"
+            className="flex flex-wrap items-center gap-3 pt-2"
+          >
+            {initial.hasPrevious ? (
+              <Link
+                href={buildHref(initial.page - 1)}
+                className="rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium underline-offset-2 hover:underline"
+              >
+                Previous
+              </Link>
+            ) : (
+              <span className="rounded-md border border-transparent px-3 py-2 text-sm text-muted-foreground">
+                Previous
+              </span>
+            )}
+            <span className="text-sm text-muted-foreground">
+              Page {initial.page}
+            </span>
+            {initial.hasNext ? (
+              <Link
+                href={buildHref(initial.page + 1)}
+                className="rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium underline-offset-2 hover:underline"
+              >
+                Next
+              </Link>
+            ) : (
+              <span className="rounded-md border border-transparent px-3 py-2 text-sm text-muted-foreground">
+                Next
+              </span>
+            )}
+          </nav>
         </section>
       ) : null}
     </div>

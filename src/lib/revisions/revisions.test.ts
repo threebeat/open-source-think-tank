@@ -389,11 +389,21 @@ describe("content revisions (3.7)", () => {
     if (!stale.ok) expect(stale.code).toBe("SUBMISSION_STATE_CONFLICT");
 
     const previous = process.env.APP_MODE;
-    const previousDb = process.env.DATABASE_URL;
-    const previousAuth = process.env.AUTH_SECRET;
+    const previousSecrets: Record<string, string | undefined> = {};
+    for (const key of [
+      "DATABASE_URL",
+      "AUTH_SECRET",
+      "AUTH_URL",
+      "EMAIL_API_KEY",
+      "EMAIL_SERVER",
+      "VERIFICATION_VENDOR_API_KEY",
+      "OPERATOR_BOOTSTRAP_SECRET",
+      "OPERATOR_RESET_SECRET",
+    ] as const) {
+      previousSecrets[key] = process.env[key];
+      delete process.env[key];
+    }
     process.env.APP_MODE = "public-demo";
-    delete process.env.DATABASE_URL;
-    delete process.env.AUTH_SECRET;
     try {
       await expect(
         updateOwnClaimContent(db, {
@@ -407,10 +417,10 @@ describe("content revisions (3.7)", () => {
       ).resolves.toMatchObject({ ok: false });
     } finally {
       process.env.APP_MODE = previous;
-      if (previousDb === undefined) delete process.env.DATABASE_URL;
-      else process.env.DATABASE_URL = previousDb;
-      if (previousAuth === undefined) delete process.env.AUTH_SECRET;
-      else process.env.AUTH_SECRET = previousAuth;
+      for (const [key, value] of Object.entries(previousSecrets)) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
     }
 
     const revs = await listClaimContentRevisions(db, bundle.claim.id);

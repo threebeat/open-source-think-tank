@@ -116,6 +116,154 @@ for (const rel of scanRoots) {
 }
 ok("secret pattern scan completed");
 
+// --- Phase 3.12 hardening guards ---
+{
+  const pkg = JSON.parse(
+    readFileSync(path.join(root, "package.json"), "utf8"),
+  );
+  const deps = {
+    ...(pkg.dependencies ?? {}),
+    ...(pkg.devDependencies ?? {}),
+  };
+  const forbiddenVendors = [
+    "polis",
+    "@polis",
+    "stripe",
+    "openai",
+    "@anthropic",
+    "posthog",
+    "segment",
+    "mixpanel",
+    "sendgrid",
+    "@sendgrid",
+    "mailgun",
+    "resend",
+    "twilio",
+    "elasticsearch",
+    "@elastic",
+    "algoliasearch",
+    "meilisearch",
+    "@aws-sdk/client-s3",
+    "firebase",
+    "supabase",
+  ];
+  for (const name of Object.keys(deps)) {
+    if (
+      forbiddenVendors.some(
+        (v) => name === v || name.startsWith(`${v}/`) || name.startsWith(`@${v}`),
+      )
+    ) {
+      fail(`unexpected vendor/sdk dependency: ${name}`);
+    }
+  }
+  ok("no forbidden Phase 3 vendor/SDK dependencies in package.json");
+}
+
+{
+  const appDir = path.join(root, "src/app");
+  const publicRouteFiles = [];
+  function walkApp(dir) {
+    for (const entry of readdirSync(dir)) {
+      const full = path.join(dir, entry);
+      const st = statSync(full);
+      if (st.isDirectory()) {
+        if (entry === "api" || entry === "workspace" || entry === "account") {
+          continue;
+        }
+        walkApp(full);
+      } else if (/\.(ts|tsx)$/.test(entry)) {
+        publicRouteFiles.push(full);
+      }
+    }
+  }
+  walkApp(appDir);
+  const gatedImport =
+    /from\s+["']@\/(db|lib\/(auth|operator|privacy\/export|search\/workspace-search)|lib\/topics\/staff-export)/;
+  for (const file of publicRouteFiles) {
+    const rel = path.relative(root, file);
+    if (rel.includes(`${path.sep}workspace${path.sep}`)) continue;
+    if (rel.includes(`${path.sep}account${path.sep}`)) continue;
+    if (rel.includes(`${path.sep}api${path.sep}`)) continue;
+    const text = readFileSync(file, "utf8");
+    if (gatedImport.test(text) && !text.includes("resolveAppMode")) {
+      // Soft: allow mode-branched pages that import only after gated checks via dynamic import.
+      if (!text.includes("await import(") && !text.includes('APP_MODE')) {
+        fail(`public route may import gated modules: ${rel}`);
+      }
+    }
+  }
+  ok("public app routes scanned for direct gated module imports");
+}
+
+{
+  const resetRouteHit = [];
+  function walkAll(dir) {
+    for (const entry of readdirSync(dir)) {
+      const full = path.join(dir, entry);
+      const st = statSync(full);
+      if (st.isDirectory()) {
+        if (entry === "node_modules" || entry === ".next") continue;
+        walkAll(full);
+      } else if (/\.(ts|tsx)$/.test(entry)) {
+        const rel = path.relative(root, full).replace(/\\/g, "/");
+        if (!rel.startsWith("src/app/")) continue;
+        const text = readFileSync(full, "utf8");
+        if (
+          /alpha-reset|operator-reset-alpha|executeAlphaReset|dryRunAlphaReset/.test(
+            text,
+          )
+        ) {
+          resetRouteHit.push(rel);
+        }
+      }
+    }
+  }
+  walkAll(path.join(root, "src/app"));
+  if (resetRouteHit.length > 0) {
+    fail(`public/app reset surface detected: ${resetRouteHit.join(", ")}`);
+  } else {
+    ok("no app-route alpha reset surface");
+  }
+}
+
+{
+  const dumpPatterns = [
+    /\.sql\.gz$/i,
+    /\.dump$/i,
+    /pg_dump/i,
+    /alpha-reset-dump/i,
+  ];
+  const badArtifacts = [];
+  function walkArtifacts(dir) {
+    for (const entry of readdirSync(dir)) {
+      const full = path.join(dir, entry);
+      const st = statSync(full);
+      if (st.isDirectory()) {
+        if (["node_modules", ".next", ".git"].includes(entry)) continue;
+        walkArtifacts(full);
+      } else {
+        const rel = path.relative(root, full).replace(/\\/g, "/");
+        if (dumpPatterns.some((p) => p.test(rel) || p.test(entry))) {
+          badArtifacts.push(rel);
+        }
+      }
+    }
+  }
+  for (const top of ["tmp", "tmp-qa", "scripts", "docs"]) {
+    const abs = path.join(root, top);
+    try {
+      walkArtifacts(abs);
+    } catch {
+      // optional dirs
+    }
+  }
+  if (badArtifacts.length > 0) {
+    fail(`possible reset dump artifacts: ${badArtifacts.join(", ")}`);
+  } else {
+    ok("no committed reset dump artifacts under scanned dirs");
+  }
+}
+
 try {
   execSync("npm audit --audit-level=high", {
     cwd: root,

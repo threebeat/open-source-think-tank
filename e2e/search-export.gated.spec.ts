@@ -87,20 +87,53 @@ test.describe("workspace search and export (gated)", () => {
     expect(deniedBody.code).toBe("TOPIC_NOT_FOUND");
 
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto("/workspace/search?q=billing&entities=claims,topics");
+    await page.goto(
+      "/workspace/search?q=billing&entities=claims,topics,evidence&pageSize=2",
+    );
     await expect(
-      page.getByRole("heading", { name: /^Search$/i }),
+      page.getByTestId("search-result-range"),
     ).toBeVisible({ timeout: 30_000 });
+    await page.screenshot({
+      path: "tmp-qa/search-pagination-desktop.png",
+      fullPage: true,
+    });
     await expectNoSeriousAxe(page, "workspace search desktop");
     await expectNoHorizontalOverflow(page);
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload();
     await expect(
-      page.getByRole("heading", { name: /^Search$/i }),
+      page.getByTestId("search-result-range"),
     ).toBeVisible({ timeout: 30_000 });
+    await page.screenshot({
+      path: "tmp-qa/search-pagination-phone.png",
+      fullPage: true,
+    });
     await expectNoSeriousAxe(page, "workspace search mobile");
     await expectNoHorizontalOverflow(page);
+
+    // Bounded pagination controls: range announcement + Previous omitted as link on page 1.
+    await expect(page.getByTestId("search-result-range")).toContainText(
+      /Showing 1–/i,
+    );
+    await expect(
+      page.getByRole("navigation", { name: /Search results pagination/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /^Previous$/i }),
+    ).toHaveCount(0);
+    const next = page.getByRole("link", { name: /^Next$/i });
+    if ((await next.count()) > 0) {
+      await next.click();
+      await expect(page).toHaveURL(/page=2/);
+      await expect(page.getByTestId("search-result-range")).toContainText(
+        /Showing /i,
+      );
+      await expect(
+        page.getByRole("link", { name: /^Previous$/i }),
+      ).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    }
   });
 
   test("staff search and topic export", async ({ page }) => {

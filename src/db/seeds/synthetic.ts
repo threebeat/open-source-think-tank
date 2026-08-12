@@ -52,10 +52,13 @@ function hashToken(token: string): string {
  * mistaken for real people. Never load production participant data here.
  */
 export async function seedSyntheticFoundation(db: FoundationDb) {
-  await db.insert(schemaMeta).values({
-    key: "migration_label",
-    value: "3.3-capabilities-bootstrap",
-  });
+  await db
+    .insert(schemaMeta)
+    .values({
+      key: "migration_label",
+      value: "3.3-capabilities-bootstrap",
+    })
+    .onConflictDoNothing();
 
   await db
     .insert(operatorBootstrapState)

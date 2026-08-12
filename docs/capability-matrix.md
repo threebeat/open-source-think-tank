@@ -66,6 +66,7 @@ Default decision: **deny**.
 | Action | Actor | Notes |
 | --- | --- | --- |
 | `operator.bootstrap_administrator` | Environment operator (`OPERATOR_BOOTSTRAP_SECRET` + `OPERATOR_LABEL`) | First-administrator ceremony only; not exercised by a normal authenticated principal; never public-demo; see [phase-3-plan.md](./phase-3-plan.md) bootstrap ceremony |
+| `alpha.reset_executed` (audit action; not a browser capability) | Environment operator (`OPERATOR_RESET_SECRET` + `OPERATOR_LABEL` + fingerprint confirm) | Gated CLI only; dry-run default; never public-demo; never HTTP; see [alpha-reset-runbook.md](./alpha-reset-runbook.md) |
 
 ## Self-elevation rules
 

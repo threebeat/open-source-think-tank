@@ -91,4 +91,46 @@ describe("GET /api/workspace/search", () => {
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(searchWorkspace).toHaveBeenCalled();
   });
+
+  it("sanitizes thrown search failures without leaking exception text", async () => {
+    requireGatedSession.mockResolvedValue({
+      ok: true,
+      session: { accountId: "account-ostt-synth-ada" },
+    });
+    searchWorkspace.mockRejectedValue(
+      new Error("forced search boom account-ostt-synth-ada SELECT *"),
+    );
+    const { GET } = await import("@/app/api/workspace/search/route");
+    const response = await GET(
+      new Request(
+        "http://localhost/api/workspace/search?q=billing&entities=claims",
+      ),
+    );
+    expect(response.status).toBe(503);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    const body = (await response.json()) as {
+      code?: string;
+      error?: string;
+    };
+    expect(body.code).toBe("WORKSPACE_SEARCH_UNAVAILABLE");
+    expect(JSON.stringify(body)).not.toMatch(
+      /forced|account-ostt|SELECT/i,
+    );
+  });
+
+  it("sanitizes thrown principal/session failures", async () => {
+    requireGatedSession.mockRejectedValue(
+      new Error("forced principal load failure"),
+    );
+    const { GET } = await import("@/app/api/workspace/search/route");
+    const response = await GET(
+      new Request(
+        "http://localhost/api/workspace/search?q=billing&entities=claims",
+      ),
+    );
+    expect(response.status).toBe(503);
+    const body = (await response.json()) as { code?: string; error?: string };
+    expect(body.code).toBe("WORKSPACE_SEARCH_UNAVAILABLE");
+    expect(body.error).not.toMatch(/forced principal/i);
+  });
 });

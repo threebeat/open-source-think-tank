@@ -98,6 +98,8 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Start Postgres and wait for health
         run: npm run db:up
+      - name: Alpha reset smoke (disposable ostt_alpha_reset only)
+        run: npm run alpha:reset:smoke
       - name: Migrate and seed synthetic foundation
         run: node scripts/gated-e2e-prepare.mjs
       - name: Production build (gated)
