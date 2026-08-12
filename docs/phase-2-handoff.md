@@ -58,7 +58,7 @@ Closes the readiness delta created when PR #12 (`a4ed112`) landed after the orig
 | Post-tag 2.11 hardening baseline | `a4ed112016c4b5a402ee0ada6a043387c97b4999` (merged PR #12) |
 | Main-branch CI on 2.11 merge | [31567948650](https://github.com/threebeat/open-source-think-tank/actions/runs/31567948650) — **success** |
 | Original immutable foundation tag | `phase-2-foundation` → `eef9166dfd4d170ab55abe1f5811f0f4085e8f65` (**unchanged**) |
-| Addendum candidate SHA | `70c6d4d242f7731170ffe13d9742193dcafe8dd0` (PR #13) |
+| Addendum verification SHA | `004633444f24d134711939969a21d80a26a3c037` (full ladder green; PR #13 tip may include docs-only follow-ups) |
 | Local gated revalidation | PostgreSQL **16.14** (Ubuntu package; Docker Compose overlay unavailable in agent host); `gated-e2e-prepare` + gated Playwright — **34 passed / 0 failed** (incl. new `privacy.gated.spec.ts`) |
 | Privacy / axe coverage added | Stateful export + closure journey; axe on initial / error / receipt; 390×844 overflow + keyboard; CSRF `no-store`; `privacy_request` mutation family |
 | Public-demo revalidation | `APP_MODE=public-demo` build + Playwright — **53 passed / 0 failed** |
