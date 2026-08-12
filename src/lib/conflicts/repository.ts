@@ -155,3 +155,62 @@ export async function listConflictDisclosuresForEvidence(
     );
   return { ok: true, value: rows.map(mapDisclosure) };
 }
+
+/** Current disclosure for a claim (at most one after 0018 uniqueness). */
+export async function getConflictDisclosureForClaim(
+  db: GatedDb,
+  claimId: string,
+): Promise<AdapterResult<ConflictDisclosureRecord | null>> {
+  const listed = await listConflictDisclosuresForClaim(db, claimId);
+  if (!listed.ok) return listed;
+  return { ok: true, value: listed.value[0] ?? null };
+}
+
+/** Current disclosure for evidence (at most one after 0018 uniqueness). */
+export async function getConflictDisclosureForEvidence(
+  db: GatedDb,
+  evidenceSubmissionId: string,
+): Promise<AdapterResult<ConflictDisclosureRecord | null>> {
+  const listed = await listConflictDisclosuresForEvidence(
+    db,
+    evidenceSubmissionId,
+  );
+  if (!listed.ok) return listed;
+  return { ok: true, value: listed.value[0] ?? null };
+}
+
+/**
+ * Expected-timestamp update. Returns null when expectedUpdatedAt no longer matches.
+ * Does not change subject attachment or disclosing account.
+ */
+export async function updateConflictDisclosure(
+  db: GatedDb,
+  input: {
+    disclosureId: string;
+    expectedUpdatedAt: Date;
+    publicSummary: string;
+    privateDetail: string | null;
+  },
+): Promise<AdapterResult<ConflictDisclosureRecord | null>> {
+  const denied = requireGatedPersistence();
+  if (denied) {
+    return denied;
+  }
+
+  const [row] = await db
+    .update(conflictDisclosures)
+    .set({
+      publicSummary: input.publicSummary,
+      privateDetail: input.privateDetail,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(conflictDisclosures.id, input.disclosureId),
+        eq(conflictDisclosures.updatedAt, input.expectedUpdatedAt),
+      ),
+    )
+    .returning();
+
+  return { ok: true, value: row ? mapDisclosure(row) : null };
+}

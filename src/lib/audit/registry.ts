@@ -645,12 +645,134 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
       payloadSchema: z
         .object({
           disclosureId: z.string(),
-          claimId: z.string(),
+          claimId: z.string().optional(),
+          evidenceSubmissionId: z.string().optional(),
           topicId: z.string(),
           capability: z.literal("conflicts.disclose_own"),
           actorAccountId: z.string(),
           disclosureChoice: z.enum(["none", "disclose"]),
-          attachedTo: z.literal("claim"),
+          attachedTo: z.enum(["claim", "evidence"]),
+        })
+        .strict()
+        .superRefine((value, ctx) => {
+          const hasClaim = Boolean(value.claimId);
+          const hasEvidence = Boolean(value.evidenceSubmissionId);
+          if (value.attachedTo === "claim" && (!hasClaim || hasEvidence)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Claim disclosure audit requires claimId only",
+            });
+          }
+          if (value.attachedTo === "evidence" && (!hasEvidence || hasClaim)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Evidence disclosure audit requires evidenceSubmissionId only",
+            });
+          }
+        }) as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "conflicts.updated": def(
+    "conflicts.updated",
+    "Conflict disclosure updated",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          disclosureId: z.string(),
+          claimId: z.string().optional(),
+          evidenceSubmissionId: z.string().optional(),
+          topicId: z.string(),
+          capability: z.literal("conflicts.disclose_own"),
+          actorAccountId: z.string(),
+          attachedTo: z.enum(["claim", "evidence"]),
+          disclosureChoice: z.enum(["none", "disclose"]),
+          changedFieldLabels: z.array(z.string()).min(1),
+        })
+        .strict()
+        .superRefine((value, ctx) => {
+          const hasClaim = Boolean(value.claimId);
+          const hasEvidence = Boolean(value.evidenceSubmissionId);
+          if (value.attachedTo === "claim" && (!hasClaim || hasEvidence)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Claim disclosure audit requires claimId only",
+            });
+          }
+          if (value.attachedTo === "evidence" && (!hasEvidence || hasClaim)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Evidence disclosure audit requires evidenceSubmissionId only",
+            });
+          }
+        }) as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "moderation.submission_held": def(
+    "moderation.submission_held",
+    "Submission held from public visibility",
+    {
+      requireActorAccount: true,
+      highImpact: true,
+      payloadSchema: z
+        .object({
+          moderationActionId: z.string(),
+          claimId: z.string().optional(),
+          evidenceSubmissionId: z.string().optional(),
+          topicId: z.string(),
+          capability: z.literal("moderation.review_submission"),
+          actorAccountId: z.string(),
+          attachedTo: z.enum(["claim", "evidence"]),
+          fromVisibility: z.literal("visible"),
+          toVisibility: z.literal("held"),
+          hasPublicRationale: z.literal(true),
+          hasPrivateNotes: z.boolean(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "moderation.submission_hidden": def(
+    "moderation.submission_hidden",
+    "Submission hidden from public visibility",
+    {
+      requireActorAccount: true,
+      highImpact: true,
+      payloadSchema: z
+        .object({
+          moderationActionId: z.string(),
+          claimId: z.string().optional(),
+          evidenceSubmissionId: z.string().optional(),
+          topicId: z.string(),
+          capability: z.literal("moderation.review_submission"),
+          actorAccountId: z.string(),
+          attachedTo: z.enum(["claim", "evidence"]),
+          fromVisibility: z.enum(["visible", "held"]),
+          toVisibility: z.literal("hidden"),
+          hasPublicRationale: z.literal(true),
+          hasPrivateNotes: z.boolean(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "moderation.submission_restored": def(
+    "moderation.submission_restored",
+    "Submission restored to visible",
+    {
+      requireActorAccount: true,
+      highImpact: true,
+      payloadSchema: z
+        .object({
+          moderationActionId: z.string(),
+          claimId: z.string().optional(),
+          evidenceSubmissionId: z.string().optional(),
+          topicId: z.string(),
+          capability: z.literal("moderation.review_submission"),
+          actorAccountId: z.string(),
+          attachedTo: z.enum(["claim", "evidence"]),
+          fromVisibility: z.enum(["held", "hidden"]),
+          toVisibility: z.literal("visible"),
+          hasPublicRationale: z.literal(true),
+          hasPrivateNotes: z.boolean(),
         })
         .strict() as z.ZodType<Record<string, unknown>>,
     },

@@ -982,6 +982,13 @@ export const moderationVisibilityEnum = pgEnum("moderation_visibility", [
   "hidden",
 ]);
 
+/** Append-only moderation action kinds (Package 3.8). Restore is never a stored visibility. */
+export const moderationActionEnum = pgEnum("moderation_action", [
+  "hold",
+  "hide",
+  "restore",
+]);
+
 export const claimEvidenceRelationshipEnum = pgEnum(
   "claim_evidence_relationship",
   ["supporting", "counterevidence"],
@@ -1265,6 +1272,12 @@ export const conflictDisclosures = pgTable(
     index("conflict_disclosures_account_idx").on(table.disclosingAccountId),
     index("conflict_disclosures_claim_idx").on(table.claimId),
     index("conflict_disclosures_evidence_idx").on(table.evidenceSubmissionId),
+    uniqueIndex("conflict_disclosures_claim_uidx")
+      .on(table.claimId)
+      .where(sql`${table.claimId} IS NOT NULL`),
+    uniqueIndex("conflict_disclosures_evidence_uidx")
+      .on(table.evidenceSubmissionId)
+      .where(sql`${table.evidenceSubmissionId} IS NOT NULL`),
     check(
       "conflict_disclosures_public_summary_nonblank",
       sql`char_length(btrim(${table.publicSummary})) > 0`,
@@ -1274,6 +1287,98 @@ export const conflictDisclosures = pgTable(
       sql`(
         (${table.claimId} IS NOT NULL AND ${table.evidenceSubmissionId} IS NULL)
         OR (${table.claimId} IS NULL AND ${table.evidenceSubmissionId} IS NOT NULL)
+      )`,
+    ),
+  ],
+);
+
+/**
+ * Append-only institutional moderation history (Package 3.8).
+ * Exactly one of claim_id / evidence_submission_id; immutable via migration trigger.
+ * Current visibility remains on the claim/evidence row — never a stored `restored` state.
+ */
+export const moderationActions = pgTable(
+  "moderation_actions",
+  {
+    id: text("id").primaryKey(),
+    topicId: text("topic_id")
+      .notNull()
+      .references(() => topics.id, { onDelete: "restrict" }),
+    claimId: text("claim_id"),
+    evidenceSubmissionId: text("evidence_submission_id"),
+    actorAccountId: text("actor_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    action: moderationActionEnum("action").notNull(),
+    fromVisibility: moderationVisibilityEnum("from_visibility").notNull(),
+    toVisibility: moderationVisibilityEnum("to_visibility").notNull(),
+    publicRationale: text("public_rationale").notNull(),
+    privateNotes: text("private_notes"),
+    synthetic: boolean("synthetic").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("moderation_actions_claim_created_idx")
+      .on(table.claimId, table.createdAt)
+      .where(sql`${table.claimId} IS NOT NULL`),
+    index("moderation_actions_evidence_created_idx")
+      .on(table.evidenceSubmissionId, table.createdAt)
+      .where(sql`${table.evidenceSubmissionId} IS NOT NULL`),
+    index("moderation_actions_topic_created_idx").on(
+      table.topicId,
+      table.createdAt,
+    ),
+    foreignKey({
+      name: "moderation_actions_claim_topic_fk",
+      columns: [table.claimId, table.topicId],
+      foreignColumns: [claims.id, claims.topicId],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "moderation_actions_evidence_topic_fk",
+      columns: [table.evidenceSubmissionId, table.topicId],
+      foreignColumns: [evidenceSubmissions.id, evidenceSubmissions.topicId],
+    }).onDelete("restrict"),
+    check(
+      "moderation_actions_public_rationale_nonblank",
+      sql`char_length(btrim(${table.publicRationale})) > 0`,
+    ),
+    check(
+      "moderation_actions_exactly_one_subject",
+      sql`(
+        (${table.claimId} IS NOT NULL AND ${table.evidenceSubmissionId} IS NULL)
+        OR (${table.claimId} IS NULL AND ${table.evidenceSubmissionId} IS NOT NULL)
+      )`,
+    ),
+    check(
+      "moderation_actions_hold_transition",
+      sql`(
+        (${table.action} <> 'hold')
+        OR (
+          ${table.fromVisibility} = 'visible'
+          AND ${table.toVisibility} = 'held'
+        )
+      )`,
+    ),
+    check(
+      "moderation_actions_hide_transition",
+      sql`(
+        (${table.action} <> 'hide')
+        OR (
+          ${table.fromVisibility} IN ('visible', 'held')
+          AND ${table.toVisibility} = 'hidden'
+        )
+      )`,
+    ),
+    check(
+      "moderation_actions_restore_transition",
+      sql`(
+        (${table.action} <> 'restore')
+        OR (
+          ${table.fromVisibility} IN ('held', 'hidden')
+          AND ${table.toVisibility} = 'visible'
+        )
       )`,
     ),
   ],
@@ -1464,6 +1569,7 @@ export const foundationTables = {
   evidenceSubmissions,
   claimEvidenceLinks,
   conflictDisclosures,
+  moderationActions,
   contentRevisions,
   claimReviews,
   evidenceReviews,
