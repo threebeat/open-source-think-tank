@@ -45,7 +45,7 @@ test.describe("public-demo operational workflow preview", () => {
     await page.goto("/demo/workflow?view=moderation&state=held");
     await expect(
       page.getByTestId("workflow-moderation-state-label"),
-    ).toHaveTextContent("Example held state");
+    ).toContainText("Example held state");
     await expect(
       page.getByText(/Preview next state: hidden/i),
     ).toBeVisible();
@@ -57,7 +57,7 @@ test.describe("public-demo operational workflow preview", () => {
     await expect(page).toHaveURL(/state=held/);
     await expect(
       page.getByTestId("workflow-moderation-state-label"),
-    ).toHaveTextContent("Example held state");
+    ).toContainText("Example held state");
 
     await page.goto("/demo/workflow?view=visitor");
     await expect(
@@ -65,7 +65,7 @@ test.describe("public-demo operational workflow preview", () => {
     ).toContainText(/Synthetic role preview — visitor public projection/i);
     await expect(
       page.getByTestId("workflow-visitor-state-label"),
-    ).toHaveTextContent(/Visitor view while claim is visible/i);
+    ).toContainText(/Visitor view while claim is visible/i);
 
     const viewSelect = page.getByLabel("Synthetic preview view");
     await viewSelect.focus();
