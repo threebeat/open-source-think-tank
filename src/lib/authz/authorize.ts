@@ -35,6 +35,8 @@ const ACTIVE_ONLY = new Set<Capability>([
   "evidence.review",
   "conflicts.disclose_own",
   "moderation.review_submission",
+  "workspace.search",
+  "topics.export_staff",
   "invites.issue",
 ]);
 
@@ -216,6 +218,26 @@ export function authorize(
 
     case "moderation.review_submission":
       if (!hasPlatform(principal, ["moderator", "administrator"])) {
+        return deny(capability);
+      }
+      return { ok: true, principal };
+
+    case "workspace.search":
+      // Auditor-only principals are excluded; search is content-workspace scoped.
+      if (
+        !hasPlatform(principal, [
+          "participant",
+          "reviewer",
+          "moderator",
+          "administrator",
+        ])
+      ) {
+        return deny(capability);
+      }
+      return { ok: true, principal };
+
+    case "topics.export_staff":
+      if (!hasPlatform(principal, ["reviewer", "administrator"])) {
         return deny(capability);
       }
       return { ok: true, principal };

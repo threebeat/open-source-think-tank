@@ -30,6 +30,8 @@ const PHASE3_CAPABILITIES = [
   "evidence.review",
   "conflicts.disclose_own",
   "moderation.review_submission",
+  "workspace.search",
+  "topics.export_staff",
   "invites.issue",
 ] as const satisfies readonly Capability[];
 
@@ -124,6 +126,16 @@ const ROLE_MATRIX: RoleExpectation[] = [
     capability: "moderation.review_submission",
     allowRoles: ["moderator", "administrator"],
     denyRoles: ["participant", "reviewer", "auditor"],
+  },
+  {
+    capability: "workspace.search",
+    allowRoles: ["participant", "reviewer", "moderator", "administrator"],
+    denyRoles: ["auditor"],
+  },
+  {
+    capability: "topics.export_staff",
+    allowRoles: ["reviewer", "administrator"],
+    denyRoles: ["participant", "moderator", "auditor"],
   },
 ];
 

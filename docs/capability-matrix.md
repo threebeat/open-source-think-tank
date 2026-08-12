@@ -57,6 +57,8 @@ Default decision: **deny**.
 | `evidence.review` | active | reviewer or administrator | — | Workflow + independent quality decisions (3.6); also authorizes **staff** evidence subject revision history (3.7) |
 | `conflicts.disclose_own` | active | participant | own (service checks) | Required on submit (3.5) and own disclosure create/update (3.8); does **not** grant staff private-detail reads |
 | `moderation.review_submission` | active | moderator or administrator | — | Visibility hold/hide/restore-to-visible with required public rationale (3.8); does **not** grant disclosure private-detail access or pseudonym reverse-map; private-detail still requires matching `claims.review` / `evidence.review` |
+| `workspace.search` | active | participant, reviewer, moderator, or administrator | — | Gated workspace metadata search (3.11); L3 uniqueness; auditor-only `audit.read_restricted` does **not** grant this; audience rules in architecture §5 / phase-3-plan 3.11 |
+| `topics.export_staff` | active | reviewer or administrator | — | Staff topic-package export (3.11); L3 uniqueness; allowlisted projector; no private notes/disclosure detail/account IDs |
 | `invites.issue` | active | administrator | — | Hashed token at rest; raw link returned once; never public-demo |
 
 ### Operator actions (not account capabilities)

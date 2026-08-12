@@ -135,6 +135,8 @@ describe("authorizeCapability assurance gate", () => {
       "evidence.review": "account-ostt-synth-ac-reviewer",
       "conflicts.disclose_own": "account-ostt-synth-ac-participant",
       "moderation.review_submission": "account-ostt-synth-ac-moderator",
+      "workspace.search": "account-ostt-synth-ac-participant",
+      "topics.export_staff": "account-ostt-synth-ac-reviewer",
       "account.read_own": "account-ostt-synth-ac-participant",
       "account.sign_out": "account-ostt-synth-ac-participant",
       "account.revoke_all_sessions": "account-ostt-synth-ac-participant",
@@ -244,6 +246,14 @@ describe("authorizeCapability assurance gate", () => {
       {
         accountId: "account-ostt-synth-ac-moderator",
         capability: "moderation.review_submission",
+      },
+      {
+        accountId: "account-ostt-synth-ac-participant",
+        capability: "workspace.search",
+      },
+      {
+        accountId: "account-ostt-synth-ac-reviewer",
+        capability: "topics.export_staff",
       },
     ];
 

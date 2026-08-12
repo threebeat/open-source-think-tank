@@ -85,7 +85,7 @@ Controls below are **implemented** through 2.11 unless noted as still blocked.
 | Secret leakage to browser | No `NEXT_PUBLIC_` secrets; adapter boundary; security headers + CSRF middleware; [secrets-and-operations.md](./secrets-and-operations.md) |
 | Raw account ids in ops logs | `securityLog` uses keyed `subjectRef` / recursive identifier redaction; closure success logged only after commit |
 | Audit tampering by ordinary roles | Append-only ledger; continuity digests over institutional fields; public projections allowlisted (2.9) |
-| Cross-account export leakage | Own-account export aborts if another `account-*` id appears (2.11) |
+| Cross-account export leakage | Own-account export aborts on structured foreign ownership fields **and** if another `account-*` id appears in serialization (2.11/3.11) |
 | Silent destruction on closure | Closure retains assent/audit; legal holds block closure/purge (2.11) |
 | Single-admin high-impact mistakes | Dual-control request/approve/claim for hold release and closure; execution consumes an approved unexpired matching request in the same transaction; self-approve denied ([incident-response.md](./incident-response.md)) |
 | Email / DB vendor abuse | DPA/region/retention checklist before production keys; managed DB host still blocked pending addendum |
@@ -123,6 +123,10 @@ Controls below are **implemented** through 2.11 unless noted as still blocked.
 | Closure-request CSRF / abuse (2.12 post-merge) | Shared `csrfDeniedResponse` is `no-store`; closure POST uses `gateAuthenticatedMutation` with dedicated `privacy_request` family; unexpected TX failures map to stable public errors (detail only in redacted security logs) |
 | Source URL SSRF via stored links (3.9) | Reject private/local/metadata hosts and non-https schemes at validate/publish/projection; anchors use `noopener noreferrer` + `referrerPolicy=no-referrer`; no remote fetch |
 | Demo practice mistaken for gated intake (3.9) | Topic-recommendation labeled interaction prototype; sessionStorage only; zero workspace API calls; snapshot explorer secondary |
+| Cross-participant draft search leakage (3.11) | `workspace.search` SQL ACL by role/ownership; participant hits only own claims/evidence; auditor-only denied; DTOs forbid account IDs/private notes |
+| Staff export over-disclosure (3.11) | Allowlisted topic projector; omit account IDs, contacts, verification, invites, pseudonyms, raw audit, private disclosure, private notes; audit event stores counts only |
+| Search/export in public-demo (3.11) | Generic 404 before gated DB/auth imports; zero gated persistence calls on demo path |
+| Remote fetch via export/search (3.11) | Source URLs revalidated locally only; never fetched during export or search |
 
 ## Explicit non-goals for Phase 1 / Phase 2 public-demo
 

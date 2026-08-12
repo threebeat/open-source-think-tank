@@ -43,8 +43,11 @@ export function PrivacyControlsClient() {
           data.error ??
             "Could not submit the closure request. Your account was not closed.",
         );
-        requestAnimationFrame(() => {
-          document.getElementById(errorSummaryId)?.focus();
+        // Wait for React commit so the alert node exists before focusing.
+        queueMicrotask(() => {
+          requestAnimationFrame(() => {
+            document.getElementById(errorSummaryId)?.focus();
+          });
         });
         return;
       }
@@ -52,8 +55,10 @@ export function PrivacyControlsClient() {
       setReason("");
     } catch {
       setError("Could not submit the closure request. Your account was not closed.");
-      requestAnimationFrame(() => {
-        document.getElementById(errorSummaryId)?.focus();
+      queueMicrotask(() => {
+        requestAnimationFrame(() => {
+          document.getElementById(errorSummaryId)?.focus();
+        });
       });
     } finally {
       setPending(false);
@@ -70,8 +75,10 @@ export function PrivacyControlsClient() {
           Download a JSON export of your own account-holder records. The bundle
           is limited to your lifecycle and contact channel, profile fields,
           assent metadata and outcomes, verification case metadata (no raw
-          artifacts), your conversation pseudonym mappings, and your
-          closure-request records.
+          artifacts), your conversation pseudonym mappings, your
+          closure-request records, and owned Phase 3 workspace submissions
+          (claims, evidence, links, own disclosures, and owner revision
+          history) with minimal topic context.
         </p>
         <p className="max-w-2xl text-base leading-7 text-muted-foreground">
           The export excludes other accounts, staff-restricted audit private

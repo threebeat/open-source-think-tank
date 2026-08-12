@@ -103,6 +103,14 @@ export async function listPublishedTopicsForPublic(
  * Operational/projection failures return `{ ok: false, ... }` — callers must
  * not map those to 404 or empty catalogs (3.10).
  */
+function projectionUnavailable(): AdapterResult<never> {
+  return {
+    ok: false,
+    error: "Published topic projection unavailable",
+    code: "PUBLIC_TOPIC_PROJECTION_UNAVAILABLE",
+  };
+}
+
 export async function getPublishedTopicProjection(
   db: GatedDb,
   slug: string,
@@ -112,27 +120,37 @@ export async function getPublishedTopicProjection(
   const persistence = requireGatedPersistence();
   if (persistence) return persistence;
 
-  const topicResult = await getTopicBySlug(db, slug);
-  if (!topicResult.ok) return topicResult;
-  const topic = topicResult.value;
-  if (!topic || topic.publicationStatus !== "published") {
-    return { ok: true, value: null };
-  }
+  try {
+    const topicResult = await getTopicBySlug(db, slug);
+    if (!topicResult.ok) {
+      // Normalize repository/AdapterResult failures — never 404 visitors.
+      return projectionUnavailable();
+    }
+    const topic = topicResult.value;
+    if (!topic || topic.publicationStatus !== "published") {
+      return { ok: true, value: null };
+    }
 
-  return buildProjectionForTopic(db, topic);
+    return await buildProjectionForTopic(db, topic);
+  } catch {
+    // Thrown failures from getTopicBySlug, loadProjectionInputs, or nested DB
+    // calls must never leak SQL/config/IDs/stacks to visitor HTML/DTOs.
+    return projectionUnavailable();
+  }
 }
 
 async function buildProjectionForTopic(
   db: GatedDb,
   topic: TopicRecord,
 ): Promise<AdapterResult<PublicTopicProjection | null>> {
-  const loaded = await loadProjectionInputs(db, topic);
+  let loaded: Awaited<ReturnType<typeof loadProjectionInputs>>;
+  try {
+    loaded = await loadProjectionInputs(db, topic);
+  } catch {
+    return projectionUnavailable();
+  }
   if (!loaded.ok) {
-    return {
-      ok: false,
-      error: "Published topic projection unavailable",
-      code: "PUBLIC_TOPIC_PROJECTION_UNAVAILABLE",
-    };
+    return projectionUnavailable();
   }
 
   try {
@@ -185,10 +203,6 @@ async function buildProjectionForTopic(
 
     return { ok: true, value: projection };
   } catch {
-    return {
-      ok: false,
-      error: "Published topic projection unavailable",
-      code: "PUBLIC_TOPIC_PROJECTION_UNAVAILABLE",
-    };
+    return projectionUnavailable();
   }
 }

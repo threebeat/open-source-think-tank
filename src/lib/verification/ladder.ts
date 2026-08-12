@@ -165,6 +165,8 @@ export const CAPABILITY_ASSURANCE: Partial<
   "evidence.review": "L3_uniqueness",
   "conflicts.disclose_own": "L3_uniqueness",
   "moderation.review_submission": "L3_uniqueness",
+  "workspace.search": "L3_uniqueness",
+  "topics.export_staff": "L3_uniqueness",
   "invites.issue": "L3_uniqueness",
 };
 
