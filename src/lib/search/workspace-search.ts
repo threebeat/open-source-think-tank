@@ -1,11 +1,5 @@
-import { and, asc, desc, eq, or, sql, type SQL } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
-import {
-  claimEvidenceLinks,
-  claims,
-  evidenceSubmissions,
-  topics,
-} from "@/db/schema";
 import type { AdapterResult } from "@/lib/adapters/types";
 import { authorizeCapability } from "@/lib/authz/authorize-capability";
 import { loadPrincipal } from "@/lib/authz/load-principal";
@@ -14,6 +8,7 @@ import { assertEnvironmentSafe } from "@/lib/env/app-mode";
 import type { GatedDb } from "@/lib/persistence/gated";
 import {
   ilikeContainsPattern,
+  WORKSPACE_SEARCH_PAGE_MAX,
   type WorkspaceSearchEntity,
   type WorkspaceSearchQuery,
 } from "@/lib/search/schemas";
@@ -37,14 +32,47 @@ export type WorkspaceSearchPage = {
   page: number;
   pageSize: number;
   total: number;
+  /** 1-based inclusive index of first result on this page (0 when empty). */
+  rangeFrom: number;
+  /** 1-based inclusive index of last result on this page (0 when empty). */
+  rangeTo: number;
+  hasPrevious: boolean;
+  hasNext: boolean;
   results: WorkspaceSearchResult[];
 };
+
+/**
+ * Internal admission class used only to pick an authorized href.
+ * Never serialized into visitor/search DTOs.
+ */
+type AdmissionClass =
+  | "owner"
+  | "participant-topic"
+  | "reviewer"
+  | "moderator"
+  | "administrator"
+  | "published";
 
 type SearchAudience = {
   isParticipant: boolean;
   isReviewer: boolean;
   isModerator: boolean;
   isAdministrator: boolean;
+};
+
+type HitRow = {
+  entity_type: "topic" | "claim" | "evidence";
+  id: string;
+  title: string;
+  topic_title: string | null;
+  topic_slug: string | null;
+  workflow_state: string | null;
+  quality_status: string | null;
+  moderation_visibility: string | null;
+  publication_status: string | null;
+  updated_at: Date | string;
+  linked_claim_id: string | null;
+  admission_class: AdmissionClass;
 };
 
 const FORBIDDEN_RESULT_KEYS = [
@@ -62,6 +90,8 @@ const FORBIDDEN_RESULT_KEYS = [
   "rawAudit",
   "beforeSnapshot",
   "afterSnapshot",
+  "admissionClass",
+  "admission_class",
 ] as const;
 
 function hasRole(principal: AuthzPrincipal, role: PlatformRole): boolean {
@@ -70,9 +100,9 @@ function hasRole(principal: AuthzPrincipal, role: PlatformRole): boolean {
 
 function audienceOf(principal: AuthzPrincipal): SearchAudience {
   return {
-    // Administrator must not inherit participant “own submission” semantics.
     isParticipant: hasRole(principal, "participant"),
-    isReviewer: hasRole(principal, "reviewer") || hasRole(principal, "administrator"),
+    isReviewer:
+      hasRole(principal, "reviewer") || hasRole(principal, "administrator"),
     isModerator:
       hasRole(principal, "moderator") || hasRole(principal, "administrator"),
     isAdministrator: hasRole(principal, "administrator"),
@@ -96,70 +126,94 @@ function assertSafeResult(result: WorkspaceSearchResult): void {
   }
 }
 
-function topicHref(
-  audience: SearchAudience,
-  slug: string,
-  publicationStatus: string,
-  workflowState: string,
-): string {
-  if (audience.isAdministrator) {
-    return `/workspace/topics/${slug}`;
+function hrefForHit(row: HitRow): string {
+  switch (row.admission_class) {
+    case "owner":
+      if (row.entity_type === "claim") {
+        return `/workspace/submissions/${row.id}`;
+      }
+      if (row.entity_type === "evidence") {
+        return row.linked_claim_id
+          ? `/workspace/submissions/${row.linked_claim_id}`
+          : "/workspace/submissions";
+      }
+      return row.topic_slug
+        ? `/workspace/topics/${row.topic_slug}/submit`
+        : "/workspace/submissions";
+    case "participant-topic":
+      return `/workspace/topics/${row.topic_slug}/submit`;
+    case "published":
+      return `/topics/${row.topic_slug}`;
+    case "administrator":
+      return `/workspace/topics/${row.topic_slug}`;
+    case "reviewer":
+      if (row.entity_type === "claim") {
+        return `/workspace/review/claims/${row.id}`;
+      }
+      if (row.entity_type === "evidence") {
+        return `/workspace/review/evidence/${row.id}`;
+      }
+      return row.publication_status === "published"
+        ? `/topics/${row.topic_slug}`
+        : "/workspace/review";
+    case "moderator":
+      if (row.entity_type === "claim") {
+        return `/workspace/moderation/claims/${row.id}`;
+      }
+      if (row.entity_type === "evidence") {
+        return `/workspace/moderation/evidence/${row.id}`;
+      }
+      return row.publication_status === "published"
+        ? `/topics/${row.topic_slug}`
+        : "/workspace/moderation";
+    default: {
+      const _exhaustive: never = row.admission_class;
+      return _exhaustive;
+    }
   }
-  if (publicationStatus === "published") {
-    return `/topics/${slug}`;
-  }
-  if (
-    audience.isParticipant &&
-    workflowState === "open_for_submissions"
-  ) {
-    return `/workspace/topics/${slug}/submit`;
-  }
-  // Reviewer/moderator may still see topic metadata when reviewing; link to
-  // public published surface only when published, else workspace review home.
-  if (audience.isReviewer || audience.isModerator) {
-    return publicationStatus === "published"
-      ? `/topics/${slug}`
-      : "/workspace/review";
-  }
-  return `/topics/${slug}`;
 }
 
-function claimHref(audience: SearchAudience, claimId: string): string {
-  if (audience.isReviewer) {
-    return `/workspace/review/claims/${claimId}`;
-  }
-  if (audience.isModerator) {
-    return `/workspace/moderation/claims/${claimId}`;
-  }
-  return `/workspace/submissions/${claimId}`;
+function mapHit(row: HitRow): WorkspaceSearchResult {
+  const updatedAt =
+    row.updated_at instanceof Date
+      ? row.updated_at.toISOString()
+      : new Date(row.updated_at).toISOString();
+  return {
+    entityType: row.entity_type,
+    id: row.id,
+    title: row.title,
+    topicTitle: row.topic_title,
+    topicSlug: row.topic_slug,
+    workflowLabel: workflowLabel(row.workflow_state),
+    qualityLabel: workflowLabel(row.quality_status),
+    visibilityLabel:
+      row.entity_type === "topic"
+        ? row.publication_status === "published"
+          ? "published"
+          : "unpublished"
+        : workflowLabel(row.moderation_visibility),
+    updatedAt,
+    href: hrefForHit(row),
+  };
 }
 
-function evidenceHref(
-  audience: SearchAudience,
-  evidenceId: string,
-  linkedClaimId: string | null,
-): string {
-  if (audience.isReviewer) {
-    return `/workspace/review/evidence/${evidenceId}`;
-  }
-  if (audience.isModerator) {
-    return `/workspace/moderation/evidence/${evidenceId}`;
-  }
-  if (linkedClaimId) {
-    return `/workspace/submissions/${linkedClaimId}`;
-  }
-  return "/workspace/submissions";
+function unavailable(): AdapterResult<never> {
+  return {
+    ok: false,
+    error: "Workspace search temporarily unavailable",
+    code: "WORKSPACE_SEARCH_UNAVAILABLE",
+  };
 }
 
 /**
- * Gated workspace search — ACL applied in SQL; allowlisted DTOs only.
+ * Gated workspace search — ACL, count, order, and page bounds applied in SQL.
  */
 export async function searchWorkspace(
   db: GatedDb,
   actorAccountId: string,
   input: WorkspaceSearchQuery,
 ): Promise<AdapterResult<WorkspaceSearchPage>> {
-  if (assertEnvironmentSafe() !== "gated") {
+  if (process.env.APP_MODE === "public-demo") {
     return {
       ok: false,
       error: "Workspace search unavailable in public-demo mode",
@@ -167,46 +221,82 @@ export async function searchWorkspace(
     };
   }
 
-  const principal = await loadPrincipal(db, actorAccountId);
-  const decision = await authorizeCapability(db, principal, "workspace.search");
-  if (!decision.ok) {
-    return { ok: false, error: decision.error, code: decision.code };
-  }
-
-  const audience = audienceOf(decision.principal);
-  const pattern = ilikeContainsPattern(input.q);
-  const offset = (input.page - 1) * input.pageSize;
-
   try {
-    const collected: WorkspaceSearchResult[] = [];
-
-    if (input.entities.includes("topics")) {
-      collected.push(...(await searchTopics(db, decision.principal, audience, pattern)));
-    }
-    if (input.entities.includes("claims")) {
-      collected.push(...(await searchClaims(db, decision.principal, audience, pattern)));
-    }
-    if (input.entities.includes("evidence")) {
-      collected.push(
-        ...(await searchEvidence(db, decision.principal, audience, pattern)),
-      );
+    if (assertEnvironmentSafe() !== "gated") {
+      return {
+        ok: false,
+        error: "Workspace search unavailable in public-demo mode",
+        code: "PUBLIC_DEMO_NO_SEARCH",
+      };
     }
 
-    // Deterministic ordering across entity union: updatedAt desc, entityType, id.
-    collected.sort((a, b) => {
-      const byTime = b.updatedAt.localeCompare(a.updatedAt);
-      if (byTime !== 0) return byTime;
-      const byType = a.entityType.localeCompare(b.entityType);
-      if (byType !== 0) return byType;
-      return a.id.localeCompare(b.id);
-    });
+    if (input.page > WORKSPACE_SEARCH_PAGE_MAX) {
+      return {
+        ok: false,
+        error: "Invalid search query",
+        code: "SEARCH_VALIDATION_FAILED",
+      };
+    }
 
-    for (const row of collected) {
+    let principal: AuthzPrincipal | null;
+    try {
+      principal = await loadPrincipal(db, actorAccountId);
+    } catch {
+      return unavailable();
+    }
+
+    let decision: Awaited<ReturnType<typeof authorizeCapability>>;
+    try {
+      decision = await authorizeCapability(db, principal, "workspace.search");
+    } catch {
+      return unavailable();
+    }
+    if (!decision.ok) {
+      return { ok: false, error: decision.error, code: decision.code };
+    }
+
+    const audience = audienceOf(decision.principal);
+    const pattern = ilikeContainsPattern(input.q);
+    const offset = (input.page - 1) * input.pageSize;
+    const actorId = decision.principal.accountId;
+
+    const unionSql = buildUnionSql(audience, actorId, pattern, input.entities);
+    if (!unionSql) {
+      return {
+        ok: true,
+        value: emptyPage(input),
+      };
+    }
+
+    const countResult = await db.execute<{ total: string | number }>(sql`
+      SELECT COUNT(*)::int AS total
+      FROM (${unionSql}) AS search_hits
+    `);
+    const countRows =
+      "rows" in countResult
+        ? (countResult.rows as Array<{ total: string | number }>)
+        : (countResult as unknown as Array<{ total: string | number }>);
+    const total = Number(countRows[0]?.total ?? 0);
+
+    const hitResult = await db.execute<HitRow>(sql`
+      SELECT *
+      FROM (${unionSql}) AS search_hits
+      ORDER BY updated_at DESC, entity_type ASC, id ASC
+      LIMIT ${input.pageSize}
+      OFFSET ${offset}
+    `);
+    const rows =
+      "rows" in hitResult
+        ? (hitResult.rows as HitRow[])
+        : (hitResult as unknown as HitRow[]);
+    const results = rows.map(mapHit);
+    for (const row of results) {
       assertSafeResult(row);
     }
 
-    const total = collected.length;
-    const results = collected.slice(offset, offset + input.pageSize);
+    const rangeFrom = total === 0 || results.length === 0 ? 0 : offset + 1;
+    const rangeTo =
+      total === 0 || results.length === 0 ? 0 : offset + results.length;
 
     return {
       ok: true,
@@ -216,256 +306,255 @@ export async function searchWorkspace(
         page: input.page,
         pageSize: input.pageSize,
         total,
+        rangeFrom,
+        rangeTo,
+        hasPrevious: input.page > 1 && total > 0,
+        hasNext: offset + results.length < total,
         results,
       },
     };
   } catch {
-    return {
-      ok: false,
-      error: "Workspace search temporarily unavailable",
-      code: "WORKSPACE_SEARCH_UNAVAILABLE",
-    };
+    return unavailable();
   }
 }
 
-async function searchTopics(
-  db: GatedDb,
-  principal: AuthzPrincipal,
+function emptyPage(input: WorkspaceSearchQuery): WorkspaceSearchPage {
+  return {
+    query: input.q,
+    entities: input.entities,
+    page: input.page,
+    pageSize: input.pageSize,
+    total: 0,
+    rangeFrom: 0,
+    rangeTo: 0,
+    hasPrevious: false,
+    hasNext: false,
+    results: [],
+  };
+}
+
+function buildUnionSql(
   audience: SearchAudience,
+  actorId: string,
   pattern: string,
-): Promise<WorkspaceSearchResult[]> {
-  const visibility = topicVisibilitySql(principal, audience);
-  if (!visibility) return [];
+  entities: WorkspaceSearchEntity[],
+) {
+  const parts: ReturnType<typeof sql>[] = [];
 
-  const rows = await db
-    .select({
-      id: topics.id,
-      title: topics.title,
-      slug: topics.slug,
-      workflowState: topics.workflowState,
-      publicationStatus: topics.publicationStatus,
-      updatedAt: topics.updatedAt,
-    })
-    .from(topics)
-    .where(
-      and(
-        visibility,
-        or(
-          sql`${topics.title} ILIKE ${pattern} ESCAPE '\\'`,
-          sql`${topics.slug} ILIKE ${pattern} ESCAPE '\\'`,
-          sql`${topics.question} ILIKE ${pattern} ESCAPE '\\'`,
-        )!,
-      ),
-    )
-    .orderBy(desc(topics.updatedAt), asc(topics.slug));
-
-  return rows.map((row) => ({
-    entityType: "topic" as const,
-    id: row.id,
-    title: row.title,
-    topicTitle: row.title,
-    topicSlug: row.slug,
-    workflowLabel: workflowLabel(row.workflowState),
-    qualityLabel: null,
-    visibilityLabel:
-      row.publicationStatus === "published" ? "published" : "unpublished",
-    updatedAt: row.updatedAt.toISOString(),
-    href: topicHref(
-      audience,
-      row.slug,
-      row.publicationStatus,
-      row.workflowState,
-    ),
-  }));
-}
-
-function topicVisibilitySql(
-  principal: AuthzPrincipal,
-  audience: SearchAudience,
-): SQL | undefined {
-  const clauses: SQL[] = [];
-
-  if (audience.isParticipant) {
-    // Open for submissions, published metadata, or topics tied to own submissions.
-    clauses.push(
-      or(
-        eq(topics.workflowState, "open_for_submissions"),
-        eq(topics.publicationStatus, "published"),
-        sql`${topics.id} IN (
-          SELECT ${claims.topicId} FROM ${claims}
-          WHERE ${claims.authorAccountId} = ${principal.accountId}
-          UNION
-          SELECT ${evidenceSubmissions.topicId} FROM ${evidenceSubmissions}
-          WHERE ${evidenceSubmissions.submitterAccountId} = ${principal.accountId}
-        )`,
-      )!,
-    );
+  if (entities.includes("topics")) {
+    const topicVis = topicVisibilityPredicate(audience, actorId);
+    if (topicVis) {
+      parts.push(sql`
+        SELECT
+          'topic'::text AS entity_type,
+          t.id AS id,
+          t.title AS title,
+          t.title AS topic_title,
+          t.slug AS topic_slug,
+          t.workflow_state::text AS workflow_state,
+          NULL::text AS quality_status,
+          NULL::text AS moderation_visibility,
+          t.publication_status::text AS publication_status,
+          t.updated_at AS updated_at,
+          NULL::text AS linked_claim_id,
+          CASE
+            WHEN t.publication_status = 'published' THEN 'published'
+            WHEN ${audience.isAdministrator} THEN 'administrator'
+            WHEN ${audience.isParticipant} AND t.workflow_state = 'open_for_submissions'
+              THEN 'participant-topic'
+            WHEN ${audience.isReviewer} THEN 'reviewer'
+            WHEN ${audience.isModerator} THEN 'moderator'
+            ELSE 'published'
+          END::text AS admission_class
+        FROM topics t
+        WHERE (${topicVis})
+          AND (
+            t.title ILIKE ${pattern} ESCAPE '\\'
+            OR t.slug ILIKE ${pattern} ESCAPE '\\'
+            OR t.question ILIKE ${pattern} ESCAPE '\\'
+          )
+      `);
+    }
   }
 
+  if (entities.includes("claims")) {
+    const claimVis = claimVisibilityPredicate(audience, actorId);
+    if (claimVis) {
+      parts.push(sql`
+        SELECT
+          'claim'::text AS entity_type,
+          c.id AS id,
+          c.title AS title,
+          top.title AS topic_title,
+          top.slug AS topic_slug,
+          c.workflow_state::text AS workflow_state,
+          NULL::text AS quality_status,
+          c.moderation_visibility::text AS moderation_visibility,
+          top.publication_status::text AS publication_status,
+          c.updated_at AS updated_at,
+          NULL::text AS linked_claim_id,
+          CASE
+            WHEN c.author_account_id = ${actorId} THEN 'owner'
+            WHEN ${audience.isReviewer} AND c.workflow_state <> 'draft' THEN 'reviewer'
+            WHEN ${audience.isModerator} AND c.workflow_state <> 'draft' THEN 'moderator'
+            ELSE 'owner'
+          END::text AS admission_class
+        FROM claims c
+        INNER JOIN topics top ON top.id = c.topic_id
+        WHERE (${claimVis})
+          AND (
+            c.title ILIKE ${pattern} ESCAPE '\\'
+            OR c.summary ILIKE ${pattern} ESCAPE '\\'
+            OR c.approach_label ILIKE ${pattern} ESCAPE '\\'
+          )
+      `);
+    }
+  }
+
+  if (entities.includes("evidence")) {
+    const evidenceVis = evidenceVisibilityPredicate(audience, actorId);
+    if (evidenceVis) {
+      parts.push(sql`
+        SELECT
+          'evidence'::text AS entity_type,
+          e.id AS id,
+          e.title AS title,
+          top.title AS topic_title,
+          top.slug AS topic_slug,
+          e.workflow_state::text AS workflow_state,
+          e.quality_status::text AS quality_status,
+          e.moderation_visibility::text AS moderation_visibility,
+          top.publication_status::text AS publication_status,
+          e.updated_at AS updated_at,
+          (
+            SELECT cel.claim_id
+            FROM claim_evidence_links cel
+            WHERE cel.evidence_submission_id = e.id
+            ORDER BY cel.created_at ASC
+            LIMIT 1
+          ) AS linked_claim_id,
+          CASE
+            WHEN e.submitter_account_id = ${actorId} THEN 'owner'
+            WHEN ${audience.isReviewer} AND e.workflow_state <> 'draft' THEN 'reviewer'
+            WHEN ${audience.isModerator} AND e.workflow_state <> 'draft' THEN 'moderator'
+            ELSE 'owner'
+          END::text AS admission_class
+        FROM evidence_submissions e
+        INNER JOIN topics top ON top.id = e.topic_id
+        WHERE (${evidenceVis})
+          AND (
+            e.title ILIKE ${pattern} ESCAPE '\\'
+            OR e.organization ILIKE ${pattern} ESCAPE '\\'
+            OR e.limitations ILIKE ${pattern} ESCAPE '\\'
+          )
+      `);
+    }
+  }
+
+  if (parts.length === 0) return null;
+  let combined = parts[0]!;
+  for (let i = 1; i < parts.length; i += 1) {
+    combined = sql`${combined} UNION ALL ${parts[i]!}`;
+  }
+  return combined;
+}
+
+function topicVisibilityPredicate(
+  audience: SearchAudience,
+  actorId: string,
+) {
+  const clauses: ReturnType<typeof sql>[] = [];
+  if (audience.isParticipant) {
+    clauses.push(sql`(
+      t.workflow_state = 'open_for_submissions'
+      OR t.publication_status = 'published'
+      OR t.id IN (
+        SELECT c2.topic_id FROM claims c2 WHERE c2.author_account_id = ${actorId}
+        UNION
+        SELECT e2.topic_id FROM evidence_submissions e2
+        WHERE e2.submitter_account_id = ${actorId}
+      )
+    )`);
+  }
   if (audience.isReviewer || audience.isModerator || audience.isAdministrator) {
-    // Staff may search administrative / reviewable topic metadata (not drafts-only
-    // enumeration beyond what review workflows need). Include all non-empty topics
-    // that have workflow activity or publication — still no account IDs in DTO.
-    clauses.push(sql`true`);
+    clauses.push(sql`TRUE`);
   }
-
-  if (clauses.length === 0) return undefined;
-  return or(...clauses);
+  if (clauses.length === 0) return null;
+  let combined = clauses[0]!;
+  for (let i = 1; i < clauses.length; i += 1) {
+    combined = sql`(${combined}) OR (${clauses[i]!})`;
+  }
+  return combined;
 }
 
-async function searchClaims(
-  db: GatedDb,
-  principal: AuthzPrincipal,
+function claimVisibilityPredicate(
   audience: SearchAudience,
-  pattern: string,
-): Promise<WorkspaceSearchResult[]> {
-  const visibility = claimVisibilitySql(principal, audience);
-  if (!visibility) return [];
-
-  const rows = await db
-    .select({
-      id: claims.id,
-      title: claims.title,
-      workflowState: claims.workflowState,
-      moderationVisibility: claims.moderationVisibility,
-      updatedAt: claims.updatedAt,
-      topicTitle: topics.title,
-      topicSlug: topics.slug,
-    })
-    .from(claims)
-    .innerJoin(topics, eq(claims.topicId, topics.id))
-    .where(
-      and(
-        visibility,
-        or(
-          sql`${claims.title} ILIKE ${pattern} ESCAPE '\\'`,
-          sql`${claims.summary} ILIKE ${pattern} ESCAPE '\\'`,
-          sql`${claims.approachLabel} ILIKE ${pattern} ESCAPE '\\'`,
-        )!,
-      ),
-    )
-    .orderBy(desc(claims.updatedAt), asc(claims.id));
-
-  return rows.map((row) => ({
-    entityType: "claim" as const,
-    id: row.id,
-    title: row.title,
-    topicTitle: row.topicTitle,
-    topicSlug: row.topicSlug,
-    workflowLabel: workflowLabel(row.workflowState),
-    qualityLabel: null,
-    visibilityLabel: workflowLabel(row.moderationVisibility),
-    updatedAt: row.updatedAt.toISOString(),
-    href: claimHref(audience, row.id),
-  }));
-}
-
-function claimVisibilitySql(
-  principal: AuthzPrincipal,
-  audience: SearchAudience,
-): SQL | undefined {
-  const clauses: SQL[] = [];
-
+  actorId: string,
+) {
+  const clauses: ReturnType<typeof sql>[] = [];
   if (audience.isParticipant) {
-    // Own authored claims only — never another participant’s drafts/private rows.
-    clauses.push(eq(claims.authorAccountId, principal.accountId));
+    clauses.push(sql`c.author_account_id = ${actorId}`);
   }
-
   if (audience.isReviewer) {
-    // Metadata needed by claims.review — submitted+ and accepted/rejected etc.
-    // Exclude nothing by ownership; DTO stays metadata-only.
-    clauses.push(sql`${claims.workflowState} <> 'draft'`);
+    clauses.push(sql`c.workflow_state <> 'draft'`);
   }
-
   if (audience.isModerator && !audience.isReviewer) {
-    // Moderator without reviewer: moderation queue-relevant metadata.
-    clauses.push(
-      sql`${claims.workflowState} IN ('submitted', 'accepted', 'changes_requested', 'rejected')`,
-    );
+    clauses.push(sql`c.workflow_state IN ('submitted', 'accepted', 'changes_requested', 'rejected')`);
   }
-
-  if (clauses.length === 0) return undefined;
-  return or(...clauses);
+  if (clauses.length === 0) return null;
+  let combined = clauses[0]!;
+  for (let i = 1; i < clauses.length; i += 1) {
+    combined = sql`(${combined}) OR (${clauses[i]!})`;
+  }
+  return combined;
 }
 
-async function searchEvidence(
-  db: GatedDb,
-  principal: AuthzPrincipal,
+function evidenceVisibilityPredicate(
   audience: SearchAudience,
-  pattern: string,
-): Promise<WorkspaceSearchResult[]> {
-  const visibility = evidenceVisibilitySql(principal, audience);
-  if (!visibility) return [];
-
-  const rows = await db
-    .select({
-      id: evidenceSubmissions.id,
-      title: evidenceSubmissions.title,
-      workflowState: evidenceSubmissions.workflowState,
-      qualityStatus: evidenceSubmissions.qualityStatus,
-      moderationVisibility: evidenceSubmissions.moderationVisibility,
-      updatedAt: evidenceSubmissions.updatedAt,
-      topicTitle: topics.title,
-      topicSlug: topics.slug,
-      linkedClaimId: sql<string | null>`(
-        SELECT ${claimEvidenceLinks.claimId}
-        FROM ${claimEvidenceLinks}
-        WHERE ${claimEvidenceLinks.evidenceSubmissionId} = ${evidenceSubmissions.id}
-        ORDER BY ${claimEvidenceLinks.createdAt} ASC
-        LIMIT 1
-      )`.as("linked_claim_id"),
-    })
-    .from(evidenceSubmissions)
-    .innerJoin(topics, eq(evidenceSubmissions.topicId, topics.id))
-    .where(
-      and(
-        visibility,
-        or(
-          sql`${evidenceSubmissions.title} ILIKE ${pattern} ESCAPE '\\'`,
-          sql`${evidenceSubmissions.organization} ILIKE ${pattern} ESCAPE '\\'`,
-          sql`${evidenceSubmissions.limitations} ILIKE ${pattern} ESCAPE '\\'`,
-        )!,
-      ),
-    )
-    .orderBy(desc(evidenceSubmissions.updatedAt), asc(evidenceSubmissions.id));
-
-  return rows.map((row) => ({
-    entityType: "evidence" as const,
-    id: row.id,
-    title: row.title,
-    topicTitle: row.topicTitle,
-    topicSlug: row.topicSlug,
-    workflowLabel: workflowLabel(row.workflowState),
-    qualityLabel: workflowLabel(row.qualityStatus),
-    visibilityLabel: workflowLabel(row.moderationVisibility),
-    updatedAt: row.updatedAt.toISOString(),
-    href: evidenceHref(audience, row.id, row.linkedClaimId),
-  }));
-}
-
-function evidenceVisibilitySql(
-  principal: AuthzPrincipal,
-  audience: SearchAudience,
-): SQL | undefined {
-  const clauses: SQL[] = [];
-
+  actorId: string,
+) {
+  const clauses: ReturnType<typeof sql>[] = [];
   if (audience.isParticipant) {
-    clauses.push(eq(evidenceSubmissions.submitterAccountId, principal.accountId));
+    clauses.push(sql`e.submitter_account_id = ${actorId}`);
   }
-
   if (audience.isReviewer) {
-    clauses.push(sql`${evidenceSubmissions.workflowState} <> 'draft'`);
+    clauses.push(sql`e.workflow_state <> 'draft'`);
   }
-
   if (audience.isModerator && !audience.isReviewer) {
-    clauses.push(
-      sql`${evidenceSubmissions.workflowState} IN ('submitted', 'accepted', 'changes_requested', 'rejected')`,
-    );
+    clauses.push(sql`e.workflow_state IN ('submitted', 'accepted', 'changes_requested', 'rejected')`);
   }
-
-  if (clauses.length === 0) return undefined;
-  return or(...clauses);
+  if (clauses.length === 0) return null;
+  let combined = clauses[0]!;
+  for (let i = 1; i < clauses.length; i += 1) {
+    combined = sql`(${combined}) OR (${clauses[i]!})`;
+  }
+  return combined;
 }
 
 /** Test helper — exposed forbidden-key list for sentinel assertions. */
 export const WORKSPACE_SEARCH_FORBIDDEN_KEYS = FORBIDDEN_RESULT_KEYS;
+
+/** Test helper — resolve href from admission class without exposing it in DTOs. */
+export function resolveSearchHrefForTests(input: {
+  entityType: "topic" | "claim" | "evidence";
+  id: string;
+  topicSlug: string | null;
+  linkedClaimId: string | null;
+  publicationStatus: string | null;
+  admissionClass: AdmissionClass;
+}): string {
+  return hrefForHit({
+    entity_type: input.entityType,
+    id: input.id,
+    title: "t",
+    topic_title: null,
+    topic_slug: input.topicSlug,
+    workflow_state: null,
+    quality_status: null,
+    moderation_visibility: null,
+    publication_status: input.publicationStatus,
+    updated_at: new Date(),
+    linked_claim_id: input.linkedClaimId,
+    admission_class: input.admissionClass,
+  });
+}

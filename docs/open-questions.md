@@ -82,7 +82,7 @@ Phase 2 decision register and counsel gates: [phase-2-plan.md](./phase-2-plan.md
 
 18. **Public attribution of claim/evidence authors** — Unresolved. Phase 3 forbids publishing account identifiers, contact channels, and verification records. Whether gated published topics show a preferred display name, a neutral “participant” label, or no personal attribution remains open ([phase-3-plan.md](./phase-3-plan.md), [architecture-phase-3.md](./architecture-phase-3.md) D14).
 
-19. **Alpha wipe versus assent/audit copies for the post-alpha report** — Unresolved at the edge. ADR 0007 requires resetting alpha users and topic discussion; Phase 2 closure retains assent/audit for living accounts. What redacted aggregates (if any) may be copied into the post-alpha report without carrying live alpha datastores forward remains open (architecture D15).
+19. **Alpha wipe versus assent/audit copies for the post-alpha report** — Unresolved at the edge. ADR 0007 requires resetting alpha users and topic discussion; Phase 2 closure retains assent/audit for living accounts. Package **3.12** implements a metadata-only `alpha.reset_executed` receipt and wipes alpha assent/audit rows on the operator CLI path ([alpha-reset-runbook.md](./alpha-reset-runbook.md)). What redacted aggregates (if any) may be copied into the post-alpha report without carrying live alpha datastores forward remains open (architecture D15).
 
 20. **Pre-publication visibility of others’ in-flight submissions** — Unresolved. Visitors must not see drafts/rejected/held material. Whether **other active participants** (not staff) may see peers’ submitted-but-unpublished claims in the gated workspace before topic publication remains open (architecture D16).
 

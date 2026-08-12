@@ -104,6 +104,31 @@ export async function exportStaffTopicPackage(
 ): Promise<
   AdapterResult<{ bundle: StaffTopicExportBundle; filename: string }>
 > {
+  if (process.env.APP_MODE === "public-demo") {
+    return {
+      ok: false,
+      error: "Staff topic export unavailable in public-demo mode",
+      code: "PUBLIC_DEMO_NO_STAFF_EXPORT",
+    };
+  }
+  try {
+    return await exportStaffTopicPackageInner(db, actorAccountId, topicId);
+  } catch {
+    return {
+      ok: false,
+      error: "Staff export temporarily unavailable",
+      code: "STAFF_EXPORT_UNAVAILABLE",
+    };
+  }
+}
+
+async function exportStaffTopicPackageInner(
+  db: GatedDb,
+  actorAccountId: string,
+  topicId: string,
+): Promise<
+  AdapterResult<{ bundle: StaffTopicExportBundle; filename: string }>
+> {
   if (assertEnvironmentSafe() !== "gated") {
     return {
       ok: false,

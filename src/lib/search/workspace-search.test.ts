@@ -27,6 +27,7 @@ const MODERATOR = "account-ostt-synth-staff-moderator";
 const REVIEWER = "account-ostt-synth-search-reviewer";
 const AUDITOR = "account-ostt-synth-search-auditor";
 const MULTI = "account-ostt-synth-search-multi";
+const MULTI_MOD = "account-ostt-synth-search-multi-mod";
 const CEDAR_TOPIC = "topic-ostt-synth-cedar-billing";
 
 async function insertActiveAccount(
@@ -113,6 +114,7 @@ describe("workspace search (3.11)", () => {
     await insertActiveAccount(db, REVIEWER, ["reviewer"]);
     await insertActiveAccount(db, AUDITOR, ["auditor"]);
     await insertActiveAccount(db, MULTI, ["participant", "reviewer"]);
+    await insertActiveAccount(db, MULTI_MOD, ["participant", "moderator"]);
 
     const openTopic = await createTopic(db, {
       actorAccountId: ADMIN,
@@ -399,6 +401,7 @@ describe("workspace search (3.11)", () => {
       workflowState: "draft",
     });
     expect(ownDraft.ok).toBe(true);
+    if (!ownDraft.ok) return;
 
     const ownHit = await searchWorkspace(db, MULTI, {
       q: "multi-role own draft",
@@ -409,6 +412,10 @@ describe("workspace search (3.11)", () => {
     expect(ownHit.ok).toBe(true);
     if (!ownHit.ok) return;
     expect(ownHit.value.results.length).toBeGreaterThan(0);
+    const ownRow = ownHit.value.results.find((r) => r.id === ownDraft.value.id);
+    expect(ownRow?.href).toBe(
+      `/workspace/submissions/${ownDraft.value.id}`,
+    );
 
     const othersSubmitted = await searchWorkspace(db, MULTI, {
       q: "Queue-only billing",
@@ -419,6 +426,9 @@ describe("workspace search (3.11)", () => {
     expect(othersSubmitted.ok).toBe(true);
     if (!othersSubmitted.ok) return;
     expect(othersSubmitted.value.results.length).toBeGreaterThan(0);
+    for (const row of othersSubmitted.value.results) {
+      expect(row.href).toMatch(/^\/workspace\/review\/claims\//);
+    }
 
     const foreignDraft = await searchWorkspace(db, MULTI, {
       q: "FOREIGN private draft",
@@ -429,6 +439,85 @@ describe("workspace search (3.11)", () => {
     expect(foreignDraft.ok).toBe(true);
     if (!foreignDraft.ok) return;
     expect(foreignDraft.value.results).toHaveLength(0);
+
+    const published = await searchWorkspace(db, MULTI, {
+      q: "Cedar River billing",
+      entities: ["topics"],
+      page: 1,
+      pageSize: 20,
+    });
+    expect(published.ok).toBe(true);
+    if (!published.ok) return;
+    const publishedRow = published.value.results.find(
+      (r) => r.topicSlug === "ostt-synth-cedar-billing-ops",
+    );
+    expect(publishedRow?.href).toBe("/topics/ostt-synth-cedar-billing-ops");
+  });
+
+  it("participant+moderator own drafts link to owner surfaces; staff non-drafts to moderation", async () => {
+    const ownDraft = await insertClaim(db, {
+      topicId: openTopicId,
+      authorAccountId: MULTI_MOD,
+      title: "ostt-synth multi-mod own draft claim",
+      summary: "Own draft for participant+moderator.",
+      approachLabel: "MultiMod",
+      synthetic: true,
+      workflowState: "draft",
+    });
+    expect(ownDraft.ok).toBe(true);
+    if (!ownDraft.ok) return;
+
+    const ownHit = await searchWorkspace(db, MULTI_MOD, {
+      q: "multi-mod own draft",
+      entities: ["claims"],
+      page: 1,
+      pageSize: 20,
+    });
+    expect(ownHit.ok).toBe(true);
+    if (!ownHit.ok) return;
+    const ownRow = ownHit.value.results.find((r) => r.id === ownDraft.value.id);
+    expect(ownRow?.href).toBe(
+      `/workspace/submissions/${ownDraft.value.id}`,
+    );
+
+    const staffHit = await searchWorkspace(db, MULTI_MOD, {
+      q: "Queue-only billing",
+      entities: ["claims"],
+      page: 1,
+      pageSize: 20,
+    });
+    expect(staffHit.ok).toBe(true);
+    if (!staffHit.ok) return;
+    expect(staffHit.value.results.length).toBeGreaterThan(0);
+    for (const row of staffHit.value.results) {
+      expect(row.href).toMatch(/^\/workspace\/moderation\/claims\//);
+    }
+  });
+
+  it("sanitizes thrown principal/query failures to WORKSPACE_SEARCH_UNAVAILABLE", async () => {
+    const broken = {
+      execute: async () => {
+        throw new Error("forced SQL boom with account-ostt-synth-ada");
+      },
+      select: () => {
+        throw new Error("forced principal boom");
+      },
+      transaction: async () => {
+        throw new Error("forced tx boom");
+      },
+    } as unknown as typeof db;
+
+    const result = await searchWorkspace(broken, ADA, {
+      q: "billing",
+      entities: ["claims"],
+      page: 1,
+      pageSize: 20,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.code).toBe("WORKSPACE_SEARCH_UNAVAILABLE");
+      expect(result.error).not.toMatch(/forced|SQL|account-ostt/i);
+    }
   });
 
   it("matches titles containing % or _ literally when those chars are searched", async () => {
@@ -542,5 +631,98 @@ describe("workspace search (3.11)", () => {
       if (priorAuth === undefined) delete process.env.AUTH_SECRET;
       else process.env.AUTH_SECRET = priorAuth;
     }
+  });
+
+  it("resolves owner admission hrefs ahead of staff surfaces", async () => {
+    const { resolveSearchHrefForTests } = await import(
+      "@/lib/search/workspace-search"
+    );
+    expect(
+      resolveSearchHrefForTests({
+        entityType: "claim",
+        id: "claim-own-draft",
+        topicSlug: "topic-a",
+        linkedClaimId: null,
+        publicationStatus: "unpublished",
+        admissionClass: "owner",
+      }),
+    ).toBe("/workspace/submissions/claim-own-draft");
+    expect(
+      resolveSearchHrefForTests({
+        entityType: "evidence",
+        id: "ev-own",
+        topicSlug: "topic-a",
+        linkedClaimId: "claim-own-draft",
+        publicationStatus: "unpublished",
+        admissionClass: "owner",
+      }),
+    ).toBe("/workspace/submissions/claim-own-draft");
+  });
+
+  it("resolves reviewer/moderator/published admission hrefs", async () => {
+    const { resolveSearchHrefForTests } = await import(
+      "@/lib/search/workspace-search"
+    );
+    expect(
+      resolveSearchHrefForTests({
+        entityType: "claim",
+        id: "claim-foreign",
+        topicSlug: "topic-a",
+        linkedClaimId: null,
+        publicationStatus: "published",
+        admissionClass: "reviewer",
+      }),
+    ).toBe("/workspace/review/claims/claim-foreign");
+    expect(
+      resolveSearchHrefForTests({
+        entityType: "claim",
+        id: "claim-foreign",
+        topicSlug: "topic-a",
+        linkedClaimId: null,
+        publicationStatus: "published",
+        admissionClass: "moderator",
+      }),
+    ).toBe("/workspace/moderation/claims/claim-foreign");
+    expect(
+      resolveSearchHrefForTests({
+        entityType: "topic",
+        id: "topic-1",
+        topicSlug: "ostt-synth-cedar-billing-ops",
+        linkedClaimId: null,
+        publicationStatus: "published",
+        admissionClass: "published",
+      }),
+    ).toBe("/topics/ostt-synth-cedar-billing-ops");
+  });
+
+  it("paginates with bounded SQL and reports ranges", async () => {
+    const page1 = await searchWorkspace(db, ADA, {
+      q: "billing",
+      entities: ["claims", "topics", "evidence"],
+      page: 1,
+      pageSize: 2,
+    });
+    expect(page1.ok).toBe(true);
+    if (!page1.ok) return;
+    expect(page1.value.results.length).toBeLessThanOrEqual(2);
+    expect(page1.value.total).toBeGreaterThan(2);
+    expect(page1.value.rangeFrom).toBe(1);
+    expect(page1.value.rangeTo).toBe(page1.value.results.length);
+    expect(page1.value.hasPrevious).toBe(false);
+    expect(page1.value.hasNext).toBe(true);
+
+    const page2 = await searchWorkspace(db, ADA, {
+      q: "billing",
+      entities: ["claims", "topics", "evidence"],
+      page: 2,
+      pageSize: 2,
+    });
+    expect(page2.ok).toBe(true);
+    if (!page2.ok) return;
+    expect(page2.value.hasPrevious).toBe(true);
+    expect(page2.value.rangeFrom).toBe(3);
+    const ids1 = page1.value.results.map((r) => r.id);
+    const ids2 = page2.value.results.map((r) => r.id);
+    expect(ids1.some((id) => ids2.includes(id))).toBe(false);
   });
 });

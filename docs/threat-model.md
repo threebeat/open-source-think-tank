@@ -127,6 +127,10 @@ Controls below are **implemented** through 2.11 unless noted as still blocked.
 | Staff export over-disclosure (3.11) | Allowlisted topic projector; omit account IDs, contacts, verification, invites, pseudonyms, raw audit, private disclosure, private notes; audit event stores counts only |
 | Search/export in public-demo (3.11) | Generic 404 before gated DB/auth imports; zero gated persistence calls on demo path |
 | Remote fetch via export/search (3.11) | Source URLs revalidated locally only; never fetched during export or search |
+| Unbounded workspace search load (3.12) | SQL `COUNT` + `ORDER BY` + `LIMIT`/`OFFSET`; page ≤100; pageSize ≤50; no load-all-then-slice |
+| Multi-role search href confusion (3.12) | Internal admission class picks href; owner drafts → owner surfaces even for staff multi-role principals; class never in DTOs |
+| Thrown search/export exception leakage (3.12) | Sanitized `WORKSPACE_SEARCH_UNAVAILABLE` / `ACCOUNT_EXPORT_UNAVAILABLE` / `STAFF_EXPORT_UNAVAILABLE`; no SQL/config/IDs/stacks |
+| Accidental alpha wipe / wrong DB (3.12) | Dry-run default; fingerprint confirm; refuse `ostt_dev` in smoke; advisory lock; transactional deletes; no public reset route; metadata-only receipt |
 
 ## Explicit non-goals for Phase 1 / Phase 2 public-demo
 

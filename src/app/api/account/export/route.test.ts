@@ -65,4 +65,21 @@ describe("GET /api/account/export", () => {
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(exportOwnAccountData).not.toHaveBeenCalled();
   });
+
+  it("sanitizes thrown export failures to ACCOUNT_EXPORT_UNAVAILABLE", async () => {
+    requireGatedSession.mockResolvedValue({
+      ok: true,
+      session: { accountId: "account-ostt-synth-ada" },
+    });
+    exportOwnAccountData.mockRejectedValue(
+      new Error("forced export boom with stack and account-ostt-synth-ada"),
+    );
+    const { GET } = await import("@/app/api/account/export/route");
+    const response = await GET();
+    expect(response.status).toBe(503);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    const body = (await response.json()) as { code?: string; error?: string };
+    expect(body.code).toBe("ACCOUNT_EXPORT_UNAVAILABLE");
+    expect(JSON.stringify(body)).not.toMatch(/forced|account-ostt|stack/i);
+  });
 });

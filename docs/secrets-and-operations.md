@@ -15,6 +15,7 @@ This is an engineering policy, not a privacy policy or DPA.
 | Email provider keys | unset | required in staging/production; optional local stub |
 | Verification vendor keys | unset | only if a vendor is later approved |
 | `OPERATOR_BOOTSTRAP_SECRET` | **must be unset** | required only for first-administrator operator ceremony (3.3); never pass on CLI argv |
+| `OPERATOR_RESET_SECRET` | **must be unset** | required only for gated alpha-reset CLI (3.12); separate from bootstrap secret; never pass on CLI argv |
 | `OPERATOR_LABEL` | unset | non-secret operator label recorded in bootstrap audit (3.3) |
 
 Rules:
@@ -106,3 +107,31 @@ npm run operator:bootstrap -- finalize --reason="Complete first administrator" -
 ### Reset implications
 
 Alpha reset (3.12) must clear `operator_bootstrap_state` and bootstrap invitations with other alpha tables. Synthetic seed re-inserts `operator_bootstrap_state` as `not_started`.
+
+---
+
+## Operator alpha reset (3.12)
+
+**Status:** Implemented. Command: `npm run operator:reset-alpha` (default dry-run). Automated proof: `npm run alpha:reset:smoke` against disposable `ostt_alpha_reset` only.
+
+### Required environment
+
+| Variable | Notes |
+| --- | --- |
+| `APP_MODE=gated` | Public-demo fails closed |
+| `DATABASE_URL` | Target alpha DB; smoke refuses `ostt_dev` unless `OSTT_ALLOW_DEV_RESET=1` |
+| `OPERATOR_RESET_SECRET` | ≥32 characters; **never** pass on CLI argv; distinct from bootstrap secret |
+| `OPERATOR_LABEL` | Non-secret label in audit metadata |
+| `SOURCE_COMMIT_SHA` (optional) | Else `GITHUB_SHA` / `git rev-parse HEAD` / `unknown` |
+
+### Commands
+
+```bash
+# Dry-run (prints safe fingerprint + coarse counts)
+npm run operator:reset-alpha -- --reason="Alpha drill dry-run"
+
+# Execute only with exact fingerprint from dry-run
+npm run operator:reset-alpha -- --execute --confirm-fingerprint=<exact> --reason="Alpha drill execute"
+```
+
+Classification: [alpha-reset-classification.md](./alpha-reset-classification.md). No HTTP/browser reset route.

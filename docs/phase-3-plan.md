@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 3 (packages 3.1–3.12)  
 **Baseline:** Phase 2 foundation at or after `a894317317f3ff1e80d0a3602df69e5b4d8cd589` (tag `phase-2-foundation` recorded in [phase-2-handoff.md](./phase-2-handoff.md))  
-**Current package:** **3.11 complete (awaiting human review before 3.12).** Package **3.10** is merged on `main`. Package **3.11** adds gated workspace search and scoped exports (account-holder Phase 3 section + staff topic packages), plus a 3.10 carryover fix for thrown public-projection failures.
+**Current package:** **3.12 complete; Phase 3 handoff awaiting human review before Phase 4.** Baseline for 3.12 work was `418d678` (PR #14 / 3.11). Package **3.12** closes 3.11 search/export carryovers, adds operator alpha reset + disposable reset drill, and publishes [phase-3-handoff.md](./phase-3-handoff.md).
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [phase-2-plan.md](./phase-2-plan.md), [phase-2-handoff.md](./phase-2-handoff.md), [architecture-phase-2.md](./architecture-phase-2.md), [architecture-phase-3.md](./architecture-phase-3.md), [capability-matrix.md](./capability-matrix.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [open-questions.md](./open-questions.md), [decisions/0006-phase-3-two-lane-sequencing.md](./decisions/0006-phase-3-two-lane-sequencing.md), [decisions/0007-alpha-test-interim-council-dispositions.md](./decisions/0007-alpha-test-interim-council-dispositions.md), [decisions/0008-phase-3-operational-alpha-contract.md](./decisions/0008-phase-3-operational-alpha-contract.md), [decisions/0009-phase-3-operational-slice-corrections.md](./decisions/0009-phase-3-operational-slice-corrections.md)
 
@@ -766,7 +766,7 @@ Auditor with only `audit.read_restricted` does **not** receive workspace content
 
 ### Work package 3.12 — Operational hardening and handoff
 
-**Status:** Not started.
+**Status:** Complete; Phase 3 handoff awaiting human review before Phase 4.
 
 **Objective:** Reset drill, regression hardening, Phase 3 handoff doc, and explicit deferred register closure for owner follow-up.
 
@@ -774,21 +774,24 @@ Auditor with only `audit.read_restricted` does **not** receive workspace content
 
 **Implementation steps:**
 
-1. Implement/document alpha reset procedure that removes accounts and topic workflow data while preserving product code and required report inputs.
-2. Run lint, typecheck, unit, build, public e2e, gated e2e; record evidence.
-3. Write `docs/phase-3-handoff.md` with blockers, deferred register, and recommended Phase 4 entry.
-4. Confirm no vendor silently installed; no demo/gated confusion.
-5. Stop for human authorization before any “alpha complete” claim beyond handoff facts.
+1. Close 3.11 carryovers: bounded SQL search + pagination UI; multi-role admission-class hrefs; sanitized thrown search/export failures; dynamic gated import for own export.
+2. Document table-by-table reset classification ([alpha-reset-classification.md](./alpha-reset-classification.md)).
+3. Implement operator-only alpha reset (`npm run operator:reset-alpha`) with dry-run default, fingerprint confirm, advisory lock, transactional deletes, `alpha.reset_executed` metadata audit.
+4. Disposable reset drill: `npm run alpha:reset:smoke` against `ostt_alpha_reset` only.
+5. Write [phase-3-handoff.md](./phase-3-handoff.md) + [alpha-reset-runbook.md](./alpha-reset-runbook.md); map §4 journey to evidence; keep D1–D16 deferred.
+6. Stop for human authorization before Phase 4.
 
-**Expected user-visible outcome:** Operator can reset alpha data; handoff readable by humans.
+**Expected user-visible outcome:** Operators can reset alpha data via CLI; participants see corrected search pagination; handoff readable by humans.
 
-**Authorization and audit:** Reset is operator-controlled, audited, gated-only.
+**Authorization and audit:** Reset is operator-controlled (`OPERATOR_RESET_SECRET`), gated-only, audited.
 
-**Privacy/security/accessibility:** Reset does not push alpha PII into fixtures, prompts, or logs.
+**Privacy/security/accessibility:** Reset does not push alpha PII into fixtures, prompts, or logs; search pagination accessible.
 
-**Tests and acceptance criteria:** End-to-end journey §4 demonstrable; reset leaves DB without alpha users/topics; deferred items listed not marked done.
+**Tests and acceptance criteria:** End-to-end journey §4 mapped to evidence; reset leaves disposable DB without alpha users/topics; deferred items listed not marked done.
 
-**Non-goals:** Production launch; managed host selection; penetration-test certification; installing Pol.is (that is the Phase 4 alpha Public Input package).
+**Migrations:** none.
+
+**Non-goals:** Production launch; managed host selection; penetration-test certification; installing Pol.is (Phase 4).
 
 **Stop condition:** Human review before any Phase 4 package.
 

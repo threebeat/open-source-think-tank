@@ -140,4 +140,30 @@ describe("GET /api/workspace/topics/[id]/export", () => {
     const body = (await response.json()) as { code?: string };
     expect(body.code).toBe("TOPIC_NOT_FOUND");
   });
+
+  it("sanitizes thrown staff-export failures to STAFF_EXPORT_UNAVAILABLE", async () => {
+    requireGatedSession.mockResolvedValue({
+      ok: true,
+      session: { accountId: "account-ostt-synth-staff-admin" },
+    });
+    exportStaffTopicPackage.mockRejectedValue(
+      new Error("forced staff export boom SELECT * FROM claims"),
+    );
+    const { GET } = await import(
+      "@/app/api/workspace/topics/[id]/export/route"
+    );
+    const response = await GET(
+      new Request(
+        "http://localhost/api/workspace/topics/topic-ostt-synth-cedar-billing/export",
+      ),
+      {
+        params: Promise.resolve({ id: "topic-ostt-synth-cedar-billing" }),
+      },
+    );
+    expect(response.status).toBe(503);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    const body = (await response.json()) as { code?: string; error?: string };
+    expect(body.code).toBe("STAFF_EXPORT_UNAVAILABLE");
+    expect(JSON.stringify(body)).not.toMatch(/forced|SELECT|claims/i);
+  });
 });

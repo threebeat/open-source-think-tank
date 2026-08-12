@@ -1,6 +1,6 @@
 # Phase 3 architecture — operational alpha
 
-**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.11 complete** — gated workspace search + scoped exports (own Phase 3 section + staff topic packages); 3.10 thrown-read carryover normalized to sanitized unavailable UI; **3.12 not started**  
+**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.12 complete** — bounded workspace search + multi-role hrefs + sanitized export failures; operator alpha reset + disposable drill; [phase-3-handoff.md](./phase-3-handoff.md) awaiting human review before Phase 4  
 **Plan:** [phase-3-plan.md](./phase-3-plan.md)  
 **ADRs:** [0008](./decisions/0008-phase-3-operational-alpha-contract.md), [0009](./decisions/0009-phase-3-operational-slice-corrections.md)  
 **Foundation:** [architecture-phase-2.md](./architecture-phase-2.md), ADRs 0002–0005, capability matrix, audit registry
@@ -295,7 +295,7 @@ Alpha-test interim council requires full reset of included alpha users and topic
 
 **Not a silent production migration:** restoring an alpha dump into a future production cluster as living membership/topic history is forbidden by contract.
 
-Operator procedure lands in **3.12** (design may start earlier). Reset is gated-only, audited, and never exposed in public-demo.
+Operator procedure is implemented in **3.12**. Reset is gated-only, audited (`alpha.reset_executed`), CLI-only, and never exposed in public-demo. Classification and runbook: [alpha-reset-classification.md](./alpha-reset-classification.md), [alpha-reset-runbook.md](./alpha-reset-runbook.md).
 
 ---
 
