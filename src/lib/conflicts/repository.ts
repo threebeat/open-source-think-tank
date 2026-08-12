@@ -197,6 +197,8 @@ export async function updateConflictDisclosure(
     return denied;
   }
 
+  // Truncate to milliseconds so ISO/JS Date expected tokens match Postgres
+  // `now()` defaults that may carry microsecond precision from seed inserts.
   const [row] = await db
     .update(conflictDisclosures)
     .set({
@@ -207,7 +209,7 @@ export async function updateConflictDisclosure(
     .where(
       and(
         eq(conflictDisclosures.id, input.disclosureId),
-        eq(conflictDisclosures.updatedAt, input.expectedUpdatedAt),
+        sql`date_trunc('milliseconds', ${conflictDisclosures.updatedAt}) = date_trunc('milliseconds', ${input.expectedUpdatedAt}::timestamptz)`,
       ),
     )
     .returning();

@@ -59,6 +59,9 @@ test.describe("moderation and disclosure (gated)", () => {
       .getByRole("button", { name: /Save conflict disclosure/i })
       .click();
 
+    await expect(disclosureSection.getByRole("alert")).toHaveCount(0, {
+      timeout: 15_000,
+    });
     await expect(
       currentCard.getByText(updatedSummary, { exact: true }),
     ).toBeVisible({ timeout: 30_000 });
