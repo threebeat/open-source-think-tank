@@ -49,6 +49,9 @@ export function csrfDeniedResponse(error: unknown): Response {
           ? error.message
           : "CSRF_DENIED",
     },
-    { status: 403 },
+    {
+      status: 403,
+      headers: { "Cache-Control": "no-store" },
+    },
   );
 }

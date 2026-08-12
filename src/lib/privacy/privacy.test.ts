@@ -151,6 +151,39 @@ describe("privacy and operational controls (2.11/2.12 hardening)", () => {
     auditSpy.mockRestore();
   });
 
+  it("maps unexpected closure request failures to a stable public error", async () => {
+    const securitySpy = vi
+      .spyOn(securityLogModule, "securityLog")
+      .mockImplementation(() => {});
+    const txSpy = vi
+      .spyOn(db, "transaction")
+      .mockRejectedValue(
+        new Error("relation account_deletion_requests does not exist"),
+      );
+
+    const failed = await requestAccountClosure(db, {
+      accountId: "account-ostt-synth-ada",
+      actorAccountId: "account-ostt-synth-ada",
+      reason: "Synthetic unexpected failure probe.",
+    });
+
+    expect(failed.ok).toBe(false);
+    if (!failed.ok) {
+      expect(failed.code).toBe("CLOSURE_TX_FAILED");
+      expect(failed.error).not.toMatch(/relation|does not exist/i);
+      expect(failed.error).toMatch(/could not submit the closure request/i);
+    }
+    expect(securitySpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: "privacy.closure_request_failed",
+        details: expect.objectContaining({ code: "CLOSURE_TX_FAILED" }),
+      }),
+    );
+
+    txSpy.mockRestore();
+    securitySpy.mockRestore();
+  });
+
   it("closes an account only with a claimed dual-control request", async () => {
     const personId = newEntityId("person");
     const accountId = "account-ostt-synth-privacy-closee";

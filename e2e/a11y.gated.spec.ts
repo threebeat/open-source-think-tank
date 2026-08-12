@@ -22,6 +22,7 @@ async function expectNoSeriousAxe(page: import("@playwright/test").Page, label: 
 /**
  * Gated account/staff axe coverage required for 2.12 readiness.
  * Runs only under playwright.gated.config.ts with prepared synthetic DB.
+ * Dynamic privacy error/receipt states are covered in privacy.gated.spec.ts.
  */
 test.describe("gated account and staff accessibility", () => {
   test("account privacy and onboarding surfaces have no serious axe violations", async ({

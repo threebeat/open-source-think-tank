@@ -154,7 +154,7 @@ export function PrivacyControlsClient() {
 
           <button
             type="submit"
-            disabled={pending || reason.trim().length === 0}
+            disabled={pending}
             className="inline-flex min-h-11 items-center rounded-md bg-foreground px-4 text-base text-background disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
           >
             {pending ? "Submitting…" : "Submit closure request"}

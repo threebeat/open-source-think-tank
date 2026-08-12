@@ -149,12 +149,21 @@ export async function requestAccountClosure(
       };
     });
   } catch (error) {
+    // Keep precise failure detail in redacted security telemetry only.
+    securityLog({
+      level: "error",
+      event: "privacy.closure_request_failed",
+      subjectRef: operationalSubjectRef(input.accountId),
+      details: {
+        code: "CLOSURE_TX_FAILED",
+        failureClass:
+          error instanceof Error ? error.name.slice(0, 64) : "unknown",
+      },
+    });
     return {
       ok: false,
       error:
-        error instanceof Error
-          ? error.message
-          : "Closure request failed and was rolled back",
+        "Could not submit the closure request. Your account was not closed.",
       code: "CLOSURE_TX_FAILED",
     };
   }

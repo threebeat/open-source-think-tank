@@ -120,6 +120,7 @@ Controls below are **implemented** through 2.11 unless noted as still blocked.
 | Reviews predating revised content (3.7) | Chronology notice in owner/staff history UI; 3.7 does **not** auto-reset evidence quality or invent a new publish blocker (see OQ22) |
 | Bootstrap disguised as independent review | `decision_source = operator_bootstrap` + null `reviewer_account_id` + operator label; dedicated audit actions |
 | Mutation abuse / oversized bodies (3.9) | 32 KiB bounded JSON (`413`); per-family account + optional trusted-origin rate limits (`429`); no denial-side domain/audit writes; opaque security-log refs only |
+| Closure-request CSRF / abuse (2.12 post-merge) | Shared `csrfDeniedResponse` is `no-store`; closure POST uses `gateAuthenticatedMutation` with dedicated `privacy_request` family; unexpected TX failures map to stable public errors (detail only in redacted security logs) |
 | Source URL SSRF via stored links (3.9) | Reject private/local/metadata hosts and non-https schemes at validate/publish/projection; anchors use `noopener noreferrer` + `referrerPolicy=no-referrer`; no remote fetch |
 | Demo practice mistaken for gated intake (3.9) | Topic-recommendation labeled interaction prototype; sessionStorage only; zero workspace API calls; snapshot explorer secondary |
 
