@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 3 (packages 3.1–3.12)  
 **Baseline:** Phase 2 foundation at or after `a894317317f3ff1e80d0a3602df69e5b4d8cd589` (tag `phase-2-foundation` recorded in [phase-2-handoff.md](./phase-2-handoff.md))  
-**Current package:** **3.6 complete (awaiting human approval before 3.7).** First operational vertical slice is visitor-visible: staff claim/evidence review, independent evidence quality, participant-visible public rationales, administrator publish, and gated anonymous allowlisted projection. Public-demo remains the 3.5 Tennessee fixture experience. Revision history, moderation UI, deliberation, public-interface hardening, and workspace search/export remain later packages.
+**Current package:** **3.7 complete (awaiting human approval before 3.8).** Richer supporting/counterevidence comparison UX and immutable `content_revisions` history landed on the 3.6 vertical slice. Public-demo remains the 3.5 Tennessee fixture experience. Package **3.8** moderation / disclosure depth is **not started**. Deliberation, public-interface hardening (3.10), and workspace search/export remain later packages.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [phase-2-plan.md](./phase-2-plan.md), [phase-2-handoff.md](./phase-2-handoff.md), [architecture-phase-2.md](./architecture-phase-2.md), [architecture-phase-3.md](./architecture-phase-3.md), [capability-matrix.md](./capability-matrix.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [open-questions.md](./open-questions.md), [decisions/0006-phase-3-two-lane-sequencing.md](./decisions/0006-phase-3-two-lane-sequencing.md), [decisions/0007-alpha-test-interim-council-dispositions.md](./decisions/0007-alpha-test-interim-council-dispositions.md), [decisions/0008-phase-3-operational-alpha-contract.md](./decisions/0008-phase-3-operational-alpha-contract.md), [decisions/0009-phase-3-operational-slice-corrections.md](./decisions/0009-phase-3-operational-slice-corrections.md)
 
@@ -563,7 +563,7 @@ Still **forbidden in Phase 3** unless a future ADR + register update says otherw
 
 ### Work package 3.7 — Richer linking, comparison, and immutable revision history
 
-**Status:** Not started.
+**Status:** Complete (awaiting human approval before 3.8).
 
 **Objective:** Build on the basic supporting/counterevidence links from 3.2/3.5 with richer comparison UX and append-only revision history for edits after submit.
 
@@ -588,11 +588,19 @@ Still **forbidden in Phase 3** unless a future ADR + register update says otherw
 
 **Stop condition:** Human review before **3.8**.
 
+**3.7 delivery notes (implemented):**
+
+- Migration `0017_content_revisions`: append-only `content_revisions` with exactly-one subject (`claim_id` XOR `evidence_submission_id`), same-topic composite FKs, per-subject `revision_number` uniqueness, JSONB before/after snapshots, immutable UPDATE/DELETE trigger.
+- Subject-specific owner edit / resubmit / withdraw (`updateOwnClaimContent` / `updateOwnEvidenceContent`, `resubmitOwnClaim` / `resubmitOwnEvidence`, `withdrawOwnClaim` / `withdrawOwnEvidence`); revision rows written only for post-submit `changes_requested` edits (not draft overwrites).
+- Owner and staff full history DTOs; public published projection gets summary-only allowlist (count, timestamps, field labels—never historic bodies, URLs, or account IDs).
+- Supporting vs counterevidence comparison UI over existing `claim_evidence_links` only (no new relationship types).
+- Audits registered and emitted: `claims.revision_recorded`, `evidence.revision_recorded`.
+
 ---
 
 ### Work package 3.8 — Conflict disclosures and moderation
 
-**Status:** Not started.
+**Status:** Next / awaiting human approval (not started).
 
 **Objective:** Deepen disclosure capture and moderation visibility actions (`visible`/`held`/`hidden`, with restore-to-visible action) with mandatory reasons.
 

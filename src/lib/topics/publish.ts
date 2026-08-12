@@ -20,6 +20,9 @@ import {
   type EvidenceSubmissionRecord,
 } from "@/lib/evidence/repository";
 import type { GatedDb } from "@/lib/persistence/gated";
+import { toPublicRevisionSummary } from "@/lib/revisions/history";
+import { countContentRevisionsForSubjects } from "@/lib/revisions/repository";
+import type { PublicRevisionSummaryProjection } from "@/lib/topics/public-projection";
 import {
   getTopicById,
   type TopicRecord,
@@ -435,12 +438,14 @@ export async function loadProjectionInputs(
     ClaimRecord & {
       workflowPublicRationale: string | null;
       conflictPublicSummary: string | null;
+      revisionSummary: PublicRevisionSummaryProjection | null;
     }
   >;
   evidence: Array<
     EvidenceSubmissionRecord & {
       qualityPublicRationale: string | null;
       workflowPublicRationale: string | null;
+      revisionSummary: PublicRevisionSummaryProjection | null;
     }
   >;
   links: Awaited<ReturnType<typeof listClaimEvidenceLinks>>;
@@ -451,10 +456,25 @@ export async function loadProjectionInputs(
   });
   const links = await listClaimEvidenceLinks(db, { topicId: topic.id });
 
+  const claimRows = claimsResult.ok ? claimsResult.value : [];
+  const evidenceRows = evidenceResult.ok ? evidenceResult.value : [];
+
+  const revisionCounts = await countContentRevisionsForSubjects(db, {
+    claimIds: claimRows.map((row) => row.id),
+    evidenceSubmissionIds: evidenceRows.map((row) => row.id),
+  });
+  const claimRevisionMap = revisionCounts.ok
+    ? revisionCounts.value.byClaimId
+    : new Map();
+  const evidenceRevisionMap = revisionCounts.ok
+    ? revisionCounts.value.byEvidenceId
+    : new Map();
+
   const claims = [];
-  for (const claim of claimsResult.ok ? claimsResult.value : []) {
+  for (const claim of claimRows) {
     const reviews = await listClaimReviews(db, claim.id);
     const disclosures = await listConflictDisclosuresForClaim(db, claim.id);
+    const rev = claimRevisionMap.get(claim.id);
     claims.push({
       ...claim,
       workflowPublicRationale: reviews.ok
@@ -463,12 +483,20 @@ export async function loadProjectionInputs(
       conflictPublicSummary: disclosures.ok
         ? (disclosures.value[0]?.publicSummary ?? null)
         : null,
+      revisionSummary: rev
+        ? toPublicRevisionSummary({
+            count: rev.count,
+            latestAt: rev.latestAt,
+            changedFields: rev.changedFieldUnion,
+          })
+        : null,
     });
   }
 
   const evidence = [];
-  for (const row of evidenceResult.ok ? evidenceResult.value : []) {
+  for (const row of evidenceRows) {
     const reviews = await listEvidenceReviews(db, row.id);
+    const rev = evidenceRevisionMap.get(row.id);
     evidence.push({
       ...row,
       qualityPublicRationale: reviews.ok
@@ -476,6 +504,13 @@ export async function loadProjectionInputs(
         : null,
       workflowPublicRationale: reviews.ok
         ? latestWorkflowRationale(reviews.value, "accepted")
+        : null,
+      revisionSummary: rev
+        ? toPublicRevisionSummary({
+            count: rev.count,
+            latestAt: rev.latestAt,
+            changedFields: rev.changedFieldUnion,
+          })
         : null,
     });
   }

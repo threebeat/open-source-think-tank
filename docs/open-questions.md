@@ -88,6 +88,8 @@ Phase 2 decision register and counsel gates: [phase-2-plan.md](./phase-2-plan.md
 
 21. **Operator self-attestation for first-administrator verification (owner-run alpha)** — Unresolved as a lasting governance posture. Package 3.3 requires a concurrency-safe bootstrap path when no reviewer/administrator yet exists. The engineering ceremony may record required alpha verification floor decisions with explicit `operator_bootstrap` provenance (operator label + reason; not represented as independent account review). Whether that interim owner-run attestation is acceptable beyond the resettable alpha test, and what independent review should replace it afterward, remains open for the post-alpha report ([phase-3-plan.md](./phase-3-plan.md), [architecture-phase-3.md](./architecture-phase-3.md) §10a).
 
+22. **Pre-revision evidence-quality decisions after content edits** — Unresolved. When a submission is edited after an evidence-quality decision (or other review) that predates the revised content, should that prior quality status block publication eligibility until re-reviewed? Package **3.7** records immutable revisions and surfaces chronology notices but does **not** invent a new publish blocker and does **not** auto-reset quality ([phase-3-plan.md](./phase-3-plan.md) 3.7, [architecture-phase-3.md](./architecture-phase-3.md) §3.4, [threat-model.md](./threat-model.md)).
+
 ---
 
 ## How to add questions

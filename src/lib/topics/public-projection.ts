@@ -9,12 +9,20 @@ export type PublicGeographyInput = {
   countyFips: string | null;
 };
 
+/** Safe public revision summary — never historic bodies or actor IDs. */
+export type PublicRevisionSummaryProjection = {
+  revisionCount: number;
+  latestRevisionAt: string | null;
+  changedFieldLabels: string[];
+};
+
 export type PublicClaimProjection = {
   title: string;
   summary: string;
   approachLabel: string;
   workflowPublicRationale: string | null;
   conflictPublicSummary: string | null;
+  revisionSummary: PublicRevisionSummaryProjection | null;
   evidenceLinks: Array<{
     relationship: "supporting" | "counterevidence";
     evidenceKey: string;
@@ -32,6 +40,7 @@ export type PublicEvidenceProjection = {
   qualityStatus: "accepted" | "limited" | "disputed" | "rejected";
   qualityPublicRationale: string | null;
   workflowPublicRationale: string | null;
+  revisionSummary: PublicRevisionSummaryProjection | null;
 };
 
 export type PublicTopicProjection = {
@@ -56,6 +65,7 @@ export type ProjectionClaimInput = {
   moderationVisibility: string;
   workflowPublicRationale: string | null;
   conflictPublicSummary: string | null;
+  revisionSummary: PublicRevisionSummaryProjection | null;
 };
 
 export type ProjectionEvidenceInput = {
@@ -71,6 +81,7 @@ export type ProjectionEvidenceInput = {
   moderationVisibility: string;
   qualityPublicRationale: string | null;
   workflowPublicRationale: string | null;
+  revisionSummary: PublicRevisionSummaryProjection | null;
 };
 
 export type ProjectionLinkInput = {
@@ -223,6 +234,7 @@ export function buildPublicTopicProjection(
           qualityStatus: evidence.qualityStatus,
           qualityPublicRationale: evidence.qualityPublicRationale,
           workflowPublicRationale: evidence.workflowPublicRationale,
+          revisionSummary: evidence.revisionSummary,
         });
       }
       publicLinks.push({
@@ -241,6 +253,7 @@ export function buildPublicTopicProjection(
       approachLabel: claim.approachLabel,
       workflowPublicRationale: claim.workflowPublicRationale,
       conflictPublicSummary: claim.conflictPublicSummary,
+      revisionSummary: claim.revisionSummary,
       evidenceLinks: publicLinks,
     });
   }
@@ -280,6 +293,12 @@ export function projectionContainsForbiddenKeys(
     "verification",
     "private_detail",
     "private_notes",
+    "editorAccountId",
+    "beforeSnapshot",
+    "afterSnapshot",
+    "claimId",
+    "evidenceSubmissionId",
+    "revisionNumber",
   ],
 ): string[] {
   const serialized = JSON.stringify(value);

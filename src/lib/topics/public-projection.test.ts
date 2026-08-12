@@ -34,6 +34,7 @@ function baseInput(
         moderationVisibility: "visible",
         workflowPublicRationale: "Accepted after review of limitations.",
         conflictPublicSummary: "No known conflict of interest to disclose.",
+        revisionSummary: null,
       },
     ],
     evidence: [
@@ -50,6 +51,7 @@ function baseInput(
         moderationVisibility: "visible",
         qualityPublicRationale: "Useful but limited for recommendation.",
         workflowPublicRationale: "Workflow accepted after review.",
+        revisionSummary: null,
       },
     ],
     links: [
@@ -104,6 +106,7 @@ describe("buildPublicTopicProjection", () => {
             moderationVisibility: "visible",
             workflowPublicRationale: "Rejected publicly.",
             conflictPublicSummary: null,
+            revisionSummary: null,
           },
           {
             id: "claim-1",
@@ -114,6 +117,7 @@ describe("buildPublicTopicProjection", () => {
             moderationVisibility: "visible",
             workflowPublicRationale: "Accepted after review of limitations.",
             conflictPublicSummary: null,
+            revisionSummary: null,
           },
         ],
         evidence: [
@@ -130,6 +134,7 @@ describe("buildPublicTopicProjection", () => {
             moderationVisibility: "hidden",
             qualityPublicRationale: "Quality ok",
             workflowPublicRationale: "Workflow ok",
+            revisionSummary: null,
           },
           {
             id: "ev-db-1",
@@ -144,6 +149,7 @@ describe("buildPublicTopicProjection", () => {
             moderationVisibility: "visible",
             qualityPublicRationale: "Useful but limited for recommendation.",
             workflowPublicRationale: "Workflow accepted after review.",
+            revisionSummary: null,
           },
         ],
         links: [

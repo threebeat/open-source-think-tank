@@ -1,6 +1,6 @@
 # Phase 3 architecture — operational alpha
 
-**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.6 implemented** (first operational vertical slice includes staff review, independent evidence quality, publish, and gated anonymous allowlisted projection; public-demo remains fixture-backed)  
+**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.7 implemented** (first operational vertical slice through 3.6; 3.7 adds immutable `content_revisions` and supporting/counterevidence comparison UX; public-demo remains fixture-backed; **3.8 not started**)  
 **Plan:** [phase-3-plan.md](./phase-3-plan.md)  
 **ADRs:** [0008](./decisions/0008-phase-3-operational-alpha-contract.md), [0009](./decisions/0009-phase-3-operational-slice-corrections.md)  
 **Foundation:** [architecture-phase-2.md](./architecture-phase-2.md), ADRs 0002–0005, capability matrix, audit registry
@@ -107,9 +107,29 @@ Migration: `drizzle/0012_topic_evidence.sql`. Repositories: `src/lib/topics|clai
 
 - `conflict_disclosures` — disclosing_account_id, nullable `claim_id` and `evidence_submission_id` with CHECK requiring exactly one subject, public_summary, optional private_detail, synthetic, timestamps (no unenforced polymorphic subject_type/subject_id)
 
-### 3.4 Revisions (enriched in 3.7)
+### 3.4 Revisions (Package 3.7)
 
-- `content_revisions` — **not created in 3.2**; full append-only content revision history remains Package 3.7
+- `content_revisions` — append-only content history (migration `0017_content_revisions`):
+  - Exactly one subject: `claim_id` XOR `evidence_submission_id` (CHECK)
+  - `topic_id` with same-topic composite FKs (`claim_id, topic_id` → `claims`; `evidence_submission_id, topic_id` → `evidence_submissions`)
+  - `revision_number` unique per subject (partial unique indexes)
+  - `editor_account_id`, `changed_fields[]` (nonempty), `before_snapshot` / `after_snapshot` JSONB, `synthetic`, `created_at`
+  - Claim snapshot shape: `title` / `summary` / `approachLabel`
+  - Evidence snapshot shape: `sourceUrl` / `title` / `organization` / `authorType` / `sourceType` / `limitations`
+  - Immutable after insert: `content_revisions_immutable` trigger rejects UPDATE/DELETE
+
+**Service boundaries (3.7):**
+
+| Surface | Behavior |
+| --- | --- |
+| `updateOwnClaimContent` / `updateOwnEvidenceContent` | Owner content edit; writes a revision row **only** when workflow is `changes_requested` (draft edits overwrite without revision history) |
+| `resubmitOwnClaim` / `resubmitOwnEvidence` | Subject-specific resubmit (`changes_requested` → `submitted`); does not invent joint claim+evidence resubmit |
+| `withdrawOwnClaim` / `withdrawOwnEvidence` | Subject-specific withdraw; revision rows retained |
+| Owner history DTOs (`getOwnClaimRevisionHistory` / `getOwnEvidenceRevisionHistory`) | Full before/after snapshots for the owning account; requires `claims.edit_own` / `evidence.edit_own` + ownership |
+| Staff history DTOs (`getStaffClaimRevisionHistory` / `getStaffEvidenceRevisionHistory`) | Full snapshots for reviewers; requires `claims.review` / `evidence.review` |
+| Public revision summary | Allowlist only: `revisionCount`, `latestRevisionAt`, `changedFieldLabels` on published included rows — never historic bodies, URLs, editor account IDs, or revision row IDs |
+
+**Relationship comparison UX (3.7):** Uses existing `claim_evidence_links` only (`supporting` \| `counterevidence`). No new relationship types or link tables.
 
 ### 3.5 Review artifacts
 
@@ -126,6 +146,7 @@ claims *---* evidence_submissions  (via claim_evidence_links; same topic)
 claims/evidence 1---* conflict_disclosures  (exactly one subject FK)
 claims 1---* claim_reviews
 evidence_submissions 1---* evidence_reviews
+claims/evidence 1---* content_revisions  (exactly one subject FK; immutable)
 all mutable institutional actions ---> audit_events
 ```
 
@@ -198,7 +219,7 @@ Exact paths may align with existing `/account/*` and `/staff/*` trees; do not ex
 | Topic create | topic row + audit |
 | Topic operational transition | `workflow_state` update + audit (+ optional changelog); **must not** alter `publication_status` unless the mutation is explicitly a publish/unpublish |
 | Submit claim+evidence+disclosure | all inserts/links + audit; fail together |
-| Resubmit after changes_requested | content update + workflow state + audit (+ revision row when 3.7 lands) |
+| Resubmit / edit after changes_requested | content update + append-only `content_revisions` row (on content change) + workflow state + audit (`*.updated` / `*.revision_recorded` / `*.resubmitted` as applicable) |
 | Claim workflow decision | `claims.review` + audit |
 | Evidence workflow / quality decision | `evidence.review` + audit; must not rewrite unrelated popularity fields |
 | Moderation visibility | visibility ∈ {visible,held,hidden} + audit; restore action → visible + `moderation.submission_restored`; never delete revisions |
@@ -221,8 +242,8 @@ Register in implementing packages (unregistered actions must fail):
 | `operator.*` | `operator.bootstrap_invitation_issued`, `operator.bootstrap_verification_recorded`, `operator.bootstrap_administrator` |
 | `invites.*` | `invites.issued`, `invites.revoked` |
 | `topics.*` | **Registered:** `topics.created`, `topics.updated`, `topics.opened`, `topics.review_started`, `topics.reopened`, `topics.paused`, `topics.archived`, **`topics.published` (3.6)** |
-| `claims.*` | `claims.draft_created`, `claims.submitted`, `claims.changes_requested`, `claims.accepted`, `claims.rejected`, `claims.withdrawn`, `claims.revision_recorded` |
-| `evidence.*` | parallel to claims + `evidence.quality_decided`, `evidence.quality_revised` |
+| `claims.*` | `claims.draft_created`, `claims.submitted`, `claims.changes_requested`, `claims.accepted`, `claims.rejected`, `claims.withdrawn`, **`claims.revision_recorded` (3.7 registered)** |
+| `evidence.*` | parallel to claims + `evidence.quality_decided`, `evidence.quality_revised`, **`evidence.revision_recorded` (3.7 registered)** |
 | `conflicts.*` | `conflicts.disclosed`, `conflicts.updated` |
 | `moderation.*` | `moderation.submission_held`, `moderation.submission_hidden`, `moderation.submission_restored` |
 | `alpha.*` | `alpha.reset_executed` |

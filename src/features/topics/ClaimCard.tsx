@@ -1,5 +1,10 @@
+import {
+  EvidenceComparison,
+  type ComparableEvidenceItem,
+} from "@/components/topics/EvidenceComparison";
 import { EvidenceSourceCard } from "@/features/topics/EvidenceSourceCard";
 import type { Claim, EvidenceSource } from "@/domain/types";
+import { evidenceReviewExplanations } from "@/lib/evidence-labels";
 
 type ClaimCardProps = {
   claim: Claim;
@@ -7,7 +12,42 @@ type ClaimCardProps = {
   counterevidence: EvidenceSource[];
 };
 
+/**
+ * Public-demo fixture claim card. Uses the shared comparison presentation with
+ * fixture DTOs only — never imports gated revision/review services.
+ */
 export function ClaimCard({ claim, supporting, counterevidence }: ClaimCardProps) {
+  const comparable: ComparableEvidenceItem[] = [
+    ...supporting.map((source) => ({
+      key: source.id,
+      relationship: "supporting" as const,
+      title: source.title,
+      organization: source.organization,
+      authorType: source.authorType,
+      sourceType: source.sourceType,
+      limitations: source.limitations,
+      qualityStatus: source.reviewStatus,
+      qualityPlainLanguage: evidenceReviewExplanations[source.reviewStatus],
+      qualityPublicRationale: null,
+      workflowPublicRationale: null,
+      sourceUrl: null,
+    })),
+    ...counterevidence.map((source) => ({
+      key: source.id,
+      relationship: "counterevidence" as const,
+      title: source.title,
+      organization: source.organization,
+      authorType: source.authorType,
+      sourceType: source.sourceType,
+      limitations: source.limitations,
+      qualityStatus: source.reviewStatus,
+      qualityPlainLanguage: evidenceReviewExplanations[source.reviewStatus],
+      qualityPublicRationale: null,
+      workflowPublicRationale: null,
+      sourceUrl: null,
+    })),
+  ];
+
   return (
     <article
       id={claim.id}
@@ -49,7 +89,7 @@ export function ClaimCard({ claim, supporting, counterevidence }: ClaimCardProps
             id={`${claim.id}-counter`}
             className="text-sm font-medium text-foreground"
           >
-            Evidence Against This Claim
+            Counterevidence
           </h4>
           <div className="mt-3 space-y-3">
             {counterevidence.length > 0 ? (
@@ -63,11 +103,15 @@ export function ClaimCard({ claim, supporting, counterevidence }: ClaimCardProps
               ))
             ) : (
               <p className="rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground">
-                No evidence against this claim attached yet.
+                No counterevidence attached yet.
               </p>
             )}
           </div>
         </section>
+      </div>
+
+      <div className="mt-5">
+        <EvidenceComparison claimTitle={claim.title} items={comparable} />
       </div>
     </article>
   );

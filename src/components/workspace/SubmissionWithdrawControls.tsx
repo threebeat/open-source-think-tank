@@ -5,16 +5,20 @@ import { useId, useState } from "react";
 
 type Props = {
   claimId: string;
+  evidenceSubmissionId: string | null;
   claimWorkflowState: string;
-  evidenceWorkflowState: string;
-  canWithdraw: boolean;
+  evidenceWorkflowState: string | null;
+  canWithdrawClaim: boolean;
+  canWithdrawEvidence: boolean;
 };
 
 export function SubmissionWithdrawControls({
   claimId,
+  evidenceSubmissionId,
   claimWorkflowState,
   evidenceWorkflowState,
-  canWithdraw,
+  canWithdrawClaim,
+  canWithdrawEvidence,
 }: Props) {
   const router = useRouter();
   const errorId = useId();
@@ -22,28 +26,38 @@ export function SubmissionWithdrawControls({
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  if (!canWithdraw) {
+  if (!canWithdrawClaim && !canWithdrawEvidence) {
     return (
       <p className="text-sm text-muted-foreground">
-        This submission cannot be withdrawn in its current state.
+        Neither the claim nor linked evidence can be withdrawn in its current
+        state.
       </p>
     );
   }
 
-  async function onWithdraw(event: React.FormEvent) {
-    event.preventDefault();
+  async function withdraw(subject: "claim" | "evidence") {
     setPending(true);
     setError(null);
     try {
+      const body: Record<string, unknown> = {
+        action: "withdraw",
+        subject,
+        reason: reason || undefined,
+      };
+      if (subject === "claim") {
+        body.expectedWorkflowState = claimWorkflowState;
+      } else {
+        if (!evidenceSubmissionId || !evidenceWorkflowState) {
+          throw new Error("Evidence subject is not available");
+        }
+        body.evidenceSubmissionId = evidenceSubmissionId;
+        body.expectedWorkflowState = evidenceWorkflowState;
+      }
+
       const response = await fetch(`/api/workspace/submissions/${claimId}`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          action: "withdraw",
-          expectedClaimWorkflowState: claimWorkflowState,
-          expectedEvidenceWorkflowState: evidenceWorkflowState,
-          reason: reason || undefined,
-        }),
+        body: JSON.stringify(body),
       });
       const data = (await response.json()) as { error?: string };
       if (!response.ok) {
@@ -61,7 +75,7 @@ export function SubmissionWithdrawControls({
   }
 
   return (
-    <form onSubmit={onWithdraw} className="max-w-xl space-y-3">
+    <div className="max-w-xl space-y-3">
       {error ? (
         <div
           id={errorId}
@@ -81,16 +95,28 @@ export function SubmissionWithdrawControls({
           onChange={(event) => setReason(event.target.value)}
         />
       </label>
-      <button
-        type="submit"
-        disabled={pending}
-        className="inline-flex min-h-11 items-center rounded-md border border-border px-4 text-sm disabled:opacity-60"
-      >
-        {pending ? "Withdrawing…" : "Withdraw submission"}
-      </button>
+      <div className="flex flex-wrap gap-3">
+        <button
+          type="button"
+          disabled={pending || !canWithdrawClaim}
+          onClick={() => void withdraw("claim")}
+          className="inline-flex min-h-11 items-center rounded-md border border-border px-4 text-sm disabled:opacity-60"
+        >
+          {pending ? "Working…" : "Withdraw claim only"}
+        </button>
+        <button
+          type="button"
+          disabled={pending || !canWithdrawEvidence || !evidenceSubmissionId}
+          onClick={() => void withdraw("evidence")}
+          className="inline-flex min-h-11 items-center rounded-md border border-border px-4 text-sm disabled:opacity-60"
+        >
+          {pending ? "Working…" : "Withdraw evidence only"}
+        </button>
+      </div>
       <p className="text-xs text-muted-foreground">
-        Withdrawal retains rows and history; nothing is deleted.
+        Withdrawal is subject-specific. Linked counterparts and revision history
+        are retained; nothing is deleted.
       </p>
-    </form>
+    </div>
   );
 }

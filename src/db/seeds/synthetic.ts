@@ -10,6 +10,7 @@ import {
   claims,
   closedTestConversations,
   conflictDisclosures,
+  contentRevisions,
   councilAppointments,
   operatorBootstrapState,
   retentionPolicySettings,
@@ -345,42 +346,133 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
     synthetic: true,
   });
 
-  await db.insert(claims).values({
-    id: "claim-ostt-synth-billing-timeline",
-    topicId: "topic-ostt-synth-cedar-billing",
-    authorAccountId: "account-ostt-synth-ada",
-    title: "ostt-synth Clearer billing timeline reduces call volume",
-    summary:
-      "Synthetic claim summary for repository and constraint smoke tests.",
-    approachLabel: "Operational transparency",
-    workflowState: "submitted",
-    moderationVisibility: "visible",
-    synthetic: true,
-  });
+  // Projection-eligible published claim/evidence pair (plus counterevidence)
+  // for anonymous gated public reads and comparison drills (3.6/3.7).
+  await db.insert(claims).values([
+    {
+      id: "claim-ostt-synth-billing-timeline",
+      topicId: "topic-ostt-synth-cedar-billing",
+      authorAccountId: "account-ostt-synth-ada",
+      title: "ostt-synth Clearer billing timeline reduces call volume",
+      summary:
+        "Synthetic claim summary for repository and constraint smoke tests.",
+      approachLabel: "Operational transparency",
+      workflowState: "accepted",
+      moderationVisibility: "visible",
+      synthetic: true,
+    },
+    // Separate submitted claim keeps the staff review queue non-empty.
+    {
+      id: "claim-ostt-synth-billing-queue",
+      topicId: "topic-ostt-synth-cedar-billing",
+      authorAccountId: "account-ostt-synth-ada",
+      title: "ostt-synth Queue-only billing follow-up claim",
+      summary:
+        "Synthetic submitted claim reserved for staff review-queue drills.",
+      approachLabel: "Process drill",
+      workflowState: "submitted",
+      moderationVisibility: "visible",
+      synthetic: true,
+    },
+  ]);
 
-  await db.insert(evidenceSubmissions).values({
-    id: "evsub-ostt-synth-billing-memo",
-    topicId: "topic-ostt-synth-cedar-billing",
-    submitterAccountId: "account-ostt-synth-ada",
-    sourceUrl: "https://example.ostt.synth.test/billing-ops-memo",
-    title: "ostt-synth Billing operations memo",
-    organization: "ostt-synth Cedar River Research Desk",
-    authorType: "agency",
-    sourceType: "memo",
-    limitations:
-      "Synthetic source metadata only — no remote fetch; not a real document.",
-    workflowState: "submitted",
-    qualityStatus: "pending",
-    moderationVisibility: "visible",
-    synthetic: true,
-  });
+  await db.insert(evidenceSubmissions).values([
+    {
+      id: "evsub-ostt-synth-billing-memo",
+      topicId: "topic-ostt-synth-cedar-billing",
+      submitterAccountId: "account-ostt-synth-ada",
+      sourceUrl: "https://example.ostt.synth.test/billing-ops-memo",
+      title: "ostt-synth Billing operations memo",
+      organization: "ostt-synth Cedar River Research Desk",
+      authorType: "agency",
+      sourceType: "memo",
+      limitations:
+        "Synthetic source metadata only — no remote fetch; not a real document.",
+      workflowState: "accepted",
+      qualityStatus: "limited",
+      moderationVisibility: "visible",
+      synthetic: true,
+    },
+    {
+      id: "evsub-ostt-synth-billing-counter",
+      topicId: "topic-ostt-synth-cedar-billing",
+      submitterAccountId: "account-ostt-synth-ada",
+      sourceUrl: "https://example.ostt.synth.test/billing-ops-counter-brief",
+      title: "ostt-synth Billing operations counter brief",
+      organization: "ostt-synth Cedar River Alternate Desk",
+      authorType: "researcher",
+      sourceType: "report",
+      limitations:
+        "Synthetic counterevidence metadata only — no remote fetch; not a real document.",
+      workflowState: "accepted",
+      qualityStatus: "limited",
+      moderationVisibility: "visible",
+      synthetic: true,
+    },
+    {
+      id: "evsub-ostt-synth-billing-queue",
+      topicId: "topic-ostt-synth-cedar-billing",
+      submitterAccountId: "account-ostt-synth-ada",
+      sourceUrl: "https://example.ostt.synth.test/billing-ops-queue-memo",
+      title: "ostt-synth Queue-only billing evidence",
+      organization: "ostt-synth Cedar River Research Desk",
+      authorType: "agency",
+      sourceType: "memo",
+      limitations:
+        "Synthetic submitted evidence reserved for staff evidence-queue drills.",
+      workflowState: "submitted",
+      qualityStatus: "pending",
+      moderationVisibility: "visible",
+      synthetic: true,
+    },
+  ]);
 
-  await db.insert(claimEvidenceLinks).values({
-    id: "celink-ostt-synth-billing-support",
+  await db.insert(claimEvidenceLinks).values([
+    {
+      id: "celink-ostt-synth-billing-support",
+      topicId: "topic-ostt-synth-cedar-billing",
+      claimId: "claim-ostt-synth-billing-timeline",
+      evidenceSubmissionId: "evsub-ostt-synth-billing-memo",
+      relationship: "supporting",
+    },
+    {
+      id: "celink-ostt-synth-billing-counter",
+      topicId: "topic-ostt-synth-cedar-billing",
+      claimId: "claim-ostt-synth-billing-timeline",
+      evidenceSubmissionId: "evsub-ostt-synth-billing-counter",
+      relationship: "counterevidence",
+    },
+    {
+      id: "celink-ostt-synth-billing-queue",
+      topicId: "topic-ostt-synth-cedar-billing",
+      claimId: "claim-ostt-synth-billing-queue",
+      evidenceSubmissionId: "evsub-ostt-synth-billing-queue",
+      relationship: "supporting",
+    },
+  ]);
+
+  // Historic content revision for summary-only public projection drills (3.7).
+  await db.insert(contentRevisions).values({
+    id: "crevhist-ostt-synth-billing-claim-1",
     topicId: "topic-ostt-synth-cedar-billing",
     claimId: "claim-ostt-synth-billing-timeline",
-    evidenceSubmissionId: "evsub-ostt-synth-billing-memo",
-    relationship: "supporting",
+    evidenceSubmissionId: null,
+    revisionNumber: 1,
+    editorAccountId: "account-ostt-synth-ada",
+    changedFields: ["summary"],
+    beforeSnapshot: {
+      title: "ostt-synth Clearer billing timeline reduces call volume",
+      summary: "Synthetic prior summary before the recorded content revision.",
+      approachLabel: "Operational transparency",
+    },
+    afterSnapshot: {
+      title: "ostt-synth Clearer billing timeline reduces call volume",
+      summary:
+        "Synthetic claim summary for repository and constraint smoke tests.",
+      approachLabel: "Operational transparency",
+    },
+    synthetic: true,
+    createdAt: new Date("2026-08-04T12:00:00.000Z"),
   });
 
   await db.insert(conflictDisclosures).values({
@@ -395,29 +487,85 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
     synthetic: true,
   });
 
-  await db.insert(claimReviews).values({
-    id: "crev-ostt-synth-claim-submitted",
-    claimId: "claim-ostt-synth-billing-timeline",
-    reviewerAccountId: "account-ostt-synth-staff-admin",
-    decision: "changes_requested",
-    publicRationale:
-      "Synthetic review note: please attach stronger source limitations language.",
-    privateNotes: "Synthetic private reviewer note — staff drill only.",
-    synthetic: true,
-  });
+  await db.insert(claimReviews).values([
+    {
+      id: "crev-ostt-synth-claim-changes",
+      claimId: "claim-ostt-synth-billing-timeline",
+      reviewerAccountId: "account-ostt-synth-staff-admin",
+      decision: "changes_requested",
+      publicRationale:
+        "Synthetic review note: please attach stronger source limitations language.",
+      privateNotes: "Synthetic private reviewer note — staff drill only.",
+      synthetic: true,
+      decidedAt: new Date("2026-08-03T12:00:00.000Z"),
+    },
+    {
+      id: "crev-ostt-synth-claim-accepted",
+      claimId: "claim-ostt-synth-billing-timeline",
+      reviewerAccountId: "account-ostt-synth-staff-admin",
+      decision: "accepted",
+      publicRationale:
+        "Synthetic accept rationale for gated public projection drills.",
+      privateNotes: "Synthetic private accept note — staff drill only.",
+      synthetic: true,
+      decidedAt: new Date("2026-08-05T12:00:00.000Z"),
+    },
+  ]);
 
-  await db.insert(evidenceReviews).values({
-    id: "erev-ostt-synth-evidence-pending",
-    evidenceSubmissionId: "evsub-ostt-synth-billing-memo",
-    reviewerAccountId: "account-ostt-synth-staff-admin",
-    decision: "quality_decided",
-    qualityStatus: "limited",
-    workflowDecision: null,
-    publicRationale:
-      "Synthetic quality decision: useful for process drill; limited for institutional recommendation.",
-    privateNotes: "Synthetic private evidence note — staff drill only.",
-    synthetic: true,
-  });
+  await db.insert(evidenceReviews).values([
+    {
+      id: "erev-ostt-synth-evidence-accepted",
+      evidenceSubmissionId: "evsub-ostt-synth-billing-memo",
+      reviewerAccountId: "account-ostt-synth-staff-admin",
+      decision: "accepted",
+      qualityStatus: null,
+      workflowDecision: "accepted",
+      publicRationale:
+        "Synthetic evidence workflow accept for public projection drills.",
+      privateNotes: "Synthetic private evidence workflow note — staff only.",
+      synthetic: true,
+      decidedAt: new Date("2026-08-05T12:30:00.000Z"),
+    },
+    {
+      id: "erev-ostt-synth-evidence-quality",
+      evidenceSubmissionId: "evsub-ostt-synth-billing-memo",
+      reviewerAccountId: "account-ostt-synth-staff-admin",
+      decision: "quality_decided",
+      qualityStatus: "limited",
+      workflowDecision: null,
+      publicRationale:
+        "Synthetic quality decision: useful for process drill; limited for institutional recommendation.",
+      privateNotes: "Synthetic private evidence note — staff drill only.",
+      synthetic: true,
+      decidedAt: new Date("2026-08-05T12:45:00.000Z"),
+    },
+    {
+      id: "erev-ostt-synth-counter-accepted",
+      evidenceSubmissionId: "evsub-ostt-synth-billing-counter",
+      reviewerAccountId: "account-ostt-synth-staff-admin",
+      decision: "accepted",
+      qualityStatus: null,
+      workflowDecision: "accepted",
+      publicRationale:
+        "Synthetic counterevidence workflow accept for comparison drills.",
+      privateNotes: "Synthetic private counterevidence note — staff only.",
+      synthetic: true,
+      decidedAt: new Date("2026-08-05T13:00:00.000Z"),
+    },
+    {
+      id: "erev-ostt-synth-counter-quality",
+      evidenceSubmissionId: "evsub-ostt-synth-billing-counter",
+      reviewerAccountId: "account-ostt-synth-staff-admin",
+      decision: "quality_decided",
+      qualityStatus: "limited",
+      workflowDecision: null,
+      publicRationale:
+        "Synthetic counterevidence quality: limited with clear constraints.",
+      privateNotes: "Synthetic private counter quality note — staff only.",
+      synthetic: true,
+      decidedAt: new Date("2026-08-05T13:15:00.000Z"),
+    },
+  ]);
 
   await appendAuthAudit(db, {
     actorRole: "ostt-synth-seeder",

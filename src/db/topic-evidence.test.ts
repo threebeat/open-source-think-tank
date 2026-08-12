@@ -453,7 +453,7 @@ describe("Phase 3.2 topic/claim/evidence model (PGlite)", () => {
       db
         .update(evidenceReviews)
         .set({ publicRationale: "overwrite" })
-        .where(eq(evidenceReviews.id, "erev-ostt-synth-evidence-pending")),
+        .where(eq(evidenceReviews.id, "erev-ostt-synth-evidence-quality")),
     ).rejects.toThrow(/immutable|Failed query/i);
 
     const [stillThere] = await db
@@ -499,7 +499,7 @@ describe("Phase 3.2 topic/claim/evidence model (PGlite)", () => {
     }
 
     const claimWorkflow = await updateClaimWorkflow(db, {
-      claimId: "claim-ostt-synth-billing-timeline",
+      claimId: "claim-ostt-synth-billing-queue",
       expectedWorkflowState: "submitted",
       nextWorkflowState: "changes_requested",
     });
@@ -555,20 +555,27 @@ describe("Phase 3.2 topic/claim/evidence model (PGlite)", () => {
     }
   });
 
-  it("seed evidence review does not require matching current quality row", async () => {
-    const [row] = await db
+  it("seed keeps projection-eligible evidence consistent and queue evidence submitted", async () => {
+    const [published] = await db
       .select()
       .from(evidenceSubmissions)
       .where(eq(evidenceSubmissions.id, "evsub-ostt-synth-billing-memo"));
-    expect(row?.workflowState).toBe("submitted");
-    expect(row?.qualityStatus).toBe("pending");
+    expect(published?.workflowState).toBe("accepted");
+    expect(published?.qualityStatus).toBe("limited");
 
-    const [review] = await db
+    const [quality] = await db
       .select()
       .from(evidenceReviews)
-      .where(eq(evidenceReviews.id, "erev-ostt-synth-evidence-pending"));
-    expect(review?.qualityStatus).toBe("limited");
-    expect(review?.decision).toBe("quality_decided");
+      .where(eq(evidenceReviews.id, "erev-ostt-synth-evidence-quality"));
+    expect(quality?.qualityStatus).toBe("limited");
+    expect(quality?.decision).toBe("quality_decided");
+
+    const [queued] = await db
+      .select()
+      .from(evidenceSubmissions)
+      .where(eq(evidenceSubmissions.id, "evsub-ostt-synth-billing-queue"));
+    expect(queued?.workflowState).toBe("submitted");
+    expect(queued?.qualityStatus).toBe("pending");
   });
 
   it("claim and evidence tables exist after empty-database migration", async () => {
