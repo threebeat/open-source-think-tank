@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 2  
 **Baseline:** Phase 1 demonstration release tag [`phase-1-demonstration`](https://github.com/threebeat/open-source-think-tank/releases/tag/phase-1-demonstration) at commit `33ff0cc`  
-**Current package:** **2.12 — readiness counsel dispositions recorded (alpha-test interim council); foundation tag authorized.** Gated E2E (incl. account/staff axe) and Docker Compose PG16 evidence are in [phase-2-handoff.md](./phase-2-handoff.md). Managed Postgres host and production email vendor remain blocked pending addenda. Post-alpha lasting questions belong in the alpha-test report (see [ADR 0007](./decisions/0007-alpha-test-interim-council-dispositions.md)).
+**Current package:** **2.12 post-merge readiness addendum** — harden closure-request mutation gate / CSRF `no-store` / public-error sanitization, add stateful gated privacy E2E, append post-`phase-2-foundation` evidence. Does **not** reopen counsel dispositions or move the existing annotated tag. Evidence: [phase-2-handoff.md](./phase-2-handoff.md). Managed Postgres host and production email vendor remain blocked pending addenda. Post-alpha lasting questions belong in the alpha-test report (see [ADR 0007](./decisions/0007-alpha-test-interim-council-dispositions.md)).
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [open-questions.md](./open-questions.md), [legal-questions.md](./legal-questions.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [phase-1-handoff.md](./phase-1-handoff.md), [phase-2-handoff.md](./phase-2-handoff.md), [counsel-review-packet-2.12.md](./counsel-review-packet-2.12.md)
 

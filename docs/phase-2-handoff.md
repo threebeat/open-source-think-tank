@@ -1,6 +1,6 @@
 # Phase 2 handoff
 
-**Status:** Phase 2 foundation readiness authorized for the **alpha-test** window. Interim council dispositions recorded ([ADR 0007](./decisions/0007-alpha-test-interim-council-dispositions.md)); local Docker Compose PG16 gated E2E green. Tag: `phase-2-foundation` (see Tagging below).
+**Status:** Phase 2 foundation readiness authorized for the **alpha-test** window. Interim council dispositions recorded ([ADR 0007](./decisions/0007-alpha-test-interim-council-dispositions.md)); local Docker Compose PG16 gated E2E green. Tag: `phase-2-foundation` (see Tagging below). **Post-merge 2.12 readiness addendum** after 2.11 privacy hardening is recorded below; the annotated foundation tag was **not** moved.
 
 Engineering packages **2.1–2.12** are in place. Alpha-test data must remain **resettable**; lasting open questions ship in the post-alpha report (product + report retained; no user/topic carry-over).
 
@@ -49,6 +49,38 @@ Engineering packages **2.1–2.12** are in place. Alpha-test data must remain **
 
 Earlier the same day, with Docker Desktop engine unavailable (WSL missing), the gated Playwright suite was also executed against a local PostgreSQL **17** host service. That was **application-level only** and is superseded for Docker/PG16 evidence by the Compose run above.
 
+## Post-merge 2.12 readiness addendum (after 2.11)
+
+Closes the readiness delta created when PR #12 (`a4ed112`) landed after the original foundation tag. Does **not** reopen counsel dispositions. Does **not** move or rewrite `phase-2-foundation` → `eef9166`.
+
+| Field | Value |
+| --- | --- |
+| Post-tag 2.11 hardening baseline | `a4ed112016c4b5a402ee0ada6a043387c97b4999` (merged PR #12) |
+| Main-branch CI on 2.11 merge | [31567948650](https://github.com/threebeat/open-source-think-tank/actions/runs/31567948650) — **success** |
+| Original immutable foundation tag | `phase-2-foundation` → `eef9166dfd4d170ab55abe1f5811f0f4085e8f65` (**unchanged**) |
+| Addendum verification SHA | `004633444f24d134711939969a21d80a26a3c037` (full ladder green; PR #13 tip may include docs-only follow-ups) |
+| Local gated revalidation | PostgreSQL **16.14** (Ubuntu package; Docker Compose overlay unavailable in agent host); `gated-e2e-prepare` + gated Playwright — **34 passed / 0 failed** (incl. new `privacy.gated.spec.ts`) |
+| Privacy / axe coverage added | Stateful export + closure journey; axe on initial / error / receipt; 390×844 overflow + keyboard; CSRF `no-store`; `privacy_request` mutation family |
+| Public-demo revalidation | `APP_MODE=public-demo` build + Playwright — **53 passed / 0 failed** |
+| Unit / lint / typecheck / security / backup | Green on addendum SHA (368 unit tests passed) |
+| Recommended patch tag (not created) | `phase-2-foundation-2.12.1` — **stop for human authorization** before any tag create |
+| Manual NVDA spot-check | Still **pending** |
+| Remaining operator / policy items | Managed Postgres host + production email (blocked); distributed mutation limiter (OQ14); production PITR; penetration test; post-alpha lasting questions |
+
+### Addendum verification ladder (commands run)
+
+```bash
+npm ci
+npm run lint          # 0 errors (pre-existing adapter unused-arg warnings only)
+npm run typecheck     # pass
+npm test              # 368 passed / 1 skipped
+npm run security:check
+npm run backup:smoke
+APP_MODE=public-demo npm run build
+APP_MODE=public-demo npx playwright test   # 53 passed
+# Gated (PG16): prepare + build + playwright.gated.config.ts  # 34 passed
+```
+
 ## Counsel review record
 
 | Topic | Gate id | Disposition status | Source |
@@ -73,6 +105,7 @@ Interim council = project owner acting as council until alpha test; formal counc
 | 2.4–2.8 | Auth, roles, assent, verification, invite-only onboarding (real `active` allowed under alpha-test counsel scopes) |
 | 2.9–2.11 | Audit ledger, pseudonyms, privacy/ops controls |
 | 2.12 | Hardening, handoff, CI, counsel packet, interim council dispositions, foundation tag |
+| 2.12 post-merge addendum | Closure mutation gate + CSRF `no-store` + public-error sanitization; gated privacy E2E; handoff provenance after `a4ed112` (tag unchanged) |
 
 ## Isolation and alpha-test posture
 
@@ -97,6 +130,8 @@ See [open-questions.md](./open-questions.md) (incl. OQ16–OQ17), [legal-questio
 ## Tagging rule
 
 Create/update `phase-2-foundation` after interim council dispositions allow `readinessCounselAllowsFoundationTag()`, gated E2E evidence is recorded, and a human explicitly authorizes the tag (authorized 2026-08-10).
+
+**Post-merge addendum:** do **not** move, delete, or force-update `phase-2-foundation`. If a new release marker is wanted after this addendum merges and CI is green, create a **new** immutable patch tag (recommended: `phase-2-foundation-2.12.1`) only after explicit human authorization.
 
 ## Commands
 

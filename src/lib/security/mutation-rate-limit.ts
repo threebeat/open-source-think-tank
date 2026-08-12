@@ -15,7 +15,9 @@ export type MutationRateLimitFamily =
   | "create_submission"
   | "edit_resubmit_withdraw_disclosure"
   | "claim_evidence_review_quality"
-  | "moderation_action";
+  | "moderation_action"
+  /** Account-holder privacy mutations (closure/deletion requests). Single-instance alpha only (OQ14). */
+  | "privacy_request";
 
 export type MutationRateLimitPolicy = {
   accountLimit: number;
@@ -46,6 +48,13 @@ export const MUTATION_RATE_LIMIT_POLICY: Record<
   moderation_action: {
     accountLimit: 30,
     originLimit: 90,
+    windowMs: 15 * 60 * 1000,
+  },
+  // Closure requests are rare; keep a tight privacy-specific bucket rather than
+  // borrowing submission/moderation limits. In-process only (OQ14).
+  privacy_request: {
+    accountLimit: 5,
+    originLimit: 15,
     windowMs: 15 * 60 * 1000,
   },
 };

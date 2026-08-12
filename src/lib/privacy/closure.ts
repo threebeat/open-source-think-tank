@@ -113,22 +113,36 @@ export async function requestAccountClosure(
         };
       }
 
-      try {
-        await tx.insert(accountDeletionRequests).values({
-          id: requestId,
-          accountId: input.accountId,
-          status: "pending",
-          reason: input.reason.trim(),
-          requestedAt: now,
-          synthetic: account.synthetic,
-        });
-      } catch {
+      // Pre-check open requests so a unique-index conflict does not abort the
+      // surrounding transaction (Postgres cannot return a domain error after).
+      const [openRequest] = await tx
+        .select({ id: accountDeletionRequests.id })
+        .from(accountDeletionRequests)
+        .where(
+          and(
+            eq(accountDeletionRequests.accountId, input.accountId),
+            inArray(accountDeletionRequests.status, [
+              ...EXECUTABLE_DELETION_STATUSES,
+            ]),
+          ),
+        )
+        .limit(1);
+      if (openRequest) {
         return {
           ok: false as const,
           error: "An open closure/deletion request already exists",
           code: "CLOSURE_REQUEST_EXISTS",
         };
       }
+
+      await tx.insert(accountDeletionRequests).values({
+        id: requestId,
+        accountId: input.accountId,
+        status: "pending",
+        reason: input.reason.trim(),
+        requestedAt: now,
+        synthetic: account.synthetic,
+      });
 
       await appendAuthAudit(tx, {
         actorRole: "account_holder",
@@ -149,12 +163,35 @@ export async function requestAccountClosure(
       };
     });
   } catch (error) {
+    const pgCode =
+      error && typeof error === "object" && "code" in error
+        ? String((error as { code: unknown }).code)
+        : null;
+    // Unique open-request race (partial unique index) — stable domain error.
+    if (pgCode === "23505") {
+      return {
+        ok: false,
+        error: "An open closure/deletion request already exists",
+        code: "CLOSURE_REQUEST_EXISTS",
+      };
+    }
+
+    // Keep precise failure detail in redacted security telemetry only.
+    securityLog({
+      level: "error",
+      event: "privacy.closure_request_failed",
+      subjectRef: operationalSubjectRef(input.accountId),
+      details: {
+        code: "CLOSURE_TX_FAILED",
+        failureClass:
+          error instanceof Error ? error.name.slice(0, 64) : "unknown",
+        pgCode,
+      },
+    });
     return {
       ok: false,
       error:
-        error instanceof Error
-          ? error.message
-          : "Closure request failed and was rolled back",
+        "Could not submit the closure request. Your account was not closed.",
       code: "CLOSURE_TX_FAILED",
     };
   }
