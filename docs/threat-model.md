@@ -97,11 +97,11 @@ Controls below are **implemented** through 2.11 unless noted as still blocked.
 | Stale topic transitions / lost updates (3.4) | Expected-state workflow/`updatedAt` checks; conflict without audit emit |
 | Topic mutation without audit (3.4) | Single transaction: mutate then append; audit failure rolls back |
 | Cross-participant draft enumeration / mutation (3.5) | Own-submission lists/detail only; ownership re-checked server-side; public-demo workspace 404 |
-| Remote evidence fetch / scrape (3.5) | Syntax-only URL validation (`http:`/`https:`); no server or browser fetch of source URLs |
+| Remote evidence fetch / scrape (3.5/3.9) | Shared `https:` source-URL policy with host denylist (literal classification only); no DNS, no server or browser fetch of source URLs |
 | Private disclosure leakage (3.5/3.8) | One current disclosure per claim/evidence; private_detail only in owner + matching reviewer DTOs; never in moderator-only, anonymous projection, audit payloads, URLs, or CSS-hidden client props |
 | Uneven / unauthorized moderation (3.8) | `moderation.review_submission` only; participant denied; expected-state transitions; append-only `moderation_actions` + audits; no hard-delete |
 | Hidden-content leakage via notices (3.8) | Public withhold notices allowlist action/rationale/date only — no held title/body/URL, internal IDs, account IDs, or private notes |
-| Stale moderation/disclosure writers (3.8) | Expected visibility/`updated_at` conditions; losers create no partial rows/audits |
+| Stale moderation/disclosure writers (3.8/3.9) | SQL expected visibility/`updated_at` (ms) conditions on the write; concurrent same-token writers: one success, one conflict; losers create no partial rows/audits |
 | Moderation/disclosure audit rollback (3.8) | Action-history or audit failure rolls back visibility/disclosure update in the same transaction |
 | Demo/gated import confusion (3.8) | `/demo/workflow` is fixture-only; workspace moderation/disclosure APIs 404 in public-demo before gated imports; no fake operational admin console |
 | Geography-as-eligibility confusion (3.5) | Documented classification-only fields; no capability grants from FIPS; alpha still has no geographic eligibility rule |
@@ -116,6 +116,9 @@ Controls below are **implemented** through 2.11 unless noted as still blocked.
 | Cross-topic link / revision confusion (3.7) | Same-topic composite FKs on `claim_evidence_links` and `content_revisions`; comparison UX uses existing supporting/counterevidence links only |
 | Reviews predating revised content (3.7) | Chronology notice in owner/staff history UI; 3.7 does **not** auto-reset evidence quality or invent a new publish blocker (see OQ22) |
 | Bootstrap disguised as independent review | `decision_source = operator_bootstrap` + null `reviewer_account_id` + operator label; dedicated audit actions |
+| Mutation abuse / oversized bodies (3.9) | 32 KiB bounded JSON (`413`); per-family account + optional trusted-origin rate limits (`429`); no denial-side domain/audit writes; opaque security-log refs only |
+| Source URL SSRF via stored links (3.9) | Reject private/local/metadata hosts and non-https schemes at validate/publish/projection; anchors use `noopener noreferrer` + `referrerPolicy=no-referrer`; no remote fetch |
+| Demo practice mistaken for gated intake (3.9) | Topic-recommendation labeled interaction prototype; sessionStorage only; zero workspace API calls; snapshot explorer secondary |
 
 ## Explicit non-goals for Phase 1 / Phase 2 public-demo
 

@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  DEFAULT_WORKFLOW_DEMO_QUERY,
   DEFAULT_WORKFLOW_PREVIEW_QUERY,
+  parseWorkflowDemoQuery,
   parseWorkflowPreviewQuery,
+  serializeWorkflowDemoQuery,
   serializeWorkflowPreviewQuery,
+  workflowDemoHref,
   workflowPreviewHref,
 } from "@/features/demo/workflow/workflow-query";
 
@@ -49,12 +53,60 @@ describe("workflow-query", () => {
     ).toBe("view=revision");
   });
 
-  it("builds demo workflow hrefs", () => {
-    expect(workflowPreviewHref(DEFAULT_WORKFLOW_PREVIEW_QUERY)).toBe(
-      "/demo/workflow",
+  it("maps legacy view deep links to the secondary explorer task", () => {
+    expect(
+      parseWorkflowDemoQuery(
+        new URLSearchParams("view=moderation&state=held"),
+      ),
+    ).toEqual({
+      task: "explore",
+      step: null,
+      explorer: { view: "moderation", state: "held" },
+    });
+  });
+
+  it("parses practice task and step deep links", () => {
+    expect(
+      parseWorkflowDemoQuery(
+        new URLSearchParams("task=topic-recommendation&step=review"),
+      ),
+    ).toEqual({
+      task: "topic-recommendation",
+      step: "review",
+      explorer: null,
+    });
+    expect(
+      parseWorkflowDemoQuery(
+        new URLSearchParams("task=source-contribution&step=url"),
+      ),
+    ).toEqual({
+      task: "source-contribution",
+      step: "url",
+      explorer: null,
+    });
+    expect(parseWorkflowDemoQuery(new URLSearchParams())).toEqual(
+      DEFAULT_WORKFLOW_DEMO_QUERY,
     );
+  });
+
+  it("builds demo workflow hrefs with safe fixture/step params only", () => {
+    expect(workflowDemoHref(DEFAULT_WORKFLOW_DEMO_QUERY)).toBe("/demo/workflow");
+    expect(
+      workflowDemoHref({
+        task: "topic-recommendation",
+        step: "review",
+        explorer: null,
+      }),
+    ).toBe("/demo/workflow?task=topic-recommendation&step=review");
     expect(
       workflowPreviewHref({ view: "visitor", state: "restored" }),
-    ).toBe("/demo/workflow?view=visitor&state=restored");
+    ).toBe("/demo/workflow?task=explore&view=visitor&state=restored");
+    expect(
+      serializeWorkflowDemoQuery({
+        task: "explore",
+        step: null,
+        explorer: { view: "moderation", state: "held" },
+      }).toString(),
+    ).toBe("task=explore&view=moderation&state=held");
   });
 });

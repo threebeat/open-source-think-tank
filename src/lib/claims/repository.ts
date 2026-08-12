@@ -11,6 +11,10 @@ import {
   type GatedDb,
   requireGatedPersistence,
 } from "@/lib/persistence/gated";
+import {
+  nextUpdatedAt,
+  updatedAtEqualsMs,
+} from "@/lib/persistence/optimistic";
 
 export type SubmissionWorkflowState =
   | "draft"
@@ -278,22 +282,22 @@ export async function updateClaimModerationVisibility(
     return denied;
   }
 
+  const next = nextUpdatedAt(input.expectedUpdatedAt);
   const [row] = await db
     .update(claims)
     .set({
       moderationVisibility: input.nextVisibility,
-      updatedAt: new Date(),
+      updatedAt: next,
     })
     .where(
       and(
         eq(claims.id, input.claimId),
         eq(claims.moderationVisibility, input.expectedVisibility),
+        updatedAtEqualsMs(claims.updatedAt, input.expectedUpdatedAt),
       ),
     )
     .returning();
 
-  // Callers enforce expectedUpdatedAt at JS millisecond precision before invoke.
-  void input.expectedUpdatedAt;
   return { ok: true, value: row ? mapClaim(row) : null };
 }
 

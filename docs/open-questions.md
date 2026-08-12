@@ -68,7 +68,7 @@ Phase 2 decision register and counsel gates: [phase-2-plan.md](./phase-2-plan.md
 
 ## Phase 2 operations
 
-14. **Distributed auth rate limiting** — Unresolved for staging/production. Work Package 2.4 ships an in-process limiter suitable for local/ephemeral use. Multi-instance deployments need a shared limiter before real enrollment.
+14. **Distributed auth / mutation rate limiting** — Unresolved for staging/production. Work Package 2.4 ships an in-process auth limiter; Work Package 3.9 ships a replaceable in-process `MutationRateLimiter` for gated mutations. Both are single-instance only. Multi-instance gated deployments need a shared limiter before real enrollment or multi-instance alpha (architecture D13).
 
 15. **Retention and deletion rights** — Alpha-test scoped clearance in [ADR 0007](./decisions/0007-alpha-test-interim-council-dispositions.md): proposed postures may run to prove efficacy; **must** reset all included alpha-test data (no user/topic carry-over). Permanent post-alpha schedules remain open for the report.
 
@@ -91,6 +91,10 @@ Phase 2 decision register and counsel gates: [phase-2-plan.md](./phase-2-plan.md
 22. **Pre-revision evidence-quality decisions after content edits** — Unresolved. When a submission is edited after an evidence-quality decision (or other review) that predates the revised content, should that prior quality status block publication eligibility until re-reviewed? Package **3.7** records immutable revisions and surfaces chronology notices but does **not** invent a new publish blocker and does **not** auto-reset quality ([phase-3-plan.md](./phase-3-plan.md) 3.7, [architecture-phase-3.md](./architecture-phase-3.md) §3.4, [threat-model.md](./threat-model.md)).
 
 23. **Public moderation-notice depth on published topics** — Unresolved for 3.10 polish. Package **3.8** exposes allowlisted withhold/restore notices (action + public rationale + date; subjectKind claim/evidence) without titles, bodies, URLs, or IDs. Whether visitors should see richer chronology, appeal pointers, or eligibility interactions—and whether dual-control should apply to some visibility actions—remains open. 3.8 does **not** invent appeal policy, dual control for every moderation action, legal disclosure taxonomy, or permanent retention ([phase-3-plan.md](./phase-3-plan.md) 3.8, [architecture-phase-3.md](./architecture-phase-3.md) §3.6 / §4).
+
+24. **Trusted proxy hops for mutation origin buckets** — Unresolved operationally. Package **3.9** derives opaque origin refs only when `TRUSTED_PROXY_HOPS` is a positive integer; otherwise the origin bucket is omitted and the account bucket remains. Which production proxy topology and hop count to trust remains open; never trust arbitrary forwarded headers silently.
+
+25. **Gated topic-recommendation intake** — Unresolved / not authorized. The 3.9 public-demo “Recommend a topic” journey is an interaction prototype with local fixture state only. Whether and how the gated alpha accepts topic recommendations remains a later package decision.
 
 ---
 

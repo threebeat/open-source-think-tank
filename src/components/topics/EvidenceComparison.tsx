@@ -225,6 +225,7 @@ export function EvidenceComparison({
                         href={item.sourceUrl}
                         target="_blank"
                         rel="noopener noreferrer"
+                        referrerPolicy="no-referrer"
                         className="break-all text-primary underline"
                       >
                         {item.sourceUrl}

@@ -1,3 +1,5 @@
+import { isAllowedSourceUrl } from "@/lib/security/source-url";
+
 /**
  * Pure allowlisted public projection for gated published topics (WP 3.6).
  * Unit-testable without React, request, or a live database.
@@ -139,15 +141,6 @@ export type BuildPublicTopicProjectionInput = {
   links: ProjectionLinkInput[];
 };
 
-function isPublishableHttpUrl(value: string): boolean {
-  try {
-    const parsed = new URL(value);
-    return parsed.protocol === "http:" || parsed.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
 function operationalLabelFor(workflowState: string): string {
   switch (workflowState) {
     case "under_review":
@@ -231,7 +224,7 @@ export function buildPublicTopicProjection(
       evidence.workflowState === "accepted" &&
       isNonPendingQuality(evidence.qualityStatus) &&
       Boolean(evidence.qualityPublicRationale?.trim()) &&
-      isPublishableHttpUrl(evidence.sourceUrl)
+      isAllowedSourceUrl(evidence.sourceUrl)
     );
   }
 

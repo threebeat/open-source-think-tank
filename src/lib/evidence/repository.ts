@@ -11,6 +11,10 @@ import {
   type GatedDb,
   requireGatedPersistence,
 } from "@/lib/persistence/gated";
+import {
+  nextUpdatedAt,
+  updatedAtEqualsMs,
+} from "@/lib/persistence/optimistic";
 
 export type EvidenceQualityStatus =
   | "pending"
@@ -311,11 +315,12 @@ export async function updateEvidenceModerationVisibility(
     return denied;
   }
 
+  const next = nextUpdatedAt(input.expectedUpdatedAt);
   const [row] = await db
     .update(evidenceSubmissions)
     .set({
       moderationVisibility: input.nextVisibility,
-      updatedAt: new Date(),
+      updatedAt: next,
     })
     .where(
       and(
@@ -324,12 +329,14 @@ export async function updateEvidenceModerationVisibility(
           evidenceSubmissions.moderationVisibility,
           input.expectedVisibility,
         ),
+        updatedAtEqualsMs(
+          evidenceSubmissions.updatedAt,
+          input.expectedUpdatedAt,
+        ),
       ),
     )
     .returning();
 
-  // Callers enforce expectedUpdatedAt at JS millisecond precision before invoke.
-  void input.expectedUpdatedAt;
   return { ok: true, value: row ? mapEvidence(row) : null };
 }
 

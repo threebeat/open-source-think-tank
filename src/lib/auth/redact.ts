@@ -1,13 +1,19 @@
 const SECRETISH =
-  /(token|secret|password|authorization|cookie|session|recovery|magic|credential)/i;
+  /(token|secret|password|authorization|cookie|session|recovery|magic|credential|verificationArtifact|artifactPayload)/i;
 
 /** Keys that must never appear as raw identifiers in security logs. */
 const IDENTIFIERISH =
   /^(accountId|actorAccountId|otherAccountId|subjectId|personId|contactChannel|email|intendedContactChannel|placedByAccountId|releasedByAccountId|requestedByAccountId|approvedByAccountId|subjectAccountId|foreignSubjectRef)$/i;
 
+/** Keys that must never appear as raw network/location values in security logs. */
+const NETWORKISH =
+  /^(clientIp|ip|ipAddress|remoteAddress|xForwardedFor|forwardedFor|sourceUrl|rawUrl|url|privateDetail|privateNotes)$/i;
+
 const EMAIL_VALUE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ACCOUNT_ID_VALUE = /^account-[a-z0-9-]+$/i;
 const PERSON_ID_VALUE = /^person-[a-z0-9-]+$/i;
+const IPV4_VALUE = /^\d{1,3}(\.\d{1,3}){3}$/;
+const URLISH_VALUE = /^https?:\/\//i;
 
 export type RedactOptions = {
   /**
@@ -25,6 +31,12 @@ function redactStringValue(value: string, redactIdentifiers: boolean): string {
     }
     if (ACCOUNT_ID_VALUE.test(value) || PERSON_ID_VALUE.test(value)) {
       return "[redacted-id]";
+    }
+    if (IPV4_VALUE.test(value)) {
+      return "[redacted-ip]";
+    }
+    if (URLISH_VALUE.test(value)) {
+      return "[redacted-url]";
     }
   }
   if (value.length > 64 && /^[A-Za-z0-9_-]+$/.test(value)) {
@@ -73,6 +85,10 @@ export function redactSensitiveFields(
       continue;
     }
     if (redactIdentifiers && IDENTIFIERISH.test(key)) {
+      out[key] = "[redacted]";
+      continue;
+    }
+    if (redactIdentifiers && NETWORKISH.test(key)) {
       out[key] = "[redacted]";
       continue;
     }

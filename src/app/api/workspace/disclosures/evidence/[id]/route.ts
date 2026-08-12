@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { resolveAppMode } from "@/lib/env/app-mode";
 import { assertCsrfSafe, csrfDeniedResponse } from "@/lib/security/csrf";
+import { gateAuthenticatedMutation } from "@/lib/security/mutation-gate";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -85,13 +86,6 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const { id } = await context.params;
-  let body: Record<string, unknown>;
-  try {
-    body = (await request.json()) as Record<string, unknown>;
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
   const { requireGatedSession } = await import("@/lib/auth/guard");
   const gated = await requireGatedSession();
   if (!gated.ok) {
@@ -103,6 +97,16 @@ export async function PATCH(request: Request, context: RouteContext) {
       },
     );
   }
+
+  const gatedBody = await gateAuthenticatedMutation({
+    request,
+    accountId: gated.session.accountId,
+    family: "edit_resubmit_withdraw_disclosure",
+  });
+  if (!gatedBody.ok) {
+    return gatedBody.response;
+  }
+  const body = gatedBody.body;
 
   const { getGatedDb } = await import("@/lib/auth/runtime");
   const { upsertOwnEvidenceDisclosure } =

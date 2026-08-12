@@ -84,12 +84,12 @@ test.describe("guided demonstration", () => {
       page.getByText(/grounds the recorded step-aside because of a conflict/i),
     ).toBeVisible();
     await page
-      .getByRole("link", { name: "Continue to Operational workflow preview" })
+      .getByRole("link", { name: "Continue to Workflow practice" })
       .click();
     await expect(page).toHaveURL(/\/demo\/workflow\?demoStep=workflow/);
     await expect(
       page.getByRole("heading", {
-        name: "Operational workflow preview",
+        name: "Workflow practice",
         exact: true,
       }),
     ).toBeVisible();
