@@ -142,9 +142,9 @@ Relevant open questions remain open in [open-questions.md](./open-questions.md).
 | --- | --- |
 | Baseline `origin/main` | `33874e8a9ea9d3ddc690dc69de4d015861e41fcb` |
 | Closure PR | https://github.com/threebeat/open-source-think-tank/pull/16 |
-| Candidate head | `badaba2924c4413bd1978930b12273ca412f6840` |
-| CI run (success) | https://github.com/threebeat/open-source-think-tank/actions/runs/31632944572 |
-| Vercel preview | https://vercel.com/johnmoore2048-7946s-projects/open-source-think-tank/9atWmxM8xDe4vigKk3StPDTg9uHq (Deployment has completed) |
+| Candidate head | `b04edebdc6c0e0aff6b8916cd319574ad05705e0` (docs evidence commit atop verified `badaba2924c4413bd1978930b12273ca412f6840`) |
+| CI run (verified engineering head `badaba2`) | https://github.com/threebeat/open-source-think-tank/actions/runs/31632944572 — unit **428 passed / 5 skipped**; public E2E **53 passed**; gated job steps invite/reset/acceptance/smoke/E2E green |
+| Vercel preview (on `badaba2`) | https://vercel.com/johnmoore2048-7946s-projects/open-source-think-tank/9atWmxM8xDe4vigKk3StPDTg9uHq (Deployment has completed) |
 | `npm ci` | pass |
 | `npm run lint` | pass (16 pre-existing unused-adapter warnings; 0 errors) |
 | `npm run typecheck` | pass |
