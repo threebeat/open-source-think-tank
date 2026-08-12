@@ -639,7 +639,7 @@ Still **forbidden in Phase 3** unless a future ADR + register update says otherw
 
 ### Work package 3.9 — Source security and abuse controls
 
-**Status:** Not started.
+**Status:** Next / awaiting human approval (not started).
 
 **Objective:** Harden URL handling and abuse controls without fetching remote content.
 
