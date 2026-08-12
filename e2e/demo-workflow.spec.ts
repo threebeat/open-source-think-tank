@@ -123,6 +123,15 @@ test.describe("public-demo workflow practice", () => {
     ).toContainText("Example held state");
     await expect(page.getByText(/You held this/i)).toHaveCount(0);
 
+    await page.goto("/demo/workflow?task=explore&view=visitor&state=empty");
+    await expect(page.getByTestId("workflow-preview-visitor")).toBeVisible();
+    await expect(
+      page.getByText(/No currently included claims or evidence/i),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/Metered drought surcharge reduces peak residential use/i),
+    ).toHaveCount(0);
+
     await page.reload();
     await expect(page).toHaveURL(/view=moderation/);
     await expect(page).toHaveURL(/state=held/);

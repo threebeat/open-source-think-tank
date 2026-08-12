@@ -69,6 +69,20 @@ describe("SnapshotExplorer", () => {
     expect(screen.queryByText(/Action completed/i)).not.toBeInTheDocument();
   });
 
+  it("shows visitor empty published shell without inventing excluded bodies", () => {
+    searchParams = new URLSearchParams("view=visitor&state=empty");
+    render(<SnapshotExplorer />);
+    const visitor = screen.getByTestId("workflow-preview-visitor");
+    expect(
+      within(visitor).getByText(/No currently included claims or evidence/i),
+    ).toBeInTheDocument();
+    expect(
+      within(visitor).queryByText(
+        /Metered drought surcharge reduces peak residential use/i,
+      ),
+    ).not.toBeInTheDocument();
+  });
+
   it("shows visitor projection labels for held state without claiming live users", () => {
     searchParams = new URLSearchParams("view=visitor&state=held");
     render(<SnapshotExplorer />);

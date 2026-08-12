@@ -102,10 +102,14 @@ export type WorkflowVisitorStateFixture = {
   claimSummary: string | null;
   bodyExcludedNote: string | null;
   publicConflictSummary: string | null;
+  /** Public summary for an included evidence disclosure (never private detail). */
+  evidenceConflictPublicSummary: string | null;
   revisionSummary: WorkflowPublicRevisionSummaryFixture | null;
   comparisonItems: ComparableEvidenceItem[];
   moderationNotice: WorkflowModerationNoticeFixture | null;
   projectionNote: string;
+  /** True when the published topic has no currently included claim/evidence. */
+  emptyPublishedShell?: boolean;
 };
 
 const COMPARISON_ITEMS: ComparableEvidenceItem[] = [
@@ -328,6 +332,25 @@ export const workflowModerationFixtures: Record<
     previewNextState: null,
     previewNextStateLabel: null,
   },
+  empty: {
+    roleLabel: "Synthetic role preview — moderation",
+    stateLabel: "Not a moderation visibility state",
+    visibility: "visible",
+    bodyIncluded: false,
+    claimTitle: null,
+    claimSummary: null,
+    timelineNote:
+      "“Empty” is a visitor-publication preview: the topic stays published while no claim/evidence currently meets the allowlist. It is not a stored moderation visibility value.",
+    publicRationaleRequired:
+      "No additional moderation action is implied by the empty published shell.",
+    privateNoteRedactionNote:
+      "Private moderator notes stay staff-only and are redacted from every public projection.",
+    preservedRevisionHistoryNote:
+      "Publication status remains published; operational workflow and moderation stay independent axes.",
+    notice: null,
+    previewNextState: null,
+    previewNextStateLabel: null,
+  },
 };
 
 export const workflowVisitorFixtures: Record<
@@ -344,6 +367,8 @@ export const workflowVisitorFixtures: Record<
     bodyExcludedNote: null,
     publicConflictSummary:
       "Submitter notes a prior consulting engagement with a regional metering vendor (ended more than two years ago).",
+    evidenceConflictPublicSummary:
+      "Evidence author notes a fictional prior research stipend related to the linked metering memo.",
     revisionSummary: {
       revisionCount: 1,
       latestRevisionAt: "2026-03-12T15:10:00.000Z",
@@ -352,7 +377,7 @@ export const workflowVisitorFixtures: Record<
     comparisonItems: COMPARISON_ITEMS,
     moderationNotice: null,
     projectionNote:
-      "Allowlisted public fields only: no private conflict detail, no private review notes, no account identifiers.",
+      "Allowlisted public fields only: no private conflict detail, no private review notes, no account identifiers. Evidence quality and workflow explanations stay separate from claim truth.",
   },
   held: {
     roleLabel: "Synthetic role preview — visitor public projection",
@@ -363,6 +388,7 @@ export const workflowVisitorFixtures: Record<
     bodyExcludedNote:
       "Claim body is absent from this projection while held. Withholding is a visibility action; content is retained.",
     publicConflictSummary: null,
+    evidenceConflictPublicSummary: null,
     revisionSummary: null,
     comparisonItems: [],
     moderationNotice: {
@@ -384,6 +410,7 @@ export const workflowVisitorFixtures: Record<
     bodyExcludedNote:
       "Claim body remains absent while hidden. Hide does not delete the submission or its revision history.",
     publicConflictSummary: null,
+    evidenceConflictPublicSummary: null,
     revisionSummary: null,
     comparisonItems: [],
     moderationNotice: {
@@ -406,6 +433,8 @@ export const workflowVisitorFixtures: Record<
     bodyExcludedNote: null,
     publicConflictSummary:
       "Submitter notes a prior consulting engagement with a regional metering vendor (ended more than two years ago).",
+    evidenceConflictPublicSummary:
+      "Evidence author notes a fictional prior research stipend related to the linked metering memo.",
     revisionSummary: {
       revisionCount: 1,
       latestRevisionAt: "2026-03-12T15:10:00.000Z",
@@ -422,6 +451,23 @@ export const workflowVisitorFixtures: Record<
     projectionNote:
       "Restoration returns content to the published projection; it is not approval, truth certification, or consensus.",
   },
+  empty: {
+    roleLabel: "Synthetic role preview — visitor public projection",
+    stateLabel: "Visitor view of a published topic with no included content",
+    topicTitle: "Cedar River residential drought surcharge (synthetic)",
+    claimTitle: null,
+    claimSummary: null,
+    bodyExcludedNote:
+      "This topic remains published, but no claim or evidence currently meets the public projection allowlist. Excluded titles, bodies, and URLs are not listed.",
+    publicConflictSummary: null,
+    evidenceConflictPublicSummary: null,
+    revisionSummary: null,
+    comparisonItems: [],
+    moderationNotice: null,
+    emptyPublishedShell: true,
+    projectionNote:
+      "A published-but-empty shell stays addressable. Moderation and quality decisions do not silently unpublish the topic.",
+  },
 };
 
 export const workflowDemoDisclosure = {
@@ -432,6 +478,8 @@ export const workflowDemoDisclosure = {
     "Supporting vs counterevidence comparison as a local reading aid.",
     "Moderation visibility timeline (visible → held → hidden → restored-to-visible) with required public rationales.",
     "Visitor allowlisted projection, including absent bodies while held or hidden.",
+    "Evidence public conflict summary beside included sources; private detail never shown.",
+    "Published topic with no currently included content remains an addressable empty shell.",
   ],
   remainsSimulated: [
     "No live accounts, sessions, invitations, or administrator console.",

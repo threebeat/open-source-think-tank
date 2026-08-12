@@ -535,7 +535,20 @@ function VisitorSection({ state }: { state: ModerationPreviewState }) {
         <h3 className="font-heading text-lg text-foreground">Topic</h3>
         <p className="break-words text-foreground">{fixture.topicTitle}</p>
       </div>
-      {fixture.claimTitle && fixture.claimSummary ? (
+      <DisclosureNotice title="How to read this publication" tone="neutral">
+        Evidence quality is not claim truth. Workflow acceptance is not
+        popularity or consensus. Revision summaries are edit records, not
+        approval timestamps. Moderation visibility is independent from workflow
+        and quality.
+      </DisclosureNotice>
+      {fixture.emptyPublishedShell ? (
+        <DisclosureNotice
+          title="No currently included claims or evidence"
+          tone="neutral"
+        >
+          {fixture.bodyExcludedNote}
+        </DisclosureNotice>
+      ) : fixture.claimTitle && fixture.claimSummary ? (
         <div className="space-y-2 text-sm">
           <h3 className="font-heading text-lg text-foreground">Published claim</h3>
           <p className="font-medium text-foreground break-words">
@@ -552,8 +565,16 @@ function VisitorSection({ state }: { state: ModerationPreviewState }) {
       )}
       {fixture.publicConflictSummary ? (
         <ConflictDisclosureCard
-          title="Public conflict summary"
+          title="Claim conflict disclosure"
           publicSummary={fixture.publicConflictSummary}
+          headingId="workflow-visitor-claim-conflict"
+        />
+      ) : null}
+      {fixture.evidenceConflictPublicSummary ? (
+        <ConflictDisclosureCard
+          title="Evidence conflict disclosure"
+          publicSummary={fixture.evidenceConflictPublicSummary}
+          headingId="workflow-visitor-evidence-conflict"
         />
       ) : null}
       <PublicRevisionSummaryNotice summary={fixture.revisionSummary} />
