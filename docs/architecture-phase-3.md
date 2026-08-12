@@ -1,6 +1,6 @@
 # Phase 3 architecture — operational alpha
 
-**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.9 complete**; **3.10 in progress** — public projection hardening (evidence conflict summaries, quality eligibility, empty published shell, sanitized read failures) and completed gated list/detail presentation with public-demo visitor parity  
+**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.10 complete** — public projection hardening (evidence conflict summaries, quality eligibility, empty published shell, sanitized read failures) and completed gated list/detail presentation with public-demo visitor parity; **3.11 not started**  
 **Plan:** [phase-3-plan.md](./phase-3-plan.md)  
 **ADRs:** [0008](./decisions/0008-phase-3-operational-alpha-contract.md), [0009](./decisions/0009-phase-3-operational-slice-corrections.md)  
 **Foundation:** [architecture-phase-2.md](./architecture-phase-2.md), ADRs 0002–0005, capability matrix, audit registry
