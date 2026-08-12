@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { PageHeader } from "@/components/PageHeader";
+import { ConflictDisclosureCard } from "@/components/topics/ConflictDisclosureCard";
 import { RevisionHistoryPanel } from "@/components/topics/RevisionHistoryPanel";
 import { EvidenceReviewForms } from "@/components/workspace/EvidenceReviewForms";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
@@ -44,6 +45,21 @@ export default async function EvidenceReviewDetailPage({ params }: PageProps) {
     actorAccountId: gated.session.accountId,
     evidenceSubmissionId: evidenceId,
   });
+
+  const { getConflictDisclosureForEvidence } = await import(
+    "@/lib/conflicts/repository"
+  );
+  const { toOwnerOrReviewerConflictDisclosure } = await import(
+    "@/lib/conflicts/audiences"
+  );
+  const disclosureRow = await getConflictDisclosureForEvidence(
+    db,
+    evidenceId,
+  );
+  const ownerDisclosure =
+    disclosureRow.ok && disclosureRow.value
+      ? toOwnerOrReviewerConflictDisclosure(disclosureRow.value)
+      : null;
 
   const { evidence, topic, linkedClaims, reviews } = detail.value;
   const latestReviewAt = reviews.at(-1)?.decidedAt ?? null;
@@ -97,6 +113,18 @@ export default async function EvidenceReviewDetailPage({ params }: PageProps) {
           <dd className="whitespace-pre-wrap">{evidence.limitations}</dd>
         </div>
       </dl>
+
+      {ownerDisclosure ? (
+        <ConflictDisclosureCard
+          publicSummary={ownerDisclosure.publicSummary}
+          privateDetail={ownerDisclosure.privateDetail}
+          title="Conflict disclosure (public + private)"
+        />
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          No conflict disclosure recorded for this evidence.
+        </p>
+      )}
 
       <section className="space-y-2" aria-labelledby="linked-claims-heading">
         <h2 id="linked-claims-heading" className="font-heading text-xl">

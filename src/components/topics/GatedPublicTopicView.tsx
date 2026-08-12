@@ -2,10 +2,12 @@ import Link from "next/link";
 
 import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { PageHeader } from "@/components/PageHeader";
+import { ConflictDisclosureCard } from "@/components/topics/ConflictDisclosureCard";
 import {
   EvidenceComparison,
   type ComparableEvidenceItem,
 } from "@/components/topics/EvidenceComparison";
+import { PublicModerationNotice } from "@/components/topics/PublicModerationNotice";
 import { PublicRevisionSummaryNotice } from "@/components/topics/RevisionHistoryPanel";
 import { formatTopicGeography } from "@/lib/geography/tennessee-counties";
 import { groupEvidenceByRelationship } from "@/lib/topics/evidence-groups";
@@ -75,6 +77,16 @@ function EvidenceBlock({
         <span className="font-medium text-foreground">Limitations: </span>
         {evidence.limitations}
       </p>
+      {evidence.latestRestorationNotice ? (
+        <div className="mt-2">
+          <PublicModerationNotice
+            action={evidence.latestRestorationNotice.action}
+            publicRationale={evidence.latestRestorationNotice.publicRationale}
+            recordedAt={evidence.latestRestorationNotice.recordedAt}
+            subjectKind="evidence"
+          />
+        </div>
+      ) : null}
       <PublicRevisionSummaryNotice summary={evidence.revisionSummary} />
       <p className="mt-2">
         <a
@@ -130,6 +142,39 @@ export function GatedPublicTopicView({ projection }: GatedPublicTopicViewProps) 
         agreement. Supporting and counterevidence are shown for comparison; neither
         side is ranked.
       </DisclosureNotice>
+
+      {projection.withheldModerationNotices.length > 0 ? (
+        <section
+          className="space-y-3"
+          aria-labelledby="withheld-moderation-heading"
+        >
+          <h2
+            id="withheld-moderation-heading"
+            className="font-heading text-xl text-foreground"
+          >
+            Withheld from this publication
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Some accepted material is currently withheld. Notices below include
+            only the public rationale and date — not titles, bodies, or source
+            URLs.
+          </p>
+          <ul className="space-y-3">
+            {projection.withheldModerationNotices.map((notice, index) => (
+              <li
+                key={`${notice.subjectKind}-${notice.recordedAt}-${index}`}
+              >
+                <PublicModerationNotice
+                  action={notice.action}
+                  publicRationale={notice.publicRationale}
+                  recordedAt={notice.recordedAt}
+                  subjectKind={notice.subjectKind}
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section className="grid gap-4 md:grid-cols-2">
         <div className="space-y-3">
@@ -223,12 +268,20 @@ export function GatedPublicTopicView({ projection }: GatedPublicTopicViewProps) 
                   </p>
                 ) : null}
                 {claim.conflictPublicSummary ? (
-                  <p className="text-sm text-muted-foreground break-words">
-                    <span className="font-medium text-foreground">
-                      Conflict summary:{" "}
-                    </span>
-                    {claim.conflictPublicSummary}
-                  </p>
+                  <ConflictDisclosureCard
+                    publicSummary={claim.conflictPublicSummary}
+                    title="Conflict disclosure"
+                  />
+                ) : null}
+                {claim.latestRestorationNotice ? (
+                  <PublicModerationNotice
+                    action={claim.latestRestorationNotice.action}
+                    publicRationale={
+                      claim.latestRestorationNotice.publicRationale
+                    }
+                    recordedAt={claim.latestRestorationNotice.recordedAt}
+                    subjectKind="claim"
+                  />
                 ) : null}
                 <PublicRevisionSummaryNotice summary={claim.revisionSummary} />
 

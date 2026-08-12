@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { PageHeader } from "@/components/PageHeader";
+import { ConflictDisclosureCard } from "@/components/topics/ConflictDisclosureCard";
 import {
   EvidenceComparison,
   type ComparableEvidenceItem,
@@ -49,6 +50,18 @@ export default async function ClaimReviewDetailPage({ params }: PageProps) {
     actorAccountId: gated.session.accountId,
     claimId,
   });
+
+  const { getConflictDisclosureForClaim } = await import(
+    "@/lib/conflicts/repository"
+  );
+  const { toOwnerOrReviewerConflictDisclosure } = await import(
+    "@/lib/conflicts/audiences"
+  );
+  const disclosureRow = await getConflictDisclosureForClaim(db, claimId);
+  const ownerDisclosure =
+    disclosureRow.ok && disclosureRow.value
+      ? toOwnerOrReviewerConflictDisclosure(disclosureRow.value)
+      : null;
 
   const { claim, topic, links, reviews } = detail.value;
   const canReview = claim.workflowState === "submitted";
@@ -109,11 +122,19 @@ export default async function ClaimReviewDetailPage({ params }: PageProps) {
           <dt className="font-medium">Workflow</dt>
           <dd>{claim.workflowState.replaceAll("_", " ")}</dd>
         </div>
-        <div>
-          <dt className="font-medium">Public conflict summary</dt>
-          <dd>{claim.conflictPublicSummary ?? "—"}</dd>
-        </div>
       </dl>
+
+      {ownerDisclosure ? (
+        <ConflictDisclosureCard
+          publicSummary={ownerDisclosure.publicSummary}
+          privateDetail={ownerDisclosure.privateDetail}
+          title="Conflict disclosure (public + private)"
+        />
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          No conflict disclosure recorded for this claim.
+        </p>
+      )}
 
       <section className="space-y-4" aria-labelledby="linked-evidence-heading">
         <h2 id="linked-evidence-heading" className="font-heading text-xl">

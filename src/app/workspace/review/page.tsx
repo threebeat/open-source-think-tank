@@ -63,6 +63,19 @@ export default async function WorkspaceReviewPage() {
         topics.
       </DisclosureNotice>
 
+      <p className="text-sm">
+        <Link
+          href="/workspace/moderation"
+          className="text-primary underline underline-offset-2"
+        >
+          Open moderation queue
+        </Link>
+        <span className="text-muted-foreground">
+          {" "}
+          — hold, hide, or restore visibility without deleting content.
+        </span>
+      </p>
+
       <section className="space-y-3" aria-labelledby="claim-queue-heading">
         <h2 id="claim-queue-heading" className="font-heading text-xl">
           Claim queue (submitted)

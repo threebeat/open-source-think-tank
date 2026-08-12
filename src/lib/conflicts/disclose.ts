@@ -4,6 +4,10 @@ import { authorizeCapability } from "@/lib/authz/authorize-capability";
 import { loadPrincipal } from "@/lib/authz/load-principal";
 import { getClaimById } from "@/lib/claims/repository";
 import {
+  toOwnerOrReviewerConflictDisclosure,
+  type OwnerOrReviewerConflictDisclosure,
+} from "@/lib/conflicts/audiences";
+import {
   claimDisclosureUpsertSchema,
   evidenceDisclosureUpsertSchema,
   normalizeExpectedUpdatedAt,
@@ -109,6 +113,119 @@ function mapServiceError(message: string): AdapterResult<never> {
         error: "Conflict disclosure update failed",
         code: "DISCLOSURE_UPSERT_FAILED",
       };
+  }
+}
+
+/**
+ * Owner read of claim disclosure including private detail.
+ * Returns DISCLOSURE_NOT_OWNED (map to 404) without distinguishing missing
+ * subjects from other owners — no enumeration.
+ */
+export async function getOwnClaimDisclosure(
+  db: GatedDb,
+  input: { actorAccountId: string; claimId: string },
+): Promise<
+  AdapterResult<{ disclosure: OwnerOrReviewerConflictDisclosure | null }>
+> {
+  const denied = gatedOrDeny();
+  if (denied) return denied;
+
+  try {
+    const principal = await loadPrincipal(db, input.actorAccountId);
+    const decision = await authorizeCapability(
+      db,
+      principal,
+      "conflicts.disclose_own",
+    );
+    if (!decision.ok) {
+      return authzFail(decision);
+    }
+
+    const claim = await getClaimById(db, input.claimId);
+    if (!claim.ok || !claim.value) {
+      return mapServiceError("DISCLOSURE_NOT_OWNED");
+    }
+    if (claim.value.authorAccountId !== decision.principal.accountId) {
+      return mapServiceError("DISCLOSURE_NOT_OWNED");
+    }
+
+    const existing = await getConflictDisclosureForClaim(db, claim.value.id);
+    if (!existing.ok) {
+      return { ok: false, error: existing.error, code: existing.code };
+    }
+
+    return {
+      ok: true,
+      value: {
+        disclosure: existing.value
+          ? toOwnerOrReviewerConflictDisclosure(existing.value)
+          : null,
+      },
+    };
+  } catch (error) {
+    const authz = mapThrownAuthz(error);
+    if (authz) return authz;
+    return mapServiceError("");
+  }
+}
+
+/**
+ * Owner read of evidence disclosure including private detail.
+ * Same non-enumeration contract as {@link getOwnClaimDisclosure}.
+ */
+export async function getOwnEvidenceDisclosure(
+  db: GatedDb,
+  input: { actorAccountId: string; evidenceSubmissionId: string },
+): Promise<
+  AdapterResult<{ disclosure: OwnerOrReviewerConflictDisclosure | null }>
+> {
+  const denied = gatedOrDeny();
+  if (denied) return denied;
+
+  try {
+    const principal = await loadPrincipal(db, input.actorAccountId);
+    const decision = await authorizeCapability(
+      db,
+      principal,
+      "conflicts.disclose_own",
+    );
+    if (!decision.ok) {
+      return authzFail(decision);
+    }
+
+    const evidence = await getEvidenceSubmissionById(
+      db,
+      input.evidenceSubmissionId,
+    );
+    if (!evidence.ok || !evidence.value) {
+      return mapServiceError("DISCLOSURE_NOT_OWNED");
+    }
+    if (
+      evidence.value.submitterAccountId !== decision.principal.accountId
+    ) {
+      return mapServiceError("DISCLOSURE_NOT_OWNED");
+    }
+
+    const existing = await getConflictDisclosureForEvidence(
+      db,
+      evidence.value.id,
+    );
+    if (!existing.ok) {
+      return { ok: false, error: existing.error, code: existing.code };
+    }
+
+    return {
+      ok: true,
+      value: {
+        disclosure: existing.value
+          ? toOwnerOrReviewerConflictDisclosure(existing.value)
+          : null,
+      },
+    };
+  } catch (error) {
+    const authz = mapThrownAuthz(error);
+    if (authz) return authz;
+    return mapServiceError("");
   }
 }
 

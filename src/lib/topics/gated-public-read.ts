@@ -129,6 +129,7 @@ async function buildProjectionForTopic(
       workflowPublicRationale: claim.workflowPublicRationale,
       conflictPublicSummary: claim.conflictPublicSummary,
       revisionSummary: claim.revisionSummary,
+      latestModerationNotice: claim.latestModerationNotice,
     })),
     evidence: loaded.evidence.map((row) => ({
       id: row.id,
@@ -144,6 +145,7 @@ async function buildProjectionForTopic(
       qualityPublicRationale: row.qualityPublicRationale,
       workflowPublicRationale: row.workflowPublicRationale,
       revisionSummary: row.revisionSummary,
+      latestModerationNotice: row.latestModerationNotice,
     })),
     links: (loaded.links.ok ? loaded.links.value : []).map((link) => ({
       topicId: link.topicId,
