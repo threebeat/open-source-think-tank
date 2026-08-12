@@ -252,7 +252,7 @@ Exact paths may align with existing `/account/*` and `/staff/*` trees; do not ex
 | Publish | `publication_status` → published + projection stamp + audit (minimal in 3.6) |
 | Alpha reset | documented ordered deletes/truncates in one operator procedure; audited |
 
-**Concurrency:** use row-level conditions (update … where state = expected and/or `updated_at = expected`) so stale writers lose atomically; follow Phase 2 patterns used for invite claim / dual-control. JS pre-checks are fail-fast only; successful writes advance `updated_at` by ≥1 ms.
+**Concurrency:** use row-level conditions (update … where state = expected and/or epoch-millis(`updated_at`) = expected token) so stale writers lose atomically across Postgres microsecond storage and JS/ISO millisecond tokens; follow Phase 2 patterns used for invite claim / dual-control. JS pre-checks are fail-fast only; successful writes advance `updated_at` by ≥1 ms.
 
 ---
 
