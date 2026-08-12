@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 3 (packages 3.1–3.12)  
 **Baseline:** Phase 2 foundation at or after `a894317317f3ff1e80d0a3602df69e5b4d8cd589` (tag `phase-2-foundation` recorded in [phase-2-handoff.md](./phase-2-handoff.md))  
-**Current package:** **3.10 in progress.** Package **3.9** is merged on `main`. Package **3.10** completes and hardens the gated public topic interface (projection, list/detail presentation, public-demo visitor parity). Package **3.11** is not started.
+**Current package:** **3.10 complete (awaiting human approval before 3.11).** Package **3.9** is merged on `main`. Package **3.10** completed and hardened the gated public topic interface (projection, list/detail presentation, public-demo visitor parity). Package **3.11** search/export is **not started**.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [phase-2-plan.md](./phase-2-plan.md), [phase-2-handoff.md](./phase-2-handoff.md), [architecture-phase-2.md](./architecture-phase-2.md), [architecture-phase-3.md](./architecture-phase-3.md), [capability-matrix.md](./capability-matrix.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [open-questions.md](./open-questions.md), [decisions/0006-phase-3-two-lane-sequencing.md](./decisions/0006-phase-3-two-lane-sequencing.md), [decisions/0007-alpha-test-interim-council-dispositions.md](./decisions/0007-alpha-test-interim-council-dispositions.md), [decisions/0008-phase-3-operational-alpha-contract.md](./decisions/0008-phase-3-operational-alpha-contract.md), [decisions/0009-phase-3-operational-slice-corrections.md](./decisions/0009-phase-3-operational-slice-corrections.md)
 
@@ -678,7 +678,7 @@ Still **forbidden in Phase 3** unless a future ADR + register update says otherw
 
 ### Work package 3.10 — Public interface completion and hardening
 
-**Status:** In progress.
+**Status:** Complete (awaiting human approval before 3.11).
 
 **Objective:** Complete and harden the gated public topic interface introduced minimally in **3.6**, including later revision, disclosure, moderation, and presentation depth. Keep public-demo fixture pages operational with fixture-backed visitor parity for the completed presentation.
 
