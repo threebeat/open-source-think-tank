@@ -4,11 +4,11 @@ import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { PageHeader } from "@/components/PageHeader";
 import {
   EvidenceComparison,
-  groupEvidenceByRelationship,
   type ComparableEvidenceItem,
 } from "@/components/topics/EvidenceComparison";
 import { PublicRevisionSummaryNotice } from "@/components/topics/RevisionHistoryPanel";
 import { formatTopicGeography } from "@/lib/geography/tennessee-counties";
+import { groupEvidenceByRelationship } from "@/lib/topics/evidence-groups";
 import type { PublicTopicProjection } from "@/lib/topics/public-projection";
 
 function geographyLabel(geography: PublicTopicProjection["geography"]): string {

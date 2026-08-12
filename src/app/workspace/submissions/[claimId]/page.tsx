@@ -4,7 +4,6 @@ import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { PageHeader } from "@/components/PageHeader";
 import {
   EvidenceComparison,
-  groupEvidenceByRelationship,
   type ComparableEvidenceItem,
 } from "@/components/topics/EvidenceComparison";
 import { RevisionHistoryPanel } from "@/components/topics/RevisionHistoryPanel";
@@ -13,6 +12,7 @@ import { SubmissionWithdrawControls } from "@/components/workspace/SubmissionWit
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { MainContainer } from "@/components/layout/MainContainer";
 import { resolveAppMode } from "@/lib/env/app-mode";
+import { groupEvidenceByRelationship } from "@/lib/topics/evidence-groups";
 
 export const dynamic = "force-dynamic";
 
