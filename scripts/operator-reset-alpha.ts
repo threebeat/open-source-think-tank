@@ -1,12 +1,13 @@
 /**
- * Operator alpha-reset ceremony (Package 3.12).
+ * Operator alpha-reset ceremony (Phase 3 closure).
  *
  * Usage (secrets from environment only — never CLI argv):
  *   APP_MODE=gated DATABASE_URL=... OPERATOR_RESET_SECRET=... OPERATOR_LABEL=... \
  *     npm run operator:reset-alpha -- --reason="..."
  *   npm run operator:reset-alpha -- --execute --confirm-fingerprint=<exact> --reason="..."
  *
- * Default is dry-run. Never pass OPERATOR_RESET_SECRET on the command line.
+ * Default is dry-run. Receipt provenance is always operational/non-synthetic.
+ * Never pass OPERATOR_RESET_SECRET on the command line.
  */
 import { execSync } from "node:child_process";
 
@@ -29,6 +30,7 @@ function usage(): never {
 Environment (required): APP_MODE=gated, DATABASE_URL, OPERATOR_RESET_SECRET, OPERATOR_LABEL
 Optional: SOURCE_COMMIT_SHA (else GITHUB_SHA / git HEAD / unknown)
 Refuse ostt_dev unless OSTT_ALLOW_DEV_RESET=1.
+Receipt provenance is operational (non-synthetic). Disposable smoke opts into synthetic separately.
 Never pass OPERATOR_RESET_SECRET on the command line.`);
   process.exit(2);
 }
@@ -106,6 +108,7 @@ async function main() {
   console.log(`  databaseFingerprint=${fingerprint}`);
   console.log(`  sourceCommitSha=${process.env.SOURCE_COMMIT_SHA}`);
   console.log(`  mode=${execute ? "execute" : "dry-run"}`);
+  console.log(`  receiptProvenance=operational`);
 
   const client = postgres(url, { max: 1 });
   const db = drizzle(client, { schema });
@@ -115,8 +118,10 @@ async function main() {
       ? await executeAlphaReset(db, {
           reason,
           confirmFingerprint: confirmFingerprint!,
+          // Normal operator CLI is always non-synthetic.
+          syntheticReceipt: false,
         })
-      : await dryRunAlphaReset(db, { reason });
+      : await dryRunAlphaReset(db, { reason, syntheticReceipt: false });
 
     if (!result.ok) {
       console.error(result.error);
@@ -128,6 +133,7 @@ async function main() {
     console.log(`  manifestHash=${receipt.manifestHash}`);
     console.log(`  schemaVersion=${receipt.schemaVersion}`);
     console.log(`  operatorLabel=${receipt.operatorLabel}`);
+    console.log(`  receiptProvenance=${receipt.receiptProvenance}`);
     console.log("  counts.before=", JSON.stringify(receipt.counts.before));
     console.log("  counts.after=", JSON.stringify(receipt.counts.after));
     if (receipt.dryRun) {
@@ -138,7 +144,9 @@ async function main() {
       );
     } else {
       console.log("");
-      console.log("Alpha reset executed. Verify via audit action alpha.reset_executed (no secrets).");
+      console.log(
+        "Alpha reset executed. New audit chain is rooted at alpha.reset_executed (metadata only; not continuity with the erased pre-reset ledger).",
+      );
     }
   } finally {
     await client.end({ timeout: 5 });

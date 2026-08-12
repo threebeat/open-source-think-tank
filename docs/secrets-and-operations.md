@@ -106,13 +106,13 @@ npm run operator:bootstrap -- finalize --reason="Complete first administrator" -
 
 ### Reset implications
 
-Alpha reset (3.12) must clear `operator_bootstrap_state` and bootstrap invitations with other alpha tables. Synthetic seed re-inserts `operator_bootstrap_state` as `not_started`.
+Alpha reset clears `operator_bootstrap_state` and bootstrap invitations with other alpha tables, then restores the singleton as `not_started`. Required assent **document definitions** are regenerated from the operational catalog (not from synthetic seed accounts). Participant assent records remain wiped. Synthetic seed may still re-insert fixtures for disposable drills, but recovery must not depend on it.
 
 ---
 
-## Operator alpha reset (3.12)
+## Operator alpha reset (Phase 3 closure)
 
-**Status:** Implemented. Command: `npm run operator:reset-alpha` (default dry-run). Automated proof: `npm run alpha:reset:smoke` against disposable `ostt_alpha_reset` only.
+**Status:** Implemented. Command: `npm run operator:reset-alpha` (default dry-run). Automated proofs: `npm run alpha:reset:smoke` (`ostt_alpha_reset`), `npm run test:pg:alpha-reset`, `npm run phase3:acceptance`.
 
 ### Required environment
 
@@ -124,14 +124,18 @@ Alpha reset (3.12) must clear `operator_bootstrap_state` and bootstrap invitatio
 | `OPERATOR_LABEL` | Non-secret label in audit metadata |
 | `SOURCE_COMMIT_SHA` (optional) | Else `GITHUB_SHA` / `git rev-parse HEAD` / `unknown` |
 
+### Quiescence
+
+Stop or maintenance-quiesce the gated app/workers before `--execute` and keep them quiesced through verification. See [alpha-reset-runbook.md](./alpha-reset-runbook.md).
+
 ### Commands
 
 ```bash
-# Dry-run (prints safe fingerprint + coarse counts)
+# Dry-run (prints safe fingerprint + coarse counts); receipt provenance = operational
 npm run operator:reset-alpha -- --reason="Alpha drill dry-run"
 
 # Execute only with exact fingerprint from dry-run
 npm run operator:reset-alpha -- --execute --confirm-fingerprint=<exact> --reason="Alpha drill execute"
 ```
 
-Classification: [alpha-reset-classification.md](./alpha-reset-classification.md). No HTTP/browser reset route.
+Classification: [alpha-reset-classification.md](./alpha-reset-classification.md). No HTTP/browser reset route. CLI receipts are non-synthetic (`receiptProvenance=operational`); disposable smoke opts into `synthetic_smoke` explicitly.

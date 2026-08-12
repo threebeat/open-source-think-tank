@@ -241,6 +241,10 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
   const reviewedAt = new Date("2026-08-01T00:00:00.000Z");
   const publishedAt = new Date("2026-08-01T01:00:00.000Z");
 
+  // Disposable synthetic seed replaces any regenerated operational catalog.
+  // Safe only when assent child rows are absent (fresh migrate/truncate or post-reset).
+  await db.delete(documentVersions);
+
   // Insert as draft, then transition — DB state machine forbids non-draft inserts.
   await db.insert(documentVersions).values({
     id: "doc-ostt-synth-privacy-v1",

@@ -7,6 +7,12 @@ import {
 } from "./gated-helpers";
 
 const CEDAR_TOPIC_SLUG = "ostt-synth-cedar-billing-ops";
+/** Deterministic submitted claim from synthetic foundation seed — must always exist. */
+const QUEUE_CLAIM_ID = "claim-ostt-synth-billing-queue";
+const QUEUE_CLAIM_PATH = `/workspace/review/claims/${QUEUE_CLAIM_ID}`;
+/** Accepted claim with a seeded content revision for chronology assertions. */
+const REVISION_CLAIM_ID = "claim-ostt-synth-billing-timeline";
+const REVISION_CLAIM_PATH = `/workspace/review/claims/${REVISION_CLAIM_ID}`;
 
 test.describe("revisions and evidence comparison (gated)", () => {
   test("staff claim review detail exposes revision chronology heading @desktop", async ({
@@ -17,18 +23,31 @@ test.describe("revisions and evidence comparison (gated)", () => {
     await expect(page.getByRole("heading", { name: "Review queues" })).toBeVisible({
       timeout: 30_000,
     });
-    const claimLink = page.locator('a[href*="/workspace/review/claims/"]').first();
-    if ((await claimLink.count()) === 0) {
-      test.skip(true, "No claim queue items in seed");
-      return;
-    }
-    await claimLink.click();
+    await expect(
+      page.locator(`a[href="${QUEUE_CLAIM_PATH}"]`),
+      "seeded submitted claim must appear in the review queue",
+    ).toHaveCount(1);
+
+    // Open the deterministic claim that carries seeded revision chronology.
+    await page.goto(REVISION_CLAIM_PATH);
+    await expect(page).toHaveURL(new RegExp(`${REVISION_CLAIM_ID}$`));
     await expect(
       page.getByRole("heading", { name: /Claim content revisions/i }),
     ).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText(/Revision 1/i)).toBeVisible();
+    await expect(page.getByText(/Changed:\s*summary/i)).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Supporting evidence" }),
     ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Counterevidence" }),
+    ).toBeVisible();
+    // Historic before/after bodies stay inside collapsed staff details — not openly exposed.
+    await expect(
+      page.getByText(
+        "Synthetic prior summary before the recorded content revision.",
+      ),
+    ).toBeHidden();
     await expectNoHorizontalOverflow(page);
   });
 

@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 3 (packages 3.1–3.12)  
 **Baseline:** Phase 2 foundation at or after `a894317317f3ff1e80d0a3602df69e5b4d8cd589` (tag `phase-2-foundation` recorded in [phase-2-handoff.md](./phase-2-handoff.md))  
-**Current package:** **3.12 complete; Phase 3 handoff awaiting human review before Phase 4.** Baseline for 3.12 work was `418d678` (PR #14 / 3.11). Package **3.12** closes 3.11 search/export carryovers, adds operator alpha reset + disposable reset drill, and publishes [phase-3-handoff.md](./phase-3-handoff.md).
+**Current package:** **3.12 complete; Phase 3 engineering closure candidate awaiting explicit owner acceptance before Phase 4.** Baseline for 3.12 was `418d678` (PR #14 / 3.11); post-3.12 merge baseline `33874e8` (PR #15). Closure corrections harden reset recovery/concurrency/provenance, mandatory PostgreSQL CI proofs, revision E2E determinism, and a connected acceptance-journey smoke — still not Phase 4 and not a new 3.13 package.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [phase-2-plan.md](./phase-2-plan.md), [phase-2-handoff.md](./phase-2-handoff.md), [architecture-phase-2.md](./architecture-phase-2.md), [architecture-phase-3.md](./architecture-phase-3.md), [capability-matrix.md](./capability-matrix.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [open-questions.md](./open-questions.md), [decisions/0006-phase-3-two-lane-sequencing.md](./decisions/0006-phase-3-two-lane-sequencing.md), [decisions/0007-alpha-test-interim-council-dispositions.md](./decisions/0007-alpha-test-interim-council-dispositions.md), [decisions/0008-phase-3-operational-alpha-contract.md](./decisions/0008-phase-3-operational-alpha-contract.md), [decisions/0009-phase-3-operational-slice-corrections.md](./decisions/0009-phase-3-operational-slice-corrections.md)
 
@@ -766,9 +766,9 @@ Auditor with only `audit.read_restricted` does **not** receive workspace content
 
 ### Work package 3.12 — Operational hardening and handoff
 
-**Status:** Complete; Phase 3 handoff awaiting human review before Phase 4.
+**Status:** Complete; Phase 3 engineering closure candidate awaiting explicit owner acceptance before Phase 4.
 
-**Objective:** Reset drill, regression hardening, Phase 3 handoff doc, and explicit deferred register closure for owner follow-up.
+**Objective:** Reset drill, regression hardening, Phase 3 handoff doc, and explicit deferred register closure for owner follow-up. Closure corrections (post-3.12) harden operational document regeneration, quiesced reset locking, receipt provenance, mandatory PostgreSQL CI evidence, deterministic revision E2E, and connected acceptance-journey proof.
 
 **Prerequisites:** 3.2–3.11 acceptance criteria met or explicitly waived by owner in handoff.
 
@@ -793,7 +793,7 @@ Auditor with only `audit.read_restricted` does **not** receive workspace content
 
 **Non-goals:** Production launch; managed host selection; penetration-test certification; installing Pol.is (Phase 4).
 
-**Stop condition:** Human review before any Phase 4 package.
+**Stop condition:** Human review / explicit owner acceptance before any Phase 4 package.
 
 ---
 

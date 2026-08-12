@@ -98,8 +98,22 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Start Postgres and wait for health
         run: npm run db:up
+      - name: PostgreSQL invitation concurrency proof
+        run: npm run test:pg:invites
+        env:
+          OSTT_REQUIRE_POSTGRES: "1"
+          OSTT_PG_ADMIN_URL: postgres://ostt:ostt@127.0.0.1:54329/postgres
+          OSTT_PG_INVITE_TEST_URL: postgres://ostt:ostt@127.0.0.1:54329/ostt_invite_concurrency
+      - name: PostgreSQL alpha-reset concurrency proof
+        run: npm run test:pg:alpha-reset
+        env:
+          OSTT_REQUIRE_POSTGRES: "1"
+          OSTT_PG_ADMIN_URL: postgres://ostt:ostt@127.0.0.1:54329/postgres
+          OSTT_PG_RESET_TEST_URL: postgres://ostt:ostt@127.0.0.1:54329/ostt_alpha_reset_concurrency
       - name: Alpha reset smoke (disposable ostt_alpha_reset only)
         run: npm run alpha:reset:smoke
+      - name: Phase 3 acceptance journey (disposable ostt_phase3_acceptance)
+        run: npm run phase3:acceptance
       - name: Migrate and seed synthetic foundation
         run: node scripts/gated-e2e-prepare.mjs
       - name: Production build (gated)

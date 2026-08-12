@@ -10,20 +10,26 @@ import type { AdapterResult } from "@/lib/adapters/types";
 import { appendAuthAudit } from "@/lib/auth/audit-log";
 import {
   ALPHA_RESET_ADVISORY_LOCK_KEY,
+  ALPHA_RESET_LOCK_TIMEOUT,
+  ALPHA_RESET_STATEMENT_TIMEOUT,
   COUNT_FAMILIES,
   DELETE_ORDER,
   hashManifest,
   IMMUTABLE_DELETE_TRIGGERS,
+  RESET_LOCK_TABLES,
   RESET_MANIFEST_VERSION,
   assertManifestComplete,
   tablesByClass,
 } from "@/lib/operator/alpha-reset-manifest";
+import { regenerateOperationalAssentDocuments } from "@/lib/operator/operational-assent-documents";
 import { requireOperatorResetEnv } from "@/lib/operator/secrets";
 
 const LEDGER_HEAD_ID = "default";
 const BOOTSTRAP_STATE_ID = "default";
 
 export type AlphaResetCounts = Record<string, number>;
+
+export type AlphaResetReceiptProvenance = "operational" | "synthetic_smoke";
 
 export type AlphaResetReceipt = {
   dryRun: boolean;
@@ -33,6 +39,7 @@ export type AlphaResetReceipt = {
   manifestVersion: string;
   manifestHash: string;
   operatorLabel: string;
+  receiptProvenance: AlphaResetReceiptProvenance;
   counts: { before: AlphaResetCounts; after: AlphaResetCounts };
   deletedTables: string[];
 };
@@ -255,12 +262,81 @@ async function deleteResetTables(db: FoundationDb): Promise<void> {
   }
 }
 
+/**
+ * Establish the protected reset window inside an open transaction:
+ * bounded timeouts, transaction-scoped advisory lock, allowlisted table locks.
+ */
+export async function acquireAlphaResetProtection(
+  db: FoundationDb,
+): Promise<void> {
+  await db.execute(
+    sql.raw(`SET LOCAL lock_timeout = '${ALPHA_RESET_LOCK_TIMEOUT}'`),
+  );
+  await db.execute(
+    sql.raw(
+      `SET LOCAL statement_timeout = '${ALPHA_RESET_STATEMENT_TIMEOUT}'`,
+    ),
+  );
+  await db.execute(
+    sql`SELECT pg_advisory_xact_lock(${ALPHA_RESET_ADVISORY_LOCK_KEY})`,
+  );
+  for (const table of RESET_LOCK_TABLES) {
+    await db.execute(
+      sql.raw(
+        `LOCK TABLE ${quoteIdent(table)} IN SHARE ROW EXCLUSIVE MODE`,
+      ),
+    );
+  }
+}
+
+function isLockContentionError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  const code =
+    error && typeof error === "object" && "code" in error
+      ? String((error as { code?: unknown }).code ?? "")
+      : "";
+  return (
+    code === "55P03" ||
+    /lock timeout|canceling statement due to lock timeout|could not obtain lock|deadlock detected/i.test(
+      message,
+    )
+  );
+}
+
+function sanitizeResetFailure(error: unknown): AdapterResult<never> {
+  if (isLockContentionError(error)) {
+    return {
+      ok: false,
+      code: "RESET_LOCK_UNAVAILABLE",
+      error:
+        "Alpha reset could not establish a protected quiesced window (lock contention or timeout). No destructive changes were committed.",
+    };
+  }
+  const message = error instanceof Error ? error.message : "Alpha reset failed";
+  // Keep operator-facing failures free of contact channels / tokens.
+  const sanitized = message
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[redacted]")
+    .replace(/postgres:\/\/[^\s]+/gi, "[redacted-db-url]");
+  return {
+    ok: false,
+    code: "RESET_FAILED",
+    error: sanitized,
+  };
+}
+
 type ResetPlanInput = {
   db: FoundationDb;
   reason: string;
   confirmFingerprint?: string;
   dryRun: boolean;
+  /**
+   * Explicit ceremony provenance. Operational CLI must pass false;
+   * disposable smoke must pass true. Never inferred from DATABASE_URL.
+   */
+  syntheticReceipt: boolean;
   env?: Record<string, string | undefined>;
+  /** Test-only: throw after deletes to prove rollback restores data/triggers. */
+  __testInjectFailure?: "after_deletes";
 };
 
 async function runAlphaReset(
@@ -319,9 +395,12 @@ async function runAlphaReset(
   const schemaVersion = await readSchemaVersion(input.db);
   const sourceCommitSha = resolveSourceCommitSha(env);
   const manifestHash = hashManifest();
-  const before = await collectCoarseCounts(input.db);
+  const receiptProvenance: AlphaResetReceiptProvenance = input.syntheticReceipt
+    ? "synthetic_smoke"
+    : "operational";
 
   if (input.dryRun) {
+    const before = await collectCoarseCounts(input.db);
     return {
       ok: true,
       value: {
@@ -332,38 +411,45 @@ async function runAlphaReset(
         manifestVersion: RESET_MANIFEST_VERSION,
         manifestHash,
         operatorLabel: creds.label,
+        receiptProvenance,
         counts: { before, after: before },
         deletedTables: [...DELETE_ORDER],
       },
     };
   }
 
-  let after: AlphaResetCounts = before;
+  let receiptCounts: { before: AlphaResetCounts; after: AlphaResetCounts } | null =
+    null;
+
   try {
-    await input.db.execute(
-      sql`SELECT pg_advisory_lock(${ALPHA_RESET_ADVISORY_LOCK_KEY})`,
-    );
-    try {
-      await input.db.transaction(async (tx) => {
-        const txDb = tx as unknown as FoundationDb;
-        await setImmutableTriggers(txDb, false);
-        try {
-          await ensureLedgerHead(txDb);
-          await deleteResetTables(txDb);
-          await reseedRetentionDefaults(txDb);
-          await restoreBootstrapSingleton(txDb);
-          await ensureLedgerHead(txDb);
-          after = await collectCoarseCounts(txDb);
-          // Include the forthcoming reset receipt (+1 audit) in after.audit.
-          after = {
-            ...after,
-            audit: (after.audit ?? 0) + 1,
-          };
-        } finally {
-          await setImmutableTriggers(txDb, true);
+    await input.db.transaction(async (tx) => {
+      const txDb = tx as unknown as FoundationDb;
+      await acquireAlphaResetProtection(txDb);
+
+      const before = await collectCoarseCounts(txDb);
+      await setImmutableTriggers(txDb, false);
+      try {
+        await ensureLedgerHead(txDb);
+        await deleteResetTables(txDb);
+        await regenerateOperationalAssentDocuments(txDb);
+        await reseedRetentionDefaults(txDb);
+        await restoreBootstrapSingleton(txDb);
+        await ensureLedgerHead(txDb);
+
+        if (input.__testInjectFailure === "after_deletes") {
+          throw new Error("RESET_TEST_INJECTED_FAILURE");
         }
 
+        let after = await collectCoarseCounts(txDb);
+        // Include the forthcoming reset receipt (+1 audit) in after.audit.
+        after = {
+          ...after,
+          audit: (after.audit ?? 0) + 1,
+        };
+
         // Success audit only after wipe + regenerated defaults.
+        // New audit chain is rooted at this receipt — not continuity with the
+        // erased pre-reset ledger.
         await appendAuthAudit(txDb, {
           actorRole: "operator",
           action: "alpha.reset_executed",
@@ -378,26 +464,29 @@ async function runAlphaReset(
             sourceCommitSha,
             manifestVersion: RESET_MANIFEST_VERSION,
             manifestHash,
+            receiptProvenance,
             counts: { before, after },
           },
-          synthetic: true,
+          synthetic: input.syntheticReceipt,
         });
-      });
-    } finally {
-      await input.db.execute(
-        sql`SELECT pg_advisory_unlock(${ALPHA_RESET_ADVISORY_LOCK_KEY})`,
-      );
-    }
+
+        after = await collectCoarseCounts(txDb);
+        receiptCounts = { before, after };
+      } finally {
+        await setImmutableTriggers(txDb, true);
+      }
+    });
   } catch (error) {
+    return sanitizeResetFailure(error);
+  }
+
+  if (!receiptCounts) {
     return {
       ok: false,
       code: "RESET_FAILED",
-      error: error instanceof Error ? error.message : "Alpha reset failed",
+      error: "Alpha reset completed without authoritative counts",
     };
   }
-
-  // Re-read after commit so ledger head / audit row are reflected accurately.
-  after = await collectCoarseCounts(input.db);
 
   return {
     ok: true,
@@ -409,7 +498,8 @@ async function runAlphaReset(
       manifestVersion: RESET_MANIFEST_VERSION,
       manifestHash,
       operatorLabel: creds.label,
-      counts: { before, after },
+      receiptProvenance,
+      counts: receiptCounts,
       deletedTables: [...DELETE_ORDER],
     },
   };
@@ -420,25 +510,33 @@ async function runAlphaReset(
  */
 export async function dryRunAlphaReset(
   db: FoundationDb,
-  input: { reason: string; env?: Record<string, string | undefined> },
+  input: {
+    reason: string;
+    syntheticReceipt?: boolean;
+    env?: Record<string, string | undefined>;
+  },
 ): Promise<AdapterResult<AlphaResetReceipt>> {
   return runAlphaReset({
     db,
     reason: input.reason,
     dryRun: true,
+    syntheticReceipt: input.syntheticReceipt ?? false,
     env: input.env,
   });
 }
 
 /**
  * Execute alpha wipe after fingerprint confirmation.
+ * `syntheticReceipt` must be set explicitly by the ceremony caller.
  */
 export async function executeAlphaReset(
   db: FoundationDb,
   input: {
     reason: string;
     confirmFingerprint: string;
+    syntheticReceipt: boolean;
     env?: Record<string, string | undefined>;
+    __testInjectFailure?: "after_deletes";
   },
 ): Promise<AdapterResult<AlphaResetReceipt>> {
   return runAlphaReset({
@@ -446,7 +544,9 @@ export async function executeAlphaReset(
     reason: input.reason,
     confirmFingerprint: input.confirmFingerprint,
     dryRun: false,
+    syntheticReceipt: input.syntheticReceipt,
     env: input.env,
+    __testInjectFailure: input.__testInjectFailure,
   });
 }
 

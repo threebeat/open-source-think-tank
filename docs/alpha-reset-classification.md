@@ -1,6 +1,7 @@
-# Alpha reset table classification (Phase 3.12)
+# Alpha reset table classification (Phase 3 closure)
 
-**Status:** Operator procedure for gated invite-only alpha. Not a public-demo feature. Not production retention counsel.
+**Status:** Operator procedure for gated invite-only alpha. Not a public-demo feature. Not production retention counsel.  
+**Manifest version:** `3.12.1`
 
 **Scope:** Every `pgTable` in `src/db/schema.ts` (35 tables) is classified as exactly one of:
 
@@ -8,7 +9,7 @@
 | --- | --- |
 | **reset** | Rows are deliberately deleted by the operator alpha-reset (explicit `DELETE FROM` in fixed order). |
 | **retained** | Rows are left in place (product/schema metadata that must survive a drill). |
-| **regenerated** | Cleared or reset to a known-good skeleton, then defaults / reset receipt written by the procedure. |
+| **regenerated** | Cleared or reset to a known-good skeleton, then defaults / operational catalog / reset receipt written by the procedure. |
 | **deferred** | Intentionally not classified for wipe yet — **none** in this package (all tables classified). |
 
 Machine-readable mirror: `src/lib/operator/alpha-reset-manifest.ts`.
@@ -26,9 +27,11 @@ Machine-readable mirror: `src/lib/operator/alpha-reset-manifest.ts`.
 7. **Explicit delete list** — only tables marked **reset** (plus regenerated clears) are deleted; no `TRUNCATE … CASCADE` of unknown tables.
 8. **Immutability triggers** — tables with `BEFORE DELETE` immutability triggers are deleted only after those known triggers are disabled for the operator transaction, then re-enabled. Fail closed if disable/enable fails.
 9. **Success audit only after success** — `alpha.reset_executed` is appended only after deletes + regenerated defaults succeed in the same transactional work; failed reset must not leave a success receipt.
-10. **No PII in audit payload** — coarse family counts, fingerprints, versions, and operator label only.
-11. **Advisory lock** — fixed bigint `pg_advisory_lock` serializes concurrent reset attempts.
-12. **Manifest completeness** — `assertManifestComplete(knownTableNames)` throws if schema adds a table not classified.
+10. **No PII in audit payload** — coarse family counts, fingerprints, versions, operator label, and explicit `receiptProvenance` only.
+11. **Protected quiesced window** — inside the destructive transaction: bounded `lock_timeout` / `statement_timeout`, `pg_advisory_xact_lock`, and allowlisted `LOCK TABLE … IN SHARE ROW EXCLUSIVE MODE` on reset/regenerated tables. Authoritative before/after counts are collected inside that window. Lock release follows transaction outcome (no post-commit unlock that can flip success into failure).
+12. **Quiescence contract** — gated application/workers must be stopped or verifiably maintenance-quiesced before execute and remain quiesced through post-reset verification (see runbook).
+13. **Manifest completeness** — `assertManifestComplete(knownTableNames)` throws if schema adds a table not classified.
+14. **Operational assent documents** — `document_versions` are **regenerated** from the checked-in non-participant catalog in `src/lib/operator/operational-assent-documents.ts`. Participant assent records/presentations/outcomes remain **reset**. Catalog bodies are provisional alpha placeholders — not counsel-approved legal language.
 
 ---
 
@@ -43,7 +46,7 @@ Machine-readable mirror: `src/lib/operator/alpha-reset-manifest.ts`.
 | `operator_bootstrap_state` | reset | Ceremony state cleared; singleton `not_started` row recreated after wipe so bootstrap can run again. |
 | `role_assignments` | reset | Platform roles (alpha staff). |
 | `council_appointments` | reset | Council seats (alpha). |
-| `document_versions` | reset | Synthetic / alpha assent documents (seeded; not permanent product config). |
+| `document_versions` | regenerated | Required operational assent document definitions; cleared then republished from deterministic non-participant catalog so post-reset bootstrap/onboarding can proceed without synthetic reseeding. |
 | `assent_records` | reset | Alpha assent history (immutable in normal ops; operator reset disables delete trigger). |
 | `assent_outcomes` | reset | Decline/withdraw outcomes. |
 | `assent_presentations` | reset | Presentation sessions. |
@@ -51,7 +54,7 @@ Machine-readable mirror: `src/lib/operator/alpha-reset-manifest.ts`.
 | `verification_assertions` | reset | Assertion decisions. |
 | `verification_artifact_holds` | reset | Artifact holds. |
 | `verification_artifact_payloads` | reset | Artifact payloads. |
-| `audit_events` | reset | Alpha ledger wiped; new chain starts with reset receipt. |
+| `audit_events` | reset | Alpha ledger wiped; **new audit chain rooted at** the reset receipt (not continuity with the erased pre-reset ledger). |
 | `audit_ledger_head` | regenerated | Cleared to empty head, then updated by `alpha.reset_executed` append. |
 | `closed_test_conversations` | reset | Synthetic closed-test conversation registry. |
 | `conversation_pseudonyms` | reset | Account↔pseudonym maps. |
@@ -78,7 +81,18 @@ Machine-readable mirror: `src/lib/operator/alpha-reset-manifest.ts`.
 
 ## Delete order
 
-Children first; see `DELETE_ORDER` in `alpha-reset-manifest.ts`. Matches the spirit of `scripts/gated-e2e-prepare.mjs` truncate order without cascading unknown tables. Self-referential FKs (e.g. `conversation_pseudonyms.superseded_by_id`) are nulled before delete.
+Children first; see `DELETE_ORDER` in `alpha-reset-manifest.ts` (class=`reset` only). Self-referential FKs (e.g. `conversation_pseudonyms.superseded_by_id`) are nulled before delete. `document_versions` are cleared inside the regenerate step after assent child tables are gone.
+
+---
+
+## Receipt provenance
+
+| Ceremony | `synthetic` on audit row | `receiptProvenance` |
+| --- | --- | --- |
+| Normal operator CLI (`npm run operator:reset-alpha`) | `false` | `operational` |
+| Disposable smoke (`npm run alpha:reset:smoke`) | `true` | `synthetic_smoke` |
+
+Provenance is an explicit input to the ceremony — never inferred from database name heuristics.
 
 ---
 
@@ -93,4 +107,8 @@ APP_MODE=gated DATABASE_URL=... OPERATOR_RESET_SECRET=... OPERATOR_LABEL=ops \
 npm run operator:reset-alpha -- --execute --confirm-fingerprint=<exact> --reason="Alpha drill execute"
 ```
 
-Automated proof: `npm run alpha:reset:smoke` against disposable `ostt_alpha_reset` only (never `ostt_dev`).
+Automated proofs:
+
+- `npm run alpha:reset:smoke` — disposable `ostt_alpha_reset` only; proves wipe + **bootstrap recovery without** `seedSyntheticFoundation`
+- `npm run test:pg:alpha-reset` — concurrency / lock / rollback proofs on `ostt_alpha_reset_concurrency`
+- `npm run phase3:acceptance` — connected Phase 3 journey on `ostt_phase3_acceptance`
