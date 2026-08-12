@@ -120,3 +120,54 @@ describe("moderation and disclosure API public-demo isolation", () => {
     expect(evidenceDisclosurePatch.status).toBe(404);
   });
 });
+
+describe("workspace moderation/disclosure page import isolation (source)", () => {
+  it("keeps gated DB modules behind dynamic import in moderation pages", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const queue = readFileSync(
+      join(process.cwd(), "src/app/workspace/moderation/page.tsx"),
+      "utf8",
+    );
+    const claim = readFileSync(
+      join(
+        process.cwd(),
+        "src/app/workspace/moderation/claims/[claimId]/page.tsx",
+      ),
+      "utf8",
+    );
+    const evidence = readFileSync(
+      join(
+        process.cwd(),
+        "src/app/workspace/moderation/evidence/[evidenceId]/page.tsx",
+      ),
+      "utf8",
+    );
+    const submission = readFileSync(
+      join(process.cwd(), "src/app/workspace/submissions/[claimId]/page.tsx"),
+      "utf8",
+    );
+
+    for (const source of [queue, claim, evidence, submission]) {
+      expect(source).not.toMatch(
+        /import\s+.*from\s+["']@\/lib\/auth\/runtime["']/,
+      );
+      expect(source).not.toMatch(
+        /import\s+.*from\s+["']@\/lib\/moderation\/queues["']/,
+      );
+      expect(source).not.toMatch(
+        /import\s+.*from\s+["']@\/lib\/conflicts\/disclose["']/,
+      );
+      expect(source).not.toMatch(/import\s+.*from\s+["']@\/db\/client["']/);
+    }
+
+    expect(queue).toMatch(/import\(\s*["']@\/lib\/moderation\/queues["']\s*\)/);
+    expect(claim).toMatch(/import\(\s*["']@\/lib\/moderation\/queues["']\s*\)/);
+    expect(evidence).toMatch(
+      /import\(\s*["']@\/lib\/moderation\/queues["']\s*\)/,
+    );
+    expect(submission).toMatch(
+      /import\(\s*["']@\/lib\/conflicts\/disclose["']\s*\)/,
+    );
+  });
+});

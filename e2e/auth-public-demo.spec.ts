@@ -43,6 +43,19 @@ test.describe("auth isolation in public-demo", () => {
       { data: { action: "withdraw" } },
     );
     expect(ownSubmission.status()).toBe(404);
+
+    const moderationQueue = await page.request.get("/api/workspace/moderation");
+    expect(moderationQueue.status()).toBe(404);
+    const moderationClaim = await page.request.post(
+      "/api/workspace/moderation/claims/x",
+      { data: { action: "hold", publicRationale: "demo-should-404" } },
+    );
+    expect(moderationClaim.status()).toBe(404);
+    const disclosurePatch = await page.request.patch(
+      "/api/workspace/disclosures/claims/x",
+      { data: { disclosureChoice: "none" } },
+    );
+    expect(disclosurePatch.status()).toBe(404);
   });
 
   test("workspace topic and submission pages are not found in public-demo", async ({
@@ -54,6 +67,12 @@ test.describe("auth isolation in public-demo", () => {
     expect(submit?.status()).toBe(404);
     const submissions = await page.goto("/workspace/submissions");
     expect(submissions?.status()).toBe(404);
+    const moderation = await page.goto("/workspace/moderation");
+    expect(moderation?.status()).toBe(404);
+    const moderationClaim = await page.goto(
+      "/workspace/moderation/claims/claim-ostt-synth-billing-timeline",
+    );
+    expect(moderationClaim?.status()).toBe(404);
   });
 
   test("public join preview still cannot enroll", async ({ page }) => {
