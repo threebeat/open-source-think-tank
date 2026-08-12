@@ -1,6 +1,6 @@
 # Phase 3 architecture — operational alpha
 
-**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.9 implemented/in progress** (first operational vertical slice through 3.6; 3.7–3.8 enrichments; **3.9** hardens source URLs + mutation abuse controls, closes 3.8 concurrency, and makes `/demo/workflow` an interactive local practice surface; **3.10 not started**)  
+**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.9 implemented/in progress** (first operational vertical slice through 3.6; 3.7–3.8 enrichments; **3.9 complete** — source URLs + mutation abuse controls, 3.8 concurrency closed, interactive `/demo/workflow` practice; **3.10 not started**)  
 **Plan:** [phase-3-plan.md](./phase-3-plan.md)  
 **ADRs:** [0008](./decisions/0008-phase-3-operational-alpha-contract.md), [0009](./decisions/0009-phase-3-operational-slice-corrections.md)  
 **Foundation:** [architecture-phase-2.md](./architecture-phase-2.md), ADRs 0002–0005, capability matrix, audit registry

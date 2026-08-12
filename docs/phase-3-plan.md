@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 3 (packages 3.1–3.12)  
 **Baseline:** Phase 2 foundation at or after `a894317317f3ff1e80d0a3602df69e5b4d8cd589` (tag `phase-2-foundation` recorded in [phase-2-handoff.md](./phase-2-handoff.md))  
-**Current package:** **3.9 in progress.** Owner-reviewed 3.8 carryovers (atomic disclosure/moderation concurrency; interactive `/demo/workflow` practice) plus source-URL hardening, bounded mutation bodies, and single-instance mutation rate limits. Package **3.10** public-interface completion is **not started** and awaits human approval after 3.9.
+**Current package:** **3.9 complete (awaiting human approval before 3.10).** Owner-reviewed 3.8 carryovers closed; source-URL hardening, bounded mutation bodies, single-instance mutation rate limits, and interactive `/demo/workflow` practice landed. Package **3.10** public-interface completion is **not started**.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [phase-2-plan.md](./phase-2-plan.md), [phase-2-handoff.md](./phase-2-handoff.md), [architecture-phase-2.md](./architecture-phase-2.md), [architecture-phase-3.md](./architecture-phase-3.md), [capability-matrix.md](./capability-matrix.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [open-questions.md](./open-questions.md), [decisions/0006-phase-3-two-lane-sequencing.md](./decisions/0006-phase-3-two-lane-sequencing.md), [decisions/0007-alpha-test-interim-council-dispositions.md](./decisions/0007-alpha-test-interim-council-dispositions.md), [decisions/0008-phase-3-operational-alpha-contract.md](./decisions/0008-phase-3-operational-alpha-contract.md), [decisions/0009-phase-3-operational-slice-corrections.md](./decisions/0009-phase-3-operational-slice-corrections.md)
 
@@ -639,7 +639,7 @@ Still **forbidden in Phase 3** unless a future ADR + register update says otherw
 
 ### Work package 3.9 — Source security, abuse controls, and interactive user demo
 
-**Status:** In progress.
+**Status:** Complete (awaiting human approval before 3.10).
 
 **Objective:** Harden stored source URLs and high-value mutation surfaces without fetching remote content, close 3.8 concurrency and demo-journey carryovers, and turn `/demo/workflow` into a user-operated local practice journey.
 
@@ -665,6 +665,14 @@ Still **forbidden in Phase 3** unless a future ADR + register update says otherw
 **Non-goals:** Real gated topic-recommendation intake; link previews/scrapers/malware scanning; distributed rate-limit vendor; file uploads; 3.10 public-interface completion.
 
 **Stop condition:** Human review before **3.10**.
+
+**3.9 delivery notes (implemented):**
+
+- Shared pure `src/lib/security/source-url.ts` (`https:` only; credentials/private/local/metadata/non-443 rejected; no DNS/fetch); wired into submit/edit/publish/projection.
+- Bounded JSON (32 KiB) + replaceable in-process `MutationRateLimiter` on submission, edit/resubmit/withdraw/disclosure, review/quality, and moderation routes; denials are no-store `413`/`429` without domain/audit writes.
+- Disclosure/moderation `expectedUpdatedAt` enforced in SQL; concurrent same-token writers proven in unit tests; successful writes advance `updated_at` by ≥1 ms.
+- `/demo/workflow` primary surface is local topic-recommendation + source-contribution practice (`sessionStorage`, safe deep links); snapshot explorer secondary. Topic recommendation labeled interaction prototype (not gated intake).
+- Log/redaction regressions expanded for invite tokens, verification artifacts, raw URLs/IPs, and private disclosure/moderation fields.
 
 ---
 
