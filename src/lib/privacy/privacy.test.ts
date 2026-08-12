@@ -151,6 +151,33 @@ describe("privacy and operational controls (2.11/2.12 hardening)", () => {
     auditSpy.mockRestore();
   });
 
+  it("denies a second open closure request without leaking internal errors", async () => {
+    const accountId = "account-ostt-synth-ada";
+    const first = await requestAccountClosure(db, {
+      accountId,
+      actorAccountId: accountId,
+      reason: "Synthetic first open closure request.",
+    });
+    expect(first.ok).toBe(true);
+
+    const second = await requestAccountClosure(db, {
+      accountId,
+      actorAccountId: accountId,
+      reason: "Synthetic duplicate open closure request.",
+    });
+    expect(second.ok).toBe(false);
+    if (!second.ok) {
+      expect(second.code).toBe("CLOSURE_REQUEST_EXISTS");
+      expect(second.error).toMatch(/already exists/i);
+    }
+
+    const open = await db
+      .select({ id: accountDeletionRequests.id })
+      .from(accountDeletionRequests)
+      .where(eq(accountDeletionRequests.accountId, accountId));
+    expect(open.length).toBe(1);
+  });
+
   it("maps unexpected closure request failures to a stable public error", async () => {
     const securitySpy = vi
       .spyOn(securityLogModule, "securityLog")

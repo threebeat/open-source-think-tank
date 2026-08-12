@@ -40,9 +40,11 @@ test.describe("gated account privacy journey (synthetic)", () => {
       /attachment;\s*filename="ostt-account-export\.json"/i,
     );
     const exportBody = (await exportResponse.json()) as {
-      accountId?: string;
+      ok?: boolean;
+      value?: { accountId?: string };
     };
-    expect(exportBody.accountId).toBe(OWN_ACCOUNT_ID);
+    expect(exportBody.ok).toBe(true);
+    expect(exportBody.value?.accountId).toBe(OWN_ACCOUNT_ID);
     expect(JSON.stringify(exportBody)).not.toContain(FOREIGN_ACCOUNT_SENTINEL);
 
     await page.goto("/account/privacy");
@@ -54,9 +56,10 @@ test.describe("gated account privacy journey (synthetic)", () => {
     // --- Empty reason → accessible error summary focus ---
     await page.getByLabel(/reason for closure/i).fill("");
     await page.getByRole("button", { name: /submit closure request/i }).click();
-    const errorSummary = page.getByRole("alert");
+    const errorSummary = page.getByRole("alert").filter({
+      hasText: /closure request requires a reason/i,
+    });
     await expect(errorSummary).toBeVisible();
-    await expect(errorSummary).toContainText(/reason/i);
     await expect(errorSummary).toBeFocused();
     await expectNoSeriousAxe(page, "privacy error");
 
@@ -65,9 +68,10 @@ test.describe("gated account privacy journey (synthetic)", () => {
       "Synthetic gated e2e closure request — workflow receipt only.";
     await page.getByLabel(/reason for closure/i).fill(reason);
     await page.getByRole("button", { name: /submit closure request/i }).click();
-    const receipt = page.getByRole("status");
+    const receipt = page.getByRole("status").filter({
+      hasText: /closure request received/i,
+    });
     await expect(receipt).toBeVisible();
-    await expect(receipt).toContainText(/closure request received/i);
     await expect(receipt).toContainText(/pending/i);
     await expect(receipt).toContainText(/sessions remain active/i);
     await expectNoSeriousAxe(page, "privacy receipt");
@@ -83,8 +87,10 @@ test.describe("gated account privacy journey (synthetic)", () => {
       "Synthetic duplicate closure probe.",
     );
     await page.getByRole("button", { name: /submit closure request/i }).click();
-    await expect(page.getByRole("alert")).toBeVisible();
-    await expect(page.getByRole("alert")).toContainText(/already exists/i);
+    const duplicateAlert = page.getByRole("alert").filter({
+      hasText: /already exists/i,
+    });
+    await expect(duplicateAlert).toBeVisible();
 
     const duplicateApi = await page.request.post(
       "/api/account/closure-request",
