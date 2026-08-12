@@ -142,7 +142,9 @@ Relevant open questions remain open in [open-questions.md](./open-questions.md).
 | --- | --- |
 | Baseline `origin/main` | `33874e8a9ea9d3ddc690dc69de4d015861e41fcb` |
 | Closure PR | https://github.com/threebeat/open-source-think-tank/pull/16 |
-| Candidate head | *(see latest commit on `cursor/phase-3-closure-signoff-0ee2`)* |
+| Candidate head | `badaba2924c4413bd1978930b12273ca412f6840` |
+| CI run (success) | https://github.com/threebeat/open-source-think-tank/actions/runs/31632944572 |
+| Vercel preview | https://vercel.com/johnmoore2048-7946s-projects/open-source-think-tank/9atWmxM8xDe4vigKk3StPDTg9uHq (Deployment has completed) |
 | `npm ci` | pass |
 | `npm run lint` | pass (16 pre-existing unused-adapter warnings; 0 errors) |
 | `npm run typecheck` | pass |
