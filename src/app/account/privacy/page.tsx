@@ -4,6 +4,7 @@ import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { PageHeader } from "@/components/PageHeader";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { MainContainer } from "@/components/layout/MainContainer";
+import { PrivacyControlsClient } from "@/components/privacy/PrivacyControlsClient";
 import { resolveAppMode } from "@/lib/env/app-mode";
 import { RETENTION_RULES } from "@/lib/privacy/retention-rules";
 
@@ -40,20 +41,11 @@ export default async function AccountPrivacyPage() {
         description="Export your account-holder data or request closure. Retention and deletion rights remain counsel-gated."
       />
       <DisclosureNotice title="Provisional engineering controls" tone="caution">
-        {RETENTION_RULES.counselGate}. Closure retains assent and audit history.
-        This is not a settled privacy policy.
+        {RETENTION_RULES.counselGate}. {RETENTION_RULES.closure} This is not a
+        settled privacy policy, and submission of a closure request does not
+        promise immediate deletion.
       </DisclosureNotice>
-      <ul className="list-disc space-y-2 pl-5 text-sm">
-        <li>
-          <a className="underline" href="/api/account/export">
-            Download account-holder export (JSON)
-          </a>
-        </li>
-        <li>
-          Closure requests: POST <code>/api/account/closure-request</code> with a
-          reason (authenticated session required).
-        </li>
-      </ul>
+      <PrivacyControlsClient />
     </MainContainer>
   );
 }

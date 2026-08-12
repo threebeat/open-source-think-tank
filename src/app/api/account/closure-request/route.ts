@@ -2,12 +2,22 @@ import { NextResponse } from "next/server";
 
 import { resolveAppMode } from "@/lib/env/app-mode";
 import { requestAccountClosure } from "@/lib/privacy/closure";
+import { assertCsrfSafe, csrfDeniedResponse } from "@/lib/security/csrf";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   if (resolveAppMode() !== "gated") {
-    return NextResponse.json({ ok: false, code: "NOT_FOUND" }, { status: 404 });
+    return NextResponse.json(
+      { ok: false, code: "NOT_FOUND" },
+      { status: 404, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
+  try {
+    assertCsrfSafe(request);
+  } catch (error) {
+    return csrfDeniedResponse(error);
   }
 
   const { requireGatedSession } = await import("@/lib/auth/guard");
@@ -16,7 +26,7 @@ export async function POST(request: Request) {
   if (!gated.ok) {
     return NextResponse.json(
       { ok: false, error: gated.error, code: gated.code },
-      { status: gated.status },
+      { status: gated.status, headers: { "Cache-Control": "no-store" } },
     );
   }
 
@@ -27,7 +37,13 @@ export async function POST(request: Request) {
     reason: body.reason ?? "",
   });
   if (!result.ok) {
-    return NextResponse.json(result, { status: 400 });
+    return NextResponse.json(result, {
+      status: 400,
+      headers: { "Cache-Control": "no-store" },
+    });
   }
-  return NextResponse.json({ ok: true, value: result.value });
+  return NextResponse.json(
+    { ok: true, value: result.value },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }

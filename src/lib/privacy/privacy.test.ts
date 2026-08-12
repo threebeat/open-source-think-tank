@@ -9,6 +9,7 @@ import {
   dualControlRequests,
   legalHolds,
   persons,
+  profiles,
   roleAssignments,
 } from "@/db/schema";
 import { seedSyntheticFoundation } from "@/db/seeds/synthetic";
@@ -109,6 +110,45 @@ describe("privacy and operational controls (2.11/2.12 hardening)", () => {
       "account-ostt-synth-ben",
     );
     expect(exported.value.assentRecords.length).toBeGreaterThan(0);
+  });
+
+  it("aborts when a foreign account sentinel appears in the export bundle", async () => {
+    const actorId = "account-ostt-synth-ada";
+    const foreignSentinel = "account-ostt-synth-ben";
+    const [before] = await db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.accountId, actorId))
+      .limit(1);
+    expect(before).toBeTruthy();
+
+    await db
+      .update(profiles)
+      .set({ preferredDisplayName: `planted ${foreignSentinel}` })
+      .where(eq(profiles.accountId, actorId));
+
+    try {
+      const blocked = await exportOwnAccountData(db, actorId);
+      expect(blocked.ok).toBe(false);
+      if (!blocked.ok) {
+        expect(blocked.code).toBe("EXPORT_CROSS_ACCOUNT_BLOCKED");
+      }
+    } finally {
+      await db
+        .update(profiles)
+        .set({ preferredDisplayName: before!.preferredDisplayName })
+        .where(eq(profiles.accountId, actorId));
+    }
+  });
+
+  it("does not return a successful export when audit append fails", async () => {
+    const auditSpy = vi
+      .spyOn(auditLog, "appendAuthAudit")
+      .mockRejectedValue(new Error("forced export audit failure"));
+    await expect(
+      exportOwnAccountData(db, "account-ostt-synth-ada"),
+    ).rejects.toThrow(/forced export audit failure/);
+    auditSpy.mockRestore();
   });
 
   it("closes an account only with a claimed dual-control request", async () => {
