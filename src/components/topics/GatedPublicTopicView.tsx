@@ -2,10 +2,12 @@ import Link from "next/link";
 
 import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { PageHeader } from "@/components/PageHeader";
+import { ConflictDisclosureCard } from "@/components/topics/ConflictDisclosureCard";
 import {
   EvidenceComparison,
   type ComparableEvidenceItem,
 } from "@/components/topics/EvidenceComparison";
+import { PublicModerationNotice } from "@/components/topics/PublicModerationNotice";
 import { PublicRevisionSummaryNotice } from "@/components/topics/RevisionHistoryPanel";
 import { formatTopicGeography } from "@/lib/geography/tennessee-counties";
 import { groupEvidenceByRelationship } from "@/lib/topics/evidence-groups";
@@ -47,8 +49,11 @@ function EvidenceBlock({
         {evidence.title}
       </p>
       <p className="mt-1 text-muted-foreground break-words">
-        {relationship === "supporting" ? "Supporting evidence" : "Counterevidence"}{" "}
-        · {evidence.organization} · {evidence.authorType} · {evidence.sourceType}
+        {relationship === "supporting"
+          ? "Supporting evidence"
+          : "Counterevidence"}{" "}
+        · {evidence.organization} · {evidence.authorType} ·{" "}
+        {evidence.sourceType}
       </p>
       <p className="mt-2 text-muted-foreground break-words">
         <span className="font-medium text-foreground">Evidence quality: </span>
@@ -75,6 +80,16 @@ function EvidenceBlock({
         <span className="font-medium text-foreground">Limitations: </span>
         {evidence.limitations}
       </p>
+      {evidence.latestRestorationNotice ? (
+        <div className="mt-2">
+          <PublicModerationNotice
+            action={evidence.latestRestorationNotice.action}
+            publicRationale={evidence.latestRestorationNotice.publicRationale}
+            recordedAt={evidence.latestRestorationNotice.recordedAt}
+            subjectKind="evidence"
+          />
+        </div>
+      ) : null}
       <PublicRevisionSummaryNotice summary={evidence.revisionSummary} />
       <p className="mt-2">
         <a
@@ -97,7 +112,9 @@ type GatedPublicTopicViewProps = {
   projection: PublicTopicProjection;
 };
 
-export function GatedPublicTopicView({ projection }: GatedPublicTopicViewProps) {
+export function GatedPublicTopicView({
+  projection,
+}: GatedPublicTopicViewProps) {
   const evidenceByKey = new Map(
     projection.evidence.map((row) => [row.key, row]),
   );
@@ -127,9 +144,40 @@ export function GatedPublicTopicView({ projection }: GatedPublicTopicViewProps) 
         This is a resettable alpha publication from the gated environment. It is
         not government adoption, legal authority, or truth certification.
         Evidence quality labels are independent of popularity and consultation
-        agreement. Supporting and counterevidence are shown for comparison; neither
-        side is ranked.
+        agreement. Supporting and counterevidence are shown for comparison;
+        neither side is ranked.
       </DisclosureNotice>
+
+      {projection.withheldModerationNotices.length > 0 ? (
+        <section
+          className="space-y-3"
+          aria-labelledby="withheld-moderation-heading"
+        >
+          <h2
+            id="withheld-moderation-heading"
+            className="font-heading text-xl text-foreground"
+          >
+            Withheld from this publication
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Some accepted material is currently withheld. Notices below include
+            only the public rationale and date — not titles, bodies, or source
+            URLs.
+          </p>
+          <ul className="space-y-3">
+            {projection.withheldModerationNotices.map((notice, index) => (
+              <li key={`${notice.subjectKind}-${notice.recordedAt}-${index}`}>
+                <PublicModerationNotice
+                  action={notice.action}
+                  publicRationale={notice.publicRationale}
+                  recordedAt={notice.recordedAt}
+                  subjectKind={notice.subjectKind}
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section className="grid gap-4 md:grid-cols-2">
         <div className="space-y-3">
@@ -211,7 +259,9 @@ export function GatedPublicTopicView({ projection }: GatedPublicTopicViewProps) 
                   {claim.summary}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  <span className="font-medium text-foreground">Approach: </span>
+                  <span className="font-medium text-foreground">
+                    Approach:{" "}
+                  </span>
                   {claim.approachLabel}
                 </p>
                 {claim.workflowPublicRationale ? (
@@ -223,12 +273,20 @@ export function GatedPublicTopicView({ projection }: GatedPublicTopicViewProps) 
                   </p>
                 ) : null}
                 {claim.conflictPublicSummary ? (
-                  <p className="text-sm text-muted-foreground break-words">
-                    <span className="font-medium text-foreground">
-                      Conflict summary:{" "}
-                    </span>
-                    {claim.conflictPublicSummary}
-                  </p>
+                  <ConflictDisclosureCard
+                    publicSummary={claim.conflictPublicSummary}
+                    title="Conflict disclosure"
+                  />
+                ) : null}
+                {claim.latestRestorationNotice ? (
+                  <PublicModerationNotice
+                    action={claim.latestRestorationNotice.action}
+                    publicRationale={
+                      claim.latestRestorationNotice.publicRationale
+                    }
+                    recordedAt={claim.latestRestorationNotice.recordedAt}
+                    subjectKind="claim"
+                  />
                 ) : null}
                 <PublicRevisionSummaryNotice summary={claim.revisionSummary} />
 

@@ -22,9 +22,8 @@ export default async function WorkspaceReviewPage() {
   }
 
   const { getGatedDb } = await import("@/lib/auth/runtime");
-  const { listClaimReviewQueue, listEvidenceReviewQueue } = await import(
-    "@/lib/review/queues"
-  );
+  const { listClaimReviewQueue, listEvidenceReviewQueue } =
+    await import("@/lib/review/queues");
   const db = getGatedDb();
 
   const claims = await listClaimReviewQueue(db, {
@@ -47,10 +46,7 @@ export default async function WorkspaceReviewPage() {
   return (
     <MainContainer className="space-y-8">
       <Breadcrumbs
-        items={[
-          { href: "/", label: "Home" },
-          { label: "Review queues" },
-        ]}
+        items={[{ href: "/", label: "Home" }, { label: "Review queues" }]}
       />
       <PageHeader
         eyebrow="Staff review"
@@ -62,6 +58,19 @@ export default async function WorkspaceReviewPage() {
         disclosure detail. Public rationales may later appear on published
         topics.
       </DisclosureNotice>
+
+      <p className="text-sm">
+        <Link
+          href="/workspace/moderation"
+          className="text-primary underline underline-offset-2"
+        >
+          Open moderation queue
+        </Link>
+        <span className="text-muted-foreground">
+          {" "}
+          — hold, hide, or restore visibility without deleting content.
+        </span>
+      </p>
 
       <section className="space-y-3" aria-labelledby="claim-queue-heading">
         <h2 id="claim-queue-heading" className="font-heading text-xl">

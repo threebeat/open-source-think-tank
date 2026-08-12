@@ -1,6 +1,6 @@
 # Phase 3 architecture — operational alpha
 
-**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.7 implemented** (first operational vertical slice through 3.6; 3.7 adds immutable `content_revisions` and supporting/counterevidence comparison UX; public-demo remains fixture-backed; **3.8 not started**)  
+**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.8 implemented** (first operational vertical slice through 3.6; 3.7 adds immutable `content_revisions` and comparison UX; 3.8 deepens conflict disclosures, append-only moderation actions, gated moderation workspace, allowlisted public notices, and fixture-backed `/demo/workflow` parity; **3.9 not started**)  
 **Plan:** [phase-3-plan.md](./phase-3-plan.md)  
 **ADRs:** [0008](./decisions/0008-phase-3-operational-alpha-contract.md), [0009](./decisions/0009-phase-3-operational-slice-corrections.md)  
 **Foundation:** [architecture-phase-2.md](./architecture-phase-2.md), ADRs 0002–0005, capability matrix, audit registry
@@ -106,6 +106,10 @@ Migration: `drizzle/0012_topic_evidence.sql`. Repositories: `src/lib/topics|clai
 ### 3.3 Disclosures
 
 - `conflict_disclosures` — disclosing_account_id, nullable `claim_id` and `evidence_submission_id` with CHECK requiring exactly one subject, public_summary, optional private_detail, synthetic, timestamps (no unenforced polymorphic subject_type/subject_id)
+- Package **3.8** adds partial unique indexes: one current disclosure per claim and one per evidence submission
+- Audience DTOs: owner + matching `claims.review` / `evidence.review` staff see private detail for the exact subject; moderator-only and anonymous see public summary only
+- Owner create/update via `conflicts.disclose_own` with expected-`updated_at` concurrency; “No known conflict” uses canonical public copy and clears private detail; true no-ops write nothing
+- Audits: `conflicts.disclosed` (create), `conflicts.updated` (field labels only — never disclosure text)
 
 ### 3.4 Revisions (Package 3.7)
 
@@ -136,6 +140,17 @@ Migration: `drizzle/0012_topic_evidence.sql`. Repositories: `src/lib/topics|clai
 - `claim_reviews` — append-only decision rows (changes_requested | accepted | rejected), public_rationale, private_notes, reviewer_account_id, decided_at; UPDATE/DELETE rejected by trigger
 - `evidence_reviews` — append-only workflow and/or quality decisions (`quality_decided` requires quality_status); current claim/evidence row state may be updated separately for filtering; history is never only an overwritten rationale column
 
+### 3.6 Moderation actions (Package 3.8)
+
+- `moderation_actions` — append-only institutional history (migration `0018_moderation_actions`):
+  - Exactly one subject: `claim_id` XOR `evidence_submission_id` (CHECK) + same-topic composite FKs
+  - `action` ∈ {`hold`, `hide`, `restore`}; `from_visibility` / `to_visibility` ∈ {`visible`, `held`, `hidden`} with transition CHECKs
+  - Required nonblank `public_rationale`; optional staff-only `private_notes`
+  - Immutable after insert: `moderation_actions_immutable` trigger rejects UPDATE/DELETE
+- Current visibility remains on the claim/evidence row. Restore is an **action** that writes stored `visible` — never a `restored` enum value.
+- Transaction boundary: authorize `moderation.review_submission` → expected visibility + `updated_at` → conditional visibility update → append action → append audit. Failure rolls back all.
+- Claim moderation never mutates evidence (and vice versa); never mutates workflow, quality, disclosures, revisions, links, or topic publication.
+
 ### Relationships (logical)
 
 ```
@@ -143,14 +158,15 @@ accounts 1---* topics.created_by
 topics 1---* claims
 topics 1---* evidence_submissions
 claims *---* evidence_submissions  (via claim_evidence_links; same topic)
-claims/evidence 1---* conflict_disclosures  (exactly one subject FK)
+claims/evidence 1---1 conflict_disclosures  (exactly one subject FK; one current per subject)
 claims 1---* claim_reviews
 evidence_submissions 1---* evidence_reviews
 claims/evidence 1---* content_revisions  (exactly one subject FK; immutable)
+claims/evidence 1---* moderation_actions  (exactly one subject FK; immutable)
 all mutable institutional actions ---> audit_events
 ```
 
-**Non-joins for public APIs:** public projection queries must not require contact_channel, verification artifacts, assent payloads, or disclosure private_detail.
+**Non-joins for public APIs:** public projection queries must not require contact_channel, verification artifacts, assent payloads, disclosure private_detail, or moderation private_notes.
 
 ---
 
@@ -161,13 +177,14 @@ Allowlisted fields for gated anonymous/public topic reads when `publication_stat
 | Include | Exclude |
 | --- | --- |
 | Topic title, question, background, scope, published timestamps, operational workflow public label | Account IDs, contact channels |
-| Claims/sources in workflow `accepted` (or explicitly publication-eligible) **and** visibility `visible` | Drafts, rejected-only bodies, held/hidden bodies |
+| Claims/sources in workflow `accepted` (or explicitly publication-eligible) **and** visibility `visible` | Drafts, rejected-only bodies, held/hidden bodies/titles/URLs |
 | Evidence quality status + **public** rationale | Private moderation/review notes |
-| Public conflict summaries (deepened after 3.8) | Private disclosure detail |
-| Revision summaries safe for public (deepened in 3.7/3.10) | Invite tokens, verification cases |
+| Public conflict summaries on currently included content (3.8) | Private disclosure detail |
+| Revision summaries safe for public (3.7; more polish in 3.10) | Invite tokens, verification cases |
+| Allowlisted moderation notices (3.8): withhold notices for held/hidden accepted subjects (action + public rationale + date); restore notices on currently included visible subjects | Subject internal IDs, actor/account IDs, private notes, raw audit |
 | Allowlisted audit summaries (existing 2.9 projectors) | Raw privatePayload |
 
-Projection builder lives in a pure module (`src/lib/topics/public-projection.ts`) testable without React. **Minimal path is wired in 3.6** via mode-branched `/topics` + `src/lib/topics/gated-public-read.ts`; **3.10** completes and hardens.
+Projection builder lives in a pure module (`src/lib/topics/public-projection.ts`) testable without React. **Minimal path is wired in 3.6** via mode-branched `/topics` + `src/lib/topics/gated-public-read.ts`; **3.8** extends notices; **3.10** completes and hardens presentation.
 
 ---
 
@@ -190,7 +207,11 @@ Projection builder lives in a pure module (`src/lib/topics/public-projection.ts`
 | `/api/workspace/review*` | Review list/detail/mutations | matching review caps; public-demo 404 |
 | `/api/workspace/topics/[id]/publish` | Publish readiness GET + publish POST | `topics.publish`; public-demo 404 |
 | `/workspace/review` | Claim and evidence review queues | `claims.review`, `evidence.review` |
-| `/workspace/moderation` | Visibility hold/hide/restore-to-visible | `moderation.review_submission` |
+| `/workspace/moderation` | Visibility hold/hide/restore-to-visible queue | `moderation.review_submission` |
+| `/workspace/moderation/claims/[claimId]` | Claim moderation detail/history/action | `moderation.review_submission` |
+| `/workspace/moderation/evidence/[evidenceId]` | Evidence moderation detail/history/action | `moderation.review_submission` |
+| `/api/workspace/moderation*` | Moderation queue/detail/mutations (subject-specific) | matching cap; public-demo 404 |
+| `/api/workspace/disclosures/claims|evidence/[id]` | Own disclosure GET/PATCH (subject-specific) | `conflicts.disclose_own` + ownership; public-demo 404 |
 | `/staff/invitations` + `POST/GET /api/staff/invitations` | Issue/list invites (hash-only; one-time raw link; public-demo 404) | `invites.issue` |
 
 Exact paths may align with existing `/account/*` and `/staff/*` trees; do not expose them on public-demo.
@@ -200,15 +221,16 @@ Exact paths may align with existing `/account/*` and `/staff/*` trees; do not ex
 | Route | Public-demo | Gated |
 | --- | --- | --- |
 | `/topics`, `/topics/[slug]` | Fixtures (unchanged behavior) | Published projection only |
+| `/demo/workflow` | Fixture-backed operational workflow preview (3.8); query `view`/`state` presentation-only | N/A (public-demo surface) |
 | `/topics/[slug]/consult` | Demonstration Public Input (fixture) | Remains out of Phase 3 operational scope; **Pol.is planned for Phase 4 of the alpha — not installed or called in Phase 3** |
 | Agenda/deliberation/decision | Fixtures | Unchanged unless a later package explicitly says otherwise |
 
 ### Mutation / API boundaries
 
-- Prefer server actions or App Router route handlers under `/api/...` that call services.
-- Each mutation: CSRF → session → `authorizeCapability` → Zod → transaction → audit.
+- Prefer subject-specific App Router route handlers under `/api/...` that call services (no unvalidated polymorphic subject endpoints).
+- Each mutation: public-demo 404 → CSRF → session → `authorizeCapability` / ownership → Zod → transaction → audit → no-store.
 - Probe-style authz tests may extend `/api/authz/*` patterns from Phase 2.
-- Public-demo: gated mutation endpoints return 404.
+- Public-demo: gated mutation endpoints return 404; demo feature-tour modules must not import gated repositories/services.
 
 ---
 
@@ -222,7 +244,8 @@ Exact paths may align with existing `/account/*` and `/staff/*` trees; do not ex
 | Resubmit / edit after changes_requested | content update + append-only `content_revisions` row (on content change) + workflow state + audit (`*.updated` / `*.revision_recorded` / `*.resubmitted` as applicable) |
 | Claim workflow decision | `claims.review` + audit |
 | Evidence workflow / quality decision | `evidence.review` + audit; must not rewrite unrelated popularity fields |
-| Moderation visibility | visibility ∈ {visible,held,hidden} + audit; restore action → visible + `moderation.submission_restored`; never delete revisions |
+| Moderation visibility | expected visibility + `updated_at` → row visibility ∈ {visible,held,hidden} + append `moderation_actions` + audit (`moderation.submission_held` / `_hidden` / `_restored`); restore → visible; never delete revisions/disclosures/reviews |
+| Disclosure create/update | ownership + `conflicts.disclose_own` + expected `updated_at` (updates) + audit (`conflicts.disclosed` / `conflicts.updated`); no-op writes nothing |
 | Invite issue | invitation row (hash) + audit; raw token only in response memory |
 | Bootstrap invitation | singleton lock + zero-admin check + bootstrap invitation (hash) + operator audit |
 | Bootstrap finalize | singleton lock + re-check gates + operator_bootstrap verification provenance + activation + administrator grant + completion mark + audit |

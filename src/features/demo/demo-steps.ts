@@ -78,6 +78,16 @@ export const demoSteps: DemoStep[] = [
       "Name Farah Quinn as the minority author on the Policy Council. Dual-seat members keep separate selection paths.",
   },
   {
+    id: "workflow",
+    title: "Operational workflow preview",
+    summary:
+      "Open the fixture-backed feature tour of synthetic submission, disclosure, review, revision, comparison, moderation visibility, and visitor projection snapshots. URL query state is presentation-only.",
+    href: "/demo/workflow",
+    linkLabel: "Open operational workflow preview",
+    presenterNotes:
+      "Label every screen as a synthetic role preview. Never imply live moderation actions, admin consoles, or other current visitors.",
+  },
+  {
     id: "transparency",
     title: "The Public Record",
     summary:

@@ -26,8 +26,14 @@ describe("demo-query", () => {
       "/topics/cedar-river-drought-surcharge/consult?demoStep=consultation",
     );
     expect(demoReturnHref("topics")).toBe("/demo?step=topics");
+    expect(getNextDemoStepId("decision")).toBe("workflow");
+    expect(getDemoContinueHref("decision")).toBe(
+      "/demo/workflow?demoStep=workflow",
+    );
+    expect(getNextDemoStepId("workflow")).toBe("transparency");
     expect(getDemoContinueHref("transparency")).toBe(
       "/demo?step=questions-legal",
     );
   });
 });
+

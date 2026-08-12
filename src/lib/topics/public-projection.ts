@@ -16,6 +16,14 @@ export type PublicRevisionSummaryProjection = {
   changedFieldLabels: string[];
 };
 
+/** Allowlisted public moderation notice — never private notes or withheld bodies. */
+export type PublicModerationNoticeProjection = {
+  subjectKind: "claim" | "evidence";
+  action: "hold" | "hide" | "restore";
+  publicRationale: string;
+  recordedAt: string;
+};
+
 export type PublicClaimProjection = {
   title: string;
   summary: string;
@@ -23,6 +31,8 @@ export type PublicClaimProjection = {
   workflowPublicRationale: string | null;
   conflictPublicSummary: string | null;
   revisionSummary: PublicRevisionSummaryProjection | null;
+  /** Present only for currently included visible claims that were restored. */
+  latestRestorationNotice: PublicModerationNoticeProjection | null;
   evidenceLinks: Array<{
     relationship: "supporting" | "counterevidence";
     evidenceKey: string;
@@ -41,6 +51,8 @@ export type PublicEvidenceProjection = {
   qualityPublicRationale: string | null;
   workflowPublicRationale: string | null;
   revisionSummary: PublicRevisionSummaryProjection | null;
+  /** Present only for currently included visible evidence that was restored. */
+  latestRestorationNotice: PublicModerationNoticeProjection | null;
 };
 
 export type PublicTopicProjection = {
@@ -54,6 +66,17 @@ export type PublicTopicProjection = {
   publishedAt: string;
   claims: PublicClaimProjection[];
   evidence: PublicEvidenceProjection[];
+  /**
+   * Notices that accepted content was withheld from this publication.
+   * Contain action, public rationale, and date only — no titles/bodies/URLs/IDs.
+   */
+  withheldModerationNotices: PublicModerationNoticeProjection[];
+};
+
+export type ProjectionModerationNoticeInput = {
+  action: "hold" | "hide" | "restore";
+  publicRationale: string;
+  recordedAt: Date | string;
 };
 
 export type ProjectionClaimInput = {
@@ -66,6 +89,8 @@ export type ProjectionClaimInput = {
   workflowPublicRationale: string | null;
   conflictPublicSummary: string | null;
   revisionSummary: PublicRevisionSummaryProjection | null;
+  /** Latest moderation action for this claim, if any. */
+  latestModerationNotice: ProjectionModerationNoticeInput | null;
 };
 
 export type ProjectionEvidenceInput = {
@@ -82,6 +107,7 @@ export type ProjectionEvidenceInput = {
   qualityPublicRationale: string | null;
   workflowPublicRationale: string | null;
   revisionSummary: PublicRevisionSummaryProjection | null;
+  latestModerationNotice: ProjectionModerationNoticeInput | null;
 };
 
 export type ProjectionLinkInput = {
@@ -145,6 +171,18 @@ function toIso(publishedAt: Date | string | null): string | null {
   return publishedAt.toISOString();
 }
 
+function toNotice(
+  subjectKind: "claim" | "evidence",
+  notice: ProjectionModerationNoticeInput,
+): PublicModerationNoticeProjection {
+  return {
+    subjectKind,
+    action: notice.action,
+    publicRationale: notice.publicRationale,
+    recordedAt: toIso(notice.recordedAt) ?? "",
+  };
+}
+
 function isNonPendingQuality(
   status: string,
 ): status is "accepted" | "limited" | "disputed" | "rejected" {
@@ -176,6 +214,7 @@ export function buildPublicTopicProjection(
   const publicKeyByEvidenceId = new Map<string, string>();
   const evidenceOut: PublicEvidenceProjection[] = [];
   const claims: PublicClaimProjection[] = [];
+  const withheldModerationNotices: PublicModerationNoticeProjection[] = [];
 
   function publicKeyFor(evidenceId: string): string {
     const existing = publicKeyByEvidenceId.get(evidenceId);
@@ -185,11 +224,39 @@ export function buildPublicTopicProjection(
     return key;
   }
 
+  function isProjectionEligibleEvidence(
+    evidence: ProjectionEvidenceInput,
+  ): boolean {
+    return (
+      evidence.workflowState === "accepted" &&
+      isNonPendingQuality(evidence.qualityStatus) &&
+      Boolean(evidence.qualityPublicRationale?.trim()) &&
+      isPublishableHttpUrl(evidence.sourceUrl)
+    );
+  }
+
   for (const claim of input.claims) {
+    if (claim.workflowState !== "accepted") {
+      continue;
+    }
+
+    // Withheld accepted claims: expose a safe notice without title/body.
     if (
-      claim.workflowState !== "accepted" ||
-      claim.moderationVisibility !== "visible"
+      claim.moderationVisibility === "held" ||
+      claim.moderationVisibility === "hidden"
     ) {
+      const notice = claim.latestModerationNotice;
+      if (
+        notice &&
+        (notice.action === "hold" || notice.action === "hide") &&
+        notice.publicRationale.trim()
+      ) {
+        withheldModerationNotices.push(toNotice("claim", notice));
+      }
+      continue;
+    }
+
+    if (claim.moderationVisibility !== "visible") {
       continue;
     }
 
@@ -205,24 +272,47 @@ export function buildPublicTopicProjection(
     for (const link of claimLinks) {
       const evidence = evidenceById.get(link.evidenceSubmissionId);
       if (!evidence) continue;
-      if (
-        evidence.workflowState !== "accepted" ||
-        evidence.moderationVisibility !== "visible"
-      ) {
+      if (!isProjectionEligibleEvidence(evidence)) {
         continue;
       }
+      // Narrow qualityStatus for the public DTO (eligibility already checked).
       if (!isNonPendingQuality(evidence.qualityStatus)) {
         continue;
       }
-      if (!evidence.qualityPublicRationale?.trim()) {
+
+      if (
+        evidence.moderationVisibility === "held" ||
+        evidence.moderationVisibility === "hidden"
+      ) {
+        const notice = evidence.latestModerationNotice;
+        if (
+          notice &&
+          (notice.action === "hold" || notice.action === "hide") &&
+          notice.publicRationale.trim()
+        ) {
+          const already = withheldModerationNotices.some(
+            (row) =>
+              row.subjectKind === "evidence" &&
+              row.recordedAt === (toIso(notice.recordedAt) ?? "") &&
+              row.publicRationale === notice.publicRationale,
+          );
+          if (!already) {
+            withheldModerationNotices.push(toNotice("evidence", notice));
+          }
+        }
         continue;
       }
-      if (!isPublishableHttpUrl(evidence.sourceUrl)) {
+
+      if (evidence.moderationVisibility !== "visible") {
         continue;
       }
 
       const key = publicKeyFor(evidence.id);
       if (!evidenceOut.some((row) => row.key === key)) {
+        const restoreNotice =
+          evidence.latestModerationNotice?.action === "restore"
+            ? toNotice("evidence", evidence.latestModerationNotice)
+            : null;
         evidenceOut.push({
           key,
           sourceUrl: evidence.sourceUrl,
@@ -235,6 +325,7 @@ export function buildPublicTopicProjection(
           qualityPublicRationale: evidence.qualityPublicRationale,
           workflowPublicRationale: evidence.workflowPublicRationale,
           revisionSummary: evidence.revisionSummary,
+          latestRestorationNotice: restoreNotice,
         });
       }
       publicLinks.push({
@@ -247,6 +338,11 @@ export function buildPublicTopicProjection(
       continue;
     }
 
+    const restoreNotice =
+      claim.latestModerationNotice?.action === "restore"
+        ? toNotice("claim", claim.latestModerationNotice)
+        : null;
+
     claims.push({
       title: claim.title,
       summary: claim.summary,
@@ -254,6 +350,7 @@ export function buildPublicTopicProjection(
       workflowPublicRationale: claim.workflowPublicRationale,
       conflictPublicSummary: claim.conflictPublicSummary,
       revisionSummary: claim.revisionSummary,
+      latestRestorationNotice: restoreNotice,
       evidenceLinks: publicLinks,
     });
   }
@@ -277,6 +374,7 @@ export function buildPublicTopicProjection(
     publishedAt,
     claims,
     evidence: evidenceOut,
+    withheldModerationNotices,
   };
 }
 

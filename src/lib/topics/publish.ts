@@ -19,10 +19,17 @@ import {
   type EvidenceReviewRecord,
   type EvidenceSubmissionRecord,
 } from "@/lib/evidence/repository";
+import {
+  listModerationActionsForClaim,
+  listModerationActionsForEvidence,
+} from "@/lib/moderation/repository";
 import type { GatedDb } from "@/lib/persistence/gated";
 import { toPublicRevisionSummary } from "@/lib/revisions/history";
 import { countContentRevisionsForSubjects } from "@/lib/revisions/repository";
-import type { PublicRevisionSummaryProjection } from "@/lib/topics/public-projection";
+import type {
+  ProjectionModerationNoticeInput,
+  PublicRevisionSummaryProjection,
+} from "@/lib/topics/public-projection";
 import {
   getTopicById,
   type TopicRecord,
@@ -237,16 +244,14 @@ async function computeReadiness(
       if (!qualityRationale) {
         blockers.push({
           code: "EVIDENCE_MISSING_QUALITY_RATIONALE",
-          message:
-            "Linked evidence is missing a public quality rationale.",
+          message: "Linked evidence is missing a public quality rationale.",
         });
         continue;
       }
       if (!isHttpUrl(row.sourceUrl)) {
         blockers.push({
           code: "EVIDENCE_URL_INVALID",
-          message:
-            "Linked evidence source URL is not a valid http(s) URL.",
+          message: "Linked evidence source URL is not a valid http(s) URL.",
         });
         continue;
       }
@@ -380,8 +385,7 @@ export async function publishTopic(
           unchangedWorkflowState: priorWorkflow,
           actorAccountId: decision.principal.accountId,
           readinessSummary: {
-            acceptedVisibleClaimCount:
-              readiness.acceptedVisibleClaimIds.length,
+            acceptedVisibleClaimCount: readiness.acceptedVisibleClaimIds.length,
             linkedAcceptedVisibleEvidenceCount:
               readiness.linkedAcceptedVisibleEvidenceIds.length,
             includedClaimIds: readiness.acceptedVisibleClaimIds,
@@ -412,12 +416,12 @@ export async function publishTopic(
       };
     }
     if (message === "TOPIC_NOT_READY") {
-      const readiness = (
-        error as { readiness?: PublishReadinessResult }
-      ).readiness;
+      const readiness = (error as { readiness?: PublishReadinessResult })
+        .readiness;
       return {
         ok: false,
-        error: readiness?.blockers[0]?.message ?? "Topic is not ready to publish",
+        error:
+          readiness?.blockers[0]?.message ?? "Topic is not ready to publish",
         code: "TOPIC_NOT_READY",
       };
     }
@@ -430,6 +434,22 @@ export async function publishTopic(
 }
 
 /** Helpers for gated public-read assembly (also used by tests). */
+function latestModerationNoticeFrom(
+  actions: Array<{
+    action: "hold" | "hide" | "restore";
+    publicRationale: string;
+    createdAt: Date;
+  }>,
+): ProjectionModerationNoticeInput | null {
+  const latest = actions.at(-1);
+  if (!latest) return null;
+  return {
+    action: latest.action,
+    publicRationale: latest.publicRationale,
+    recordedAt: latest.createdAt,
+  };
+}
+
 export async function loadProjectionInputs(
   db: GatedDb,
   topic: TopicRecord,
@@ -439,6 +459,7 @@ export async function loadProjectionInputs(
       workflowPublicRationale: string | null;
       conflictPublicSummary: string | null;
       revisionSummary: PublicRevisionSummaryProjection | null;
+      latestModerationNotice: ProjectionModerationNoticeInput | null;
     }
   >;
   evidence: Array<
@@ -446,6 +467,7 @@ export async function loadProjectionInputs(
       qualityPublicRationale: string | null;
       workflowPublicRationale: string | null;
       revisionSummary: PublicRevisionSummaryProjection | null;
+      latestModerationNotice: ProjectionModerationNoticeInput | null;
     }
   >;
   links: Awaited<ReturnType<typeof listClaimEvidenceLinks>>;
@@ -474,6 +496,7 @@ export async function loadProjectionInputs(
   for (const claim of claimRows) {
     const reviews = await listClaimReviews(db, claim.id);
     const disclosures = await listConflictDisclosuresForClaim(db, claim.id);
+    const moderation = await listModerationActionsForClaim(db, claim.id);
     const rev = claimRevisionMap.get(claim.id);
     claims.push({
       ...claim,
@@ -490,12 +513,16 @@ export async function loadProjectionInputs(
             changedFields: rev.changedFieldUnion,
           })
         : null,
+      latestModerationNotice: moderation.ok
+        ? latestModerationNoticeFrom(moderation.value)
+        : null,
     });
   }
 
   const evidence = [];
   for (const row of evidenceRows) {
     const reviews = await listEvidenceReviews(db, row.id);
+    const moderation = await listModerationActionsForEvidence(db, row.id);
     const rev = evidenceRevisionMap.get(row.id);
     evidence.push({
       ...row,
@@ -511,6 +538,9 @@ export async function loadProjectionInputs(
             latestAt: rev.latestAt,
             changedFields: rev.changedFieldUnion,
           })
+        : null,
+      latestModerationNotice: moderation.ok
+        ? latestModerationNoticeFrom(moderation.value)
         : null,
     });
   }

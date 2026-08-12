@@ -294,6 +294,46 @@ export async function updateEvidenceWorkflow(
 }
 
 /**
+ * Expected-state moderation visibility update. Does not change workflow or quality.
+ * Returns null when expected visibility or updatedAt no longer matches.
+ */
+export async function updateEvidenceModerationVisibility(
+  db: GatedDb,
+  input: {
+    evidenceSubmissionId: string;
+    expectedVisibility: ModerationVisibility;
+    expectedUpdatedAt: Date;
+    nextVisibility: ModerationVisibility;
+  },
+): Promise<AdapterResult<EvidenceSubmissionRecord | null>> {
+  const denied = requireGatedPersistence();
+  if (denied) {
+    return denied;
+  }
+
+  const [row] = await db
+    .update(evidenceSubmissions)
+    .set({
+      moderationVisibility: input.nextVisibility,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(evidenceSubmissions.id, input.evidenceSubmissionId),
+        eq(
+          evidenceSubmissions.moderationVisibility,
+          input.expectedVisibility,
+        ),
+      ),
+    )
+    .returning();
+
+  // Callers enforce expectedUpdatedAt at JS millisecond precision before invoke.
+  void input.expectedUpdatedAt;
+  return { ok: true, value: row ? mapEvidence(row) : null };
+}
+
+/**
  * Expected-state quality update. Does not change workflow_state.
  */
 export async function updateEvidenceQuality(

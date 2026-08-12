@@ -3,19 +3,13 @@ import { asc, eq } from "drizzle-orm";
 import { topics } from "@/db/schema";
 import type { AdapterResult } from "@/lib/adapters/types";
 import { assertEnvironmentSafe } from "@/lib/env/app-mode";
-import {
-  type GatedDb,
-  requireGatedPersistence,
-} from "@/lib/persistence/gated";
+import { type GatedDb, requireGatedPersistence } from "@/lib/persistence/gated";
 import { loadProjectionInputs } from "@/lib/topics/publish";
 import {
   buildPublicTopicProjection,
   type PublicTopicProjection,
 } from "@/lib/topics/public-projection";
-import {
-  getTopicBySlug,
-  type TopicRecord,
-} from "@/lib/topics/repository";
+import { getTopicBySlug, type TopicRecord } from "@/lib/topics/repository";
 
 export type PublishedTopicListItem = {
   slug: string;
@@ -129,6 +123,7 @@ async function buildProjectionForTopic(
       workflowPublicRationale: claim.workflowPublicRationale,
       conflictPublicSummary: claim.conflictPublicSummary,
       revisionSummary: claim.revisionSummary,
+      latestModerationNotice: claim.latestModerationNotice,
     })),
     evidence: loaded.evidence.map((row) => ({
       id: row.id,
@@ -144,6 +139,7 @@ async function buildProjectionForTopic(
       qualityPublicRationale: row.qualityPublicRationale,
       workflowPublicRationale: row.workflowPublicRationale,
       revisionSummary: row.revisionSummary,
+      latestModerationNotice: row.latestModerationNotice,
     })),
     links: (loaded.links.ok ? loaded.links.value : []).map((link) => ({
       topicId: link.topicId,

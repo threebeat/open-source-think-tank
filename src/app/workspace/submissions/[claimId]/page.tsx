@@ -2,11 +2,13 @@ import { notFound, redirect } from "next/navigation";
 
 import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { PageHeader } from "@/components/PageHeader";
+import { ConflictDisclosureCard } from "@/components/topics/ConflictDisclosureCard";
 import {
   EvidenceComparison,
   type ComparableEvidenceItem,
 } from "@/components/topics/EvidenceComparison";
 import { RevisionHistoryPanel } from "@/components/topics/RevisionHistoryPanel";
+import { DisclosureUpsertForm } from "@/components/workspace/DisclosureUpsertForm";
 import { SubmissionEditResubmitForm } from "@/components/workspace/SubmissionEditResubmitForm";
 import { SubmissionWithdrawControls } from "@/components/workspace/SubmissionWithdrawControls";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
@@ -54,17 +56,13 @@ export default async function WorkspaceSubmissionDetailPage({
   const { getGatedDb } = await import("@/lib/auth/runtime");
   const { getClaimById, listClaimEvidenceLinks, listClaimReviews } =
     await import("@/lib/claims/repository");
-  const { getEvidenceSubmissionById } = await import(
-    "@/lib/evidence/repository"
-  );
-  const { listConflictDisclosuresForClaim } = await import(
-    "@/lib/conflicts/repository"
-  );
+  const { getEvidenceSubmissionById } =
+    await import("@/lib/evidence/repository");
   const { getTopicById } = await import("@/lib/topics/repository");
-  const {
-    getOwnClaimRevisionHistory,
-    getOwnEvidenceRevisionHistory,
-  } = await import("@/lib/revisions/history");
+  const { getOwnClaimRevisionHistory, getOwnEvidenceRevisionHistory } =
+    await import("@/lib/revisions/history");
+  const { getOwnClaimDisclosure, getOwnEvidenceDisclosure } =
+    await import("@/lib/conflicts/disclose");
   const db = getGatedDb();
 
   const claim = await getClaimById(db, claimId);
@@ -104,7 +102,30 @@ export default async function WorkspaceSubmissionDetailPage({
       (row) => row.evidence.submitterAccountId === gated.session.accountId,
     );
 
-  const disclosures = await listConflictDisclosuresForClaim(db, claim.value.id);
+  const claimDisclosure = await getOwnClaimDisclosure(db, {
+    actorAccountId: gated.session.accountId,
+    claimId: claim.value.id,
+  });
+  const claimDisclosureDto = claimDisclosure.ok
+    ? claimDisclosure.value.disclosure
+    : null;
+
+  const ownedEvidenceDisclosures = [];
+  for (const row of evidenceRows) {
+    if (row.evidence.submitterAccountId !== gated.session.accountId) continue;
+    const evidenceDisclosure = await getOwnEvidenceDisclosure(db, {
+      actorAccountId: gated.session.accountId,
+      evidenceSubmissionId: row.evidence.id,
+    });
+    ownedEvidenceDisclosures.push({
+      evidenceId: row.evidence.id,
+      title: row.evidence.title,
+      disclosure: evidenceDisclosure.ok
+        ? evidenceDisclosure.value.disclosure
+        : null,
+    });
+  }
+
   const claimReviews = await listClaimReviews(db, claim.value.id);
 
   const claimHistory = await getOwnClaimRevisionHistory(db, {
@@ -139,8 +160,9 @@ export default async function WorkspaceSubmissionDetailPage({
     }));
 
   const latestClaimReviewAt = publicClaimReviews.at(-1)?.decidedAt ?? null;
-  const claimLatestRevisionAt =
-    claimHistory.ok ? claimHistory.value.latestRevisionAt : null;
+  const claimLatestRevisionAt = claimHistory.ok
+    ? claimHistory.value.latestRevisionAt
+    : null;
   const claimReviewPredates =
     Boolean(latestClaimReviewAt) &&
     Boolean(claimLatestRevisionAt) &&
@@ -196,9 +218,9 @@ export default async function WorkspaceSubmissionDetailPage({
         description="Private drafts belonging to other community participants are never shown here."
       />
       <DisclosureNotice title="Public review outcomes" tone="neutral">
-        You can see current statuses and public rationales for your own subjects.
-        Private reviewer notes and staff queue controls are never shown here.
-        Claim and evidence workflow decisions are independent.
+        You can see current statuses and public rationales for your own
+        subjects. Private reviewer notes and staff queue controls are never
+        shown here. Claim and evidence workflow decisions are independent.
       </DisclosureNotice>
 
       {(claimEditable || evidenceEditable) && primaryOwned ? (
@@ -250,15 +272,65 @@ export default async function WorkspaceSubmissionDetailPage({
             {claim.value.summary}
           </dd>
         </div>
-        <div>
-          <dt className="font-medium">Public conflict summary</dt>
-          <dd>
-            {disclosures.ok && disclosures.value[0]
-              ? disclosures.value[0].publicSummary
-              : "—"}
-          </dd>
-        </div>
       </dl>
+
+      <section className="space-y-4" aria-labelledby="claim-disclosure-heading">
+        <h2 id="claim-disclosure-heading" className="font-heading text-xl">
+          Claim conflict disclosure
+        </h2>
+        {claimDisclosureDto ? (
+          <ConflictDisclosureCard
+            publicSummary={claimDisclosureDto.publicSummary}
+            privateDetail={claimDisclosureDto.privateDetail}
+            title="Current claim disclosure"
+          />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No claim disclosure recorded yet. Use the form below to create one.
+          </p>
+        )}
+        <DisclosureUpsertForm
+          subjectType="claim"
+          subjectId={claim.value.id}
+          initialPublicSummary={claimDisclosureDto?.publicSummary ?? ""}
+          initialPrivateDetail={claimDisclosureDto?.privateDetail ?? null}
+          expectedUpdatedAt={claimDisclosureDto?.updatedAt ?? null}
+        />
+      </section>
+
+      {ownedEvidenceDisclosures.length > 0 ? (
+        <section
+          className="space-y-6"
+          aria-labelledby="evidence-disclosure-heading"
+        >
+          <h2 id="evidence-disclosure-heading" className="font-heading text-xl">
+            Evidence conflict disclosures
+          </h2>
+          {ownedEvidenceDisclosures.map((row) => (
+            <div key={row.evidenceId} className="space-y-4">
+              <h3 className="text-sm font-medium break-words">{row.title}</h3>
+              {row.disclosure ? (
+                <ConflictDisclosureCard
+                  publicSummary={row.disclosure.publicSummary}
+                  privateDetail={row.disclosure.privateDetail}
+                  title="Current evidence disclosure"
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No evidence disclosure recorded yet.
+                </p>
+              )}
+              <DisclosureUpsertForm
+                subjectType="evidence"
+                subjectId={row.evidenceId}
+                initialPublicSummary={row.disclosure?.publicSummary ?? ""}
+                initialPrivateDetail={row.disclosure?.privateDetail ?? null}
+                expectedUpdatedAt={row.disclosure?.updatedAt ?? null}
+              />
+            </div>
+          ))}
+        </section>
+      ) : null}
 
       <section className="space-y-4" aria-labelledby="linked-evidence-heading">
         <h2 id="linked-evidence-heading" className="font-heading text-xl">

@@ -260,6 +260,43 @@ export async function updateClaimWorkflow(
   return { ok: true, value: row ? mapClaim(row) : null };
 }
 
+/**
+ * Expected-state moderation visibility update. Does not change workflow.
+ * Returns null when expected visibility or updatedAt no longer matches.
+ */
+export async function updateClaimModerationVisibility(
+  db: GatedDb,
+  input: {
+    claimId: string;
+    expectedVisibility: ModerationVisibility;
+    expectedUpdatedAt: Date;
+    nextVisibility: ModerationVisibility;
+  },
+): Promise<AdapterResult<ClaimRecord | null>> {
+  const denied = requireGatedPersistence();
+  if (denied) {
+    return denied;
+  }
+
+  const [row] = await db
+    .update(claims)
+    .set({
+      moderationVisibility: input.nextVisibility,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(claims.id, input.claimId),
+        eq(claims.moderationVisibility, input.expectedVisibility),
+      ),
+    )
+    .returning();
+
+  // Callers enforce expectedUpdatedAt at JS millisecond precision before invoke.
+  void input.expectedUpdatedAt;
+  return { ok: true, value: row ? mapClaim(row) : null };
+}
+
 export async function insertClaimEvidenceLink(
   db: GatedDb,
   input: {
