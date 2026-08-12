@@ -75,4 +75,13 @@ test.describe("gated account and staff accessibility", () => {
     ).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
+
+  test("workspace search has no serious axe violations", async ({ page }) => {
+    await signInWithCapturedEmail(page, "staff-admin@ostt.synth.test");
+    await page.goto("/workspace/search");
+    await expect(
+      page.getByRole("heading", { name: /^Search$/i }),
+    ).toBeVisible({ timeout: 15_000 });
+    await expectNoSeriousAxe(page, "/workspace/search");
+  });
 });

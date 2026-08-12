@@ -112,6 +112,52 @@ describe("privacy and operational controls (2.11/2.12 hardening)", () => {
     expect(exported.value.assentRecords.length).toBeGreaterThan(0);
   });
 
+  it("own export includes owned Phase 3 workspace claims and evidence", async () => {
+    const exported = await exportOwnAccountData(db, "account-ostt-synth-ada");
+    expect(exported.ok).toBe(true);
+    if (!exported.ok) return;
+    expect(exported.value.workspace.claims.length).toBeGreaterThan(0);
+    expect(exported.value.workspace.evidence.length).toBeGreaterThan(0);
+    expect(
+      exported.value.workspace.claims.some((row) =>
+        /billing timeline/i.test(row.title),
+      ),
+    ).toBe(true);
+    expect(JSON.stringify(exported.value.workspace)).not.toContain(
+      "account-ostt-synth-ben",
+    );
+  });
+
+  it("does not include a foreign-authored claim in own workspace export", async () => {
+    const { claims } = await import("@/db/schema");
+    const { newEntityId } = await import("@/lib/auth/tokens");
+    const foreignClaimId = newEntityId("claim");
+    await db.insert(claims).values({
+      id: foreignClaimId,
+      topicId: "topic-ostt-synth-cedar-billing",
+      authorAccountId: "account-ostt-synth-ben",
+      title: "ostt-synth Ben foreign claim must not export for Ada",
+      summary: "Synthetic foreign claim for export ACL probe.",
+      approachLabel: "Foreign",
+      workflowState: "draft",
+      moderationVisibility: "visible",
+      synthetic: true,
+    });
+
+    const exported = await exportOwnAccountData(db, "account-ostt-synth-ada");
+    expect(exported.ok).toBe(true);
+    if (!exported.ok) return;
+    expect(
+      exported.value.workspace.claims.some((row) => row.id === foreignClaimId),
+    ).toBe(false);
+    expect(JSON.stringify(exported.value)).not.toContain(foreignClaimId);
+    expect(
+      exported.value.workspace.claims.some((row) =>
+        /Ben foreign claim/i.test(row.title),
+      ),
+    ).toBe(false);
+  });
+
   it("aborts when a foreign account sentinel appears in the export bundle", async () => {
     const actorId = "account-ostt-synth-ada";
     const foreignSentinel = "account-ostt-synth-ben";

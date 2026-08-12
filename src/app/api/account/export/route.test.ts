@@ -54,6 +54,7 @@ describe("GET /api/account/export", () => {
     expect(response.headers.get("Content-Disposition")).toBe(
       'attachment; filename="ostt-account-export.json"',
     );
+    expect(response.headers.get("X-Content-Type-Options")).toBe("nosniff");
   });
 
   it("returns generic not-found with no-store in public-demo", async () => {

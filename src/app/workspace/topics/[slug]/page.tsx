@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { TopicEditForm } from "@/components/workspace/TopicEditForm";
 import { TopicPublishControls } from "@/components/workspace/TopicPublishControls";
 import { TopicTransitionControls } from "@/components/workspace/TopicTransitionControls";
+import { StaffTopicExportControl } from "@/components/workspace/StaffTopicExportControl";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { MainContainer } from "@/components/layout/MainContainer";
 import { resolveAppMode } from "@/lib/env/app-mode";
@@ -60,6 +61,9 @@ export default async function WorkspaceTopicDetailPage({ params }: PageProps) {
 
   const canPublish = (
     await authorizeCapability(db, principal, "topics.publish")
+  ).ok;
+  const canStaffExport = (
+    await authorizeCapability(db, principal, "topics.export_staff")
   ).ok;
   let readiness: {
     ready: boolean;
@@ -175,6 +179,21 @@ export default async function WorkspaceTopicDetailPage({ params }: PageProps) {
             ready={readiness.ready}
             blockers={readiness.blockers}
             publicationStatus={topic.publicationStatus}
+          />
+        </section>
+      ) : null}
+
+      {canStaffExport ? (
+        <section className="space-y-3" aria-labelledby="topic-staff-export-heading">
+          <h2
+            id="topic-staff-export-heading"
+            className="font-heading text-xl text-foreground"
+          >
+            Staff export
+          </h2>
+          <StaffTopicExportControl
+            topicId={topic.id}
+            topicTitle={topic.title}
           />
         </section>
       ) : null}

@@ -25,7 +25,8 @@ import { generateOpaqueToken, hashToken, newEntityId } from "@/lib/auth/tokens";
 
 const CHALLENGE_TTL_MS = 30 * 60 * 1000;
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const AUTH_RATE_LIMIT = 8;
+const AUTH_RATE_LIMIT =
+  process.env.AUTH_E2E_CAPTURE === "1" ? 64 : 8;
 const AUTH_RATE_WINDOW_MS = 15 * 60 * 1000;
 
 export type AuthServiceDeps = {

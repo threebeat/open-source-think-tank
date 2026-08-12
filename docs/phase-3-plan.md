@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 3 (packages 3.1–3.12)  
 **Baseline:** Phase 2 foundation at or after `a894317317f3ff1e80d0a3602df69e5b4d8cd589` (tag `phase-2-foundation` recorded in [phase-2-handoff.md](./phase-2-handoff.md))  
-**Current package:** **3.10 complete (awaiting human approval before 3.11).** Package **3.9** is merged on `main`. Package **3.10** completed and hardened the gated public topic interface (projection, list/detail presentation, public-demo visitor parity). Package **3.11** search/export is **not started**.
+**Current package:** **3.11 complete (awaiting human review before 3.12).** Package **3.10** is merged on `main`. Package **3.11** adds gated workspace search and scoped exports (account-holder Phase 3 section + staff topic packages), plus a 3.10 carryover fix for thrown public-projection failures.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [phase-2-plan.md](./phase-2-plan.md), [phase-2-handoff.md](./phase-2-handoff.md), [architecture-phase-2.md](./architecture-phase-2.md), [architecture-phase-3.md](./architecture-phase-3.md), [capability-matrix.md](./capability-matrix.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [open-questions.md](./open-questions.md), [decisions/0006-phase-3-two-lane-sequencing.md](./decisions/0006-phase-3-two-lane-sequencing.md), [decisions/0007-alpha-test-interim-council-dispositions.md](./decisions/0007-alpha-test-interim-council-dispositions.md), [decisions/0008-phase-3-operational-alpha-contract.md](./decisions/0008-phase-3-operational-alpha-contract.md), [decisions/0009-phase-3-operational-slice-corrections.md](./decisions/0009-phase-3-operational-slice-corrections.md)
 
@@ -678,7 +678,7 @@ Still **forbidden in Phase 3** unless a future ADR + register update says otherw
 
 ### Work package 3.10 — Public interface completion and hardening
 
-**Status:** Complete (awaiting human approval before 3.11).
+**Status:** Complete (awaiting human approval before 3.11). Carryover in **3.11:** thrown failures from `getTopicBySlug` / `loadProjectionInputs` normalize to `PUBLIC_TOPIC_PROJECTION_UNAVAILABLE` (sanitized unavailable UI), preserving generic 404 only for missing/unpublished slugs.
 
 **Objective:** Complete and harden the gated public topic interface introduced minimally in **3.6**, including later revision, disclosure, moderation, and presentation depth. Keep public-demo fixture pages operational with fixture-backed visitor parity for the completed presentation.
 
@@ -717,28 +717,48 @@ Still **forbidden in Phase 3** unless a future ADR + register update says otherw
 
 ### Work package 3.11 — Search and export
 
-**Status:** Not started.
+**Status:** Complete (awaiting human review before 3.12).
 
 **Objective:** Search topics/submissions in gated workspace; export account-appropriate and staff-appropriate bundles without cross-account leakage.
 
 **Prerequisites:** 3.10 projections stable.
 
+**Authorization contract (capabilities):**
+
+| Capability | Lifecycle | Roles | Assurance |
+| --- | --- | --- | --- |
+| `workspace.search` | active | participant, reviewer, moderator, or administrator | L3 uniqueness |
+| `topics.export_staff` | active | reviewer or administrator | L3 uniqueness |
+| `account.export_own` | invited / pending_onboarding / active | any session holder | existing (own export) |
+
+Auditor with only `audit.read_restricted` does **not** receive workspace content search. Administrator does **not** inherit participant “own submission” semantics. Multi-role principals receive the union of authorized result classes; every hit links only to an authorized route.
+
+**Audience rules (search):**
+
+- **Participant:** topics open for submissions; published topic metadata; topic metadata for own submissions; own authored claims; own submitted evidence. Never another participant’s draft / rejected / withdrawn / changes-requested / unpublished submission content.
+- **Reviewer:** topic/claim/evidence metadata needed by `claims.review` / `evidence.review` (metadata summaries only; private notes stay on authorized detail surfaces).
+- **Moderator:** claim/evidence metadata for `moderation.review_submission`; no private disclosure detail, reviewer private notes, account/contact data, or privileged pseudonym mappings.
+- **Administrator:** administrative topic metadata + reviewer-appropriate claim/evidence metadata.
+
 **Implementation steps:**
 
-1. Workspace search for topics/claims/evidence metadata the principal may see.
-2. Export endpoints reuse Phase 2 own-account export discipline (abort on foreign account ids).
-3. Staff export of topic packages excludes security-restricted fields.
-4. Tests for ACL on search hits and export redaction.
+1. Workspace search service + `/workspace/search` (session + `workspace.search`; Zod query 2–100 chars; entity filters; page size ≤50; ILIKE wildcard escape; SQL ACL).
+2. Extend `/api/account/export` with owned Phase 3 workspace section; structured ownership checks before serialization + serialized foreign-account abort.
+3. Staff topic export `/api/workspace/topics/[id]/export` via allowlisted projector; audit `topics.staff_export_generated` (metadata counts only).
+4. 3.10 carryover: normalize thrown public-read failures to `PUBLIC_TOPIC_PROJECTION_UNAVAILABLE`.
+5. Tests for ACL on search hits, export redaction, public-demo 404, and no remote source fetch.
 
 **Expected user-visible outcome:** Staff/participants find their topics/submissions; exports download intentionally scoped data.
 
-**Authorization and audit:** Search gated by session + capability; exports audited.
+**Authorization and audit:** Search gated by session + capability; staff exports audited (`topics.staff_export_generated`); own export retains `privacy.export_generated`.
 
-**Privacy/security/accessibility:** No public global people search; accessible results list.
+**Privacy/security/accessibility:** No public global people search; accessible results list; export headers `no-store` / attachment / JSON / `nosniff`.
 
-**Tests and acceptance criteria:** Participant cannot search others’ drafts; export leak tests pass.
+**Tests and acceptance criteria:** Participant cannot search others’ drafts; export leak tests pass; staff export redacts prohibited fields; public-demo search/export are generic 404 with zero gated DB calls.
 
-**Non-goals:** Public sitewide search of private data; Elasticsearch vendor; analytics.
+**Non-goals:** Public sitewide search of private data; Elasticsearch vendor; analytics; remote source fetching; schema migration (none required).
+
+**Migrations:** none.
 
 **Stop condition:** Human review before **3.12**.
 

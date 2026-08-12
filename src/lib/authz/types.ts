@@ -58,6 +58,8 @@ export const CAPABILITIES = [
   "evidence.review",
   "conflicts.disclose_own",
   "moderation.review_submission",
+  "workspace.search",
+  "topics.export_staff",
   "invites.issue",
 ] as const;
 

@@ -1,6 +1,6 @@
 # Phase 3 architecture — operational alpha
 
-**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.10 complete** — public projection hardening (evidence conflict summaries, quality eligibility, empty published shell, sanitized read failures) and completed gated list/detail presentation with public-demo visitor parity; **3.11 not started**  
+**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.11 complete** — gated workspace search + scoped exports (own Phase 3 section + staff topic packages); 3.10 thrown-read carryover normalized to sanitized unavailable UI; **3.12 not started**  
 **Plan:** [phase-3-plan.md](./phase-3-plan.md)  
 **ADRs:** [0008](./decisions/0008-phase-3-operational-alpha-contract.md), [0009](./decisions/0009-phase-3-operational-slice-corrections.md)  
 **Foundation:** [architecture-phase-2.md](./architecture-phase-2.md), ADRs 0002–0005, capability matrix, audit registry
@@ -185,7 +185,7 @@ Allowlisted fields for gated anonymous/public topic reads when `publication_stat
 | Allowlisted moderation notices (3.8): withhold notices for held/hidden accepted subjects (action + public rationale + date); restore notices on currently included visible subjects | Subject internal IDs, actor/account IDs, private notes, raw audit; richer chronology while OQ23 open |
 | Allowlisted audit summaries (existing 2.9 projectors) | Raw privatePayload |
 
-**Availability semantics (3.10):** `buildPublicTopicProjection` returns `null` only for unpublished/missing `publishedAt`. A topic that remains `publication_status = published` returns an addressable projection even when claims/evidence arrays are empty (safe empty shell). Gated list/detail callers must treat `AdapterResult` failures as sanitized unavailable UI — never as an empty catalog or generic 404. Missing/unpublished slugs remain a generic 404.
+**Availability semantics (3.10/3.11):** `buildPublicTopicProjection` returns `null` only for unpublished/missing `publishedAt`. A topic that remains `publication_status = published` returns an addressable projection even when claims/evidence arrays are empty (safe empty shell). Gated list/detail callers must treat `AdapterResult` failures as sanitized unavailable UI — never as an empty catalog or generic 404. Missing/unpublished slugs remain a generic 404. Thrown failures from `getTopicBySlug`, `loadProjectionInputs`, or nested repository/DB calls are normalized to `PUBLIC_TOPIC_PROJECTION_UNAVAILABLE` without leaking exception messages, SQL, configuration, IDs, or stacks into visitor DTOs/HTML.
 
 Projection builder lives in a pure module (`src/lib/topics/public-projection.ts`) testable without React. **Minimal path is wired in 3.6** via mode-branched `/topics` + `src/lib/topics/gated-public-read.ts`; **3.8** extends notices; **3.10** completes and hardens presentation, evidence disclosures, quality eligibility, and failure semantics.
 
@@ -215,6 +215,10 @@ Projection builder lives in a pure module (`src/lib/topics/public-projection.ts`
 | `/workspace/moderation/evidence/[evidenceId]` | Evidence moderation detail/history/action | `moderation.review_submission` |
 | `/api/workspace/moderation*` | Moderation queue/detail/mutations (subject-specific) | matching cap; public-demo 404 |
 | `/api/workspace/disclosures/claims|evidence/[id]` | Own disclosure GET/PATCH (subject-specific) | `conflicts.disclose_own` + ownership; public-demo 404 |
+| `/workspace/search` | ACL-scoped metadata search (topics/claims/evidence) | `workspace.search`; public-demo `notFound()` |
+| `/api/workspace/search` | Search API (Zod query; page size ≤50) | `workspace.search`; public-demo 404 |
+| `/api/workspace/topics/[id]/export` | Staff topic-package JSON download | `topics.export_staff`; public-demo 404; generic not-found when unauthorized |
+| `/api/account/export` | Own-account export including Phase 3 owned workspace section | `account.export_own` |
 | `/staff/invitations` + `POST/GET /api/staff/invitations` | Issue/list invites (hash-only; one-time raw link; public-demo 404) | `invites.issue` |
 
 Exact paths may align with existing `/account/*` and `/staff/*` trees; do not expose them on public-demo.
@@ -253,6 +257,9 @@ Exact paths may align with existing `/account/*` and `/staff/*` trees; do not ex
 | Bootstrap invitation | singleton lock + zero-admin check + bootstrap invitation (hash) + operator audit |
 | Bootstrap finalize | singleton lock + re-check gates + operator_bootstrap verification provenance + activation + administrator grant + completion mark + audit |
 | Publish | `publication_status` → published + projection stamp + audit (minimal in 3.6) |
+| Workspace search | read-only SQL ACL + allowlisted DTOs; no audit row required for each query |
+| Own-account export | allowlisted projector + structured ownership checks + serialized foreign abort + `privacy.export_generated` |
+| Staff topic export | allowlisted topic package + `topics.staff_export_generated` (counts only; no bodies) |
 | Alpha reset | documented ordered deletes/truncates in one operator procedure; audited |
 
 **Concurrency:** use row-level conditions (update … where state = expected and/or epoch-millis(`updated_at`) = expected token) so stale writers lose atomically across Postgres microsecond storage and JS/ISO millisecond tokens; follow Phase 2 patterns used for invite claim / dual-control. JS pre-checks are fail-fast only; successful writes advance `updated_at` by ≥1 ms.
@@ -377,7 +384,7 @@ Items below may be completed later **without** silently weakening core authoriza
 | D4 | File uploads / object storage | Out of initial slice |
 | D5 | Remote source fetch, preview, malware scan | Explicitly excluded; URLs stored only |
 | D6 | Rich-text authoring dependencies | Plain text / Markdown-as-text TBD later without inventing legal HTML policy |
-| D7 | Full-text search engine vendor | 3.11 may use SQL `ILIKE`/simple indexes first |
+| D7 | Full-text search engine vendor | **Deferred** — 3.11 uses SQL `ILIKE` with wildcard escaping and simple indexes; no Elasticsearch/vendor |
 | D8 | Notifications (email/push) beyond invite/auth | Forbidden until designed |
 | D9 | Pol.is-powered Public Input | **Planned Phase 4 alpha integration** — not installed or called in Phase 3; hosted vs self-hosted remains an open permitted-service decision |
 | D10 | AI APIs, analytics, payments | Forbidden |

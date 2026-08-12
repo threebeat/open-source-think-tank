@@ -8,6 +8,8 @@ export const dynamic = "force-dynamic";
 const EXPORT_HEADERS = {
   "Cache-Control": "no-store",
   "Content-Disposition": 'attachment; filename="ostt-account-export.json"',
+  "Content-Type": "application/json",
+  "X-Content-Type-Options": "nosniff",
 } as const;
 
 export async function GET() {

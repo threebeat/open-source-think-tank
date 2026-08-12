@@ -923,6 +923,29 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
       })
       .strict() as z.ZodType<Record<string, unknown>>,
   }),
+  "topics.staff_export_generated": def(
+    "topics.staff_export_generated",
+    "Staff topic package export generated",
+    {
+      requireActorAccount: true,
+      highImpact: false,
+      payloadSchema: z
+        .object({
+          topicId: z.string(),
+          capability: z.literal("topics.export_staff"),
+          actorAccountId: z.string(),
+          counts: z
+            .object({
+              claims: z.number().int().nonnegative(),
+              evidence: z.number().int().nonnegative(),
+              links: z.number().int().nonnegative(),
+              revisions: z.number().int().nonnegative(),
+            })
+            .strict(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
 };
 
 export type RegisteredAuditAction = keyof typeof AUDIT_EVENT_REGISTRY;
