@@ -224,4 +224,91 @@ describe("publish readiness and projection (3.6)", () => {
     });
     expect(denied.ok).toBe(false);
   });
+
+  it("readiness rejects quality-rejected evidence even with workflow acceptance", async () => {
+    const topic = await createTopic(db, {
+      actorAccountId: ADMIN,
+      slug: "quality-rejected-readiness",
+      title: "Quality rejected readiness",
+      question: "Should rejected quality block publish?",
+      background: "Background for quality rejection readiness.",
+      scope: "Scope for quality rejection readiness.",
+      jurisdictionLevel: "statewide",
+      countyFips: null,
+    });
+    expect(topic.ok).toBe(true);
+    if (!topic.ok) throw new Error("create failed");
+
+    const opened = await transitionTopic(db, {
+      actorAccountId: ADMIN,
+      topicId: topic.value.id,
+      action: "open",
+      expectedWorkflowState: "draft",
+    });
+    expect(opened.ok).toBe(true);
+
+    const submitted = await createAndSubmitClaimEvidence(db, {
+      actorAccountId: PARTICIPANT,
+      topicId: topic.value.id,
+      claimTitle: "Quality gate claim",
+      claimSummary: "Claim used to prove quality-rejected readiness blocking.",
+      approachLabel: "Transparency",
+      sourceUrl: "https://example.ostt.synth.test/quality-rejected-memo",
+      evidenceTitle: "Quality rejected memo",
+      organization: "Desk",
+      authorType: "agency",
+      sourceType: "memo",
+      limitations: "Synthetic limitations for quality rejection.",
+      relationship: "supporting",
+      disclosureChoice: "none",
+    });
+    expect(submitted.ok).toBe(true);
+    if (!submitted.ok) throw new Error("submit failed");
+
+    const begin = await transitionTopic(db, {
+      actorAccountId: ADMIN,
+      topicId: topic.value.id,
+      action: "begin_review",
+      expectedWorkflowState: "open_for_submissions",
+      reason: "Begin review for quality rejection readiness.",
+    });
+    expect(begin.ok).toBe(true);
+
+    const claimAccepted = await reviewClaim(db, {
+      actorAccountId: ADMIN,
+      claimId: submitted.value.claim.id,
+      decision: "accepted",
+      publicRationale: "Claim accepted for quality-gate drill.",
+      expectedWorkflowState: "submitted",
+    });
+    expect(claimAccepted.ok).toBe(true);
+
+    const evidenceAccepted = await reviewEvidenceWorkflow(db, {
+      actorAccountId: ADMIN,
+      evidenceSubmissionId: submitted.value.evidence.id,
+      decision: "accepted",
+      publicRationale: "Evidence workflow accepted before quality rejection.",
+      expectedWorkflowState: "submitted",
+    });
+    expect(evidenceAccepted.ok).toBe(true);
+
+    const quality = await decideEvidenceQuality(db, {
+      actorAccountId: ADMIN,
+      evidenceSubmissionId: submitted.value.evidence.id,
+      qualityStatus: "rejected",
+      publicRationale: "Quality rejected and must not satisfy publish readiness.",
+      expectedQualityStatus: "pending",
+    });
+    expect(quality.ok).toBe(true);
+
+    const readiness = await evaluatePublishReadiness(db, topic.value.id);
+    expect(readiness.ok).toBe(true);
+    if (!readiness.ok) return;
+    expect(readiness.value.ready).toBe(false);
+    expect(
+      readiness.value.blockers.some(
+        (b) => b.code === "EVIDENCE_QUALITY_INELIGIBLE",
+      ),
+    ).toBe(true);
+  });
 });

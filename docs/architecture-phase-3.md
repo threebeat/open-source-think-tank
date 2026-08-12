@@ -1,6 +1,6 @@
 # Phase 3 architecture — operational alpha
 
-**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.9 implemented/in progress** (first operational vertical slice through 3.6; 3.7–3.8 enrichments; **3.9 complete** — source URLs + mutation abuse controls, 3.8 concurrency closed, interactive `/demo/workflow` practice; **3.10 not started**)  
+**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.9 complete**; **3.10 in progress** — public projection hardening (evidence conflict summaries, quality eligibility, empty published shell, sanitized read failures) and completed gated list/detail presentation with public-demo visitor parity  
 **Plan:** [phase-3-plan.md](./phase-3-plan.md)  
 **ADRs:** [0008](./decisions/0008-phase-3-operational-alpha-contract.md), [0009](./decisions/0009-phase-3-operational-slice-corrections.md)  
 **Foundation:** [architecture-phase-2.md](./architecture-phase-2.md), ADRs 0002–0005, capability matrix, audit registry
@@ -176,15 +176,18 @@ Allowlisted fields for gated anonymous/public topic reads when `publication_stat
 
 | Include | Exclude |
 | --- | --- |
-| Topic title, question, background, scope, published timestamps, operational workflow public label | Account IDs, contact channels |
-| Claims/sources in workflow `accepted` (or explicitly publication-eligible) **and** visibility `visible` | Drafts, rejected-only bodies, held/hidden bodies/titles/URLs |
-| Evidence quality status + **public** rationale | Private moderation/review notes |
-| Public conflict summaries on currently included content (3.8) | Private disclosure detail |
-| Revision summaries safe for public (3.7; more polish in 3.10) | Invite tokens, verification cases |
-| Allowlisted moderation notices (3.8): withhold notices for held/hidden accepted subjects (action + public rationale + date); restore notices on currently included visible subjects | Subject internal IDs, actor/account IDs, private notes, raw audit |
+| Topic title, question, background, scope, published timestamps, operational workflow public label | Account IDs, contact channels, public author attribution while OQ18 open |
+| Claims in workflow `accepted` **and** visibility `visible`, with ≥1 currently eligible linked evidence | Drafts, workflow-rejected bodies, held/hidden bodies/titles/URLs |
+| Evidence in workflow `accepted`, visibility `visible`, quality `accepted`/`limited`/`disputed`, with public quality rationale and policy-safe source URL | Quality `pending`/`rejected`; unsafe legacy URLs (fail closed, never anchors) |
+| Evidence quality status + **public** rationale; public workflow rationales | Private moderation/review notes |
+| Public conflict summaries on currently included **claims and evidence** | Private disclosure detail (never in DTO/HTML/metadata/logs/client props) |
+| Revision summaries safe for public (count, latest edit time, changed-field labels) | Historic bodies, revision row IDs, editor/account IDs |
+| Allowlisted moderation notices (3.8): withhold notices for held/hidden accepted subjects (action + public rationale + date); restore notices on currently included visible subjects | Subject internal IDs, actor/account IDs, private notes, raw audit; richer chronology while OQ23 open |
 | Allowlisted audit summaries (existing 2.9 projectors) | Raw privatePayload |
 
-Projection builder lives in a pure module (`src/lib/topics/public-projection.ts`) testable without React. **Minimal path is wired in 3.6** via mode-branched `/topics` + `src/lib/topics/gated-public-read.ts`; **3.8** extends notices; **3.10** completes and hardens presentation.
+**Availability semantics (3.10):** `buildPublicTopicProjection` returns `null` only for unpublished/missing `publishedAt`. A topic that remains `publication_status = published` returns an addressable projection even when claims/evidence arrays are empty (safe empty shell). Gated list/detail callers must treat `AdapterResult` failures as sanitized unavailable UI — never as an empty catalog or generic 404. Missing/unpublished slugs remain a generic 404.
+
+Projection builder lives in a pure module (`src/lib/topics/public-projection.ts`) testable without React. **Minimal path is wired in 3.6** via mode-branched `/topics` + `src/lib/topics/gated-public-read.ts`; **3.8** extends notices; **3.10** completes and hardens presentation, evidence disclosures, quality eligibility, and failure semantics.
 
 ---
 

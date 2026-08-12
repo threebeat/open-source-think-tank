@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 
 import { topics } from "@/db/schema";
 import type { AdapterResult } from "@/lib/adapters/types";
@@ -16,6 +16,7 @@ export type PublishedTopicListItem = {
   title: string;
   question: string;
   publishedAt: string;
+  operationalLabel: string;
   geography: {
     jurisdictionLevel: "statewide" | "county";
     stateCode: string;
@@ -34,8 +35,25 @@ function gatedOrDeny(): AdapterResult<never> | null {
   return null;
 }
 
+function operationalLabelFor(workflowState: string): string {
+  switch (workflowState) {
+    case "under_review":
+      return "Under review (operational)";
+    case "open_for_submissions":
+      return "Open for submissions (operational)";
+    case "paused":
+      return "Paused (operational)";
+    case "archived":
+      return "Archived (operational)";
+    case "draft":
+      return "Draft (operational)";
+    default:
+      return "Operational status recorded";
+  }
+}
+
 /**
- * Gated anonymous published-topic list (minimal, deterministic).
+ * Gated anonymous published-topic list (deterministic, newest first).
  * Repository boundary filters publication_status = published.
  */
 export async function listPublishedTopicsForPublic(
@@ -46,33 +64,44 @@ export async function listPublishedTopicsForPublic(
   const persistence = requireGatedPersistence();
   if (persistence) return persistence;
 
-  const rows = await db
-    .select()
-    .from(topics)
-    .where(eq(topics.publicationStatus, "published"))
-    .orderBy(asc(topics.publishedAt), asc(topics.slug));
+  try {
+    const rows = await db
+      .select()
+      .from(topics)
+      .where(eq(topics.publicationStatus, "published"))
+      .orderBy(desc(topics.publishedAt), asc(topics.slug));
 
-  return {
-    ok: true,
-    value: rows
-      .filter((row) => row.publishedAt != null)
-      .map((row) => ({
-        slug: row.slug,
-        title: row.title,
-        question: row.question,
-        publishedAt: row.publishedAt!.toISOString(),
-        geography: {
-          jurisdictionLevel: row.jurisdictionLevel as "statewide" | "county",
-          stateCode: row.stateCode,
-          countyFips: row.countyFips,
-        },
-      })),
-  };
+    return {
+      ok: true,
+      value: rows
+        .filter((row) => row.publishedAt != null)
+        .map((row) => ({
+          slug: row.slug,
+          title: row.title,
+          question: row.question,
+          publishedAt: row.publishedAt!.toISOString(),
+          operationalLabel: operationalLabelFor(row.workflowState),
+          geography: {
+            jurisdictionLevel: row.jurisdictionLevel as "statewide" | "county",
+            stateCode: row.stateCode,
+            countyFips: row.countyFips,
+          },
+        })),
+    };
+  } catch {
+    return {
+      ok: false,
+      error: "Published topic list unavailable",
+      code: "PUBLIC_TOPIC_LIST_UNAVAILABLE",
+    };
+  }
 }
 
 /**
- * Load allowlisted projection for a published slug, or null when missing/unpublished
- * /not projection-eligible. Callers should map null to a generic 404.
+ * Load allowlisted projection for a published slug.
+ * Returns `{ ok: true, value: null }` only for missing/unpublished slugs.
+ * Operational/projection failures return `{ ok: false, ... }` — callers must
+ * not map those to 404 or empty catalogs (3.10).
  */
 export async function getPublishedTopicProjection(
   db: GatedDb,
@@ -98,56 +127,68 @@ async function buildProjectionForTopic(
   topic: TopicRecord,
 ): Promise<AdapterResult<PublicTopicProjection | null>> {
   const loaded = await loadProjectionInputs(db, topic);
-  const projection = buildPublicTopicProjection({
-    topic: {
-      id: topic.id,
-      slug: topic.slug,
-      title: topic.title,
-      question: topic.question,
-      background: topic.background,
-      scope: topic.scope,
-      workflowState: topic.workflowState,
-      publicationStatus: topic.publicationStatus,
-      jurisdictionLevel: topic.jurisdictionLevel,
-      stateCode: topic.stateCode,
-      countyFips: topic.countyFips,
-      publishedAt: topic.publishedAt,
-    },
-    claims: loaded.claims.map((claim) => ({
-      id: claim.id,
-      title: claim.title,
-      summary: claim.summary,
-      approachLabel: claim.approachLabel,
-      workflowState: claim.workflowState,
-      moderationVisibility: claim.moderationVisibility,
-      workflowPublicRationale: claim.workflowPublicRationale,
-      conflictPublicSummary: claim.conflictPublicSummary,
-      revisionSummary: claim.revisionSummary,
-      latestModerationNotice: claim.latestModerationNotice,
-    })),
-    evidence: loaded.evidence.map((row) => ({
-      id: row.id,
-      sourceUrl: row.sourceUrl,
-      title: row.title,
-      organization: row.organization,
-      authorType: row.authorType,
-      sourceType: row.sourceType,
-      limitations: row.limitations,
-      workflowState: row.workflowState,
-      qualityStatus: row.qualityStatus,
-      moderationVisibility: row.moderationVisibility,
-      qualityPublicRationale: row.qualityPublicRationale,
-      workflowPublicRationale: row.workflowPublicRationale,
-      revisionSummary: row.revisionSummary,
-      latestModerationNotice: row.latestModerationNotice,
-    })),
-    links: (loaded.links.ok ? loaded.links.value : []).map((link) => ({
-      topicId: link.topicId,
-      claimId: link.claimId,
-      evidenceSubmissionId: link.evidenceSubmissionId,
-      relationship: link.relationship,
-    })),
-  });
+  if (!loaded.ok) {
+    return {
+      ok: false,
+      error: "Published topic projection unavailable",
+      code: "PUBLIC_TOPIC_PROJECTION_UNAVAILABLE",
+    };
+  }
 
-  return { ok: true, value: projection };
+  try {
+    const projection = buildPublicTopicProjection({
+      topic: {
+        id: topic.id,
+        slug: topic.slug,
+        title: topic.title,
+        question: topic.question,
+        background: topic.background,
+        scope: topic.scope,
+        workflowState: topic.workflowState,
+        publicationStatus: topic.publicationStatus,
+        jurisdictionLevel: topic.jurisdictionLevel,
+        stateCode: topic.stateCode,
+        countyFips: topic.countyFips,
+        publishedAt: topic.publishedAt,
+      },
+      claims: loaded.value.claims.map((claim) => ({
+        id: claim.id,
+        title: claim.title,
+        summary: claim.summary,
+        approachLabel: claim.approachLabel,
+        workflowState: claim.workflowState,
+        moderationVisibility: claim.moderationVisibility,
+        workflowPublicRationale: claim.workflowPublicRationale,
+        conflictPublicSummary: claim.conflictPublicSummary,
+        revisionSummary: claim.revisionSummary,
+        latestModerationNotice: claim.latestModerationNotice,
+      })),
+      evidence: loaded.value.evidence.map((row) => ({
+        id: row.id,
+        sourceUrl: row.sourceUrl,
+        title: row.title,
+        organization: row.organization,
+        authorType: row.authorType,
+        sourceType: row.sourceType,
+        limitations: row.limitations,
+        workflowState: row.workflowState,
+        qualityStatus: row.qualityStatus,
+        moderationVisibility: row.moderationVisibility,
+        qualityPublicRationale: row.qualityPublicRationale,
+        workflowPublicRationale: row.workflowPublicRationale,
+        conflictPublicSummary: row.conflictPublicSummary,
+        revisionSummary: row.revisionSummary,
+        latestModerationNotice: row.latestModerationNotice,
+      })),
+      links: loaded.value.links,
+    });
+
+    return { ok: true, value: projection };
+  } catch {
+    return {
+      ok: false,
+      error: "Published topic projection unavailable",
+      code: "PUBLIC_TOPIC_PROJECTION_UNAVAILABLE",
+    };
+  }
 }

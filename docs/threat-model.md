@@ -108,6 +108,9 @@ Controls below are **implemented** through 2.11 unless noted as still blocked.
 | Public-demo proposed-topic bleed (3.5) | `discoveryState` fixture field; default listing excludes proposed; not reused for gated unpublished rows |
 | Staff review / private notes leakage (3.6) | Private notes staff-only on review DTOs; never in public projection, participant views, audit summaries, or URL state |
 | Unpublished gated topic enumeration (3.6) | Repository filter `publication_status=published` + projection rejects non-publishable rows; missing/unpublished → generic 404; metadata indistinguishability |
+| False 404 / empty-catalog disguise on read failure (3.10) | Gated list/detail distinguish `AdapterResult` failures (sanitized unavailable UI) from missing/unpublished (`null` → 404) and genuine empty published catalogs |
+| Quality-rejected evidence as publishable (3.10) | Readiness + projection require quality `accepted`/`limited`/`disputed`; `pending`/`rejected` never satisfy readiness or appear as included sources; no auto-unpublish |
+| Empty published topic inconsistency (3.10) | Published topics stay addressable with a safe empty shell when no claim/evidence is currently eligible; moderation does not silently unpublish |
 | Workflow/quality/publication confusion (3.6) | Independent axes in schema, services, UI copy; publish preserves operational workflow; pause does not unpublish |
 | Stale concurrent review/publish races (3.6) | Expected-state updates; one winner; audit failure rolls back review/state/publication together |
 | Revision tampering or silent deletion (3.7) | `content_revisions` immutable trigger rejects UPDATE/DELETE; withdraw/reject/hide retain history |

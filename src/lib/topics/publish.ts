@@ -11,7 +11,10 @@ import {
   type ClaimRecord,
   type ClaimReviewRecord,
 } from "@/lib/claims/repository";
-import { listConflictDisclosuresForClaim } from "@/lib/conflicts/repository";
+import {
+  listConflictDisclosuresForClaim,
+  listConflictDisclosuresForEvidence,
+} from "@/lib/conflicts/repository";
 import { assertEnvironmentSafe } from "@/lib/env/app-mode";
 import {
   listEvidenceReviews,
@@ -27,9 +30,10 @@ import type { GatedDb } from "@/lib/persistence/gated";
 import { toPublicRevisionSummary } from "@/lib/revisions/history";
 import { countContentRevisionsForSubjects } from "@/lib/revisions/repository";
 import { isAllowedSourceUrl } from "@/lib/security/source-url";
-import type {
-  ProjectionModerationNoticeInput,
-  PublicRevisionSummaryProjection,
+import {
+  isPublicEligibleEvidenceQuality,
+  type ProjectionModerationNoticeInput,
+  type PublicRevisionSummaryProjection,
 } from "@/lib/topics/public-projection";
 import {
   getTopicById,
@@ -218,6 +222,14 @@ async function computeReadiness(
         });
         continue;
       }
+      if (!isPublicEligibleEvidenceQuality(row.qualityStatus)) {
+        blockers.push({
+          code: "EVIDENCE_QUALITY_INELIGIBLE",
+          message:
+            "Linked evidence quality must be accepted, limited, or disputed to publish.",
+        });
+        continue;
+      }
       const evidenceReviews = await listEvidenceReviews(db, row.id);
       const workflowRationale = evidenceReviews.ok
         ? latestWorkflowRationale(evidenceReviews.value, "accepted")
@@ -269,7 +281,7 @@ async function computeReadiness(
     blockers.push({
       code: "NO_PUBLISHABLE_EVIDENCE",
       message:
-        "Need at least one accepted, visible evidence source with non-pending quality and public rationales, linked to a publishable claim.",
+        "Need at least one accepted, visible evidence source with accepted, limited, or disputed quality and public rationales, linked to a publishable claim.",
     });
   }
 
@@ -443,10 +455,7 @@ function latestModerationNoticeFrom(
   };
 }
 
-export async function loadProjectionInputs(
-  db: GatedDb,
-  topic: TopicRecord,
-): Promise<{
+export type ProjectionLoadBundle = {
   claims: Array<
     ClaimRecord & {
       workflowPublicRationale: string | null;
@@ -459,46 +468,65 @@ export async function loadProjectionInputs(
     EvidenceSubmissionRecord & {
       qualityPublicRationale: string | null;
       workflowPublicRationale: string | null;
+      conflictPublicSummary: string | null;
       revisionSummary: PublicRevisionSummaryProjection | null;
       latestModerationNotice: ProjectionModerationNoticeInput | null;
     }
   >;
-  links: Awaited<ReturnType<typeof listClaimEvidenceLinks>>;
-}> {
+  links: Array<{
+    topicId: string;
+    claimId: string;
+    evidenceSubmissionId: string;
+    relationship: "supporting" | "counterevidence";
+  }>;
+};
+
+/**
+ * Load projection inputs for a published topic.
+ * Repository failures propagate as AdapterResult errors (3.10) — never silently
+ * degrade into an empty published shell or false not-found.
+ */
+export async function loadProjectionInputs(
+  db: GatedDb,
+  topic: TopicRecord,
+): Promise<AdapterResult<ProjectionLoadBundle>> {
   const claimsResult = await listClaims(db, { topicId: topic.id });
+  if (!claimsResult.ok) return claimsResult;
   const evidenceResult = await listEvidenceSubmissions(db, {
     topicId: topic.id,
   });
-  const links = await listClaimEvidenceLinks(db, { topicId: topic.id });
+  if (!evidenceResult.ok) return evidenceResult;
+  const linksResult = await listClaimEvidenceLinks(db, { topicId: topic.id });
+  if (!linksResult.ok) return linksResult;
 
-  const claimRows = claimsResult.ok ? claimsResult.value : [];
-  const evidenceRows = evidenceResult.ok ? evidenceResult.value : [];
+  const claimRows = claimsResult.value;
+  const evidenceRows = evidenceResult.value;
 
   const revisionCounts = await countContentRevisionsForSubjects(db, {
     claimIds: claimRows.map((row) => row.id),
     evidenceSubmissionIds: evidenceRows.map((row) => row.id),
   });
-  const claimRevisionMap = revisionCounts.ok
-    ? revisionCounts.value.byClaimId
-    : new Map();
-  const evidenceRevisionMap = revisionCounts.ok
-    ? revisionCounts.value.byEvidenceId
-    : new Map();
+  if (!revisionCounts.ok) return revisionCounts;
+
+  const claimRevisionMap = revisionCounts.value.byClaimId;
+  const evidenceRevisionMap = revisionCounts.value.byEvidenceId;
 
   const claims = [];
   for (const claim of claimRows) {
     const reviews = await listClaimReviews(db, claim.id);
+    if (!reviews.ok) return reviews;
     const disclosures = await listConflictDisclosuresForClaim(db, claim.id);
+    if (!disclosures.ok) return disclosures;
     const moderation = await listModerationActionsForClaim(db, claim.id);
+    if (!moderation.ok) return moderation;
     const rev = claimRevisionMap.get(claim.id);
     claims.push({
       ...claim,
-      workflowPublicRationale: reviews.ok
-        ? latestWorkflowRationale(reviews.value, "accepted")
-        : null,
-      conflictPublicSummary: disclosures.ok
-        ? (disclosures.value[0]?.publicSummary ?? null)
-        : null,
+      workflowPublicRationale: latestWorkflowRationale(
+        reviews.value,
+        "accepted",
+      ),
+      conflictPublicSummary: disclosures.value[0]?.publicSummary ?? null,
       revisionSummary: rev
         ? toPublicRevisionSummary({
             count: rev.count,
@@ -506,25 +534,27 @@ export async function loadProjectionInputs(
             changedFields: rev.changedFieldUnion,
           })
         : null,
-      latestModerationNotice: moderation.ok
-        ? latestModerationNoticeFrom(moderation.value)
-        : null,
+      latestModerationNotice: latestModerationNoticeFrom(moderation.value),
     });
   }
 
   const evidence = [];
   for (const row of evidenceRows) {
     const reviews = await listEvidenceReviews(db, row.id);
+    if (!reviews.ok) return reviews;
+    const disclosures = await listConflictDisclosuresForEvidence(db, row.id);
+    if (!disclosures.ok) return disclosures;
     const moderation = await listModerationActionsForEvidence(db, row.id);
+    if (!moderation.ok) return moderation;
     const rev = evidenceRevisionMap.get(row.id);
     evidence.push({
       ...row,
-      qualityPublicRationale: reviews.ok
-        ? latestQualityRationale(reviews.value)
-        : null,
-      workflowPublicRationale: reviews.ok
-        ? latestWorkflowRationale(reviews.value, "accepted")
-        : null,
+      qualityPublicRationale: latestQualityRationale(reviews.value),
+      workflowPublicRationale: latestWorkflowRationale(
+        reviews.value,
+        "accepted",
+      ),
+      conflictPublicSummary: disclosures.value[0]?.publicSummary ?? null,
       revisionSummary: rev
         ? toPublicRevisionSummary({
             count: rev.count,
@@ -532,11 +562,21 @@ export async function loadProjectionInputs(
             changedFields: rev.changedFieldUnion,
           })
         : null,
-      latestModerationNotice: moderation.ok
-        ? latestModerationNoticeFrom(moderation.value)
-        : null,
+      latestModerationNotice: latestModerationNoticeFrom(moderation.value),
     });
   }
 
-  return { claims, evidence, links };
+  return {
+    ok: true,
+    value: {
+      claims,
+      evidence,
+      links: linksResult.value.map((link) => ({
+        topicId: link.topicId,
+        claimId: link.claimId,
+        evidenceSubmissionId: link.evidenceSubmissionId,
+        relationship: link.relationship,
+      })),
+    },
+  };
 }
