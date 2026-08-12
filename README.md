@@ -25,7 +25,7 @@ No environment variables, API keys, or third-party accounts are required for pub
 - Local PostgreSQL 16 via Docker Compose (`npm run db:up`) when exercising gated paths
 - `APP_MODE=gated` and documented secrets only in gated environments — see [`docs/secrets-and-operations.md`](docs/secrets-and-operations.md)
 - Managed PostgreSQL host and production email vendors remain **blocked** pending register addenda
-- Phase 3 operational topic/evidence workflow is **planned** in [`docs/phase-3-plan.md`](docs/phase-3-plan.md); do not assume those routes or tables already exist
+- Phase 3 operational topic/evidence workflow is implemented on the gated foundation; see [`docs/phase-3-plan.md`](docs/phase-3-plan.md) and [`docs/phase-3-handoff.md`](docs/phase-3-handoff.md). Phase 3 engineering closure candidate — awaiting explicit owner acceptance before Phase 4.
 
 ## Setup
 
@@ -70,7 +70,10 @@ Serve that build behind ordinary HTTPS in deployment so phone browsers can open 
 | `npm run db:generate` | Generate SQL migrations from `src/db/schema.ts` |
 | `npm run operator:bootstrap` | First-administrator ceremony (gated; env secrets only) |
 | `npm run operator:reset-alpha` | Alpha wipe dry-run/execute (gated; see [docs/alpha-reset-runbook.md](docs/alpha-reset-runbook.md)) |
-| `npm run alpha:reset:smoke` | Disposable `ostt_alpha_reset` drill only — never a shared/live DB |
+| `npm run alpha:reset:smoke` | Disposable `ostt_alpha_reset` drill — wipe + bootstrap recovery without synthetic reseed |
+| `npm run test:pg:invites` | Mandatory PostgreSQL invitation-concurrency proof (`ostt_invite_concurrency`) |
+| `npm run test:pg:alpha-reset` | PostgreSQL alpha-reset concurrency / lock proofs |
+| `npm run phase3:acceptance` | Connected Phase 3 acceptance journey on disposable Postgres |
 | `npm run security:check` | Headers, secret patterns, vendor/isolation guards, npm audit |
 | `npm run backup:smoke` | Ephemeral backup/restore shape check |
 
@@ -148,5 +151,5 @@ Direct product URLs still work without presentation mode.
 
 - **Phase 1** demonstration MVP is complete (tag `phase-1-demonstration`). Public-demo mode remains synthetic and separately deployable.
 - **Phase 2** invite-only foundation packages 2.1–2.12 are in place (tag `phase-2-foundation`; see [`docs/phase-2-handoff.md`](docs/phase-2-handoff.md)). Gated auth, roles, assent, verification, audit, and isolation are the baseline for alpha engineering.
-- **Phase 3** packages **3.1–3.12** are implemented on the gated foundation ([`docs/phase-3-handoff.md`](docs/phase-3-handoff.md)). **3.12 complete; Phase 3 handoff awaiting human review before Phase 4.**
+- **Phase 3** packages **3.1–3.12** are implemented on the gated foundation ([`docs/phase-3-handoff.md`](docs/phase-3-handoff.md)). **Phase 3 engineering closure candidate; awaiting explicit owner acceptance before Phase 4.**
 - Public recruitment, live Pol.is, payments, analytics, AI APIs, managed production PostgreSQL, and unsettled legal formation claims remain out of scope until their gates clear. Alpha-test data must stay fully resettable via the operator CLI.

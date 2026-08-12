@@ -962,6 +962,8 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
           sourceCommitSha: z.string().min(1),
           manifestVersion: z.string().min(1),
           manifestHash: z.string().min(16),
+          /** Explicit ceremony provenance — never inferred from environment heuristics. */
+          receiptProvenance: z.enum(["operational", "synthetic_smoke"]),
           counts: z
             .object({
               before: z.record(z.string(), z.number().int().nonnegative()),

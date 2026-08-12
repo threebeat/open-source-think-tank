@@ -1,14 +1,20 @@
 import { createHash } from "node:crypto";
 
 /**
- * Machine-readable alpha-reset classification (Phase 3.12).
+ * Machine-readable alpha-reset classification (Phase 3 closure).
  * Mirror of docs/alpha-reset-classification.md — keep in sync.
  */
 
-export const RESET_MANIFEST_VERSION = "3.12.0";
+export const RESET_MANIFEST_VERSION = "3.12.1";
 
-/** Fixed session advisory-lock key for concurrent alpha resets. */
+/** Fixed transaction-scoped advisory-lock key for concurrent alpha resets. */
 export const ALPHA_RESET_ADVISORY_LOCK_KEY = 3_120_845_120_012;
+
+/** Bounded lock wait inside the destructive transaction (fail closed). */
+export const ALPHA_RESET_LOCK_TIMEOUT = "5s";
+
+/** Bounded statement budget inside the destructive transaction (fail closed). */
+export const ALPHA_RESET_STATEMENT_TIMEOUT = "120s";
 
 export type AlphaResetTableClass =
   | "reset"
@@ -33,7 +39,9 @@ export const ALPHA_RESET_TABLES: readonly AlphaResetTableEntry[] = [
   { table: "operator_bootstrap_state", class: "reset" },
   { table: "role_assignments", class: "reset" },
   { table: "council_appointments", class: "reset" },
-  { table: "document_versions", class: "reset" },
+  // Operational assent document definitions — wiped then regenerated from the
+  // checked-in non-participant catalog (not synthetic seed accounts).
+  { table: "document_versions", class: "regenerated" },
   { table: "assent_records", class: "reset" },
   { table: "assent_outcomes", class: "reset" },
   { table: "assent_presentations", class: "reset" },
@@ -90,13 +98,24 @@ export const DELETE_ORDER: readonly string[] = [
   "assent_presentations",
   "assent_outcomes",
   "assent_records",
-  "document_versions",
   "council_appointments",
   "role_assignments",
   "invitations",
   "profiles",
   "accounts",
   "persons",
+] as const;
+
+/**
+ * Tables locked inside the destructive transaction (SHARE ROW EXCLUSIVE)
+ * so concurrent ordinary writes cannot race counts/deletes/regeneration.
+ * Includes reset + regenerated tables; excludes retained schema_meta.
+ */
+export const RESET_LOCK_TABLES: readonly string[] = [
+  ...DELETE_ORDER,
+  ...ALPHA_RESET_TABLES.filter((entry) => entry.class === "regenerated").map(
+    (entry) => entry.table,
+  ),
 ] as const;
 
 /**
@@ -199,6 +218,7 @@ export function hashManifest(): string {
     version: RESET_MANIFEST_VERSION,
     tables: ALPHA_RESET_TABLES,
     deleteOrder: DELETE_ORDER,
+    lockTables: RESET_LOCK_TABLES,
   });
   return createHash("sha256").update(canonical).digest("hex");
 }
@@ -243,6 +263,22 @@ export function assertManifestComplete(knownTableNames: readonly string[]): void
     if (!deleteSet.has(table)) {
       throw new Error(
         `ALPHA_RESET_DELETE_ORDER_MISMATCH: reset table ${table} missing from DELETE_ORDER`,
+      );
+    }
+  }
+
+  const regenerated = new Set(tablesByClass("regenerated"));
+  for (const table of RESET_LOCK_TABLES) {
+    if (!resetSet.has(table) && !regenerated.has(table)) {
+      throw new Error(
+        `ALPHA_RESET_LOCK_TABLE_MISMATCH: ${table} is neither reset nor regenerated`,
+      );
+    }
+  }
+  for (const table of [...resetSet, ...regenerated]) {
+    if (!RESET_LOCK_TABLES.includes(table)) {
+      throw new Error(
+        `ALPHA_RESET_LOCK_TABLE_MISMATCH: ${table} missing from RESET_LOCK_TABLES`,
       );
     }
   }

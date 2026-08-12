@@ -26,7 +26,10 @@
     "security:check": "node scripts/security-checks.mjs",
     "backup:smoke": "tsx scripts/backup-restore-smoke.ts",
     "operator:reset-alpha": "tsx scripts/operator-reset-alpha.ts",
-    "alpha:reset:smoke": "tsx scripts/alpha-reset-smoke.ts"
+    "alpha:reset:smoke": "tsx scripts/alpha-reset-smoke.ts",
+    "test:pg:invites": "OSTT_REQUIRE_POSTGRES=1 vitest run src/lib/invites/issue.pg.test.ts",
+    "test:pg:alpha-reset": "OSTT_REQUIRE_POSTGRES=1 vitest run src/lib/operator/alpha-reset.pg.test.ts",
+    "phase3:acceptance": "tsx scripts/phase-3-acceptance-journey.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

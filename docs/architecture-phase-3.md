@@ -1,6 +1,6 @@
 # Phase 3 architecture — operational alpha
 
-**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.12 complete** — bounded workspace search + multi-role hrefs + sanitized export failures; operator alpha reset + disposable drill; [phase-3-handoff.md](./phase-3-handoff.md) awaiting human review before Phase 4  
+**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.12 complete** — bounded workspace search + multi-role hrefs + sanitized export failures; operator alpha reset + disposable drill + Phase 3 closure corrections (ops document regeneration, quiesced reset locks, provenance, mandatory PG CI, acceptance journey); [phase-3-handoff.md](./phase-3-handoff.md) is a Phase 3 engineering closure candidate awaiting explicit owner acceptance before Phase 4  
 **Plan:** [phase-3-plan.md](./phase-3-plan.md)  
 **ADRs:** [0008](./decisions/0008-phase-3-operational-alpha-contract.md), [0009](./decisions/0009-phase-3-operational-slice-corrections.md)  
 **Foundation:** [architecture-phase-2.md](./architecture-phase-2.md), ADRs 0002–0005, capability matrix, audit registry

@@ -19,20 +19,42 @@ import { issueParticipantInvitation } from "@/lib/invites/issue";
 
 const ADMIN_URL =
   process.env.OSTT_PG_ADMIN_URL?.trim() ||
-  "postgres://ostt:ostt@127.0.0.1:54329/ostt_dev";
+  "postgres://ostt:ostt@127.0.0.1:54329/postgres";
+const INVITE_DB = "ostt_invite_concurrency";
 const PG_URL =
   process.env.OSTT_PG_INVITE_TEST_URL?.trim() ||
-  "postgres://ostt:ostt@127.0.0.1:54329/ostt_invite_concurrency";
+  `postgres://ostt:ostt@127.0.0.1:54329/${INVITE_DB}`;
+const REQUIRE_PG = process.env.OSTT_REQUIRE_POSTGRES === "1";
+
+function parseDbName(url: string): string {
+  try {
+    return decodeURIComponent(new URL(url).pathname.replace(/^\//, "").split("/")[0] ?? "");
+  } catch {
+    return "";
+  }
+}
 
 async function postgresReachable(): Promise<boolean> {
+  if (parseDbName(PG_URL) !== INVITE_DB) {
+    if (REQUIRE_PG) {
+      throw new Error(
+        `Invitation concurrency proof must target disposable DB "${INVITE_DB}" (got "${parseDbName(PG_URL)}")`,
+      );
+    }
+    return false;
+  }
+  if (parseDbName(PG_URL) === "ostt_dev") {
+    throw new Error("Invitation concurrency proof must not use ostt_dev");
+  }
+
   const probe = postgres(ADMIN_URL, { max: 1, connect_timeout: 2 });
   try {
     await probe`select 1`;
-    await probe.unsafe(`CREATE DATABASE ostt_invite_concurrency`);
+    await probe.unsafe(`CREATE DATABASE ${INVITE_DB}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (!/already exists/i.test(message) && !/duplicate_database/i.test(message)) {
-      // Connection failed or unexpected error — skip suite.
+      // Connection failed or unexpected error — skip suite unless required.
       if (/connect|ECONNREFUSED|timeout|does not exist/i.test(message)) {
         await probe.end({ timeout: 1 }).catch(() => undefined);
         return false;
@@ -54,6 +76,11 @@ async function postgresReachable(): Promise<boolean> {
 }
 
 const reachable = await postgresReachable();
+if (REQUIRE_PG && !reachable) {
+  throw new Error(
+    "OSTT_REQUIRE_POSTGRES=1 but PostgreSQL is unreachable for invitation concurrency proof",
+  );
+}
 
 describe.skipIf(!reachable)(
   "invitation issuance concurrency (PostgreSQL 16)",
