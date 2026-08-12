@@ -11,6 +11,7 @@ Nothing here is a privacy policy, retention schedule, or legal basis determinati
 | Static fixtures (people, evidence, votes, decisions) | Demonstrate the institutional journey | Public in the repository and UI | Repository lifetime | Unmistakably synthetic |
 | Consultation practice votes | Let visitors try Agree / Disagree / Pass | Local browser only | Cleared by Reset or storage clear | Keyed by synthetic topic id |
 | Guided-demo step + presenter-notes flag | Presentation continuity | Local browser + optional `?step=` / `?demoStep=` | Session | No personal information |
+| Workflow practice drafts/receipts (3.9) | Local topic-recommendation + source-contribution practice | Local browser `sessionStorage` only | Cleared by guided-demo Reset or workflow Reset | Safe fixture IDs + step in URL; never raw private detail/full URLs/IPs in the query string |
 
 ## Later phases may collect (proposed categories)
 
@@ -34,7 +35,7 @@ Nothing here is a privacy policy, retention schedule, or legal basis determinati
 | Public-demo discovery query state | Shareable advanced search filters | Local URL only; no accounts | Ephemeral browser | Never used for gated draft search (3.11) |
 | Conflict disclosures (3.5/3.8) | Participant integrity on claim/evidence subjects | **Public:** summary on included published content; **Owner / matching reviewer:** summary + private detail for exact subject; **Moderator-only:** summary only | Resettable with alpha wipe; one current row per subject | Private detail never in anonymous DTOs, URLs, logs, or audit payloads |
 | Moderation actions (3.8) | Hold/hide/restore-to-visible institutional history | **Staff:** full action history including private notes; **Public:** allowlisted withhold/restore notices (action + public rationale + date only) | Append-only within alpha dataset; wiped on alpha reset | Never hard-delete content; restore writes stored `visible`, not a `restored` state |
-| Public-demo workflow preview fixtures (3.8) | Phone visual parity for 3.5–3.8 | Synthetic only; local URL `view`/`state` | Ephemeral browser | Never imports gated DB/auth/moderation services |
+| Public-demo workflow preview fixtures (3.8/3.9) | Phone visual parity + interactive practice | Synthetic only; practice tasks + secondary `view`/`state` explorer | Ephemeral browser | Never imports gated DB/auth/moderation services; topic recommendation is not gated intake |
 | Agenda calculation inputs/outputs | Reproducible thresholds | Public traces and method versions | Snapshot + code version retained | Algorithm accountability vs personal data |
 | Deliberation and decision records | Institutional memory | Public observation + published decisions | Long-lived public record | Board authority overlays |
 | Audit events | Tamper-evident institutional action | Public feed of actions (not private payloads) | Append-only with legal hold exceptions | What actor detail is published |

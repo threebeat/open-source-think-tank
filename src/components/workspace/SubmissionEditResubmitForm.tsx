@@ -246,7 +246,10 @@ export function SubmissionEditResubmitForm({
           <label className="block space-y-2 text-sm">
             <span>Source URL</span>
             <input
-              className="w-full break-all rounded-md border border-border bg-background px-3 py-2"
+              type="url"
+              inputMode="url"
+              maxLength={2000}
+              className="w-full break-all rounded-md border border-border bg-background px-3 py-2 text-base"
               value={sourceUrl}
               onChange={(event) => setSourceUrl(event.target.value)}
               required

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { resolveAppMode } from "@/lib/env/app-mode";
 import { assertCsrfSafe, csrfDeniedResponse } from "@/lib/security/csrf";
+import { gateAuthenticatedMutation } from "@/lib/security/mutation-gate";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -20,6 +21,12 @@ function statusFor(code: string): number {
   }
   if (code === "TOPIC_NOT_FOUND" || code === "CLAIM_NOT_FOUND") {
     return 404;
+  }
+  if (code === "MUTATION_RATE_LIMITED") {
+    return 429;
+  }
+  if (code === "PAYLOAD_TOO_LARGE") {
+    return 413;
   }
   return 400;
 }
@@ -72,13 +79,6 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   const { id } = await context.params;
-  let body: Record<string, unknown>;
-  try {
-    body = (await request.json()) as Record<string, unknown>;
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
   const { requireGatedSession } = await import("@/lib/auth/guard");
   const gated = await requireGatedSession();
   if (!gated.ok) {
@@ -87,6 +87,16 @@ export async function POST(request: Request, context: RouteContext) {
       { status: gated.status },
     );
   }
+
+  const gatedBody = await gateAuthenticatedMutation({
+    request,
+    accountId: gated.session.accountId,
+    family: "create_submission",
+  });
+  if (!gatedBody.ok) {
+    return gatedBody.response;
+  }
+  const body = gatedBody.body;
 
   const { getGatedDb } = await import("@/lib/auth/runtime");
   const { createAndSubmitClaimEvidence } = await import(

@@ -1,6 +1,6 @@
 # Phase 3 architecture — operational alpha
 
-**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.8 implemented** (first operational vertical slice through 3.6; 3.7 adds immutable `content_revisions` and comparison UX; 3.8 deepens conflict disclosures, append-only moderation actions, gated moderation workspace, allowlisted public notices, and fixture-backed `/demo/workflow` parity; **3.9 not started**)  
+**Status:** Work Package 3.1 contract as amended by 3.1.1 / ADR 0009; **3.2–3.9 implemented/in progress** (first operational vertical slice through 3.6; 3.7–3.8 enrichments; **3.9** hardens source URLs + mutation abuse controls, closes 3.8 concurrency, and makes `/demo/workflow` an interactive local practice surface; **3.10 not started**)  
 **Plan:** [phase-3-plan.md](./phase-3-plan.md)  
 **ADRs:** [0008](./decisions/0008-phase-3-operational-alpha-contract.md), [0009](./decisions/0009-phase-3-operational-slice-corrections.md)  
 **Foundation:** [architecture-phase-2.md](./architecture-phase-2.md), ADRs 0002–0005, capability matrix, audit registry
@@ -244,15 +244,15 @@ Exact paths may align with existing `/account/*` and `/staff/*` trees; do not ex
 | Resubmit / edit after changes_requested | content update + append-only `content_revisions` row (on content change) + workflow state + audit (`*.updated` / `*.revision_recorded` / `*.resubmitted` as applicable) |
 | Claim workflow decision | `claims.review` + audit |
 | Evidence workflow / quality decision | `evidence.review` + audit; must not rewrite unrelated popularity fields |
-| Moderation visibility | expected visibility + `updated_at` → row visibility ∈ {visible,held,hidden} + append `moderation_actions` + audit (`moderation.submission_held` / `_hidden` / `_restored`); restore → visible; never delete revisions/disclosures/reviews |
-| Disclosure create/update | ownership + `conflicts.disclose_own` + expected `updated_at` (updates) + audit (`conflicts.disclosed` / `conflicts.updated`); no-op writes nothing |
+| Moderation visibility | expected visibility + **SQL** `updated_at` (ms) → row visibility ∈ {visible,held,hidden} + append `moderation_actions` + audit (`moderation.submission_held` / `_hidden` / `_restored`); restore → visible; never delete revisions/disclosures/reviews; axes stay independent |
+| Disclosure create/update | ownership + `conflicts.disclose_own` + **SQL** expected `updated_at` at ms precision (updates) + audit (`conflicts.disclosed` / `conflicts.updated`); no-op writes nothing; successful writes advance `updated_at` by ≥1 ms |
 | Invite issue | invitation row (hash) + audit; raw token only in response memory |
 | Bootstrap invitation | singleton lock + zero-admin check + bootstrap invitation (hash) + operator audit |
 | Bootstrap finalize | singleton lock + re-check gates + operator_bootstrap verification provenance + activation + administrator grant + completion mark + audit |
 | Publish | `publication_status` → published + projection stamp + audit (minimal in 3.6) |
 | Alpha reset | documented ordered deletes/truncates in one operator procedure; audited |
 
-**Concurrency:** use row-level conditions (update … where state = expected) or equivalent to prevent lost updates on workflow transitions; follow Phase 2 patterns used for invite claim / dual-control.
+**Concurrency:** use row-level conditions (update … where state = expected and/or `updated_at = expected`) so stale writers lose atomically; follow Phase 2 patterns used for invite claim / dual-control. JS pre-checks are fail-fast only; successful writes advance `updated_at` by ≥1 ms.
 
 ---
 
@@ -388,6 +388,15 @@ Items below may be completed later **without** silently weakening core authoriza
 Completing a deferred item requires its own package or ADR touch; do not mark it done inside an unrelated package.
 
 ---
+
+## 11a. Source URL policy and mutation abuse controls (3.9)
+
+- One shared pure policy in `src/lib/security/source-url.ts`: absolute `https:` only; no credentials; length ≤ 2000; reject private/local/metadata/single-label hosts and non-443 ports by **literal** host classification (no DNS).
+- Validate on create/edit; revalidate on publish readiness and public projection (fail closed; never emit unsafe clickable links).
+- Audits may record hostname only — never path/query/fragment/full URL.
+- Mutation routes use bounded JSON (32 KiB) and a replaceable `MutationRateLimiter`. The 3.9 implementation is an in-process sliding window suitable for **single-instance** alpha; a shared implementation is required before multi-instance gated deployment (OQ14 / D13).
+- Rate-limit denials: HTTP 429, `MUTATION_RATE_LIMITED`, generic copy, `Retry-After`, `Cache-Control: no-store`; no domain row and no institutional audit event.
+- Public-demo `/demo/workflow` primary surface is local practice (topic-recommendation prototype + source contribution). Topic recommendation is **not** a gated capability until a later package authorizes intake. Snapshot explorer remains secondary.
 
 ## 12. Future Pol.is integration boundary
 

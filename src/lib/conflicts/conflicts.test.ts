@@ -359,6 +359,78 @@ describe("conflict disclosures (3.8)", () => {
     expect(current.ok && current.value?.publicSummary).toBe("Original summary");
   });
 
+  it("concurrent disclosure updates with one token: one success, one conflict", async () => {
+    const claim = await insertClaim(db, {
+      topicId: openTopicId,
+      authorAccountId: PARTICIPANT,
+      title: "Concurrent disclosure claim",
+      summary: "Summary",
+      approachLabel: "Concurrent",
+      synthetic: true,
+    });
+    expect(claim.ok).toBe(true);
+    if (!claim.ok) return;
+
+    const created = await upsertOwnClaimDisclosure(db, {
+      actorAccountId: PARTICIPANT,
+      claimId: claim.value.id,
+      disclosureChoice: "disclose",
+      publicSummary: "Shared starting summary",
+      privateDetail: "shared private",
+    });
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+
+    const token = created.value.disclosure.updatedAt.toISOString();
+    const auditsBefore = await db
+      .select()
+      .from(auditEvents)
+      .where(eq(auditEvents.action, "conflicts.updated"));
+
+    const [first, second] = await Promise.all([
+      upsertOwnClaimDisclosure(db, {
+        actorAccountId: PARTICIPANT,
+        claimId: claim.value.id,
+        disclosureChoice: "disclose",
+        publicSummary: "Writer A summary",
+        privateDetail: "writer-a",
+        expectedUpdatedAt: token,
+      }),
+      upsertOwnClaimDisclosure(db, {
+        actorAccountId: PARTICIPANT,
+        claimId: claim.value.id,
+        disclosureChoice: "disclose",
+        publicSummary: "Writer B summary",
+        privateDetail: "writer-b",
+        expectedUpdatedAt: token,
+      }),
+    ]);
+
+    const outcomes = [first, second];
+    const successes = outcomes.filter((row) => row.ok);
+    const conflicts = outcomes.filter(
+      (row) => !row.ok && row.code === "DISCLOSURE_STATE_CONFLICT",
+    );
+    expect(successes).toHaveLength(1);
+    expect(conflicts).toHaveLength(1);
+
+    const current = await getConflictDisclosureForClaim(db, claim.value.id);
+    expect(current.ok).toBe(true);
+    if (!current.ok || !current.value) return;
+    expect(["Writer A summary", "Writer B summary"]).toContain(
+      current.value.publicSummary,
+    );
+    expect(current.value.updatedAt.getTime()).toBeGreaterThan(
+      created.value.disclosure.updatedAt.getTime(),
+    );
+
+    const auditsAfter = await db
+      .select()
+      .from(auditEvents)
+      .where(eq(auditEvents.action, "conflicts.updated"));
+    expect(auditsAfter.length).toBe(auditsBefore.length + 1);
+  });
+
   it("rolls back disclosure update when appendAuthAudit fails", async () => {
     const claim = await insertClaim(db, {
       topicId: openTopicId,

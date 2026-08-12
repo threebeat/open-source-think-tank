@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { sourceUrlSchema } from "@/lib/security/source-url";
+
 /** Claim content fields that may appear in revision snapshots / changed_fields. */
 export const CLAIM_CONTENT_FIELDS = [
   "title",
@@ -46,33 +48,9 @@ const evidenceSourceTypeSchema = z.enum([
   "other",
 ]);
 
-const httpUrlSchema = z
-  .string()
-  .trim()
-  .min(1)
-  .max(2000)
-  .superRefine((value, ctx) => {
-    let parsed: URL;
-    try {
-      parsed = new URL(value);
-    } catch {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Source URL must be a valid absolute URL",
-      });
-      return;
-    }
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Source URL must use http or https",
-      });
-    }
-  });
-
 export const evidenceContentSnapshotSchema = z
   .object({
-    sourceUrl: httpUrlSchema,
+    sourceUrl: sourceUrlSchema,
     title: z.string().trim().min(1).max(200),
     organization: z.string().trim().min(1).max(200),
     authorType: evidenceAuthorTypeSchema,

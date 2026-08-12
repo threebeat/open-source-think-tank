@@ -10,9 +10,9 @@ import { WorkflowPreview } from "@/features/demo/workflow/WorkflowPreview";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Operational workflow preview",
+  title: "Workflow practice",
   description:
-    "Synthetic, fixture-backed feature tour of operational submission, review, revision, comparison, and moderation snapshots for the public demonstration.",
+    "Interactive synthetic practice for recommending a topic and contributing a source, plus secondary fixture snapshots of staff and visitor states.",
 };
 
 export default function DemoWorkflowPage() {
@@ -22,24 +22,23 @@ export default function DemoWorkflowPage() {
         items={[
           { href: "/", label: "Home" },
           { href: "/demo", label: "Guided demo" },
-          { label: "Operational workflow preview" },
+          { label: "Workflow practice" },
         ]}
       />
       <PageHeader
         eyebrow="Public demonstration"
-        title="Operational workflow preview"
-        description="Phone-friendly synthetic snapshots of participant submission, independent review, revision history, evidence comparison, moderation visibility, and the visitor public projection. Nothing here is live operational state."
+        title="Workflow practice"
+        description="Operate a local topic-recommendation practice and a source-security practice with fixture data. A secondary explorer still shows example staff and visitor snapshots for phone review."
       />
-      <DisclosureNotice title="Synthetic role preview" tone="caution">
-        Labels such as “Synthetic role preview”, “Example held state”, and
-        “Preview next state” describe fixture presentation only. This page does
-        not claim that you held, hid, or restored content, and it is not an
-        administrator console.
+      <DisclosureNotice title="Synthetic interaction prototype" tone="caution">
+        Topic recommendation here is local practice only — not a live gated
+        intake. Source practice uses the shared https URL policy without fetching
+        remote content. Nothing on this page writes to a participant datastore.
       </DisclosureNotice>
       <Suspense
         fallback={
           <p className="text-sm text-muted-foreground">
-            Loading synthetic workflow preview…
+            Loading workflow practice…
           </p>
         }
       >

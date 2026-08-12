@@ -79,13 +79,13 @@ export const demoSteps: DemoStep[] = [
   },
   {
     id: "workflow",
-    title: "Operational workflow preview",
+    title: "Workflow practice",
     summary:
-      "Open the fixture-backed feature tour of synthetic submission, disclosure, review, revision, comparison, moderation visibility, and visitor projection snapshots. URL query state is presentation-only.",
+      "Practice recommending a topic and contributing a source with local fixture state, then optionally explore secondary staff and visitor snapshots. Session-only and resettable.",
     href: "/demo/workflow",
-    linkLabel: "Open operational workflow preview",
+    linkLabel: "Open workflow practice",
     presenterNotes:
-      "Label every screen as a synthetic role preview. Never imply live moderation actions, admin consoles, or other current visitors.",
+      "Lead with the interactive practice tasks. Topic recommendation is a prototype, not live gated intake. Never imply live moderation actions, admin consoles, or other current visitors.",
   },
   {
     id: "transparency",

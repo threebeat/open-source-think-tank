@@ -29,6 +29,7 @@ import {
   updateOwnClaimContent,
   updateOwnEvidenceContent,
 } from "@/lib/revisions/edit";
+import { sourceUrlSchema } from "@/lib/security/source-url";
 import { getTopicById } from "@/lib/topics/repository";
 
 export {
@@ -48,34 +49,9 @@ const MAX_SUMMARY = 4000;
 const MAX_APPROACH = 200;
 const MAX_ORG = 200;
 const MAX_LIMITATIONS = 4000;
-const MAX_URL = 2000;
 const MAX_PUBLIC_SUMMARY = 1000;
 const MAX_PRIVATE_DETAIL = 4000;
 const NO_CONFLICT_SUMMARY = "No known conflict of interest to disclose.";
-
-const httpUrlSchema = z
-  .string()
-  .trim()
-  .min(1)
-  .max(MAX_URL)
-  .superRefine((value, ctx) => {
-    let parsed: URL;
-    try {
-      parsed = new URL(value);
-    } catch {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Source URL must be a valid absolute URL",
-      });
-      return;
-    }
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Source URL must use http or https",
-      });
-    }
-  });
 
 const authorTypeSchema = z.enum([
   "agency",
@@ -105,7 +81,7 @@ export const submissionEnvelopeSchema = z
     claimTitle: z.string().trim().min(1).max(MAX_TITLE),
     claimSummary: z.string().trim().min(1).max(MAX_SUMMARY),
     approachLabel: z.string().trim().min(1).max(MAX_APPROACH),
-    sourceUrl: httpUrlSchema,
+    sourceUrl: sourceUrlSchema,
     evidenceTitle: z.string().trim().min(1).max(MAX_TITLE),
     organization: z.string().trim().min(1).max(MAX_ORG),
     authorType: authorTypeSchema,
@@ -357,7 +333,7 @@ export async function createAndSubmitClaimEvidence(
           previousWorkflowState: null,
           nextWorkflowState: "submitted",
           actorAccountId: principal.accountId,
-          sourceUrlHost: new URL(parsed.data.sourceUrl).host,
+          sourceUrlHost: new URL(parsed.data.sourceUrl).hostname,
         },
         synthetic: principal.synthetic,
       });

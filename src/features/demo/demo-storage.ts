@@ -1,4 +1,5 @@
 import { clearVotes } from "@/features/consultation/consultation-storage";
+import { clearWorkflowPractice } from "@/features/demo/workflow/workflow-storage";
 
 export const DEMO_STEP_KEY = "ostt-demo-step";
 export const DEMO_NOTES_KEY = "ostt-demo-presenter-notes";
@@ -88,5 +89,6 @@ export function resetDemoClientState(): void {
   window.sessionStorage.removeItem(DEMO_STEP_KEY);
   window.sessionStorage.removeItem(DEMO_NOTES_KEY);
   clearVotes(CEDAR_TOPIC_ID);
+  clearWorkflowPractice();
   emit();
 }

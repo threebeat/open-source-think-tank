@@ -401,7 +401,7 @@ export async function updateOwnEvidenceContent(
           previousWorkflowState: evidence.value.workflowState,
           nextWorkflowState: updated.value.workflowState,
           actorAccountId: principal.accountId,
-          sourceUrlHost: new URL(after.sourceUrl).host,
+          sourceUrlHost: new URL(after.sourceUrl).hostname,
         },
         synthetic: principal.synthetic,
       });

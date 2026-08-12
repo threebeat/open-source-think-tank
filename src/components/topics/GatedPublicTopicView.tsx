@@ -96,6 +96,7 @@ function EvidenceBlock({
           href={evidence.sourceUrl}
           target="_blank"
           rel="noopener noreferrer"
+          referrerPolicy="no-referrer"
           className="break-all text-primary underline"
         >
           {evidence.sourceUrl}

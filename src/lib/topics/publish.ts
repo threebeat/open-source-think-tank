@@ -26,6 +26,7 @@ import {
 import type { GatedDb } from "@/lib/persistence/gated";
 import { toPublicRevisionSummary } from "@/lib/revisions/history";
 import { countContentRevisionsForSubjects } from "@/lib/revisions/repository";
+import { isAllowedSourceUrl } from "@/lib/security/source-url";
 import type {
   ProjectionModerationNoticeInput,
   PublicRevisionSummaryProjection,
@@ -113,15 +114,6 @@ function latestQualityRationale(
     .sort((a, b) => b.decidedAt.getTime() - a.decidedAt.getTime());
   const rationale = matching[0]?.publicRationale?.trim();
   return rationale && rationale.length > 0 ? rationale : null;
-}
-
-function isHttpUrl(value: string): boolean {
-  try {
-    const parsed = new URL(value);
-    return parsed.protocol === "http:" || parsed.protocol === "https:";
-  } catch {
-    return false;
-  }
 }
 
 /**
@@ -248,10 +240,11 @@ async function computeReadiness(
         });
         continue;
       }
-      if (!isHttpUrl(row.sourceUrl)) {
+      if (!isAllowedSourceUrl(row.sourceUrl)) {
         blockers.push({
           code: "EVIDENCE_URL_INVALID",
-          message: "Linked evidence source URL is not a valid http(s) URL.",
+          message:
+            "Linked evidence source URL is not a valid https URL under the shared source policy.",
         });
         continue;
       }

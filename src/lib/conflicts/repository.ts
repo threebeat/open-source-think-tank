@@ -7,6 +7,7 @@ import {
   type GatedDb,
   requireGatedPersistence,
 } from "@/lib/persistence/gated";
+import { nextUpdatedAt } from "@/lib/persistence/optimistic";
 
 /**
  * Full gated disclosure record. Private detail must never be required by
@@ -197,18 +198,23 @@ export async function updateConflictDisclosure(
     return denied;
   }
 
-  // Concurrency is enforced by callers comparing expectedUpdatedAt in JS at
-  // millisecond precision (Postgres now() may carry microseconds that JS Date
-  // cannot round-trip through ISO tokens). Update is keyed by disclosure id.
-  void input.expectedUpdatedAt;
+  // Conditional write compares persisted updated_at in SQL so concurrent
+  // writers with the same token cannot both commit. Tokens are millisecond
+  // browser/ISO values; successful writes advance by ≥1 ms.
+  const next = nextUpdatedAt(input.expectedUpdatedAt);
   const [row] = await db
     .update(conflictDisclosures)
     .set({
       publicSummary: input.publicSummary,
       privateDetail: input.privateDetail,
-      updatedAt: new Date(),
+      updatedAt: next,
     })
-    .where(eq(conflictDisclosures.id, input.disclosureId))
+    .where(
+      and(
+        eq(conflictDisclosures.id, input.disclosureId),
+        eq(conflictDisclosures.updatedAt, input.expectedUpdatedAt),
+      ),
+    )
     .returning();
 
   return { ok: true, value: row ? mapDisclosure(row) : null };

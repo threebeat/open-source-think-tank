@@ -56,4 +56,27 @@ describe("auth redaction", () => {
       assertNoSecretsInText("token=abc", ["abc"]),
     ).toThrow(/raw secret/);
   });
+
+  it("redacts source URLs, IPs, and private moderation/disclosure fields in security-log mode", () => {
+    expect(
+      redactSensitiveFields(
+        {
+          sourceUrl: "https://www.example.com/private",
+          clientIp: "203.0.113.9",
+          privateDetail: "employer contract",
+          privateNotes: "staff-only note",
+          verificationArtifact: "ostt:vhold:abc",
+          family: "create_submission",
+        },
+        { redactIdentifiers: true },
+      ),
+    ).toEqual({
+      sourceUrl: "[redacted]",
+      clientIp: "[redacted]",
+      privateDetail: "[redacted]",
+      privateNotes: "[redacted]",
+      verificationArtifact: "[redacted]",
+      family: "create_submission",
+    });
+  });
 });

@@ -40,6 +40,42 @@ if (!proxySource.includes("assertCsrfSafe")) {
   ok("proxy wires CSRF checks");
 }
 
+const sourceUrlPolicy = readFileSync(
+  path.join(root, "src/lib/security/source-url.ts"),
+  "utf8",
+);
+if (
+  !sourceUrlPolicy.includes("https:") ||
+  !sourceUrlPolicy.includes("validateSourceUrl")
+) {
+  fail("source-url policy module missing https validation export");
+} else if (
+  sourceUrlPolicy.includes("dns.lookup") ||
+  sourceUrlPolicy.includes("fetch(") ||
+  sourceUrlPolicy.includes("http.request")
+) {
+  fail("source-url policy must not perform network I/O");
+} else {
+  ok("source-url policy is local https validation only");
+}
+
+const mutationLimiter = readFileSync(
+  path.join(root, "src/lib/security/mutation-rate-limit.ts"),
+  "utf8",
+);
+if (
+  !mutationLimiter.includes("MutationRateLimiter") ||
+  !mutationLimiter.includes("single-instance")
+) {
+  fail("mutation rate limiter interface/docs missing");
+} else if (
+  /redis|upstash|ioredis/i.test(mutationLimiter)
+) {
+  fail("mutation rate limiter must not add a distributed vendor in 3.9");
+} else {
+  ok("mutation rate limiter remains in-process / replaceable");
+}
+
 const secretPatterns = [
   /AKIA[0-9A-Z]{16}/,
   /-----BEGIN (RSA |OPENSSH )?PRIVATE KEY-----/,

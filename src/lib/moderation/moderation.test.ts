@@ -407,6 +407,63 @@ describe("moderation visibility actions (3.8)", () => {
     expect(auditsAfter.length).toBe(auditsBefore.length);
   });
 
+  it("concurrent moderation writers with one token: one success, one conflict", async () => {
+    const bundle = await submitBundle("concurrent-mod");
+    const claim = await getClaimRow(bundle.claim.id);
+    const token = claim.updatedAt.toISOString();
+    const actionsBefore = await db
+      .select()
+      .from(moderationActions)
+      .where(eq(moderationActions.claimId, bundle.claim.id));
+    const auditsBefore = await db
+      .select()
+      .from(auditEvents)
+      .where(eq(auditEvents.action, "moderation.submission_held"));
+
+    const [first, second] = await Promise.all([
+      moderateClaim(db, {
+        actorAccountId: ADMIN,
+        claimId: bundle.claim.id,
+        action: "hold",
+        publicRationale: "Concurrent writer A hold.",
+        expectedVisibility: "visible",
+        expectedUpdatedAt: token,
+      }),
+      moderateClaim(db, {
+        actorAccountId: ADMIN,
+        claimId: bundle.claim.id,
+        action: "hold",
+        publicRationale: "Concurrent writer B hold.",
+        expectedVisibility: "visible",
+        expectedUpdatedAt: token,
+      }),
+    ]);
+
+    const outcomes = [first, second];
+    const successes = outcomes.filter((row) => row.ok);
+    const conflicts = outcomes.filter(
+      (row) => !row.ok && row.code === "MODERATION_STATE_CONFLICT",
+    );
+    expect(successes).toHaveLength(1);
+    expect(conflicts).toHaveLength(1);
+
+    const after = await getClaimRow(bundle.claim.id);
+    expect(after.moderationVisibility).toBe("held");
+    expect(after.updatedAt.getTime()).toBeGreaterThan(claim.updatedAt.getTime());
+
+    const actionsAfter = await db
+      .select()
+      .from(moderationActions)
+      .where(eq(moderationActions.claimId, bundle.claim.id));
+    expect(actionsAfter.length).toBe(actionsBefore.length + 1);
+
+    const auditsAfter = await db
+      .select()
+      .from(auditEvents)
+      .where(eq(auditEvents.action, "moderation.submission_held"));
+    expect(auditsAfter.length).toBe(auditsBefore.length + 1);
+  });
+
   it("rolls back visibility when appendModerationAction fails", async () => {
     const bundle = await submitBundle("modact-rollback");
     const claim = await getClaimRow(bundle.claim.id);

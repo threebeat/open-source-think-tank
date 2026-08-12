@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 3 (packages 3.1–3.12)  
 **Baseline:** Phase 2 foundation at or after `a894317317f3ff1e80d0a3602df69e5b4d8cd589` (tag `phase-2-foundation` recorded in [phase-2-handoff.md](./phase-2-handoff.md))  
-**Current package:** **3.8 complete (awaiting human approval before 3.9).** Conflict-disclosure create/update, append-only moderation actions (hold/hide/restore-to-visible), gated moderation workspace, allowlisted public moderation notices, and fixture-backed public-demo `/demo/workflow` parity for 3.5–3.8 landed. Package **3.9** source-security hardening is **not started**. Deliberation, public-interface hardening (3.10), and workspace search/export remain later packages.
+**Current package:** **3.9 in progress.** Owner-reviewed 3.8 carryovers (atomic disclosure/moderation concurrency; interactive `/demo/workflow` practice) plus source-URL hardening, bounded mutation bodies, and single-instance mutation rate limits. Package **3.10** public-interface completion is **not started** and awaits human approval after 3.9.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [phase-2-plan.md](./phase-2-plan.md), [phase-2-handoff.md](./phase-2-handoff.md), [architecture-phase-2.md](./architecture-phase-2.md), [architecture-phase-3.md](./architecture-phase-3.md), [capability-matrix.md](./capability-matrix.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [open-questions.md](./open-questions.md), [decisions/0006-phase-3-two-lane-sequencing.md](./decisions/0006-phase-3-two-lane-sequencing.md), [decisions/0007-alpha-test-interim-council-dispositions.md](./decisions/0007-alpha-test-interim-council-dispositions.md), [decisions/0008-phase-3-operational-alpha-contract.md](./decisions/0008-phase-3-operational-alpha-contract.md), [decisions/0009-phase-3-operational-slice-corrections.md](./decisions/0009-phase-3-operational-slice-corrections.md)
 
@@ -55,7 +55,7 @@ Future gated improvements may be mirrored into the demo only through updated fix
 Every future **user-visible** Phase 3 work package (through **3.10** and beyond where the feature can be represented safely) must add or update a **fixture-backed preview** so phone-based review can inspect the changed surface without a gated session:
 
 - Public-demo remains synthetic, unauthenticated, single-user, local/ephemeral, resettable, and isolated from gated runtime dependencies.
-- Prefer stable, shareable deep links (for example `/demo/workflow?view=…`) so a PR can point reviewers at the exact phone surface.
+- Prefer stable, shareable deep links (for example `/demo/workflow?task=…&step=…` for practice, or `/demo/workflow?view=…` for secondary snapshots) so a PR can point reviewers at the exact phone surface.
 - Use fixed role-view snapshots and local query/client state only; never present a local toggle as a real institutional moderation action, account, invitation, or audit write.
 - Label synthetic previews plainly (“Synthetic role preview,” “Example held state,” “Preview next state”). Do not add a fake operational admin console.
 
@@ -609,7 +609,7 @@ Still **forbidden in Phase 3** unless a future ADR + register update says otherw
 
 ### Work package 3.8 — Conflict disclosures and moderation
 
-**Status:** Complete (awaiting human approval before 3.9).
+**Status:** Complete (owner-reviewed; concurrency + interactive-demo carryovers addressed in 3.9).
 
 **Objective:** Deepen disclosure capture and moderation visibility actions (`visible`/`held`/`hidden`, with restore-to-visible action) with mandatory reasons; keep public-demo isolated **and** fixture-backed with safe visual parity for 3.5–3.8.
 
@@ -637,31 +637,32 @@ Still **forbidden in Phase 3** unless a future ADR + register update says otherw
 
 ---
 
-### Work package 3.9 — Source security and abuse controls
+### Work package 3.9 — Source security, abuse controls, and interactive user demo
 
-**Status:** Next / awaiting human approval (not started).
+**Status:** In progress.
 
-**Objective:** Harden URL handling and abuse controls without fetching remote content.
+**Objective:** Harden stored source URLs and high-value mutation surfaces without fetching remote content, close 3.8 concurrency and demo-journey carryovers, and turn `/demo/workflow` into a user-operated local practice journey.
 
-**Prerequisites:** 3.5–3.8 mutation surfaces exist.
+**Prerequisites:** 3.5–3.8 mutation surfaces exist; 3.8 owner-reviewed.
 
 **Implementation steps:**
 
-1. Strict URL scheme allowlist (`https:` preferred; reject `javascript:`, data URLs, credentials-in-URL).
-2. Length limits, rate limits per account/IP for submit/review.
-3. Optional SSRF-oriented rejection of clearly internal hosts for **stored** URLs (still no fetch).
-4. Security tests and threat-model note update.
-5. Confirm logs never include raw invite tokens or verification artifacts.
+1. Close 3.8 carryovers: SQL-level expected-`updated_at` concurrency for disclosure/moderation; interactive local practice as the primary `/demo/workflow` experience (snapshot explorer secondary).
+2. Centralize one pure `https:` source-URL policy (no credentials, no private/local hosts, default port only; length ≤ 2000) for create, edit, publish-readiness, and public projection.
+3. Bounded JSON bodies (32 KiB → `413 PAYLOAD_TOO_LARGE`) and replaceable `MutationRateLimiter` (in-process sliding window for single-instance alpha; shared limiter required before multi-instance — OQ14/D13).
+4. Wire mutation routes for submissions, edits/resubmit/withdraw/disclosure, review/quality, and moderation; denials are `429 MUTATION_RATE_LIMITED` with `Retry-After`, no domain/audit writes.
+5. Interactive public-demo tasks: **Recommend a topic** (interaction prototype / not gated intake) and **Contribute a source** with shared URL validation categories; `sessionStorage` + safe deep links; guided Reset clears practice state.
+6. Confirm logs/audits never contain raw invite tokens, verification artifacts, raw source URLs, raw IPs, or private disclosure/moderation text.
 
-**Expected user-visible outcome:** Clear validation errors on unsafe URLs; rate-limit errors when abused.
+**Expected user-visible outcome:** Clear validation errors on unsafe URLs; accessible rate-limit / payload errors; `/demo/workflow` leads with operable practice journeys.
 
-**Authorization and audit:** Existing mutation authz; audit rate-limit denials where useful without PII spam.
+**Authorization and audit:** Existing mutation authz; rate-limit denials emit at most one deduplicated security-log event per bucket/window (opaque refs only) — no institutional audit row per denial.
 
-**Privacy/security/accessibility:** Error copy understandable; no user enumeration via invite issuance.
+**Privacy/security/accessibility:** Error copy non-enumerating; phone-first practice UI; keyboard operable; no remote URL fetch/DNS.
 
-**Tests and acceptance criteria:** Malicious schemes rejected; no outbound HTTP client added for sources.
+**Tests and acceptance criteria:** Malicious schemes/hosts rejected; concurrent writers proven; body/rate gates pass; demo practice E2E with zero `/api/workspace/` calls; import isolation preserved.
 
-**Non-goals:** Link previews, scrapers, malware scanning vendors, file uploads.
+**Non-goals:** Real gated topic-recommendation intake; link previews/scrapers/malware scanning; distributed rate-limit vendor; file uploads; 3.10 public-interface completion.
 
 **Stop condition:** Human review before **3.10**.
 
