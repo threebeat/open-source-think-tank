@@ -1,3 +1,4 @@
+import { PublicTime } from "@/components/topics/PublicTime";
 import type { ContentRevisionHistoryDto } from "@/lib/revisions/history";
 import type { PublicRevisionSummaryProjection } from "@/lib/topics/public-projection";
 
@@ -139,9 +140,12 @@ export function PublicRevisionSummaryNotice({
       <span className="font-medium text-foreground">{label}: </span>
       {summary.revisionCount} content revision
       {summary.revisionCount === 1 ? "" : "s"}
-      {summary.latestRevisionAt
-        ? ` · latest ${new Date(summary.latestRevisionAt).toLocaleString()}`
-        : ""}
+      {summary.latestRevisionAt ? (
+        <>
+          {" · latest "}
+          <PublicTime dateTime={summary.latestRevisionAt} />
+        </>
+      ) : null}
       {summary.changedFieldLabels.length > 0
         ? ` · ${summary.changedFieldLabels.join("; ")}`
         : ""}

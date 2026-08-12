@@ -3,6 +3,8 @@ type ConflictDisclosureCardProps = {
   /** Only render private detail when the server explicitly passes it. Never CSS-hide. */
   privateDetail?: string | null;
   title?: string;
+  /** Unique heading id when multiple conflict cards appear on one page. */
+  headingId?: string;
 };
 
 /**
@@ -13,18 +15,16 @@ export function ConflictDisclosureCard({
   publicSummary,
   privateDetail = null,
   title = "Conflict disclosure",
+  headingId = "conflict-disclosure-card-heading",
 }: ConflictDisclosureCardProps) {
   const showPrivate =
     typeof privateDetail === "string" && privateDetail.trim().length > 0;
 
   return (
-    <section
-      className="space-y-3"
-      aria-labelledby="conflict-disclosure-card-heading"
-    >
+    <section className="space-y-3" aria-labelledby={headingId}>
       <h3
-        id="conflict-disclosure-card-heading"
-        className="font-heading text-lg text-foreground"
+        id={headingId}
+        className="font-heading text-lg text-foreground break-words"
       >
         {title}
       </h3>
