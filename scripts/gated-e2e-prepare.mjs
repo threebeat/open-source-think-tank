@@ -38,6 +38,7 @@ await client`
     retention_policy_settings,
     evidence_reviews,
     claim_reviews,
+    moderation_actions,
     content_revisions,
     conflict_disclosures,
     claim_evidence_links,

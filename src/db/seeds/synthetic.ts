@@ -18,6 +18,7 @@ import {
   evidenceReviews,
   evidenceSubmissions,
   invitations,
+  moderationActions,
   persons,
   profiles,
   roleAssignments,
@@ -225,7 +226,8 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
       id: "council-ostt-synth-ada-policy",
       accountId: "account-ostt-synth-ada",
       councilRole: "policy_council",
-      selectionPath: "Synthetic policy selection path (seed) — independent row.",
+      selectionPath:
+        "Synthetic policy selection path (seed) — independent row.",
       termStartsOn: new Date("2026-08-01T00:00:00.000Z"),
     },
   ]);
@@ -292,7 +294,8 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
     id: "vassert-ostt-synth-ada-contact",
     caseId: "vcase-ostt-synth-ada-contact",
     kind: "contact_continuity",
-    assertionSummary: "Synthetic contact continuity assertion (no raw artifact).",
+    assertionSummary:
+      "Synthetic contact continuity assertion (no raw artifact).",
   });
 
   // Synthetic staff administrator for gated staff UI / readiness a11y only.
@@ -318,9 +321,35 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
     grantedByLabel: "ostt-synth-seeder",
     reason: "Synthetic staff administrator for gated UI and a11y drills.",
   });
+  await seedApprovedAssertions(db, "account-ostt-synth-staff-admin", L3_KINDS);
+
+  // Synthetic moderator for gated moderation drills (3.8). Administrator also
+  // holds moderation.review_submission; this account exercises the moderator role.
+  await db.insert(persons).values({
+    id: "person-ostt-synth-staff-moderator",
+    synthetic: true,
+    displayLabel: "ostt-synth Staff Moderator (seed)",
+    notes: "Synthetic staff fixture — not a real individual.",
+  });
+  await db.insert(accounts).values({
+    id: "account-ostt-synth-staff-moderator",
+    personId: "person-ostt-synth-staff-moderator",
+    contactChannel: "staff-moderator@ostt.synth.test",
+    lifecycleState: "active",
+    synthetic: true,
+    contactVerifiedAt: new Date("2026-08-01T00:00:00.000Z"),
+    activatedAt: new Date("2026-08-02T00:00:00.000Z"),
+  });
+  await db.insert(roleAssignments).values({
+    id: "role-ostt-synth-staff-moderator",
+    accountId: "account-ostt-synth-staff-moderator",
+    role: "moderator",
+    grantedByLabel: "ostt-synth-seeder",
+    reason: "Synthetic staff moderator for gated moderation drills.",
+  });
   await seedApprovedAssertions(
     db,
-    "account-ostt-synth-staff-admin",
+    "account-ostt-synth-staff-moderator",
     L3_KINDS,
   );
 
@@ -371,6 +400,19 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
         "Synthetic submitted claim reserved for staff review-queue drills.",
       approachLabel: "Process drill",
       workflowState: "submitted",
+      moderationVisibility: "visible",
+      synthetic: true,
+    },
+    // Dedicated accepted+visible claim for e2e moderation hold drills (starts visible).
+    {
+      id: "claim-ostt-synth-moderation-drill",
+      topicId: "topic-ostt-synth-cedar-billing",
+      authorAccountId: "account-ostt-synth-ada",
+      title: "ostt-synth Moderation drill claim",
+      summary:
+        "Synthetic accepted claim reserved for hold/hide/restore e2e drills.",
+      approachLabel: "Moderation drill",
+      workflowState: "accepted",
       moderationVisibility: "visible",
       synthetic: true,
     },
@@ -425,6 +467,22 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
       moderationVisibility: "visible",
       synthetic: true,
     },
+    {
+      id: "evsub-ostt-synth-moderation-drill",
+      topicId: "topic-ostt-synth-cedar-billing",
+      submitterAccountId: "account-ostt-synth-ada",
+      sourceUrl: "https://example.ostt.synth.test/billing-ops-moderation-drill",
+      title: "ostt-synth Moderation drill evidence",
+      organization: "ostt-synth Cedar River Research Desk",
+      authorType: "agency",
+      sourceType: "memo",
+      limitations:
+        "Synthetic accepted evidence linked to the moderation-drill claim.",
+      workflowState: "accepted",
+      qualityStatus: "limited",
+      moderationVisibility: "visible",
+      synthetic: true,
+    },
   ]);
 
   await db.insert(claimEvidenceLinks).values([
@@ -447,6 +505,13 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
       topicId: "topic-ostt-synth-cedar-billing",
       claimId: "claim-ostt-synth-billing-queue",
       evidenceSubmissionId: "evsub-ostt-synth-billing-queue",
+      relationship: "supporting",
+    },
+    {
+      id: "celink-ostt-synth-moderation-drill",
+      topicId: "topic-ostt-synth-cedar-billing",
+      claimId: "claim-ostt-synth-moderation-drill",
+      evidenceSubmissionId: "evsub-ostt-synth-moderation-drill",
       relationship: "supporting",
     },
   ]);
@@ -475,17 +540,64 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
     createdAt: new Date("2026-08-04T12:00:00.000Z"),
   });
 
-  await db.insert(conflictDisclosures).values({
-    id: "cdisc-ostt-synth-ada-claim",
-    disclosingAccountId: "account-ostt-synth-ada",
-    claimId: "claim-ostt-synth-billing-timeline",
-    evidenceSubmissionId: null,
-    publicSummary:
-      "ostt-synth Ada discloses a fictional prior volunteer role with a billing advisory group.",
-    privateDetail:
-      "Synthetic private detail for staff-only drill — must not appear in public projections.",
-    synthetic: true,
-  });
+  await db.insert(conflictDisclosures).values([
+    {
+      id: "cdisc-ostt-synth-ada-claim",
+      disclosingAccountId: "account-ostt-synth-ada",
+      claimId: "claim-ostt-synth-billing-timeline",
+      evidenceSubmissionId: null,
+      publicSummary:
+        "ostt-synth Ada discloses a fictional prior volunteer role with a billing advisory group.",
+      privateDetail:
+        "Synthetic private detail for staff-only drill — must not appear in public projections.",
+      synthetic: true,
+    },
+    {
+      id: "cdisc-ostt-synth-ada-evidence",
+      disclosingAccountId: "account-ostt-synth-ada",
+      claimId: null,
+      evidenceSubmissionId: "evsub-ostt-synth-billing-memo",
+      publicSummary:
+        "ostt-synth Ada discloses a fictional consulting stipend related to this evidence source.",
+      privateDetail:
+        "Synthetic evidence private detail for staff boundary drills — never public.",
+      synthetic: true,
+    },
+  ]);
+
+  // Historic hold→restore path on the dedicated drill claim; current visibility stays visible.
+  await db.insert(moderationActions).values([
+    {
+      id: "modact-ostt-synth-drill-hold",
+      topicId: "topic-ostt-synth-cedar-billing",
+      claimId: "claim-ostt-synth-moderation-drill",
+      evidenceSubmissionId: null,
+      actorAccountId: "account-ostt-synth-staff-moderator",
+      action: "hold",
+      fromVisibility: "visible",
+      toVisibility: "held",
+      publicRationale:
+        "Synthetic hold rationale for prior moderation history drill.",
+      privateNotes: "Synthetic private hold note — staff only.",
+      synthetic: true,
+      createdAt: new Date("2026-08-06T10:00:00.000Z"),
+    },
+    {
+      id: "modact-ostt-synth-drill-restore",
+      topicId: "topic-ostt-synth-cedar-billing",
+      claimId: "claim-ostt-synth-moderation-drill",
+      evidenceSubmissionId: null,
+      actorAccountId: "account-ostt-synth-staff-admin",
+      action: "restore",
+      fromVisibility: "held",
+      toVisibility: "visible",
+      publicRationale:
+        "Synthetic restore rationale after the hold history drill.",
+      privateNotes: "Synthetic private restore note — staff only.",
+      synthetic: true,
+      createdAt: new Date("2026-08-06T11:00:00.000Z"),
+    },
+  ]);
 
   await db.insert(claimReviews).values([
     {
@@ -581,7 +693,8 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
 /** Raw invite tokens for synthetic pending invitations — tests/E2E only. */
 export const SYNTHETIC_PENDING_INVITE_TOKEN = "ostt-synth-invite-token-cory";
 export const SYNTHETIC_PENDING_INVITE_CONTACT = "cory@ostt.synth.test";
-export const SYNTHETIC_PENDING_INVITE_TOKEN_DANA = "ostt-synth-invite-token-dana";
+export const SYNTHETIC_PENDING_INVITE_TOKEN_DANA =
+  "ostt-synth-invite-token-dana";
 export const SYNTHETIC_PENDING_INVITE_CONTACT_DANA = "dana@ostt.synth.test";
 export const SYNTHETIC_PENDING_INVITE_TOKEN_ELIOT =
   "ostt-synth-invite-token-eliot";
@@ -595,4 +708,7 @@ export const SYNTHETIC_PENDING_INVITE_CONTACT_GINA = "gina@ostt.synth.test";
 export const SYNTHETIC_STAFF_ADMIN_CONTACT = "staff-admin@ostt.synth.test";
 export const SYNTHETIC_STAFF_ADMIN_ACCOUNT_ID =
   "account-ostt-synth-staff-admin";
-
+export const SYNTHETIC_STAFF_MODERATOR_CONTACT =
+  "staff-moderator@ostt.synth.test";
+export const SYNTHETIC_STAFF_MODERATOR_ACCOUNT_ID =
+  "account-ostt-synth-staff-moderator";
