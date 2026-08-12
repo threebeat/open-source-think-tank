@@ -337,7 +337,7 @@ export const workflowModerationFixtures: Record<
     stateLabel: "Not a moderation visibility state",
     visibility: "visible",
     bodyIncluded: false,
-    claimTitle: null,
+    claimTitle: "Published topic with no currently included content",
     claimSummary: null,
     timelineNote:
       "“Empty” is a visitor-publication preview: the topic stays published while no claim/evidence currently meets the allowlist. It is not a stored moderation visibility value.",
