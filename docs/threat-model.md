@@ -98,7 +98,12 @@ Controls below are **implemented** through 2.11 unless noted as still blocked.
 | Topic mutation without audit (3.4) | Single transaction: mutate then append; audit failure rolls back |
 | Cross-participant draft enumeration / mutation (3.5) | Own-submission lists/detail only; ownership re-checked server-side; public-demo workspace 404 |
 | Remote evidence fetch / scrape (3.5) | Syntax-only URL validation (`http:`/`https:`); no server or browser fetch of source URLs |
-| Private disclosure leakage (3.5) | Disclosure attaches to claim only; private_detail never in public projections or audit private payloads |
+| Private disclosure leakage (3.5/3.8) | One current disclosure per claim/evidence; private_detail only in owner + matching reviewer DTOs; never in moderator-only, anonymous projection, audit payloads, URLs, or CSS-hidden client props |
+| Uneven / unauthorized moderation (3.8) | `moderation.review_submission` only; participant denied; expected-state transitions; append-only `moderation_actions` + audits; no hard-delete |
+| Hidden-content leakage via notices (3.8) | Public withhold notices allowlist action/rationale/date only — no held title/body/URL, internal IDs, account IDs, or private notes |
+| Stale moderation/disclosure writers (3.8) | Expected visibility/`updated_at` conditions; losers create no partial rows/audits |
+| Moderation/disclosure audit rollback (3.8) | Action-history or audit failure rolls back visibility/disclosure update in the same transaction |
+| Demo/gated import confusion (3.8) | `/demo/workflow` is fixture-only; workspace moderation/disclosure APIs 404 in public-demo before gated imports; no fake operational admin console |
 | Geography-as-eligibility confusion (3.5) | Documented classification-only fields; no capability grants from FIPS; alpha still has no geographic eligibility rule |
 | Public-demo proposed-topic bleed (3.5) | `discoveryState` fixture field; default listing excludes proposed; not reused for gated unpublished rows |
 | Staff review / private notes leakage (3.6) | Private notes staff-only on review DTOs; never in public projection, participant views, audit summaries, or URL state |

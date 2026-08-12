@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 3 (packages 3.1–3.12)  
 **Baseline:** Phase 2 foundation at or after `a894317317f3ff1e80d0a3602df69e5b4d8cd589` (tag `phase-2-foundation` recorded in [phase-2-handoff.md](./phase-2-handoff.md))  
-**Current package:** **3.7 complete (awaiting human approval before 3.8).** Richer supporting/counterevidence comparison UX and immutable `content_revisions` history landed on the 3.6 vertical slice. Public-demo remains the 3.5 Tennessee fixture experience. Package **3.8** moderation / disclosure depth is **not started**. Deliberation, public-interface hardening (3.10), and workspace search/export remain later packages.
+**Current package:** **3.8 complete (awaiting human approval before 3.9).** Conflict-disclosure create/update, append-only moderation actions (hold/hide/restore-to-visible), gated moderation workspace, allowlisted public moderation notices, and fixture-backed public-demo `/demo/workflow` parity for 3.5–3.8 landed. Package **3.9** source-security hardening is **not started**. Deliberation, public-interface hardening (3.10), and workspace search/export remain later packages.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [phase-2-plan.md](./phase-2-plan.md), [phase-2-handoff.md](./phase-2-handoff.md), [architecture-phase-2.md](./architecture-phase-2.md), [architecture-phase-3.md](./architecture-phase-3.md), [capability-matrix.md](./capability-matrix.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [open-questions.md](./open-questions.md), [decisions/0006-phase-3-two-lane-sequencing.md](./decisions/0006-phase-3-two-lane-sequencing.md), [decisions/0007-alpha-test-interim-council-dispositions.md](./decisions/0007-alpha-test-interim-council-dispositions.md), [decisions/0008-phase-3-operational-alpha-contract.md](./decisions/0008-phase-3-operational-alpha-contract.md), [decisions/0009-phase-3-operational-slice-corrections.md](./decisions/0009-phase-3-operational-slice-corrections.md)
 
@@ -49,6 +49,15 @@ The public demo remains a **single-user synthetic walkthrough**:
 Fixed synthetic fixtures may depict **multiple example participants**, viewpoints, reviews, and institutional actions to explain a multi-user process. Those records are not live users.
 
 Future gated improvements may be mirrored into the demo only through updated fixtures, clearer labels, fixture-backed projections of later workflow states, and shared presentation components that receive mode-specific data. The demo must **never** import gated repositories/services, issue invitation tokens, create fake operational administrator controls, write audit events, persist visitor actions on the server, simulate other current visitors, or require gated secrets at build or runtime.
+
+### Standing delivery rule — public-demo visual parity (owner-approved 3.8)
+
+Every future **user-visible** Phase 3 work package (through **3.10** and beyond where the feature can be represented safely) must add or update a **fixture-backed preview** so phone-based review can inspect the changed surface without a gated session:
+
+- Public-demo remains synthetic, unauthenticated, single-user, local/ephemeral, resettable, and isolated from gated runtime dependencies.
+- Prefer stable, shareable deep links (for example `/demo/workflow?view=…`) so a PR can point reviewers at the exact phone surface.
+- Use fixed role-view snapshots and local query/client state only; never present a local toggle as a real institutional moderation action, account, invitation, or audit write.
+- Label synthetic previews plainly (“Synthetic role preview,” “Example held state,” “Preview next state”). Do not add a fake operational admin console.
 
 ### Hard rules for agents and collaborators
 
@@ -600,28 +609,29 @@ Still **forbidden in Phase 3** unless a future ADR + register update says otherw
 
 ### Work package 3.8 — Conflict disclosures and moderation
 
-**Status:** Next / awaiting human approval (not started).
+**Status:** Complete (awaiting human approval before 3.9).
 
-**Objective:** Deepen disclosure capture and moderation visibility actions (`visible`/`held`/`hidden`, with restore-to-visible action) with mandatory reasons.
+**Objective:** Deepen disclosure capture and moderation visibility actions (`visible`/`held`/`hidden`, with restore-to-visible action) with mandatory reasons; keep public-demo isolated **and** fixture-backed with safe visual parity for 3.5–3.8.
 
 **Prerequisites:** 3.7 history model.
 
 **Implementation steps:**
 
-1. Disclosure create/update rules for submitters; staff summary vs private detail split.
-2. Moderation mutations per §5.4; never hard-delete content; never store `restored` as a state.
-3. Surface reasoned visibility in staff UI; deepen public reason strings on published topics.
-4. Tests for reason required, admin/moderator allow, participant deny, restore → `visible`.
+1. Disclosure create/update rules for submitters; one current disclosure per claim/evidence subject; staff summary vs private detail split by audience DTO.
+2. Append-only `moderation_actions` (migration `0018`) + moderation mutations per §5.4; never hard-delete content; never store `restored` as a state.
+3. Surface reasoned visibility in `/workspace/moderation` staff UI; allowlisted public withhold/restore notices on published projections.
+4. Tests for reason required, admin/moderator allow, participant deny, restore → `visible`, rollback, import isolation.
+5. Owner-approved public-demo parity: `/demo/workflow` fixture tour with shareable deep links (not a fake admin console).
 
-**Expected user-visible outcome:** Moderator holds or hides a submission with a recorded reason; restore returns it to visible; history remains.
+**Expected user-visible outcome:** Moderator holds or hides a submission with a recorded reason; restore returns it to visible; history remains; phone reviewers can inspect the slice via public-demo deep links.
 
-**Authorization and audit:** `moderation.review_submission`, `conflicts.disclose_own`; `moderation.submission_restored` on restore.
+**Authorization and audit:** `moderation.review_submission`, `conflicts.disclose_own`; audits `conflicts.updated`, `moderation.submission_held`, `moderation.submission_hidden`, `moderation.submission_restored` (plus preserved `conflicts.disclosed`).
 
-**Privacy/security/accessibility:** Private detail never in public projection; accessible moderation forms.
+**Privacy/security/accessibility:** Private detail and private notes never in anonymous DTOs; accessible moderation/disclosure forms; public notices omit hidden titles/bodies/URLs/IDs.
 
-**Tests and acceptance criteria:** Hide ≠ delete; restore audited and lands on `visible`; public-demo unaffected.
+**Tests and acceptance criteria:** Hide ≠ delete; restore audited and lands on `visible`; public-demo remains isolated and fixture-backed, with safe visual parity (not “unaffected” / frozen).
 
-**Non-goals:** Dual-control for every moderation action (deferred unless owner pulls forward); appeals tribunal.
+**Non-goals:** Dual-control for every moderation action (deferred unless owner pulls forward); appeals tribunal; legal disclosure taxonomy.
 
 **Stop condition:** Human review before **3.9**.
 

@@ -55,8 +55,8 @@ Default decision: **deny**.
 | `evidence.edit_own` | active | participant | own (service checks) | No remote fetch; also authorizes **owner** evidence revision-history reads (3.7) |
 | `evidence.withdraw_own` | active | participant | own (service checks) | History retained |
 | `evidence.review` | active | reviewer or administrator | — | Workflow + independent quality decisions (3.6); also authorizes **staff** evidence subject revision history (3.7) |
-| `conflicts.disclose_own` | active | participant | own (service checks) | Required on submit path in 3.5 |
-| `moderation.review_submission` | active | moderator or administrator | — | Visibility hold/hide/restore-to-visible; moderators do **not** get pseudonym reverse-map |
+| `conflicts.disclose_own` | active | participant | own (service checks) | Required on submit (3.5) and own disclosure create/update (3.8); does **not** grant staff private-detail reads |
+| `moderation.review_submission` | active | moderator or administrator | — | Visibility hold/hide/restore-to-visible with required public rationale (3.8); does **not** grant disclosure private-detail access or pseudonym reverse-map; private-detail still requires matching `claims.review` / `evidence.review` |
 | `invites.issue` | active | administrator | — | Hashed token at rest; raw link returned once; never public-demo |
 
 ### Operator actions (not account capabilities)

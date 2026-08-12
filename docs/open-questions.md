@@ -90,6 +90,8 @@ Phase 2 decision register and counsel gates: [phase-2-plan.md](./phase-2-plan.md
 
 22. **Pre-revision evidence-quality decisions after content edits** — Unresolved. When a submission is edited after an evidence-quality decision (or other review) that predates the revised content, should that prior quality status block publication eligibility until re-reviewed? Package **3.7** records immutable revisions and surfaces chronology notices but does **not** invent a new publish blocker and does **not** auto-reset quality ([phase-3-plan.md](./phase-3-plan.md) 3.7, [architecture-phase-3.md](./architecture-phase-3.md) §3.4, [threat-model.md](./threat-model.md)).
 
+23. **Public moderation-notice depth on published topics** — Unresolved for 3.10 polish. Package **3.8** exposes allowlisted withhold/restore notices (action + public rationale + date; subjectKind claim/evidence) without titles, bodies, URLs, or IDs. Whether visitors should see richer chronology, appeal pointers, or eligibility interactions—and whether dual-control should apply to some visibility actions—remains open. 3.8 does **not** invent appeal policy, dual control for every moderation action, legal disclosure taxonomy, or permanent retention ([phase-3-plan.md](./phase-3-plan.md) 3.8, [architecture-phase-3.md](./architecture-phase-3.md) §3.6 / §4).
+
 ---
 
 ## How to add questions
