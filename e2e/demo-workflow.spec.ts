@@ -100,9 +100,9 @@ test.describe("public-demo workflow practice", () => {
       page.getByText(/staff scoping/i),
     ).toBeVisible();
     await expect(
-      page.getByText(
-        /A recommendation does not automatically become a topic/i,
-      ),
+      page
+        .getByText(/A recommendation does not automatically become a topic/i)
+        .first(),
     ).toBeVisible();
 
     await page.reload();
