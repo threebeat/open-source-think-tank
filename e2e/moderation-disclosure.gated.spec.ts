@@ -11,7 +11,8 @@ const ADA = "ada@ostt.synth.test";
 const MODERATOR = "staff-moderator@ostt.synth.test";
 const BILLING_CLAIM_ID = "claim-ostt-synth-billing-timeline";
 const DRILL_CLAIM_ID = "claim-ostt-synth-moderation-drill";
-const BILLING_MEMO_EVIDENCE_ID = "evsub-ostt-synth-billing-memo";
+const DRILL_EVIDENCE_ID = "evsub-ostt-synth-moderation-drill";
+const DRILL_EVIDENCE_TITLE = "ostt-synth Moderation drill evidence";
 const CEDAR_TOPIC_SLUG = "ostt-synth-cedar-billing-ops";
 const PRIVATE_DETAIL =
   "Synthetic private detail for staff-only drill — must not appear in public projections.";
@@ -193,9 +194,9 @@ test.describe("moderation and disclosure (gated)", () => {
   }) => {
     await page.context().clearCookies();
     await signInWithCapturedEmail(page, MODERATOR);
-    await page.goto(
-      `/workspace/moderation/evidence/${BILLING_MEMO_EVIDENCE_ID}`,
-    );
+    // Use dedicated drill evidence so comparison fixtures (billing memo/counter)
+    // remain visible for parallel/later gated suites.
+    await page.goto(`/workspace/moderation/evidence/${DRILL_EVIDENCE_ID}`);
     const actionSection = page.locator(
       "section[aria-labelledby='moderation-action-heading']",
     );
@@ -206,6 +207,9 @@ test.describe("moderation and disclosure (gated)", () => {
       "Synthetic e2e evidence hold for public withheld-notice drill.";
     await actionSection.getByLabel(/Hold \(temporarily withhold\)/i).check();
     await actionSection.getByLabel(/Public rationale/i).fill(holdRationale);
+    await actionSection
+      .getByLabel(/Private moderator notes/i)
+      .fill("Synthetic private evidence note — must not appear publicly.");
     await actionSection
       .getByRole("button", { name: /Record moderation action/i })
       .click();
@@ -235,12 +239,16 @@ test.describe("moderation and disclosure (gated)", () => {
 
     // Held evidence body/title must not leak; private notes never public.
     await expect(
-      page.getByText("ostt-synth Billing operations memo", { exact: false }),
+      page.getByText(DRILL_EVIDENCE_TITLE, { exact: false }),
     ).toHaveCount(0);
     await expect(
       page.getByText(/Synthetic private evidence note/i),
     ).toHaveCount(0);
     await expect(page.getByText(PRIVATE_DETAIL)).toHaveCount(0);
+    // Comparison fixtures must remain projected.
+    await expect(
+      page.getByText(/ostt-synth Billing operations memo/i).first(),
+    ).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
 
@@ -261,10 +269,11 @@ test.describe("moderation and disclosure (gated)", () => {
     const holdRadio = actionSection.getByLabel(
       /Hold \(temporarily withhold\)/i,
     );
+    const hideRadio = actionSection.getByLabel(/Hide from public projection/i);
     await holdRadio.focus();
     await expect(holdRadio).toBeFocused();
-    await page.keyboard.press("Tab");
-    const hideRadio = actionSection.getByLabel(/Hide from public projection/i);
+    // Radio groups move selection with arrows; Tab leaves the group.
+    await page.keyboard.press("ArrowDown");
     await expect(hideRadio).toBeFocused();
     await page.keyboard.press("Tab");
     const rationale = actionSection.getByLabel(/Public rationale/i);
