@@ -2,9 +2,18 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildPublicTopicProjection,
+  isPublicEligibleEvidenceQuality,
   projectionContainsForbiddenKeys,
   type BuildPublicTopicProjectionInput,
 } from "@/lib/topics/public-projection";
+
+const PRIVATE_EVIDENCE_DETAIL_SENTINEL =
+  "SENTINEL_EVIDENCE_PRIVATE_DETAIL_MUST_NEVER_LEAK_9f3c";
+const PRIVATE_CLAIM_DETAIL_SENTINEL =
+  "SENTINEL_CLAIM_PRIVATE_DETAIL_MUST_NEVER_LEAK_2a1b";
+const HELD_TITLE_SENTINEL = "SENTINEL_HELD_CLAIM_TITLE_LEAK";
+const REJECTED_URL_SENTINEL =
+  "https://example.ostt.synth.test/rejected-quality-must-not-appear";
 
 function baseInput(
   overrides: Partial<BuildPublicTopicProjectionInput> = {},
@@ -52,6 +61,8 @@ function baseInput(
         moderationVisibility: "visible",
         qualityPublicRationale: "Useful but limited for recommendation.",
         workflowPublicRationale: "Workflow accepted after review.",
+        conflictPublicSummary:
+          "Evidence author notes a prior consulting engagement (synthetic).",
         revisionSummary: null,
         latestModerationNotice: null,
       },
@@ -69,7 +80,7 @@ function baseInput(
 }
 
 describe("buildPublicTopicProjection", () => {
-  it("returns allowlisted DTO for publishable content", () => {
+  it("returns allowlisted DTO for publishable content including evidence conflict summary", () => {
     const projection = buildPublicTopicProjection(baseInput());
     expect(projection).not.toBeNull();
     expect(projection!.slug).toBe("alpha-topic");
@@ -77,12 +88,21 @@ describe("buildPublicTopicProjection", () => {
     expect(projection!.evidence).toHaveLength(1);
     expect(projection!.evidence[0]!.key).toBe("ev-1");
     expect(projection!.claims[0]!.evidenceLinks[0]!.evidenceKey).toBe("ev-1");
+    expect(projection!.evidence[0]!.conflictPublicSummary).toContain(
+      "prior consulting engagement",
+    );
     expect(projection!.withheldModerationNotices).toEqual([]);
     expect(projection!.claims[0]!.latestRestorationNotice).toBeNull();
     expect(projection!.evidence[0]!.latestRestorationNotice).toBeNull();
     expect(projectionContainsForbiddenKeys(projection)).toEqual([]);
     expect(JSON.stringify(projection)).not.toContain("ev-db-1");
     expect(JSON.stringify(projection)).not.toContain("private");
+    expect(JSON.stringify(projection)).not.toContain(
+      PRIVATE_EVIDENCE_DETAIL_SENTINEL,
+    );
+    expect(JSON.stringify(projection)).not.toContain(
+      PRIVATE_CLAIM_DETAIL_SENTINEL,
+    );
   });
 
   it("returns null for unpublished topics", () => {
@@ -98,13 +118,86 @@ describe("buildPublicTopicProjection", () => {
     ).toBeNull();
   });
 
-  it("omits rejected/held rows and requires coherent claim+evidence", () => {
+  it("keeps a published topic addressable when every content item is excluded", () => {
+    const projection = buildPublicTopicProjection(
+      baseInput({
+        claims: [
+          {
+            id: "claim-held",
+            title: HELD_TITLE_SENTINEL,
+            summary: "Secret held claim summary",
+            approachLabel: "Approach",
+            workflowState: "accepted",
+            moderationVisibility: "held",
+            workflowPublicRationale: "Accepted earlier.",
+            conflictPublicSummary: null,
+            revisionSummary: null,
+            latestModerationNotice: {
+              action: "hold",
+              publicRationale: "Temporarily withheld for staff follow-up.",
+              recordedAt: "2026-08-11T15:00:00.000Z",
+            },
+          },
+        ],
+        evidence: [
+          {
+            ...baseInput().evidence[0]!,
+            qualityStatus: "rejected",
+            qualityPublicRationale: "Rejected for publication.",
+            sourceUrl: REJECTED_URL_SENTINEL,
+            conflictPublicSummary: null,
+          },
+        ],
+        links: [
+          {
+            topicId: "topic-1",
+            claimId: "claim-held",
+            evidenceSubmissionId: "ev-db-1",
+            relationship: "supporting",
+          },
+        ],
+      }),
+    );
+
+    expect(projection).not.toBeNull();
+    expect(projection!.slug).toBe("alpha-topic");
+    expect(projection!.claims).toEqual([]);
+    expect(projection!.evidence).toEqual([]);
+    expect(projection!.withheldModerationNotices).toEqual([
+      {
+        subjectKind: "claim",
+        action: "hold",
+        publicRationale: "Temporarily withheld for staff follow-up.",
+        recordedAt: "2026-08-11T15:00:00.000Z",
+      },
+    ]);
+    const serialized = JSON.stringify(projection);
+    expect(serialized).not.toContain(HELD_TITLE_SENTINEL);
+    expect(serialized).not.toContain(REJECTED_URL_SENTINEL);
+    expect(serialized).not.toContain("Secret held claim summary");
+  });
+
+  it("preserves paused operational label without unpublishing", () => {
+    const projection = buildPublicTopicProjection(
+      baseInput({
+        topic: {
+          ...baseInput().topic,
+          workflowState: "paused",
+        },
+      }),
+    );
+    expect(projection).not.toBeNull();
+    expect(projection!.operationalLabel).toBe("Paused (operational)");
+    expect(projection!.claims).toHaveLength(1);
+  });
+
+  it("omits workflow-rejected claims and quality-rejected evidence", () => {
     const projection = buildPublicTopicProjection(
       baseInput({
         claims: [
           {
             id: "claim-rejected",
-            title: "Rejected",
+            title: "Rejected claim title",
             summary: "x",
             approachLabel: "a",
             workflowState: "rejected",
@@ -129,18 +222,19 @@ describe("buildPublicTopicProjection", () => {
         ],
         evidence: [
           {
-            id: "ev-hidden",
-            sourceUrl: "https://example.ostt.synth.test/hidden",
-            title: "Hidden",
+            id: "ev-rejected-quality",
+            sourceUrl: REJECTED_URL_SENTINEL,
+            title: "Rejected quality evidence",
             organization: "Desk",
             authorType: "agency",
             sourceType: "memo",
             limitations: "x",
             workflowState: "accepted",
-            qualityStatus: "accepted",
-            moderationVisibility: "hidden",
-            qualityPublicRationale: "Quality ok",
-            workflowPublicRationale: "Workflow ok",
+            qualityStatus: "rejected",
+            moderationVisibility: "visible",
+            qualityPublicRationale: "Quality rejected after review.",
+            workflowPublicRationale: "Workflow accepted earlier.",
+            conflictPublicSummary: null,
             revisionSummary: null,
             latestModerationNotice: null,
           },
@@ -157,6 +251,7 @@ describe("buildPublicTopicProjection", () => {
             moderationVisibility: "visible",
             qualityPublicRationale: "Useful but limited for recommendation.",
             workflowPublicRationale: "Workflow accepted after review.",
+            conflictPublicSummary: null,
             revisionSummary: null,
             latestModerationNotice: null,
           },
@@ -171,7 +266,7 @@ describe("buildPublicTopicProjection", () => {
           {
             topicId: "topic-1",
             claimId: "claim-1",
-            evidenceSubmissionId: "ev-hidden",
+            evidenceSubmissionId: "ev-rejected-quality",
             relationship: "supporting",
           },
           {
@@ -187,6 +282,30 @@ describe("buildPublicTopicProjection", () => {
     expect(projection!.claims).toHaveLength(1);
     expect(projection!.claims[0]!.title).toBe("Accepted claim");
     expect(projection!.evidence.map((e) => e.title)).toEqual(["Memo"]);
+    expect(JSON.stringify(projection)).not.toContain("Rejected claim title");
+    expect(JSON.stringify(projection)).not.toContain(
+      "Rejected quality evidence",
+    );
+    expect(JSON.stringify(projection)).not.toContain(REJECTED_URL_SENTINEL);
+  });
+
+  it("includes accepted, limited, and disputed quality when otherwise eligible", () => {
+    for (const qualityStatus of ["accepted", "limited", "disputed"] as const) {
+      expect(isPublicEligibleEvidenceQuality(qualityStatus)).toBe(true);
+      const projection = buildPublicTopicProjection(
+        baseInput({
+          evidence: [
+            {
+              ...baseInput().evidence[0]!,
+              qualityStatus,
+              qualityPublicRationale: `${qualityStatus} rationale`,
+            },
+          ],
+        }),
+      );
+      expect(projection).not.toBeNull();
+      expect(projection!.evidence[0]!.qualityStatus).toBe(qualityStatus);
+    }
   });
 
   it("exposes withhold notice without leaking titles or bodies", () => {
@@ -236,6 +355,7 @@ describe("buildPublicTopicProjection", () => {
             moderationVisibility: "hidden",
             qualityPublicRationale: "Quality ok",
             workflowPublicRationale: "Workflow ok",
+            conflictPublicSummary: null,
             revisionSummary: null,
             latestModerationNotice: {
               action: "hide",
@@ -256,6 +376,7 @@ describe("buildPublicTopicProjection", () => {
             moderationVisibility: "visible",
             qualityPublicRationale: "Useful but limited for recommendation.",
             workflowPublicRationale: "Workflow accepted after review.",
+            conflictPublicSummary: null,
             revisionSummary: null,
             latestModerationNotice: null,
           },
@@ -284,22 +405,20 @@ describe("buildPublicTopicProjection", () => {
     );
 
     expect(projection).not.toBeNull();
-    expect(projection!.withheldModerationNotices).toEqual(
-      expect.arrayContaining([
-        {
-          subjectKind: "claim",
-          action: "hold",
-          publicRationale: "Temporarily withheld for staff follow-up.",
-          recordedAt: "2026-08-11T15:00:00.000Z",
-        },
-        {
-          subjectKind: "evidence",
-          action: "hide",
-          publicRationale: "Hidden pending source clarification.",
-          recordedAt: "2026-08-11T16:00:00.000Z",
-        },
-      ]),
-    );
+    expect(projection!.withheldModerationNotices).toEqual([
+      {
+        subjectKind: "claim",
+        action: "hold",
+        publicRationale: "Temporarily withheld for staff follow-up.",
+        recordedAt: "2026-08-11T15:00:00.000Z",
+      },
+      {
+        subjectKind: "evidence",
+        action: "hide",
+        publicRationale: "Hidden pending source clarification.",
+        recordedAt: "2026-08-11T16:00:00.000Z",
+      },
+    ]);
     const serialized = JSON.stringify(projection);
     expect(serialized).not.toContain("Secret held claim title");
     expect(serialized).not.toContain("Secret held claim summary");
@@ -351,34 +470,140 @@ describe("buildPublicTopicProjection", () => {
     expect(projection!.withheldModerationNotices).toEqual([]);
   });
 
-  it("omits malformed non-http(s) URLs and never requires a fetch", () => {
-    expect(
-      buildPublicTopicProjection(
-        baseInput({
-          evidence: [
-            {
-              ...baseInput().evidence[0]!,
-              sourceUrl: "javascript:alert(1)",
-            },
-          ],
-        }),
-      ),
-    ).toBeNull();
+  it("omits malformed non-http(s) URLs from included evidence and keeps published shell", () => {
+    const projection = buildPublicTopicProjection(
+      baseInput({
+        evidence: [
+          {
+            ...baseInput().evidence[0]!,
+            sourceUrl: "javascript:alert(1)",
+          },
+        ],
+      }),
+    );
+    expect(projection).not.toBeNull();
+    expect(projection!.claims).toEqual([]);
+    expect(projection!.evidence).toEqual([]);
+    expect(JSON.stringify(projection)).not.toContain("javascript:");
   });
 
   it("requires non-pending quality with public quality rationale", () => {
-    expect(
-      buildPublicTopicProjection(
-        baseInput({
-          evidence: [
-            {
-              ...baseInput().evidence[0]!,
-              qualityStatus: "pending",
-              qualityPublicRationale: null,
-            },
-          ],
-        }),
-      ),
-    ).toBeNull();
+    const projection = buildPublicTopicProjection(
+      baseInput({
+        evidence: [
+          {
+            ...baseInput().evidence[0]!,
+            qualityStatus: "pending",
+            qualityPublicRationale: null,
+          },
+        ],
+      }),
+    );
+    expect(projection).not.toBeNull();
+    expect(projection!.claims).toEqual([]);
+    expect(projection!.evidence).toEqual([]);
+  });
+
+  it("orders claims, evidence links, and notices deterministically", () => {
+    const projection = buildPublicTopicProjection(
+      baseInput({
+        claims: [
+          {
+            id: "claim-z",
+            title: "Zulu claim",
+            summary: "Z",
+            approachLabel: "B",
+            workflowState: "accepted",
+            moderationVisibility: "visible",
+            workflowPublicRationale: "Accepted Z.",
+            conflictPublicSummary: null,
+            revisionSummary: null,
+            latestModerationNotice: null,
+          },
+          {
+            id: "claim-a",
+            title: "Alpha claim",
+            summary: "A",
+            approachLabel: "A",
+            workflowState: "accepted",
+            moderationVisibility: "visible",
+            workflowPublicRationale: "Accepted A.",
+            conflictPublicSummary: null,
+            revisionSummary: null,
+            latestModerationNotice: null,
+          },
+        ],
+        evidence: [
+          {
+            id: "ev-b",
+            sourceUrl: "https://example.ostt.synth.test/b",
+            title: "Bravo source",
+            organization: "Desk",
+            authorType: "agency",
+            sourceType: "memo",
+            limitations: "b",
+            workflowState: "accepted",
+            qualityStatus: "accepted",
+            moderationVisibility: "visible",
+            qualityPublicRationale: "ok",
+            workflowPublicRationale: "ok",
+            conflictPublicSummary: null,
+            revisionSummary: null,
+            latestModerationNotice: null,
+          },
+          {
+            id: "ev-a",
+            sourceUrl: "https://example.ostt.synth.test/a",
+            title: "Alpha source",
+            organization: "Desk",
+            authorType: "agency",
+            sourceType: "memo",
+            limitations: "a",
+            workflowState: "accepted",
+            qualityStatus: "accepted",
+            moderationVisibility: "visible",
+            qualityPublicRationale: "ok",
+            workflowPublicRationale: "ok",
+            conflictPublicSummary: null,
+            revisionSummary: null,
+            latestModerationNotice: null,
+          },
+        ],
+        links: [
+          {
+            topicId: "topic-1",
+            claimId: "claim-z",
+            evidenceSubmissionId: "ev-b",
+            relationship: "counterevidence",
+          },
+          {
+            topicId: "topic-1",
+            claimId: "claim-z",
+            evidenceSubmissionId: "ev-a",
+            relationship: "supporting",
+          },
+          {
+            topicId: "topic-1",
+            claimId: "claim-a",
+            evidenceSubmissionId: "ev-a",
+            relationship: "supporting",
+          },
+        ],
+      }),
+    );
+
+    expect(projection).not.toBeNull();
+    expect(projection!.claims.map((c) => c.title)).toEqual([
+      "Alpha claim",
+      "Zulu claim",
+    ]);
+    expect(projection!.claims[1]!.evidenceLinks.map((l) => l.relationship)).toEqual([
+      "supporting",
+      "counterevidence",
+    ]);
+    expect(projection!.evidence.map((e) => e.title)).toEqual([
+      "Alpha source",
+      "Bravo source",
+    ]);
   });
 });

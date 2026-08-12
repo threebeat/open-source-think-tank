@@ -102,6 +102,9 @@ describe("workflow-query", () => {
       workflowPreviewHref({ view: "visitor", state: "restored" }),
     ).toBe("/demo/workflow?task=explore&view=visitor&state=restored");
     expect(
+      workflowPreviewHref({ view: "visitor", state: "empty" }),
+    ).toBe("/demo/workflow?task=explore&view=visitor&state=empty");
+    expect(
       serializeWorkflowDemoQuery({
         task: "explore",
         step: null,

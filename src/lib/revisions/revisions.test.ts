@@ -541,7 +541,10 @@ describe("content revisions (3.7)", () => {
       evidence: [],
       links: [],
     });
-    expect(projection).toBeNull();
+    // Published topic stays addressable with an empty included-content shell (3.10).
+    expect(projection).not.toBeNull();
+    expect(projection!.claims).toEqual([]);
+    expect(projection!.evidence).toEqual([]);
   });
 
   async function getClaimUpdatedAt(claimId: string): Promise<Date> {

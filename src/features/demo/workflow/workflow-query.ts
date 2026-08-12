@@ -12,6 +12,7 @@ export const MODERATION_PREVIEW_STATES = [
   "held",
   "hidden",
   "restored",
+  "empty",
 ] as const;
 
 export const WORKFLOW_TASKS = [
@@ -293,6 +294,8 @@ export function moderationPreviewStateLabel(
       return "Example hidden state";
     case "restored":
       return "Restored to visible";
+    case "empty":
+      return "Published with no included content";
   }
 }
 

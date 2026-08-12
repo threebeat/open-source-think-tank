@@ -2,7 +2,7 @@
 
 **Status:** Active work-package source for Phase 3 (packages 3.1–3.12)  
 **Baseline:** Phase 2 foundation at or after `a894317317f3ff1e80d0a3602df69e5b4d8cd589` (tag `phase-2-foundation` recorded in [phase-2-handoff.md](./phase-2-handoff.md))  
-**Current package:** **3.9 complete (awaiting human approval before 3.10).** Owner-reviewed 3.8 carryovers closed; source-URL hardening, bounded mutation bodies, single-instance mutation rate limits, and interactive `/demo/workflow` practice landed. Package **3.10** public-interface completion is **not started**.
+**Current package:** **3.10 complete (awaiting human approval before 3.11).** Package **3.9** is merged on `main`. Package **3.10** completed and hardened the gated public topic interface (projection, list/detail presentation, public-demo visitor parity). Package **3.11** search/export is **not started**.
 
 Related: [product-charter.md](./product-charter.md), [open-source-think-tank-mvp-plan.md](./open-source-think-tank-mvp-plan.md), [phase-2-plan.md](./phase-2-plan.md), [phase-2-handoff.md](./phase-2-handoff.md), [architecture-phase-2.md](./architecture-phase-2.md), [architecture-phase-3.md](./architecture-phase-3.md), [capability-matrix.md](./capability-matrix.md), [data-map.md](./data-map.md), [threat-model.md](./threat-model.md), [open-questions.md](./open-questions.md), [decisions/0006-phase-3-two-lane-sequencing.md](./decisions/0006-phase-3-two-lane-sequencing.md), [decisions/0007-alpha-test-interim-council-dispositions.md](./decisions/0007-alpha-test-interim-council-dispositions.md), [decisions/0008-phase-3-operational-alpha-contract.md](./decisions/0008-phase-3-operational-alpha-contract.md), [decisions/0009-phase-3-operational-slice-corrections.md](./decisions/0009-phase-3-operational-slice-corrections.md)
 
@@ -678,29 +678,38 @@ Still **forbidden in Phase 3** unless a future ADR + register update says otherw
 
 ### Work package 3.10 — Public interface completion and hardening
 
-**Status:** Not started.
+**Status:** Complete (awaiting human approval before 3.11).
 
-**Objective:** Complete and harden the gated public topic interface introduced minimally in **3.6**, including later revision, disclosure, moderation, and presentation depth. Keep public-demo fixture pages operational and unchanged in behavior.
+**Objective:** Complete and harden the gated public topic interface introduced minimally in **3.6**, including later revision, disclosure, moderation, and presentation depth. Keep public-demo fixture pages operational with fixture-backed visitor parity for the completed presentation.
 
 **Prerequisites:** 3.6 minimal publish path exists; 3.7–3.9 enrichments available as applicable.
 
+**Public contract (precise):**
+
+1. **Evidence conflict summaries** — Load and project the current public conflict summary for included evidence; never project `privateDetail`. Render beside the relevant evidence source.
+2. **Evidence quality eligibility** — Workflow must be `accepted`. Publicly eligible quality states are `accepted`, `limited`, or `disputed`. Quality `pending` or `rejected` cannot satisfy publish readiness and cannot appear as included sources. Existing published topics are not auto-unpublished when a source becomes ineligible. Axes stay independent (workflow / quality / moderation / publication / revision). OQ22 remains unresolved (no automatic quality reset after revision).
+3. **Empty published shell** — Missing/unpublished slugs remain a generic 404. A topic that remains `publication_status = published` stays addressable even when no claim/evidence is currently eligible, with a safe shell (background, scope, geography, publication metadata, neutral empty/withheld explanation). No titles/bodies/URLs/IDs/private reasons/counts that reveal excluded material.
+4. **Read failure semantics** — Operational list/detail failures use sanitized unavailable UI; they must not render as empty catalogs or false 404s.
+5. **Presentation** — Finished list/detail hierarchy; equal supporting/counterevidence treatment; deterministic ordering; semantic `<time dateTime>` with one America/Chicago public formatter; long text/URL wrap; comparison as a compact reading aid without duplicating every evidence field.
+6. **Still unresolved** — OQ18 (public attribution), OQ22 (pre-revision quality), OQ23 (richer moderation chronology / appeals / dual-control). No search/export (3.11).
+
 **Implementation steps:**
 
-1. Expand allowlisted public DTO/projection (revision summaries, public conflict summaries, moderation public reasons, presentation polish) without inventing a second data model.
-2. Harden topic route branching: public-demo → fixtures; gated → published projection only.
-3. Regression: unpublished slugs 404; pause does not hide a published projection unless visibility/moderation rules say so.
-4. Ensure no account IDs, contact channels, verification, private notes, or drafts leak.
-5. E2E: gated publish path + public-demo fixture smoke still pass.
+1. Expand allowlisted public DTO/projection (evidence conflict summaries, quality eligibility, empty published shell, deterministic ordering) without inventing a second data model.
+2. Harden topic route branching and error handling: public-demo → fixtures; gated → published projection only; failures ≠ 404/empty.
+3. Complete gated list/detail presentation and public-demo visitor parity fixtures.
+4. Regression: unpublished slugs 404; pause does not unpublish; sentinel leak tests for private disclosure detail.
+5. E2E: gated public path + public-demo fixture/practice smoke still pass.
 
 **Expected user-visible outcome:** Visitor on gated deployment sees a complete, hardened published topic surface (still without private account data).
 
 **Authorization and audit:** Existing publish capability + public reads remain unauthenticated allowlist only.
 
-**Privacy/security/accessibility:** Same responsive/a11y bar as Phase 1 topic pages.
+**Privacy/security/accessibility:** Same responsive/a11y bar as Phase 1 topic pages; axe A/AA; no horizontal overflow at phone/desktop widths.
 
-**Tests and acceptance criteria:** Draft/rejected/held hidden; demo mode never queries DB; projection tests against leak checklist; pause≠unpublish covered.
+**Tests and acceptance criteria:** Draft/rejected/held hidden; quality-rejected excluded from readiness and projection; empty published shell addressable; read failures sanitized; demo mode never queries DB; projection tests against leak checklist + private sentinels; pause≠unpublish covered.
 
-**Non-goals:** Consultation integration; agenda engine; replacing Phase 1 decision/deliberation fixture journeys; selecting a managed DB vendor.
+**Non-goals:** Consultation integration; agenda engine; replacing Phase 1 decision/deliberation fixture journeys; selecting a managed DB vendor; search/export (3.11); resolving OQ18/OQ22/OQ23.
 
 **Stop condition:** Human review before **3.11**.
 

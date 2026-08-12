@@ -1,7 +1,7 @@
 import { isAllowedSourceUrl } from "@/lib/security/source-url";
 
 /**
- * Pure allowlisted public projection for gated published topics (WP 3.6).
+ * Pure allowlisted public projection for gated published topics (WP 3.6 / 3.10).
  * Unit-testable without React, request, or a live database.
  */
 
@@ -49,9 +49,10 @@ export type PublicEvidenceProjection = {
   authorType: string;
   sourceType: string;
   limitations: string;
-  qualityStatus: "accepted" | "limited" | "disputed" | "rejected";
+  qualityStatus: "accepted" | "limited" | "disputed";
   qualityPublicRationale: string | null;
   workflowPublicRationale: string | null;
+  conflictPublicSummary: string | null;
   revisionSummary: PublicRevisionSummaryProjection | null;
   /** Present only for currently included visible evidence that was restored. */
   latestRestorationNotice: PublicModerationNoticeProjection | null;
@@ -108,6 +109,7 @@ export type ProjectionEvidenceInput = {
   moderationVisibility: string;
   qualityPublicRationale: string | null;
   workflowPublicRationale: string | null;
+  conflictPublicSummary: string | null;
   revisionSummary: PublicRevisionSummaryProjection | null;
   latestModerationNotice: ProjectionModerationNoticeInput | null;
 };
@@ -140,6 +142,15 @@ export type BuildPublicTopicProjectionInput = {
   evidence: ProjectionEvidenceInput[];
   links: ProjectionLinkInput[];
 };
+
+/** Publicly eligible evidence-quality states for readiness and projection. */
+export function isPublicEligibleEvidenceQuality(
+  status: string,
+): status is "accepted" | "limited" | "disputed" {
+  return (
+    status === "accepted" || status === "limited" || status === "disputed"
+  );
+}
 
 function operationalLabelFor(workflowState: string): string {
   switch (workflowState) {
@@ -176,20 +187,66 @@ function toNotice(
   };
 }
 
-function isNonPendingQuality(
-  status: string,
-): status is "accepted" | "limited" | "disputed" | "rejected" {
+function compareStrings(a: string, b: string): number {
+  return a.localeCompare(b, "en", { sensitivity: "base" });
+}
+
+function compareClaims(a: ProjectionClaimInput, b: ProjectionClaimInput): number {
   return (
-    status === "accepted" ||
-    status === "limited" ||
-    status === "disputed" ||
-    status === "rejected"
+    compareStrings(a.title, b.title) ||
+    compareStrings(a.approachLabel, b.approachLabel) ||
+    compareStrings(a.summary, b.summary) ||
+    compareStrings(a.id, b.id)
+  );
+}
+
+function compareEvidence(
+  a: ProjectionEvidenceInput,
+  b: ProjectionEvidenceInput,
+): number {
+  return (
+    compareStrings(a.title, b.title) ||
+    compareStrings(a.organization, b.organization) ||
+    compareStrings(a.sourceUrl, b.sourceUrl) ||
+    compareStrings(a.id, b.id)
+  );
+}
+
+function compareLinks(
+  a: ProjectionLinkInput,
+  b: ProjectionLinkInput,
+  evidenceById: Map<string, ProjectionEvidenceInput>,
+): number {
+  const relationshipRank = (value: string) =>
+    value === "supporting" ? 0 : value === "counterevidence" ? 1 : 2;
+  const byRelationship =
+    relationshipRank(a.relationship) - relationshipRank(b.relationship);
+  if (byRelationship !== 0) return byRelationship;
+  const evidenceA = evidenceById.get(a.evidenceSubmissionId);
+  const evidenceB = evidenceById.get(b.evidenceSubmissionId);
+  if (evidenceA && evidenceB) {
+    return compareEvidence(evidenceA, evidenceB);
+  }
+  return compareStrings(a.evidenceSubmissionId, b.evidenceSubmissionId);
+}
+
+function compareNotices(
+  a: PublicModerationNoticeProjection,
+  b: PublicModerationNoticeProjection,
+): number {
+  return (
+    compareStrings(a.recordedAt, b.recordedAt) ||
+    compareStrings(a.subjectKind, b.subjectKind) ||
+    compareStrings(a.action, b.action) ||
+    compareStrings(a.publicRationale, b.publicRationale)
   );
 }
 
 /**
- * Build a visitor-safe DTO. Returns null when the topic or content set is not
- * publishable under 3.6 rules (defense in depth beyond repository filters).
+ * Build a visitor-safe DTO.
+ * Returns null only for missing/unpublished (or missing publishedAt) topics.
+ * A published topic with no currently eligible claim/evidence remains addressable
+ * as an empty published shell (3.10).
  */
 export function buildPublicTopicProjection(
   input: BuildPublicTopicProjectionInput,
@@ -222,13 +279,15 @@ export function buildPublicTopicProjection(
   ): boolean {
     return (
       evidence.workflowState === "accepted" &&
-      isNonPendingQuality(evidence.qualityStatus) &&
+      isPublicEligibleEvidenceQuality(evidence.qualityStatus) &&
       Boolean(evidence.qualityPublicRationale?.trim()) &&
       isAllowedSourceUrl(evidence.sourceUrl)
     );
   }
 
-  for (const claim of input.claims) {
+  const sortedClaims = [...input.claims].sort(compareClaims);
+
+  for (const claim of sortedClaims) {
     if (claim.workflowState !== "accepted") {
       continue;
     }
@@ -253,13 +312,15 @@ export function buildPublicTopicProjection(
       continue;
     }
 
-    const claimLinks = input.links.filter(
-      (link) =>
-        link.claimId === claim.id &&
-        link.topicId === topic.id &&
-        (link.relationship === "supporting" ||
-          link.relationship === "counterevidence"),
-    );
+    const claimLinks = input.links
+      .filter(
+        (link) =>
+          link.claimId === claim.id &&
+          link.topicId === topic.id &&
+          (link.relationship === "supporting" ||
+            link.relationship === "counterevidence"),
+      )
+      .sort((a, b) => compareLinks(a, b, evidenceById));
 
     const publicLinks: PublicClaimProjection["evidenceLinks"] = [];
     for (const link of claimLinks) {
@@ -268,8 +329,7 @@ export function buildPublicTopicProjection(
       if (!isProjectionEligibleEvidence(evidence)) {
         continue;
       }
-      // Narrow qualityStatus for the public DTO (eligibility already checked).
-      if (!isNonPendingQuality(evidence.qualityStatus)) {
+      if (!isPublicEligibleEvidenceQuality(evidence.qualityStatus)) {
         continue;
       }
 
@@ -287,7 +347,8 @@ export function buildPublicTopicProjection(
             (row) =>
               row.subjectKind === "evidence" &&
               row.recordedAt === (toIso(notice.recordedAt) ?? "") &&
-              row.publicRationale === notice.publicRationale,
+              row.publicRationale === notice.publicRationale &&
+              row.action === notice.action,
           );
           if (!already) {
             withheldModerationNotices.push(toNotice("evidence", notice));
@@ -317,6 +378,7 @@ export function buildPublicTopicProjection(
           qualityStatus: evidence.qualityStatus,
           qualityPublicRationale: evidence.qualityPublicRationale,
           workflowPublicRationale: evidence.workflowPublicRationale,
+          conflictPublicSummary: evidence.conflictPublicSummary,
           revisionSummary: evidence.revisionSummary,
           latestRestorationNotice: restoreNotice,
         });
@@ -348,9 +410,7 @@ export function buildPublicTopicProjection(
     });
   }
 
-  if (claims.length === 0 || evidenceOut.length === 0) {
-    return null;
-  }
+  withheldModerationNotices.sort(compareNotices);
 
   return {
     slug: topic.slug,

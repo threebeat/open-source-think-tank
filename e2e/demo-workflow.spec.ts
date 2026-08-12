@@ -127,6 +127,15 @@ test.describe("public-demo workflow practice", () => {
     await expect(page).toHaveURL(/view=moderation/);
     await expect(page).toHaveURL(/state=held/);
 
+    await page.goto("/demo/workflow?task=explore&view=visitor&state=empty");
+    await expect(page.getByTestId("workflow-preview-visitor")).toBeVisible();
+    await expect(
+      page.getByText(/No currently included claims or evidence/i),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/Metered drought surcharge reduces peak residential use/i),
+    ).toHaveCount(0);
+
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/demo/workflow");
     await assertNoHorizontalOverflow(page);

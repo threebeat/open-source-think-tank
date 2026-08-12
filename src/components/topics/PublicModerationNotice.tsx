@@ -1,3 +1,5 @@
+import { PublicTime } from "@/components/topics/PublicTime";
+
 type PublicModerationNoticeProps = {
   action: "hold" | "hide" | "restore";
   publicRationale: string;
@@ -51,7 +53,7 @@ export function PublicModerationNotice({
         {publicRationale}
       </p>
       <p className="mt-2 text-xs text-muted-foreground">
-        Recorded {new Date(recordedAt).toLocaleString()}
+        Recorded <PublicTime dateTime={recordedAt} />
         {action === "restore"
           ? ". Restoration returns content to the published projection; it is not approval, truth certification, or consensus."
           : ". Withholding is a visibility action; content is retained and is not deleted."}
