@@ -1,6 +1,6 @@
 # Phase 4 plan — Computational democracy journey & Public Input
 
-**Status:** Active. Phase 4.1 is **owner-approved and complete** (`APPROVE PHASE 4.1 COMPLETE`, 2026-08-13; PR #17 merged). Phase **4.2** is the current package.  
+**Status:** Active. Phase 4.1 is **owner-approved and complete** (`APPROVE PHASE 4.1 COMPLETE`, 2026-08-13; PR #17 merged). Phase **4.2** is complete in this PR and awaits owner approval before **4.3**.  
 **Baseline:** `origin/main` at `122c12c2fa7272340910fe94aed5b6b0701102a0` (PR #17 merged).  
 **Related:** [architecture-phase-4.md](./architecture-phase-4.md), [public-input-provider-assessment.md](./public-input-provider-assessment.md), [0010](./decisions/0010-computational-democracy-pipeline.md), [0011](./decisions/0011-idea-commons-formal-pipeline-separation.md), [0012](./decisions/0012-public-input-provider-boundary.md), [0013](./decisions/0013-canonical-formal-topic-page.md), [phase-3-handoff.md](./phase-3-handoff.md), [product-charter.md](./product-charter.md)
 

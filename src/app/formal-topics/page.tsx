@@ -18,6 +18,13 @@ import { resolveAppMode } from "@/lib/env/app-mode";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
+  if (resolveAppMode() === "gated") {
+    return {
+      title: "Published topics",
+      description:
+        "Allowlisted published formal topics from the gated alpha projection.",
+    };
+  }
   return {
     title: "Formal Topic Pipeline",
     description:

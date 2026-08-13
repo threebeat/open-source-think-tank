@@ -1,6 +1,6 @@
 # Architecture — Phase 4 (computational democracy)
 
-**Status:** Work Package **4.2** in progress (4.1 owner-complete). Builds on [architecture-phase-3.md](./architecture-phase-3.md) and Phase 2 dual-mode isolation.  
+**Status:** Work Package **4.2** complete in PR (awaiting owner approval before 4.3). Builds on [architecture-phase-3.md](./architecture-phase-3.md) and Phase 2 dual-mode isolation.  
 **Related:** [phase-4-plan.md](./phase-4-plan.md), [public-input-provider-assessment.md](./public-input-provider-assessment.md), [ADR 0010](./decisions/0010-computational-democracy-pipeline.md), [ADR 0011](./decisions/0011-idea-commons-formal-pipeline-separation.md), [ADR 0012](./decisions/0012-public-input-provider-boundary.md), [ADR 0013](./decisions/0013-canonical-formal-topic-page.md)
 
 This document describes the Phase 4 product/architecture contract. **Public Input remains synthetic/demo-only.** The 4.2 adapter boundary and Pol.is assessment do **not** authorize a live embed. Live Pol.is remains blocked until 4.3 owner approval and vendor/privacy gates.

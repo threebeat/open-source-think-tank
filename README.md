@@ -162,5 +162,5 @@ Direct product URLs still work without presentation mode.
 - **Phase 1** demonstration MVP is complete (tag `phase-1-demonstration`). Public-demo mode remains synthetic and separately deployable.
 - **Phase 2** invite-only foundation packages 2.1–2.12 are in place (tag `phase-2-foundation`; see [`docs/phase-2-handoff.md`](docs/phase-2-handoff.md)). Gated auth, roles, assent, verification, audit, and isolation are the baseline for alpha engineering.
 - **Phase 3** packages **3.1–3.12** are implemented and **owner-accepted**.
-- **Phase 4.1** is **owner-approved and complete** (PR #17). **Phase 4.2** (provider assessment, adapter boundary, canonical topic page) is in progress. **4.3** (live embed) remains blocked pending owner approval and vendor/privacy gates.
+- **Phase 4.1** is **owner-approved and complete** (PR #17). **Phase 4.2** (provider assessment, adapter boundary, canonical topic page) is implemented in the current PR and awaits owner approval. **4.3** (live embed) remains blocked pending owner approval and vendor/privacy gates.
 - Public recruitment, live Pol.is, payments, analytics, AI APIs, managed production PostgreSQL, and unsettled legal formation claims remain out of scope until their gates clear. Alpha-test data must stay fully resettable via the operator CLI.

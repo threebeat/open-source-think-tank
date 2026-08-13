@@ -79,7 +79,7 @@ test.describe("3.10 gated public interface", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/formal-topics/${CEDAR_TOPIC_SLUG}?section=evidence`);
     await expect(
-      page.getByRole("heading", { name: /Claims and evidence|Evidence/i }),
+      page.getByRole("heading", { name: "Claims and evidence", exact: true }),
     ).toBeVisible({ timeout: 30_000 });
     await expectNoHorizontalOverflow(page);
     await expectSeriousAxeClean(page);
