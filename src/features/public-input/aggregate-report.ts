@@ -23,6 +23,13 @@ export const PUBLIC_INPUT_FORBIDDEN_PUBLIC_KEYS = PUBLIC_INPUT_FORBIDDEN_KEYS;
 
 export type OpinionGroupCell = SuppressedGroupCell;
 
+export type PublicInputModerationDisclosure = {
+  reviewedCount: number;
+  acceptedCount: number;
+  rejectedCount: number;
+  policyVersion: string | null;
+};
+
 export type PublicInputPublicDto = {
   synthetic: boolean;
   topicSlug: string;
@@ -53,6 +60,12 @@ export type PublicInputPublicDto = {
     suppressible: string[];
     neverPublic: string[];
   };
+  /** Present on published gated reports and optional fixture enrichment. */
+  reportVersion?: number;
+  publicTitle?: string;
+  publishedAt?: string;
+  moderationDisclosure?: PublicInputModerationDisclosure;
+  isSuperseded?: boolean;
 };
 
 export const PUBLIC_INPUT_CELL_POLICY = {

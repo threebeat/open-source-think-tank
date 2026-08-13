@@ -19,6 +19,13 @@ export type PublicOpinionGroupCell =
  * already shown. NEVER add `conversationId`, `importId`, raw import ids,
  * `providerConversationRef`, or any account id here.
  */
+export type PublicReportModerationDisclosure = {
+  reviewedCount: number;
+  acceptedCount: number;
+  rejectedCount: number;
+  policyVersion: string | null;
+};
+
 export type PublicReportDto = {
   synthetic: boolean;
   topicId: string;
@@ -36,9 +43,13 @@ export type PublicReportDto = {
   methodVersion: string;
   importTimestamp: string;
   smallCellSuppressionPolicyVersion: string;
+  smallCellSuppressionNotice: string;
   suppressedCells: number;
   groupsOmitted: boolean;
+  moderationDisclosure: PublicReportModerationDisclosure;
   providerNotice: string;
+  /** True when this published version has been superseded (history view only). */
+  isSuperseded: boolean;
 };
 
 function toPublicGroupCell(group: ReportGroupRecord): PublicOpinionGroupCell {
@@ -100,10 +111,19 @@ export function toPublicReportDto(input: {
     methodVersion: reportImport.methodVersion,
     importTimestamp: (reportImport.generatedAt ?? reportImport.importedAt).toISOString(),
     smallCellSuppressionPolicyVersion: SMALL_CELL_POLICY_VERSION,
+    smallCellSuppressionNotice:
+      "Complementary small-cell suppression applied at publication. Suppressed shares are not zeros and cannot be reconstructed by subtraction. Production threshold remains subject to privacy review (OQ27/OQ35).",
     suppressedCells,
     groupsOmitted,
+    moderationDisclosure: {
+      reviewedCount: reportImport.moderationReviewedCount,
+      acceptedCount: reportImport.moderationAcceptedCount,
+      rejectedCount: reportImport.moderationRejectedCount,
+      policyVersion: reportImport.moderationPolicyVersion,
+    },
     providerNotice:
-      "Aggregate-only Public Input report. Not connected to a live Pol.is conversation. Pol.is is an input, not a decision-maker.",
+      "Aggregate-only Public Input report. Not connected to a live Pol.is conversation. Pol.is / Public Input organizes preference and is not evidence, truth, representativeness, or an institutional decision.",
+    isSuperseded: false,
   };
 }
 

@@ -26,6 +26,7 @@ import {
   insertReportFindings,
   insertReportGroups,
   insertReportImport,
+  listReportsForConversation,
   publishReportWorkflow,
   supersedeReport,
   updateReportGroupPublication,
@@ -96,21 +97,22 @@ export async function importAggregateReport(
   const denied = gatedOrDeny();
   if (denied) return denied;
 
-  const publicTitle = input.publicTitle.trim();
-  if (!publicTitle) {
-    return {
-      ok: false,
-      error: "publicTitle is required",
-      code: "IMPORT_PUBLIC_TITLE_REQUIRED",
-    };
-  }
-
   const validated = validateCanonicalAggregateImport(input.payload);
   if (!validated.ok) {
     return {
       ok: false,
       error: `${validated.error}${validated.issues.length ? `: ${validated.issues.slice(0, 5).join("; ")}` : ""}`,
       code: validated.code,
+    };
+  }
+
+  const publicTitle =
+    input.publicTitle.trim() || validated.value.publicTitle.trim();
+  if (!publicTitle) {
+    return {
+      ok: false,
+      error: "publicTitle is required",
+      code: "IMPORT_PUBLIC_TITLE_REQUIRED",
     };
   }
 
@@ -711,14 +713,104 @@ export async function getPublishedReportForTopic(
   return { ok: true, value: dto };
 }
 
+export type StaffReportListItem = {
+  reportId: string;
+  version: number;
+  concurrencyVersion: number;
+  workflowState: ReportRecord["workflowState"];
+  publicTitle: string;
+  isLatestPublished: boolean;
+  publishedAt: string | null;
+  importerAccountId: string | null;
+  publisherAccountId: string | null;
+  supersededByReportId: string | null;
+  synthetic: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+async function authorizeAnyReportStaffCapability(
+  db: GatedDb,
+  actorAccountId: string,
+): Promise<AdapterResult<{ accountId: string; synthetic: boolean }>> {
+  const principal = await loadPrincipal(db, actorAccountId);
+  for (const capability of [
+    "consultations.reports.import",
+    "consultations.reports.review",
+    "consultations.reports.publish",
+  ] as const) {
+    const decision = await authorizeCapability(db, principal, capability);
+    if (decision.ok) {
+      return {
+        ok: true,
+        value: {
+          accountId: decision.principal.accountId,
+          synthetic: decision.principal.synthetic,
+        },
+      };
+    }
+  }
+  return {
+    ok: false,
+    error: "Missing report staff capability",
+    code: "AUTHZ_DENIED",
+  };
+}
+
+export async function listStaffReportsForConversation(
+  db: GatedDb,
+  input: { actorAccountId: string; conversationId: string },
+): Promise<AdapterResult<StaffReportListItem[]>> {
+  const denied = gatedOrDeny();
+  if (denied) return denied;
+
+  const authz = await authorizeAnyReportStaffCapability(db, input.actorAccountId);
+  if (!authz.ok) return authz;
+
+  const conversation = await getConversationById(db, input.conversationId);
+  if (!conversation.ok) return conversation;
+  if (!conversation.value) {
+    return {
+      ok: false,
+      error: "Public Input conversation not found",
+      code: "CONSULTATION_NOT_FOUND",
+    };
+  }
+
+  const reports = await listReportsForConversation(db, input.conversationId);
+  if (!reports.ok) return reports;
+
+  return {
+    ok: true,
+    value: reports.value.map((report) => ({
+      reportId: report.id,
+      version: report.version,
+      concurrencyVersion: report.concurrencyVersion,
+      workflowState: report.workflowState,
+      publicTitle: report.publicTitle,
+      isLatestPublished: report.isLatestPublished,
+      publishedAt: report.publishedAt ? report.publishedAt.toISOString() : null,
+      importerAccountId: report.importerAccountId,
+      publisherAccountId: report.publisherAccountId,
+      supersededByReportId: report.supersededByReportId,
+      synthetic: report.synthetic,
+      createdAt: report.createdAt.toISOString(),
+      updatedAt: report.updatedAt.toISOString(),
+    })),
+  };
+}
+
 export async function getStaffReportDetail(
   db: GatedDb,
-  reportId: string,
+  input: { actorAccountId: string; reportId: string },
 ): Promise<AdapterResult<StaffReportDetailDto | null>> {
   const denied = gatedOrDeny();
   if (denied) return denied;
 
-  const report = await getReportById(db, reportId);
+  const authz = await authorizeAnyReportStaffCapability(db, input.actorAccountId);
+  if (!authz.ok) return authz;
+
+  const report = await getReportById(db, input.reportId);
   if (!report.ok) return report;
   if (!report.value) return { ok: true, value: null };
 

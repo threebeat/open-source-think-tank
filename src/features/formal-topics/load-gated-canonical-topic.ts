@@ -1,4 +1,5 @@
 import type { CanonicalTopicViewModel } from "@/features/formal-topics/canonical-topic-model";
+import { mapPublicReportDtoToPanelDto } from "@/features/public-input/map-public-report";
 import { getGatedDb } from "@/lib/auth/runtime";
 import { getPublishedTopicProjection } from "@/lib/topics/gated-public-read";
 
@@ -10,11 +11,13 @@ export type GatedCanonicalTopicLoad =
 /**
  * Gated loader — published allowlisted PostgreSQL projection only.
  * Never falls back to synthetic formal-topic fixtures.
+ * Published Public Input reports load via topic id (never provider ref / slug join).
  */
 export async function loadGatedCanonicalTopic(
   slug: string,
 ): Promise<GatedCanonicalTopicLoad> {
-  const result = await getPublishedTopicProjection(getGatedDb(), slug);
+  const db = getGatedDb();
+  const result = await getPublishedTopicProjection(db, slug);
   if (!result.ok) {
     return { status: "unavailable" };
   }
@@ -33,6 +36,25 @@ export async function loadGatedCanonicalTopic(
     (e) => e.qualityStatus === "disputed",
   ).length;
 
+  let publicInputReport = null;
+  const { getTopicBySlug } = await import("@/lib/topics/repository");
+  const topicRow = await getTopicBySlug(db, projection.slug);
+  if (topicRow.ok && topicRow.value) {
+    const { getPublishedReportForTopic } = await import(
+      "@/lib/public-input/reports/service"
+    );
+    const publishedReport = await getPublishedReportForTopic(
+      db,
+      topicRow.value.id,
+    );
+    if (publishedReport.ok && publishedReport.value) {
+      publicInputReport = mapPublicReportDtoToPanelDto(
+        publishedReport.value,
+        projection.slug,
+      );
+    }
+  }
+
   return {
     status: "ok",
     model: {
@@ -47,7 +69,7 @@ export async function loadGatedCanonicalTopic(
           ? `Statewide · ${projection.geography.stateCode}`
           : `County · ${projection.geography.stateCode}`,
       disclosure:
-        "Gated alpha published topic. Public Input live provider remains fail-closed in Phase 4.3.",
+        "Gated alpha published topic. Public Input live provider remains fail-closed in Phase 4.4; aggregate reports may publish without live Pol.is.",
       lastPublicUpdate: projection.publishedAt,
       advancingState: "advancing",
       whoCanActNow:
@@ -78,7 +100,7 @@ export async function loadGatedCanonicalTopic(
       discussions: [],
       discussionsUnavailableReason:
         "Public discussion/proposal relationships are not yet operational in the gated schema. No synthetic relationships are shown for gated publications.",
-      publicInputReport: null,
+      publicInputReport,
       qualificationTrace: null,
       gate: null,
       topic: null,

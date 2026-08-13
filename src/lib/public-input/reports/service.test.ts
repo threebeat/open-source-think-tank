@@ -375,7 +375,10 @@ describe("Public Input aggregate report service (4.4)", () => {
     expect(JSON.stringify(publicDto.value)).not.toContain("canonicalHash");
     expect(JSON.stringify(publicDto.value)).not.toContain("rawShare");
 
-    const staffDetail = await getStaffReportDetail(db, imported.value.reportId);
+    const staffDetail = await getStaffReportDetail(db, {
+      actorAccountId: ADMIN,
+      reportId: imported.value.reportId,
+    });
     expect(staffDetail.ok).toBe(true);
     if (!staffDetail.ok || !staffDetail.value) return;
     expect(staffDetail.value.conversationId).toBe(conversationId);
@@ -522,10 +525,10 @@ describe("Public Input aggregate report service (4.4)", () => {
     expect(publishedSecond.value.version).toBe(2);
     expect(publishedSecond.value.isLatestPublished).toBe(true);
 
-    const staffFirstAfter = await getStaffReportDetail(
-      db,
-      first.imported.value.reportId,
-    );
+    const staffFirstAfter = await getStaffReportDetail(db, {
+      actorAccountId: ADMIN,
+      reportId: first.imported.value.reportId,
+    });
     expect(staffFirstAfter.ok).toBe(true);
     if (!staffFirstAfter.ok || !staffFirstAfter.value) return;
     expect(staffFirstAfter.value.workflowState).toBe("superseded");

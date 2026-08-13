@@ -40,7 +40,7 @@ Secondary: existing snapshot / workflow explorer remains available under `/demo/
 | `/idea-commons/[id]` | Idea Commons | Discussion / proposal lineage |
 | `/formal-topics` | Formal Topic Pipeline | Gate-passed topics only |
 | `/formal-topics/[slug]` | Canonical Formal Topic | Overview (default) / Evidence / Discussions via allowlisted `section` |
-| `/formal-topics/[slug]/report` (or `section=report`) | Public Input report | Published allowlisted aggregate projection only |
+| `/formal-topics/[slug]/consultation/report` | Public Input report | Published allowlisted aggregate projection only (drafts → generic not-found) |
 | `/topics` | Redirect | → `/formal-topics` |
 | `/topics/[slug]` | Redirect | → `/formal-topics/[slug]` (preserve allowlisted `section`) |
 | `/topics/[slug]/consult` | Public Input stage | Participation/practice route (preserved) |
@@ -196,7 +196,7 @@ immutable public_input_reports
    + public_input_report_findings
         │  consultations.reports.review / .publish
         ▼
-Allowlisted public report DTO ──► /formal-topics/[slug]/report (or section=report)
+Allowlisted public report DTO ──► /formal-topics/[slug]/consultation/report
         │
         └─ complementary small-cell suppression (status reported|suppressed; share null when suppressed)
 ```
