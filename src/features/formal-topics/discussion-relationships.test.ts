@@ -18,7 +18,7 @@ describe("public-demo discussion relationships", () => {
 
   it("marks moderator ordinary proposals without ranking privilege language", () => {
     const items = listPublicDemoDiscussionRelationships(
-      "cedar-river-drought-surcharge",
+      "cedar-river-billing-ops-gap",
     );
     const moderator = items.find((item) =>
       item.lineageReason?.includes("Moderator-authored"),
@@ -27,3 +27,4 @@ describe("public-demo discussion relationships", () => {
     expect(moderator?.lineageReason).toMatch(/no ranking advantage/i);
   });
 });
+

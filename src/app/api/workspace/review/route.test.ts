@@ -97,32 +97,41 @@ describe("review and publish API public-demo isolation", () => {
 });
 
 describe("public topics page import isolation (source)", () => {
-  it("keeps gated DB modules behind dynamic import in /topics pages", async () => {
+  it("keeps gated DB modules behind dynamic import on canonical formal-topic routes", async () => {
     const { readFileSync } = await import("node:fs");
     const { join } = await import("node:path");
-    const list = readFileSync(
+    const legacyList = readFileSync(
       join(process.cwd(), "src/app/topics/page.tsx"),
       "utf8",
     );
-    const detail = readFileSync(
+    const legacyDetail = readFileSync(
       join(process.cwd(), "src/app/topics/[slug]/page.tsx"),
       "utf8",
     );
-    expect(list).not.toMatch(
-      /import\s+.*from\s+["']@\/lib\/topics\/gated-public-read["']/,
+    const list = readFileSync(
+      join(process.cwd(), "src/app/formal-topics/page.tsx"),
+      "utf8",
     );
-    expect(list).not.toMatch(
-      /import\s+.*from\s+["']@\/lib\/auth\/runtime["']/,
+    const detail = readFileSync(
+      join(process.cwd(), "src/app/formal-topics/[slug]/page.tsx"),
+      "utf8",
     );
-    expect(detail).not.toMatch(
-      /import\s+.*from\s+["']@\/lib\/topics\/gated-public-read["']/,
+    for (const source of [legacyList, legacyDetail, list, detail]) {
+      expect(source).not.toMatch(
+        /import\s+.*from\s+["']@\/lib\/topics\/gated-public-read["']/,
+      );
+      expect(source).not.toMatch(
+        /import\s+.*from\s+["']@\/lib\/auth\/runtime["']/,
+      );
+    }
+    expect(legacyList).toMatch(/redirect\(\s*["']\/formal-topics["']\s*\)/);
+    expect(legacyDetail).toMatch(/redirect\(/);
+    expect(list).toMatch(
+      /import\(\s*["']@\/app\/topics\/gated-published-topics["']\s*\)/,
     );
-    expect(detail).not.toMatch(
-      /import\s+.*from\s+["']@\/lib\/auth\/runtime["']/,
-    );
-    expect(list).toMatch(/import\(\s*["']\.\/gated-published-topics["']\s*\)/);
     expect(detail).toMatch(
-      /import\(\s*["']\.\.\/gated-published-topic-detail["']\s*\)/,
+      /import\(\s*["']@\/features\/formal-topics\/load-gated-canonical-topic["']\s*\)/,
     );
   });
 });
+

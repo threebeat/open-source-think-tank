@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 
+import { PublicReadUnavailable } from "@/components/topics/PublicReadUnavailable";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
+import { MainContainer } from "@/components/layout/MainContainer";
 import { CanonicalTopicPage } from "@/features/formal-topics/CanonicalTopicPage";
 import { loadPublicDemoCanonicalTopic } from "@/features/formal-topics/load-public-demo-topic";
 import {
@@ -39,10 +42,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { loadGatedCanonicalTopic } = await import(
       "@/features/formal-topics/load-gated-canonical-topic"
     );
-    const model = await loadGatedCanonicalTopic(slug);
+    const loaded = await loadGatedCanonicalTopic(slug);
+    if (loaded.status === "unavailable") {
+      return { title: "Publication unavailable" };
+    }
+    if (loaded.status === "not_found") {
+      return { title: "Formal topic" };
+    }
     return {
-      title: model?.title ?? "Formal topic",
-      description: model?.question ?? "Canonical formal topic page.",
+      title: loaded.model.title,
+      description: loaded.model.question,
     };
   }
   const model = loadPublicDemoCanonicalTopic(slug);
@@ -61,8 +70,6 @@ export default async function FormalTopicDetailPage({
 
   if (query.view != null) {
     const legacy = normalizeLegacyTopicView(query.view);
-    // Fragments are not reliable in HTTP redirects; Overview always includes
-    // the Public Input report block with id="public-input-report".
     redirect(topicSectionHref(slug, legacy.section));
   }
 
@@ -73,11 +80,25 @@ export default async function FormalTopicDetailPage({
     const { loadGatedCanonicalTopic } = await import(
       "@/features/formal-topics/load-gated-canonical-topic"
     );
-    const model = await loadGatedCanonicalTopic(slug);
-    if (!model) {
+    const loaded = await loadGatedCanonicalTopic(slug);
+    if (loaded.status === "unavailable") {
+      return (
+        <MainContainer className="space-y-8">
+          <Breadcrumbs
+            items={[
+              { href: "/", label: "Home" },
+              { href: "/formal-topics", label: "Formal Topics" },
+              { label: "Unavailable" },
+            ]}
+          />
+          <PublicReadUnavailable contextLabel="detail" />
+        </MainContainer>
+      );
+    }
+    if (loaded.status === "not_found") {
       notFound();
     }
-    return <CanonicalTopicPage model={model} section={section} />;
+    return <CanonicalTopicPage model={loaded.model} section={section} />;
   }
 
   const model = loadPublicDemoCanonicalTopic(slug);

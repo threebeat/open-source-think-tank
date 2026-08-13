@@ -35,7 +35,8 @@ export class NoProviderPublicInputAdapter implements PublicInputProviderAdapter 
     return manifest;
   }
 
-  getLifecycleStatus(_topicId: string) {
+  getLifecycleStatus(topicId: string) {
+    void topicId;
     return {
       ok: false as const,
       code: PUBLIC_INPUT_PROVIDER_UNAVAILABLE,
@@ -43,7 +44,8 @@ export class NoProviderPublicInputAdapter implements PublicInputProviderAdapter 
     };
   }
 
-  resolveConversationRef(_topicId: string) {
+  resolveConversationRef(topicId: string) {
+    void topicId;
     return {
       ok: false as const,
       code: PUBLIC_INPUT_PROVIDER_UNAVAILABLE,
@@ -59,7 +61,8 @@ export class NoProviderPublicInputAdapter implements PublicInputProviderAdapter 
     };
   }
 
-  describeAggregateSnapshot(_topicId: string) {
+  describeAggregateSnapshot(topicId: string) {
+    void topicId;
     return {
       ok: false as const,
       code: PUBLIC_INPUT_PROVIDER_UNAVAILABLE,
