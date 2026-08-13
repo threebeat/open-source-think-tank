@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 export const metadata: Metadata = {
   title: "Guided demo",
   description:
-    "Five-to-eight-minute synthetic walkthrough from how joining works through recommendation & council vote and the public record.",
+    "Follow an idea from community discussion to collective action — synthetic computational-democracy journey.",
 };
 
 export default function DemoPage() {
@@ -22,20 +22,23 @@ export default function DemoPage() {
         items={[{ href: "/", label: "Home" }, { label: "Guided demo" }]}
       />
       <PageHeader
-        eyebrow="Presentation mode"
+        eyebrow="Primary demonstration"
         title="Guided demo"
-        description="A short presenter-led path through the Cedar River synthetic scenario. Reset restores local demo state only; no server data is stored."
+        description="Follow an idea from community discussion to collective action. Reset restores local demo state only; no server data is stored."
       />
-      <DisclosureNotice title="Operational workflow feature tour" tone="neutral">
+      <DisclosureNotice title="Primary vs secondary tools" tone="neutral">
         <p className="mb-3">
-          Explore synthetic snapshots of submission, review, revision,
-          comparison, and moderation without live accounts or workspace APIs.
+          This guided journey is the primary demo. The workflow snapshot explorer
+          remains available as a secondary reference tool.
         </p>
         <Link
           href="/demo/workflow"
-          className={cn(buttonVariants({ size: "lg" }), "min-h-11 px-4")}
+          className={cn(
+            buttonVariants({ variant: "outline", size: "lg" }),
+            "min-h-11 px-4",
+          )}
         >
-          Implemented feature tour
+          Secondary: workflow tools
         </Link>
       </DisclosureNotice>
       <GuidedDemo />

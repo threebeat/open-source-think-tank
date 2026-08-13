@@ -15,7 +15,7 @@ test.describe("phase-1 manual QA automation", () => {
     await expect(next).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(
-      page.getByRole("heading", { name: "How Joining Works" }),
+      page.getByRole("heading", { name: "1. Idea Commons discussion" }),
     ).toBeFocused();
   });
 
@@ -23,7 +23,7 @@ test.describe("phase-1 manual QA automation", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 720 });
-    await page.goto("/decisions/cedar-river-drought-surcharge?demoStep=decision");
+    await page.goto("/decisions/cedar-river-drought-surcharge?demoStep=policy");
     const bar = page.getByRole("region", {
       name: "Guided demonstration controls",
     });
@@ -39,7 +39,7 @@ test.describe("phase-1 manual QA automation", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 844, height: 390 });
-    await page.goto("/decisions/cedar-river-drought-surcharge?demoStep=decision");
+    await page.goto("/decisions/cedar-river-drought-surcharge?demoStep=policy");
     await expect(
       page.getByRole("region", { name: "Guided demonstration controls" }),
     ).toBeVisible();
@@ -65,7 +65,7 @@ test.describe("phase-1 manual QA automation", () => {
     await expect(page.getByRole("button", { name: "Next" })).toBeVisible();
     await page.getByRole("button", { name: "Next" }).click();
     await expect(
-      page.getByRole("heading", { name: "How Joining Works" }),
+      page.getByRole("heading", { name: "1. Idea Commons discussion" }),
     ).toBeVisible();
     await page.evaluate(() => {
       document.documentElement.style.zoom = "";
@@ -112,7 +112,7 @@ test.describe("phase-1 manual QA automation", () => {
     );
     await page.getByRole("button", { name: "Next" }).click();
     await expect(
-      page.getByRole("heading", { name: "How Joining Works" }),
+      page.getByRole("heading", { name: "1. Idea Commons discussion" }),
     ).toBeVisible();
     await page.goto("/topics/cedar-river-drought-surcharge");
     await expect(

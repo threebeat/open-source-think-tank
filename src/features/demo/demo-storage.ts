@@ -1,5 +1,6 @@
 import { clearVotes } from "@/features/consultation/consultation-storage";
 import { clearWorkflowPractice } from "@/features/demo/workflow/workflow-storage";
+import { clearIdeaCommonsPractice } from "@/features/idea-commons/idea-commons-storage";
 
 export const DEMO_STEP_KEY = "ostt-demo-step";
 export const DEMO_NOTES_KEY = "ostt-demo-presenter-notes";
@@ -90,5 +91,6 @@ export function resetDemoClientState(): void {
   window.sessionStorage.removeItem(DEMO_NOTES_KEY);
   clearVotes(CEDAR_TOPIC_ID);
   clearWorkflowPractice();
+  clearIdeaCommonsPractice();
   emit();
 }

@@ -11,7 +11,7 @@ import { processStages } from "@/lib/process-content";
 export const metadata: Metadata = {
   title: "How the Process Works",
   description:
-    "Seven-stage explanation of how the proposed process works, using synthetic demonstration framing only.",
+    "Computational-democracy journey from Idea Commons through member actions, using synthetic demonstration framing only.",
 };
 
 export default function ProcessPage() {
@@ -23,7 +23,7 @@ export default function ProcessPage() {
       <PageHeader
         eyebrow="How the Process Works"
         title="How the process is supposed to work"
-        description="Seven stages from how joining works through the public record. This is a demonstration of a proposed project. Algorithms organize or recommend; humans decide. The governing board’s precise legal authority is pending counsel review."
+        description="Follow an idea from community discussion to collective action: Idea Commons, qualified proposal, Public Input, agenda qualification, deliberation, policy recommendation, member actions, and lineage. Algorithms organize or recommend; humans decide. The governing board’s precise legal authority is pending counsel review."
       />
 
       <DisclosureNotice title="Demonstration only" tone="caution">

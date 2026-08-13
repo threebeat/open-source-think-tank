@@ -2,118 +2,79 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { DisclosureNotice } from "@/components/DisclosureNotice";
-import { MetricWithExplanation } from "@/components/MetricWithExplanation";
 import { PageHeader } from "@/components/PageHeader";
 import { ProcessStepper } from "@/components/ProcessStepper";
-import { StageBadge } from "@/components/StageBadge";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { MainContainer } from "@/components/layout/MainContainer";
 import { buttonVariants } from "@/components/ui/button";
-import { getFeaturedTopic } from "@/domain/selectors";
-import { fixtureCatalog } from "@/fixtures";
-import { oneSentenceMethod } from "@/lib/process-content";
 import { institutionalProcessSteps } from "@/lib/process-steps";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Home",
   description:
-    "Demonstration homepage for a proposed open-source think tank using synthetic data only.",
+    "Follow an idea from community discussion to collective action — synthetic computational-democracy demonstration.",
 };
 
 export default function Home() {
-  const featuredTopic = getFeaturedTopic(fixtureCatalog);
-
   return (
     <MainContainer className="space-y-10">
       <Breadcrumbs items={[{ label: "Home" }]} />
       <PageHeader
-        eyebrow="Proposed project · Phase 1 prototype"
+        eyebrow="Proposed project · Phase 4 demonstration"
         title="Open-Source Think Tank"
-        description="A public, nonpartisan process for examining policy questions with open evidence, public input from eligible/invited participants, clear public criteria, capacity-limited policy drafting, and published recommendations (not enacted law)."
+        description="Follow an idea from community discussion to collective action."
         actions={
           <>
             <Link
               href="/demo"
               className={cn(buttonVariants({ size: "lg" }), "min-h-11 px-4")}
             >
-              Explore the demo
+              Start the guided journey
             </Link>
             <Link
-              href="/process"
+              href="/idea-commons"
               className={cn(
                 buttonVariants({ variant: "outline", size: "lg" }),
                 "min-h-11 px-4",
               )}
             >
-              View the process
+              Explore Idea Commons
             </Link>
             <Link
-              href="/join"
+              href="/formal-topics"
               className={cn(
                 buttonVariants({ variant: "outline", size: "lg" }),
                 "min-h-11 px-4",
               )}
             >
-              How Joining Works
+              Formal Topic Pipeline
             </Link>
           </>
         }
       />
 
       <p className="max-w-3xl text-base leading-7 text-muted-foreground">
-        <span className="font-medium text-foreground">Method in one sentence: </span>
-        {oneSentenceMethod}
+        Idea Commons → qualified proposal → Public Input → transparent agenda
+        qualification → deliberation → policy recommendation → member actions →
+        review and follow-up. Preference, agreement, and evidence quality stay
+        separate. Algorithms organize or recommend; humans decide.
       </p>
 
       <DisclosureNotice title="Demonstration of a proposed project" tone="caution">
         All people, evidence, votes, and decisions in this prototype are synthetic.
-        It does not claim that an organization is incorporated, tax-exempt, legally
-        reviewed, or accepting members. Preference, cross-group agreement, and
-        evidence quality stay separate. Algorithms organize or recommend; humans
-        decide.
+        Public-demo mode never connects to Pol.is or the gated alpha datastore.
+        Idea Commons is informal; the Formal Topic Pipeline contains only
+        gate-passed topics.
       </DisclosureNotice>
 
       <section className="space-y-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <h2 className="font-heading text-2xl text-foreground">
-            Featured synthetic topic
-          </h2>
-          <StageBadge stage={featuredTopic.stage} />
-        </div>
-        <p className="max-w-3xl text-base leading-7 text-muted-foreground">
-          {featuredTopic.title}. {featuredTopic.question}
-        </p>
-        <div className="grid gap-4 md:grid-cols-2">
-          <MetricWithExplanation
-            label="Current stage"
-            value={featuredTopic.stage}
-            explanation="Stage labels describe institutional progress. They are not popularity scores or proof of evidence quality."
-          />
-          <MetricWithExplanation
-            label="Participation note"
-            value="Synthetic cohort"
-            explanation={
-              featuredTopic.participationSummary ??
-              "Participants in this demonstration are fictional."
-            }
-          />
-        </div>
-        <Link
-          href="/topics"
-          className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline-offset-4 hover:underline"
-        >
-          Browse topics (shell route)
-        </Link>
-      </section>
-
-      <section className="space-y-4">
         <h2 className="font-heading text-2xl text-foreground">
-          How the Process Works
+          The democratic journey
         </h2>
         <ProcessStepper
           steps={institutionalProcessSteps}
-          currentStepId="decision"
+          currentStepId="idea-commons"
         />
       </section>
     </MainContainer>

@@ -8,128 +8,182 @@ export type DemoStep = {
   audienceStop?: "legal" | "technical" | "board";
 };
 
+/**
+ * Phase 4.1 primary guided journey:
+ * Follow an idea from community discussion to collective action.
+ */
 export const demoSteps: DemoStep[] = [
   {
     id: "welcome",
-    title: "Start: synthetic demonstration only",
+    title: "Follow an idea from community discussion to collective action",
     summary:
-      "This guided walkthrough uses fictional people, evidence, votes, and decisions. Nothing here enrolls a member, verifies identity, binds a board, or calls Pol.is.",
+      "This guided demonstration recenters on the complete democratic journey: Idea Commons → qualified proposal → Public Input → agenda qualification → deliberation → policy recommendation → member actions → audit. All people, votes, and decisions are synthetic. Nothing here calls Pol.is or writes to the gated alpha.",
     presenterNotes:
-      "State the disclaimer out loud. Emphasize that Phase 1 proves institutional clarity with fixtures, not operational membership.",
+      "State the primary task out loud. Emphasize Idea Commons vs Formal Topic Pipeline separation before clicking onward.",
   },
   {
-    id: "join",
-    title: "How Joining Works",
+    id: "idea-commons",
+    title: "1. Idea Commons discussion",
     summary:
-      "Show the nonfunctional eligibility and assent placeholders. No form submits data; membership status remains an unresolved legal question.",
-    href: "/join",
-    linkLabel: "Open how joining works",
+      "Inspect (or practice writing) an informal Idea Commons discussion. Content is labeled informal and not yet in the Formal Topic Pipeline.",
+    href: "/idea-commons",
+    linkLabel: "Open Idea Commons",
     presenterNotes:
-      "Point to disabled controls and “not legally reviewed” language. Do not invent whether participants are statutory members.",
+      "Show the informal banner. Point out that a moderator-authored ordinary proposal has no elevated badge.",
   },
   {
-    id: "topics",
-    title: "Fact-Check & Research",
+    id: "proposal",
+    title: "2. Turn a discussion into a proposal",
     summary:
-      "Open the Cedar River topic. Keep popularity separate from research review status. Note pending, accepted, limited, disputed, and rejected sources — none of these prove a claim is true by themselves.",
-    href: "/topics/cedar-river-drought-surcharge",
-    linkLabel: "Open Cedar River topic",
+      "Open the drought-surcharge thread and convert a contribution into an unqualified proposal. History stays visible.",
+    href: "/idea-commons/idea-cedar-surcharge-discussion",
+    linkLabel: "Open surcharge discussion",
     presenterNotes:
-      "Call out the popular/weak vs less-popular/strong examples when you reach public input. Research quality does not move with agreement.",
+      "Use the local Convert to proposal control. Reset clears practice posts.",
   },
   {
-    id: "consultation",
-    title: "Public Input (simulated)",
+    id: "scoping",
+    title: "3. Scoping and qualification criteria",
     summary:
-      "Practice Agree / Disagree / Pass locally, then open the sample Public Input report. This demonstration is not connected to Pol.is; a later alpha phase is planned to use Pol.is for live Public Input from eligible/invited participants. Groups stay neutrally labeled; the cohort is not a population sample.",
+      "See the published criteria that must be met before Informal content can enter the Formal Topic Pipeline. No preference-based shortcut.",
+    href: "/formal-topics/cedar-river-drought-surcharge",
+    linkLabel: "Open formal topic gate view",
+    presenterNotes:
+      "Call out criteria met vs unmet, who can act now, and that elevated roles cannot privately promote.",
+  },
+  {
+    id: "public-input",
+    title: "4. Synthetic Public Input consultation",
+    summary:
+      "Enter the synthetic Public Input surface powered by fixture data (not Pol.is). Pol.is is planned as an input later — never a decision-maker.",
     href: "/topics/cedar-river-drought-surcharge/consult",
-    linkLabel: "Open public input simulation",
+    linkLabel: "Open Public Input",
     presenterNotes:
-      "Remind viewers that local practice votes do not personalize the fixture report, Pol.is is not live yet, and preference/agreement stay separate from research quality.",
+      "Remind viewers there is no live provider network request from public-demo.",
   },
   {
-    id: "agenda",
-    title: "Decide What Moves Forward",
+    id: "vote",
+    title: "5. Submit a statement and cast practice votes",
     summary:
-      "Show separate public criteria, how this result was calculated, and a deferral that refuses to override research concerns. No combined truth score.",
-    href: "/agenda/cedar-river-drought-surcharge",
-    linkLabel: "Open qualified agenda item",
+      "Locally Agree / Disagree / Pass. Practice votes stay in sessionStorage and do not personalize the sealed aggregate report.",
+    href: "/topics/cedar-river-drought-surcharge/consult",
+    linkLabel: "Practice voting",
     presenterNotes:
-      "Also glance at deferred and rejected sibling items on /agenda so popularity alone is visibly insufficient.",
+      "Cast a few votes, refresh, then continue — votes restore until Reset.",
+  },
+  {
+    id: "report",
+    title: "6. Anonymous aggregate Public Input report",
+    summary:
+      "View the allowlisted aggregate report: participation totals, neutrally named groups, agreement/disagreement, sufficiency, representation limits, method version. No per-person votes or group membership.",
+    href: "/formal-topics/cedar-river-drought-surcharge?view=public-input-report",
+    linkLabel: "Open aggregate report",
+    presenterNotes:
+      "Point to small-cell suppression notice (provisional threshold 5).",
+  },
+  {
+    id: "agenda-trace",
+    title: "7. Agenda qualification trace",
+    summary:
+      "Inspect independent signals — participation, breadth, agreement, disagreement, evidence readiness, scope, lineage, capacity, process. No composite truth score. Human review records reason, role, timestamp, conflicts, method version.",
+    href: "/agenda/cedar-river-drought-surcharge",
+    linkLabel: "Open qualification trace",
+    presenterNotes:
+      "Also show the deferred billing-ops trajectory where evidence readiness fails.",
   },
   {
     id: "deliberation",
-    title: "State-Level Policy Drafting (observer view)",
+    title: "8. Follow the topic into deliberation",
     summary:
-      "Walk proposal versions, amendments with targeted sources, the billing evidence request, someone who stepped aside because of a conflict, and the redaction placeholder. Closed means capacity-limited, not secret.",
+      "Observer view of capacity-limited deliberation. Formal deliberation bodies now have different authority than pre-deliberation moderators.",
     href: "/deliberation/cedar-river-drought-surcharge",
-    linkLabel: "Open policy drafting record",
+    linkLabel: "Open deliberation",
     presenterNotes:
-      "Distinguish Policy Drafting Council seats from the later Policy Council recommendation roster.",
+      "Distinguish deliberation council seats from Policy Council recommendation authority.",
   },
   {
-    id: "decision",
-    title: "Recommendation & Council Vote",
+    id: "policy",
+    title: "9. Policy recommendation",
     summary:
-      "Show the recommendation (not enacted law and not board adoption), Policy Council roll call, equal-prominence minority report, and full proposal history.",
+      "See how discussion and amendments become an actionable Policy Council recommendation (not enacted law, not board adoption).",
     href: "/decisions/cedar-river-drought-surcharge",
-    linkLabel: "Open recommendation & council vote",
+    linkLabel: "Open recommendation",
     presenterNotes:
-      "Name Farah Quinn as the minority author on the Policy Council. Dual-seat members keep separate selection paths.",
+      "Minority report stays equal prominence. Governing-board adoption remains unresolved.",
   },
   {
-    id: "workflow",
-    title: "Workflow practice",
+    id: "actions",
+    title: "10. Member action opportunities",
     summary:
-      "Practice recommending a topic and contributing a source with local fixture state, then optionally explore secondary staff and visitor snapshots. Session-only and resettable.",
-    href: "/demo/workflow",
-    linkLabel: "Open workflow practice",
+      "Review synthetic civic actions linked to the recommendation: town hall, interest-group meeting, public comment, agency review, evidence session. Basis is explicit fixture geography/interests — not individual votes or inferred ideology.",
+    href: "/actions/cedar-river-drought-surcharge",
+    linkLabel: "Open member actions",
     presenterNotes:
-      "Lead with the interactive practice tasks. Topic recommendation is a prototype, not live gated intake. Never imply live moderation actions, admin consoles, or other current visitors.",
+      "Read sponsorship/conflict and non-endorsement language aloud.",
   },
   {
-    id: "transparency",
-    title: "The Public Record",
+    id: "audit",
+    title: "11. Public audit and topic lineage",
     summary:
-      "Demonstration activity history, methods and updates, who does what, and what we publish vs what we protect. Identity and granular opinion histories stay protected.",
+      "Inspect the public audit trail and complete topic lineage, including advance, merge/split, and deferred trajectories.",
     href: "/transparency",
-    linkLabel: "Open the public record",
+    linkLabel: "Open public record and lineage",
     presenterNotes:
-      "The public record explains institutional action; it is not total exposure of personal or political-opinion records.",
+      "Trajectories: advance (Cedar primary), merge (hardship), defer (billing ops).",
+  },
+  {
+    id: "trajectories",
+    title: "Three synthetic trajectories",
+    summary:
+      "Confirm the three fixture paths: one proposal advances through every stage; one merges into another topic with visible lineage; one is deferred because a published criterion is unmet.",
+    href: "/formal-topics",
+    linkLabel: "Compare formal trajectories",
+    presenterNotes:
+      "Do not imply other visitors are live. Fixtures depict multi-user process only.",
+  },
+  {
+    id: "workflow-secondary",
+    title: "Secondary: snapshot explorer",
+    summary:
+      "Optional secondary tool for staff/visitor snapshot exploration. Not the primary demo.",
+    href: "/demo/workflow",
+    linkLabel: "Open secondary workflow tools",
+    presenterNotes:
+      "Keep this clearly secondary to the democratic journey.",
   },
   {
     id: "questions-legal",
     title: "Questions for legal counsel",
     summary:
-      "Pause for counsel critique: formation and tax lane, statutory membership vs program participation, board authority, assent records, and what must remain private.",
+      "Pause for counsel critique: Public Input data processing, small-cell thresholds, retention of raw exports, and membership language.",
     audienceStop: "legal",
     presenterNotes:
-      "Point collaborators to docs/legal-questions.md. Do not treat demo copy as approved terms.",
+      "Point to open-questions and phase-2 counsel gates. Do not treat demo copy as approved terms.",
   },
   {
     id: "questions-technical",
     title: "Questions for technical collaborators",
     summary:
-      "Pause for engineering critique: fixture boundaries, adapters for later services, auditability of algorithms, accessibility, and what must never enter prompts or logs.",
+      "Pause for engineering critique: provider-neutral adapters, public DTO allowlists, dual-mode isolation, and unsupported Pol.is features.",
     audienceStop: "technical",
     presenterNotes:
-      "Emphasize static fixtures now, adapters later, and no production participant data in demos.",
+      "No live Pol.is in 4.1. xid remains forbidden until approved.",
   },
   {
     id: "questions-board",
     title: "Questions for prospective board members",
     summary:
-      "Pause for fiduciary critique: which recommendations may bind, how overrides are published, capacity limits, and what remains reserved to a governing board after counsel advice.",
+      "Pause for fiduciary critique: agenda legitimacy without preference promotion, deliberation vs board authority, and member-action non-endorsement.",
     audienceStop: "board",
     presenterNotes:
-      "Ask them to critique institutional rules, not only visual design. Board adoption authority is intentionally unresolved.",
+      "Ask them to critique institutional rules, not only visuals.",
   },
   {
     id: "close",
     title: "Close and reset",
     summary:
-      "End by inviting critique of the institutional design. Use Reset to restore the original synthetic demonstration state in this browser session.",
+      "Invite critique of the institutional design. Reset clears guided-demo step, presenter notes, Cedar River practice votes, workflow practice, and Idea Commons practice posts.",
     presenterNotes:
-      "Reset clears the demo step, presenter-notes toggle, and local Cedar River public-input practice votes only.",
+      "Stop after 4.1 for owner review before any live Pol.is package.",
   },
 ];

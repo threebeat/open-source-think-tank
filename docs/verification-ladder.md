@@ -60,3 +60,7 @@ States: `pending` → `approved` | `denied`; `approved` → `expired` | `revoked
 | `/account/verification` | Account-private status only |
 | `GET /api/verification/status` | Status + ladder description |
 | `POST /api/verification/review` | Staff assign / approve / deny / revoke |
+
+## Phase 4.1 note
+
+Public Input aggregate projections must never include verification status, artifacts, account IDs, or identity-linking fields (`xid` forbidden until approved). Member action opportunities must not be personalized from verification level or inferred identity. See [phase-4-plan.md](./phase-4-plan.md) and OQ26–OQ28.

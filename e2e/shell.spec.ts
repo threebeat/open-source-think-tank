@@ -40,7 +40,7 @@ test.describe("application shell", () => {
     await page.keyboard.press("Tab");
     // Focus moves through banner/header controls into primary nav.
     let reachedProcess = false;
-    for (let i = 0; i < 12; i += 1) {
+    for (let i = 0; i < 24; i += 1) {
       const activeName = await page.evaluate(() => {
         const el = document.activeElement;
         return el?.textContent?.trim() ?? "";

@@ -6,7 +6,8 @@ Source vision: [`docs/open-source-think-tank-mvp-plan.md`](docs/open-source-thin
 Build contract: [`docs/product-charter.md`](docs/product-charter.md)  
 Phase 1 handoff: [`docs/phase-1-handoff.md`](docs/phase-1-handoff.md)  
 Phase 2 foundation: [`docs/phase-2-plan.md`](docs/phase-2-plan.md) · [`docs/phase-2-handoff.md`](docs/phase-2-handoff.md)  
-Phase 3 plan (operational invite-only alpha; packages 3.1–3.12): [`docs/phase-3-plan.md`](docs/phase-3-plan.md) · [`docs/phase-3-handoff.md`](docs/phase-3-handoff.md)  
+Phase 3 plan (operational invite-only alpha; packages 3.1–3.12): [`docs/phase-3-plan.md`](docs/phase-3-plan.md) · [`docs/phase-3-handoff.md`](docs/phase-3-handoff.md) — **owner-accepted**  
+Phase 4 plan (computational democracy + Public Input): [`docs/phase-4-plan.md`](docs/phase-4-plan.md) · [`docs/architecture-phase-4.md`](docs/architecture-phase-4.md)  
 Alpha reset: [`docs/alpha-reset-runbook.md`](docs/alpha-reset-runbook.md) · [`docs/alpha-reset-classification.md`](docs/alpha-reset-classification.md)
 
 ## Requirements
@@ -25,7 +26,7 @@ No environment variables, API keys, or third-party accounts are required for pub
 - Local PostgreSQL 16 via Docker Compose (`npm run db:up`) when exercising gated paths
 - `APP_MODE=gated` and documented secrets only in gated environments — see [`docs/secrets-and-operations.md`](docs/secrets-and-operations.md)
 - Managed PostgreSQL host and production email vendors remain **blocked** pending register addenda
-- Phase 3 operational topic/evidence workflow is implemented on the gated foundation; see [`docs/phase-3-plan.md`](docs/phase-3-plan.md) and [`docs/phase-3-handoff.md`](docs/phase-3-handoff.md). Phase 3 engineering closure candidate — awaiting explicit owner acceptance before Phase 4.
+- Phase 3 operational topic/evidence workflow is implemented on the gated foundation; see [`docs/phase-3-plan.md`](docs/phase-3-plan.md) and [`docs/phase-3-handoff.md`](docs/phase-3-handoff.md). Phase 3 is owner-accepted; Phase 4.1 recenters the public demo (no live Pol.is).
 
 ## Setup
 
@@ -81,21 +82,27 @@ Serve that build behind ordinary HTTPS in deployment so phone browsers can open 
 
 | Path | Purpose |
 | --- | --- |
-| `/` | Home and entry points |
+| `/` | Home — primary task: follow an idea from community discussion to collective action |
+| `/idea-commons` | Informal Idea Commons (not Formal Topic Pipeline) |
+| `/idea-commons/[id]` | Informal discussion / proposal lineage |
+| `/formal-topics` | Gate-passed Formal Topic Pipeline + three trajectories |
+| `/formal-topics/[slug]` | Stage, criteria, lineage, optional aggregate Public Input report |
 | `/about` | Project framing (mission, commitments, limitations, contact placeholder) |
 | `/process` | Institutional stage map |
 | `/join` | Nonfunctional join / assent preview |
-| `/topics` | Topic list |
+| `/topics` | Topic list (formal-stage briefs) |
 | `/topics/[slug]` | Topic brief, claims, evidence |
-| `/topics/[slug]/consult` | Simulated consultation |
+| `/topics/[slug]/consult` | Simulated Public Input |
 | `/agenda` | Agenda list by human-review state |
-| `/agenda/[slug]` | Thresholds, calculation trace, human review |
+| `/agenda/[slug]` | Independent qualification signals + human review |
 | `/deliberation/[slug]` | Public deliberation observer |
 | `/decisions/[slug]` | Policy Council recommendation record |
-| `/transparency` | Audit feed, methods, openness classes |
-| `/demo` | Guided presentation mode |
+| `/actions/[slug]` | Synthetic member action opportunities |
+| `/transparency` | Audit feed, lineage, methods, openness classes |
+| `/demo` | Primary guided journey |
+| `/demo/workflow` | Secondary workflow / snapshot tools |
 
-Cedar River (`cedar-river-drought-surcharge`) is the complete end-to-end synthetic scenario.
+Cedar River (`cedar-river-drought-surcharge`) remains the complete advancing trajectory; sibling fixtures cover merge/split and deferred paths.
 
 ## Architecture (Phase 1)
 
@@ -111,13 +118,13 @@ Cedar River (`cedar-river-drought-surcharge`) is the complete end-to-end synthet
 
 All people, organizations, evidence, votes, consultation results, conflicts, and decisions are fictional. The UI must never present consensus as proof, evidence quality as popularity, or participating users as a representative sample of the United States.
 
-## Guided demo script (5–8 minutes)
+## Guided demo script (computational-democracy journey)
 
-1. Open `/demo` and state the synthetic-data disclaimer. Toggle presenter notes if helpful.
-2. Use each stage link; the sticky **Presentation mode** bar provides **Return to guided demo** and **Continue** so you do not need the browser Back button.
-3. Walk join → topic/evidence → consultation → agenda → deliberation → decision → transparency.
-4. Pause at the legal, technical, and board audience stops.
-5. On the decision record, show Policy Council roll call, Farah’s minority report, Hugo’s recusal with conflict disclosure, and proposal history.
+1. Open `/demo` and state the primary task: follow an idea from community discussion to collective action.
+2. Walk Idea Commons → proposal → scoping/formal gate → Public Input → practice votes → aggregate report → agenda qualification → deliberation → recommendation → member actions → audit/lineage.
+3. Show three trajectories on `/formal-topics`: advances, merge/split, deferred.
+4. Emphasize that Pol.is is not live; aggregates only; no preference-based promotion by elevated roles.
+5. Pause at the legal, technical, and board audience stops. Snapshot explorer is secondary only.
 6. **Reset** restores the local demo step, notes toggle, and Cedar practice votes.
 
 Direct product URLs still work without presentation mode.

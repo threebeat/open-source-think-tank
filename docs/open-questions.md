@@ -98,6 +98,22 @@ Phase 2 decision register and counsel gates: [phase-2-plan.md](./phase-2-plan.md
 
 ---
 
+## Phase 4 computational democracy / Public Input
+
+26. **Pol.is vendor / data-processing approval** — Unresolved. Hosted vs self-hosted, DPA, subprocessors, retention, outage, and export obligations must clear the permitted-services register before 4.2+ install ([phase-4-plan.md](./phase-4-plan.md), [ADR 0010](./decisions/0010-computational-democracy-pipeline.md)).
+
+27. **Production small-cell suppression threshold** — Unresolved. Synthetic demo uses a provisional threshold of **5**; production threshold requires privacy review.
+
+28. **`xid` / identity-linking mechanisms** — Unresolved / forbidden until approved. Supported status, purpose, retention, access control, deletion behavior, and reidentification risk must be explicit before any use.
+
+29. **Raw provider export retention vs alpha wipe** — Unresolved. Raw Pol.is/provider exports are protected data; how long gated alpha may retain them versus wipe/report copies remains open (related to OQ19 / D15).
+
+30. **Member-action personalization beyond explicit interests** — Unresolved. 4.1 allows only explicit fixture geography/interests with explained basis. Any richer matching (without votes/ideology inference) needs a later privacy review.
+
+31. **Formal-gate numeric thresholds as published method registry candidates** — Unresolved. Fixture numbers are educational; which become candidates for a later published method registry is not decided (extends OQ8).
+
+---
+
 ## How to add questions
 
 When a design choice affects legal authority, privacy, verification, representation, moderation, or public data:

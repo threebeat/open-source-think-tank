@@ -12,6 +12,11 @@ Nothing here is a privacy policy, retention schedule, or legal basis determinati
 | Consultation practice votes | Let visitors try Agree / Disagree / Pass | Local browser only | Cleared by Reset or storage clear | Keyed by synthetic topic id |
 | Guided-demo step + presenter-notes flag | Presentation continuity | Local browser + optional `?step=` / `?demoStep=` | Session | No personal information |
 | Workflow practice drafts/receipts (3.9) | Local topic-recommendation + source-contribution practice | Local browser `sessionStorage` only | Cleared by guided-demo Reset or workflow Reset | Safe fixture IDs + step in URL; never raw private detail/full URLs/IPs in the query string |
+| Idea Commons practice posts (4.1) | Local informal discussion/proposal practice | Local browser `sessionStorage` only (`ostt-idea-commons-practice`) | Cleared by guided-demo Reset | Never free text/opinion in query strings; not Formal Topic Pipeline |
+| Journey fixtures (4.1) | Synthetic Idea Commons, gate views, qualification traces, aggregate Public Input reports, member actions | Public in repository/UI | Repository lifetime | Unmistakably synthetic; aggregates only in public report DTOs |
+| Public Input aggregate report DTO (4.1) | Allowlisted participation/group/agreement metrics | Public projection only | Derived from fixtures (later: versioned ingest) | No provider participant IDs, account IDs, per-person votes, group membership, xid, secret URLs |
+| Small-cell suppression metadata (4.1) | Privacy notice + suppressed cell counts | Public | With report projection | Demo provisional threshold 5; production threshold privacy-gated (OQ27) |
+| Member action opportunities (4.1) | Post-decision civic actions with sponsorship/conflict | Public synthetic listings | Repository lifetime | Explicit geography/interest basis only; non-endorsement language |
 
 ## Later phases may collect (proposed categories)
 
