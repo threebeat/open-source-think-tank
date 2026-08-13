@@ -20,23 +20,31 @@ test.describe("progressive evidence disclosure", () => {
     expect(count).toBeGreaterThan(0);
 
     for (let i = 0; i < count; i += 1) {
-      await expect(disclosures.nth(i)).not.toHaveAttribute("open", "");
+      await expect
+        .poll(async () =>
+          disclosures.nth(i).evaluate((el: HTMLDetailsElement) => el.open),
+        )
+        .toBe(false);
     }
 
-    // Source links must not be presented before expansion.
+    // Source links must not be visibly presented before expansion.
     await expect(page.getByTestId("evidence-source-link")).toHaveCount(0);
 
-    const firstToggle = page
-      .getByText("View evidence details and source")
-      .first();
-    await firstToggle.focus();
+    const firstSummary = disclosures.first().locator("summary");
+    await firstSummary.focus();
     await page.keyboard.press("Enter");
-    await expect(disclosures.first()).toHaveAttribute("open", "");
+    await expect
+      .poll(async () =>
+        disclosures.first().evaluate((el: HTMLDetailsElement) => el.open),
+      )
+      .toBe(true);
 
-    // Expanded panel may show unavailable source label for synthetic fixtures.
     await expect(
       page.getByTestId("evidence-disclosure-details-panel").first(),
     ).toBeVisible();
+    await expect(
+      firstSummary.locator("a, button, input, checkbox"),
+    ).toHaveCount(0);
 
     const results = await new AxeBuilder({ page }).analyze();
     const seriousOrWorse = results.violations.filter((violation) =>

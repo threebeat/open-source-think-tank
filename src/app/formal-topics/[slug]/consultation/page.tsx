@@ -10,9 +10,31 @@ import { resolveAppMode } from "@/lib/env/app-mode";
 
 type Props = {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ fixtureState?: string | string[] }>;
 };
 
 export const dynamic = "force-dynamic";
+
+const FIXTURE_STATES = [
+  "ready",
+  "open",
+  "commenting_closed",
+  "voting_closed",
+  "closed",
+  "archived",
+] as const;
+
+type FixtureWorkflowState = (typeof FIXTURE_STATES)[number];
+
+function parseFixtureState(
+  value: string | string[] | undefined,
+): FixtureWorkflowState | null {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (!raw) return null;
+  return (FIXTURE_STATES as readonly string[]).includes(raw)
+    ? (raw as FixtureWorkflowState)
+    : null;
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
@@ -23,8 +45,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function FormalTopicConsultationPage({ params }: Props) {
+export default async function FormalTopicConsultationPage({
+  params,
+  searchParams,
+}: Props) {
   const { slug } = await params;
+  const query = await searchParams;
   const mode = resolveAppMode();
 
   if (mode === "public-demo") {
@@ -32,6 +58,53 @@ export default async function FormalTopicConsultationPage({ params }: Props) {
     if (!model) {
       notFound();
     }
+    const fixtureState = parseFixtureState(query.fixtureState);
+    const consultation = fixtureState
+      ? {
+          topicId: "fixture-topic",
+          workflowState: fixtureState,
+          providerAvailability:
+            fixtureState === "open" && query.fixtureState === "open-degraded"
+              ? ("degraded" as const)
+              : ("not_configured" as const),
+          publicTitle: `Fixture consultation · ${model.title}`,
+          publicPrompt:
+            "Synthetic prompt for progressive disclosure and lifecycle documentation. Not a live provider conversation.",
+          opensAt: "2026-08-01T12:00:00.000Z",
+          closesAt: null,
+          configurationVersion: 1,
+        }
+      : null;
+
+    // Allow explicit degraded/unavailable fixture demos via dedicated tokens.
+    const availabilityOverride =
+      query.fixtureState === "degraded"
+        ? ("degraded" as const)
+        : query.fixtureState === "unavailable"
+          ? ("unavailable" as const)
+          : null;
+    const consultationWithAvailability =
+      availabilityOverride && consultation
+        ? {
+            ...consultation,
+            workflowState: "open" as const,
+            providerAvailability: availabilityOverride,
+          }
+        : query.fixtureState === "degraded" ||
+            query.fixtureState === "unavailable"
+          ? {
+              topicId: "fixture-topic",
+              workflowState: "open" as const,
+              providerAvailability: availabilityOverride!,
+              publicTitle: `Fixture consultation · ${model.title}`,
+              publicPrompt:
+                "Synthetic prompt for outage documentation. Provider availability is independent of institutional workflow.",
+              opensAt: "2026-08-01T12:00:00.000Z",
+              closesAt: null,
+              configurationVersion: 1,
+            }
+          : consultation;
+
     return (
       <MainContainer className="space-y-8">
         <Breadcrumbs
@@ -45,7 +118,7 @@ export default async function FormalTopicConsultationPage({ params }: Props) {
         <ConsultationSurface
           topicSlug={slug}
           topicTitle={model.title}
-          consultation={null}
+          consultation={consultationWithAvailability}
           lane="public-demo"
         />
       </MainContainer>

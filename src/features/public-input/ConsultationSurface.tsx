@@ -189,7 +189,7 @@ function EmbedBoundaryPlaceholder({
   let body =
     "The provider embed shell is fail-closed. No iframe, provider script, or provider asset is loaded.";
 
-  if (lane === "public-demo") {
+  if (lane === "public-demo" && !workflowState) {
     title = "Public-demo uses fixtures only";
     body =
       "Public-demo never loads a live iframe, provider script, provider API, or provider asset. Practice Public Input remains synthetic.";
@@ -219,6 +219,10 @@ function EmbedBoundaryPlaceholder({
   ) {
     title = "Open institutionally — live provider blocked";
     body = `Live Pol.is activation remains blocked (${unresolvedGateCount} unresolved gate(s)). The disabled embed shell preserves the security boundary.`;
+  }
+
+  if (lane === "public-demo") {
+    body = `${body} Public-demo never loads a live iframe, provider script, provider API, or provider asset.`;
   }
 
   return (

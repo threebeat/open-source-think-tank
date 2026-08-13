@@ -116,15 +116,6 @@ export function EvidenceDisclosure({
                 </dd>
               </div>
             ) : null}
-            {item.conflictSummary ? (
-              <div className="sm:col-span-2">
-                <ConflictDisclosureCard
-                  publicSummary={item.conflictSummary}
-                  title="Evidence conflict disclosure"
-                  headingId={`${item.id}-evidence-conflict`}
-                />
-              </div>
-            ) : null}
             {item.revisionSummaryLabel ? (
               <div className="sm:col-span-2">
                 <dt className="font-medium text-foreground">Revision summary</dt>
@@ -160,6 +151,14 @@ export function EvidenceDisclosure({
               </div>
             ) : null}
           </dl>
+
+          {item.conflictSummary ? (
+            <ConflictDisclosureCard
+              publicSummary={item.conflictSummary}
+              title="Evidence conflict disclosure"
+              headingId={`${item.id}-evidence-conflict`}
+            />
+          ) : null}
 
           {item.sourceUrl && item.sourceLinkTitle ? (
             <p>
