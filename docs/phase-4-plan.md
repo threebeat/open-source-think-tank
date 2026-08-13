@@ -299,7 +299,18 @@ There is no environment variable, database row, or admin toggle that can flip th
 9. **Alpha reset:** six new tables classified **reset** — `public_input_report_imports`, `public_input_reports`, `public_input_report_groups`, `public_input_report_findings`, `public_input_report_moderation_actions`, `public_input_provider_moderation_records` — local wipe only; never claim remote provider deletion ([ADR 0017](./decisions/0017-local-versus-remote-reset-semantics.md)).
 10. **Dual-mode isolation:** public-demo cannot import/publish/moderate gated reports; synthetic reports remain fixture-backed; zero Pol.is network calls; operational provider kinds remain `none`/`fixture` only.
 11. **Docs:** phase-4 plan, architecture-phase-4, open questions (OQ27 note + OQ35), threat model, reset docs, capability matrix, provider assessment, README updated; assessment explicitly states 4.4 aggregate ingest ≠ live Pol.is authorization.
-12. Full verification ladder green for the package surface; docs mark 4.4 complete in this PR **awaiting owner approval** before 4.5.
+12. Full verification ladder green for the package surface; docs mark 4.4 engineering complete in this PR **awaiting owner approval** before 4.5.
+
+### 4.4 engineering closure (awaiting owner approval)
+
+| Item | Record |
+| --- | --- |
+| Baseline main | `9aba076e09b60ea95e2c69d42380494a1c4398ac` (PR #19) |
+| Branch | `phase-4/4.4-moderation-and-aggregate-report-ingestion` |
+| ADRs | 0018–0021 |
+| Migration | `drizzle/0020_public_input_reports.sql` (six reset-classified tables) |
+| Live Pol.is | Still fail-closed; aggregate ingest ≠ activation |
+| Next | Stop for owner review; do not begin 4.5 without explicit approval |
 
 **Non-goals for 4.4:** enabling live Pol.is; resolving activation gates; permitted-services register install; counsel clearance; iframe UI; raw provider-export retention as first-class ingest; `xid`; agenda qualification services (4.5); claiming remote provider deletion on alpha reset; settling production small-cell threshold; altering GitHub branch-protection settings.
 
