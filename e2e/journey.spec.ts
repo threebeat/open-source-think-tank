@@ -44,10 +44,14 @@ test.describe("phase 4.1 computational-democracy journey", () => {
     ).toBeVisible();
 
     await page.goto("/formal-topics/cedar-river-billing-ops-gap");
-    await expect(page.getByText(/agenda_deferred/i)).toBeVisible();
+    await expect(page.getByText(/deferred/i).first()).toBeVisible();
     await expect(
-      page.getByText(/evidence-readiness criterion is unmet/i).first(),
+      page.getByText(/Accepted billing-system change-cost estimate/i).first(),
     ).toBeVisible();
+    await page
+      .getByText("Complete gate status and lineage", { exact: true })
+      .click();
+    await expect(page.getByText(/agenda_deferred/i)).toBeVisible();
   });
 
   test("aggregate report stays allowlisted and actions explain non-personalization", async ({
@@ -65,7 +69,9 @@ test.describe("phase 4.1 computational-democracy journey", () => {
       }),
     ).toBeVisible();
     await expect(page.getByText(/Group A/).first()).toBeVisible();
-    await expect(page.getByText("Suppressed", { exact: true })).toBeVisible();
+    await expect(page.getByTestId("opinion-group-suppressed")).toContainText(
+      "Suppressed",
+    );
     await expect(
       page.getByText(/provider participant IDs/i).first(),
     ).toBeVisible();

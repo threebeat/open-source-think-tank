@@ -9,7 +9,7 @@ test.describe("public-demo evidence comparison", () => {
     const topicLink = page.locator('a[href^="/formal-topics/"]').first();
     await expect(topicLink).toBeVisible({ timeout: 30_000 });
     await topicLink.click();
-    await page.getByRole("link", { name: "Evidence" }).click();
+    await page.getByRole("link", { name: "Evidence", exact: true }).click();
     await expect(page).toHaveURL(/section=evidence/);
 
     await expect(

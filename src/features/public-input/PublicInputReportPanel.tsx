@@ -49,7 +49,14 @@ export function PublicInputReportPanel({ report }: Props) {
         </h3>
         <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
           {report.opinionGroups.map((group) => (
-            <li key={group.label}>
+            <li
+              key={group.label}
+              data-testid={
+                group.status === "suppressed"
+                  ? "opinion-group-suppressed"
+                  : "opinion-group-reported"
+              }
+            >
               {group.label}: {formatOpinionGroupShare(group)}
               {group.status === "suppressed" ? (
                 <span className="sr-only">

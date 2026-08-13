@@ -30,7 +30,9 @@ test.describe("canonical formal topic page", () => {
         page.getByRole("heading", { name: "What this topic needs next" }),
       ).toBeVisible();
       await expect(page.getByText("Explore evidence")).toBeVisible();
-      await expect(page.getByText("Suppressed")).toBeVisible();
+      await expect(page.getByTestId("opinion-group-suppressed")).toContainText(
+        "Suppressed",
+      );
       await expect(page.getByRole("heading", { name: "Claims and approaches" })).toHaveCount(
         0,
       );
