@@ -21,19 +21,19 @@ describe("demo-query", () => {
   });
 
   it("continues to the next stage URL when the next step has a href", () => {
-    expect(getNextDemoStepId("topics")).toBe("consultation");
-    expect(getDemoContinueHref("topics")).toBe(
-      "/topics/cedar-river-drought-surcharge/consult?demoStep=consultation",
+    expect(getNextDemoStepId("idea-commons")).toBe("proposal");
+    expect(getDemoContinueHref("idea-commons")).toBe(
+      "/idea-commons/idea-cedar-surcharge-discussion?demoStep=proposal",
     );
-    expect(demoReturnHref("topics")).toBe("/demo?step=topics");
-    expect(getNextDemoStepId("decision")).toBe("workflow");
-    expect(getDemoContinueHref("decision")).toBe(
-      "/demo/workflow?demoStep=workflow",
+    expect(demoReturnHref("idea-commons")).toBe("/demo?step=idea-commons");
+    expect(getNextDemoStepId("policy")).toBe("actions");
+    expect(getDemoContinueHref("policy")).toBe(
+      "/actions/cedar-river-drought-surcharge?demoStep=actions",
     );
-    expect(getNextDemoStepId("workflow")).toBe("transparency");
-    expect(getDemoContinueHref("transparency")).toBe(
-      "/demo?step=questions-legal",
+    expect(getNextDemoStepId("audit")).toBe("trajectories");
+    expect(getDemoContinueHref("audit")).toBe(
+      "/formal-topics?demoStep=trajectories",
     );
+    expect(getDemoContinueHref("questions-board")).toBe("/demo?step=close");
   });
 });
-

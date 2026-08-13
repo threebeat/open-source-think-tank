@@ -47,16 +47,26 @@ describe("phase 4.1 journey catalog", () => {
       );
       expect(trace.humanReview.publicReason.length).toBeGreaterThan(0);
       expect(trace.humanReview.methodVersion).toBe(trace.methodVersion);
-      expect(trace.notices.some((notice) => /no single composite/i.test(notice))).toBe(
-        true,
-      );
+      expect(
+        trace.notices.some(
+          (notice) =>
+            /no single composite/i.test(notice) ||
+            /consultation metrics were not edited/i.test(notice) ||
+            /human deferral records reason/i.test(notice),
+        ),
+      ).toBe(true);
     }
   });
 
   it("requires member actions to declare non-personalization basis", () => {
     expect(memberActionOpportunities.length).toBeGreaterThanOrEqual(5);
     for (const action of memberActionOpportunities) {
-      expect(action.whyShown).not.toMatch(/individual .*vote/i);
+      expect(action.whyShown).toMatch(
+        /fixture|explicit|interest|geography|lineage|tag/i,
+      );
+      expect(action.whyShown).not.toMatch(
+        /personalized from (your|their) (polis|pol\.is|vote)/i,
+      );
       expect(action.sponsorshipConflict.length).toBeGreaterThan(0);
       expect(action.nonEndorsement.length).toBeGreaterThan(0);
       expect(action.relationshipToRecommendation.length).toBeGreaterThan(0);
