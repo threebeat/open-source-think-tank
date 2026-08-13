@@ -1,24 +1,30 @@
 /**
- * Live Pol.is activation checklist (Phase 4.3 domain layer).
+ * Live Pol.is activation checklist (Phase 4.3).
  *
- * This is a documentation-as-code gate list, not a live control panel: every
- * gate is hard-coded `"unresolved"` in this package. There is no environment
- * variable, database row, or admin toggle that can flip a gate to `"resolved"`
- * from inside this repository — doing so requires its own explicitly-approved
- * future package (permitted-services register addendum + owner authorization;
- * see docs/phase-4-plan.md §4, ADR 0012). `embed-url.ts` and the lifecycle
- * service consult {@link isLiveProviderActivationComplete}, which can only
- * ever return `false` while any gate below is unresolved.
+ * Engineering readiness for institutional lifecycle + fail-closed embed shell
+ * does NOT authorize a live provider. Every gate below ships as `unresolved`.
+ * There is no environment variable, database row, or admin toggle that can flip
+ * a gate to `resolved` from inside this repository — that requires an
+ * explicitly approved future package plus documented owner language equivalent to:
+ * `ENABLE LIVE POLIS FOR GATED ALPHA`.
+ *
+ * Owner risk acceptance is never equivalent to counsel `cleared`.
  */
 
 export type ActivationGateId =
+  | "hosted_vs_self_hosted_selection"
+  | "dpa_and_processing_roles"
+  | "complete_subprocessors"
+  | "data_residency"
+  | "retention_deletion_export"
+  | "breach_incident_notification"
+  | "accessibility_mobile_acceptance"
+  | "csp_iframe_third_party_script"
   | "permitted_services_register_addendum"
-  | "vendor_agreement_signed"
-  | "data_processing_addendum_signed"
-  | "privacy_review_completed"
-  | "counsel_disposition_cleared"
-  | "credentials_provisioned_out_of_band"
-  | "owner_written_authorization";
+  | "counsel_terms_and_agpl_review"
+  | "xid_forbidden_confirmed"
+  | "remote_alpha_reset_verified"
+  | "owner_enable_live_polis_authorization";
 
 export type ActivationGateStatus = "unresolved" | "resolved";
 
@@ -30,52 +36,87 @@ export type ActivationGate = {
 };
 
 /**
- * Every gate starts (and, absent a new authorized package, stays) unresolved.
- * Keep this list exhaustive — an empty list would vacuously satisfy
- * `.every()` and must never be treated as "activation complete".
+ * Exhaustive checklist from Phase 4.3 STEP 6. Keep non-empty — an empty list
+ * would vacuously satisfy `.every()` and must never mean "activation complete".
  */
 export const LIVE_PUBLIC_INPUT_ACTIVATION_GATES: readonly ActivationGate[] = [
   {
+    id: "hosted_vs_self_hosted_selection",
+    label: "Hosted versus self-hosted deployment selection",
+    status: "unresolved",
+    notes: "docs/public-input-provider-assessment.md — selection not authorized.",
+  },
+  {
+    id: "dpa_and_processing_roles",
+    label: "Data Processing Agreement and processing roles",
+    status: "unresolved",
+    notes: "No written DPA with controller/processor roles for gated alpha.",
+  },
+  {
+    id: "complete_subprocessors",
+    label: "Complete subprocessors (including report/model providers)",
+    status: "unresolved",
+    notes: "Hosted privacy names LLM processors; no complete schedule/DPA found.",
+  },
+  {
+    id: "data_residency",
+    label: "Data residency commitment",
+    status: "unresolved",
+    notes: "Residency option requires written vendor confirmation (OQ26).",
+  },
+  {
+    id: "retention_deletion_export",
+    label: "Retention, deletion, and export procedures",
+    status: "unresolved",
+    notes: "Alpha wipe vs remote retention mismatch remains open (OQ29).",
+  },
+  {
+    id: "breach_incident_notification",
+    label: "Breach and incident-notification terms",
+    status: "unresolved",
+    notes: "No contractual SLA located in public ToS review.",
+  },
+  {
+    id: "accessibility_mobile_acceptance",
+    label: "Accessibility and mobile acceptance",
+    status: "unresolved",
+    notes: "No WCAG conformance statement located for provider UIs.",
+  },
+  {
+    id: "csp_iframe_third_party_script",
+    label: "CSP, iframe, and third-party-script decision",
+    status: "unresolved",
+    notes: "OQ33 — official embed requires third-party JS; CSP frame-src unchanged.",
+  },
+  {
     id: "permitted_services_register_addendum",
-    label: "Permitted-services register addendum for live Pol.is",
+    label: "Permitted-services register / addendum",
     status: "unresolved",
-    notes: "docs/phase-2-plan.md §4 has no live-provider entry yet.",
+    notes: "docs/phase-2-plan.md §4 has no live Pol.is install authorization.",
   },
   {
-    id: "vendor_agreement_signed",
-    label: "Vendor agreement / terms of service executed",
+    id: "counsel_terms_and_agpl_review",
+    label: "Counsel review of applicable terms and AGPL implications",
     status: "unresolved",
-    notes: "No hosted or self-hosted Pol.is vendor relationship exists.",
+    notes: "Counsel disposition not cleared; owner risk ≠ cleared.",
   },
   {
-    id: "data_processing_addendum_signed",
-    label: "Data processing addendum (DPA) signed",
+    id: "xid_forbidden_confirmed",
+    label: "Confirmation that xid / stable participant identifiers will not be used",
     status: "unresolved",
-    notes: "Required before any real participant opinion data reaches a provider.",
+    notes: "OQ28 — xid remains unsupported_forbidden until explicit approval.",
   },
   {
-    id: "privacy_review_completed",
-    label: "Privacy review of small-cell suppression and retention",
+    id: "remote_alpha_reset_verified",
+    label: "Verified handling of remote data during alpha reset",
     status: "unresolved",
-    notes: "docs/phase-4-plan.md §7 privacy contract remains a design doc only.",
+    notes: "Local reset must not claim remote deletion without verified execution.",
   },
   {
-    id: "counsel_disposition_cleared",
-    label: "Counsel disposition cleared",
+    id: "owner_enable_live_polis_authorization",
+    label: 'Owner authorization equivalent to "ENABLE LIVE POLIS FOR GATED ALPHA"',
     status: "unresolved",
-    notes: "See docs/phase-2-plan.md §7 counsel gates; none recorded for live Pol.is.",
-  },
-  {
-    id: "credentials_provisioned_out_of_band",
-    label: "Provider credentials provisioned out-of-band (never via env var here)",
-    status: "unresolved",
-    notes: "No credential or env var for a live provider exists in this repository.",
-  },
-  {
-    id: "owner_written_authorization",
-    label: "Owner written authorization to enable a live embed",
-    status: "unresolved",
-    notes: "docs/phase-4-plan.md §12 stop condition: owner approval required before 4.3 live install.",
+    notes: "Starting Phase 4.3 engineering is not live-provider authorization.",
   },
 ] as const;
 
@@ -91,10 +132,6 @@ export function unresolvedActivationGates(
   return gates.filter((gate) => gate.status !== "resolved");
 }
 
-/**
- * Throws if activation is ever (unexpectedly) complete — a canary a future
- * package must explicitly remove, never silently satisfy.
- */
 export function assertLiveProviderDisabled(
   gates: readonly ActivationGate[] = LIVE_PUBLIC_INPUT_ACTIVATION_GATES,
 ): void {

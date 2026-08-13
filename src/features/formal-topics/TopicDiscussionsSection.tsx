@@ -32,6 +32,20 @@ export function TopicDiscussionsSection({ model }: Props) {
         </p>
       ) : null}
 
+      <p className="text-sm">
+        <Link
+          href={`/formal-topics/${model.slug}/consultation`}
+          className="text-primary underline underline-offset-2"
+          data-testid="consultation-surface-link"
+        >
+          Open Public Input consultation surface
+        </Link>
+        <span className="mt-1 block text-xs text-muted-foreground">
+          Institutional lifecycle and embed readiness. Live provider activation
+          remains fail-closed until every activation gate is cleared.
+        </span>
+      </p>
+
       <ul className="space-y-4">
         {model.discussions.map((item) => (
           <li

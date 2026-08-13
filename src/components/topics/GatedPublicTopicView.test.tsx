@@ -1,4 +1,5 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { GatedPublicTopicView } from "@/components/topics/GatedPublicTopicView";
@@ -96,7 +97,7 @@ describe("GatedPublicTopicView", () => {
     cleanup();
   });
 
-  it("renders equal supporting/counterevidence structure and evidence conflict summary", () => {
+  it("renders compact claim refs and keeps evidence details collapsed by default", () => {
     const { container } = render(
       <GatedPublicTopicView projection={sampleProjection()} />,
     );
@@ -105,39 +106,56 @@ describe("GatedPublicTopicView", () => {
       screen.getByRole("heading", { name: "How to read this publication" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Supporting evidence" }),
+      screen.getByRole("heading", { name: /Supporting evidence/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Counterevidence" }),
+      screen.getByRole("heading", { name: /Counterevidence/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Evidence conflict disclosure" }),
+      screen.getByRole("heading", { name: "Evidence inventory" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Evidence conflict public summary."),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText((content) =>
-        content.includes("not approval, truth certification, or consensus"),
-      ),
+      screen.getByRole("heading", { name: "Claim conflict disclosure" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: /Withheld from this publication/i }),
     ).toBeInTheDocument();
 
-    const times = container.querySelectorAll("time[datetime]");
-    expect(times.length).toBeGreaterThanOrEqual(2);
-    expect(container.innerHTML).not.toContain(PRIVATE_SENTINEL);
-    expect(container.innerHTML).not.toContain("privateDetail");
+    const details = screen.getAllByTestId("evidence-disclosure-details");
+    for (const node of details) {
+      expect(node).not.toHaveAttribute("open");
+    }
 
+    expect(container.innerHTML).not.toContain(PRIVATE_SENTINEL);
     const ids = [...container.querySelectorAll("[id]")].map((el) => el.id);
     expect(new Set(ids).size).toBe(ids.length);
+    expect(container.querySelector("#claim-0-conflict")).not.toBeNull();
+    expect(container.querySelector("#ev-1")).not.toBeNull();
+  });
+
+  it("reveals source link and conflict disclosure after intentional expansion", async () => {
+    const user = userEvent.setup();
+    render(<GatedPublicTopicView projection={sampleProjection()} />);
+
+    await user.click(
+      screen.getAllByText("View evidence details and source")[0]!,
+    );
+
+    const openDetails = screen
+      .getAllByTestId("evidence-disclosure-details")
+      .find((node) => node.hasAttribute("open"));
+    expect(openDetails).toBeTruthy();
     expect(
-      container.querySelector("#claim-0-conflict"),
-    ).not.toBeNull();
+      within(openDetails!).getByTestId("evidence-source-link"),
+    ).toHaveAttribute("href", expect.stringContaining("example.ostt.synth.test"));
     expect(
-      container.querySelector("#claim-0-support-0-evidence-conflict"),
-    ).not.toBeNull();
+      within(openDetails!).getByRole("heading", {
+        name: "Evidence conflict disclosure",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(openDetails!).getByText("Evidence conflict public summary."),
+    ).toBeInTheDocument();
   });
 
   it("renders a safe empty published shell without inventing excluded content", () => {
@@ -165,25 +183,17 @@ describe("GatedPublicTopicView", () => {
     ).toBeInTheDocument();
   });
 
-  it("keeps long URLs breakable and comparison available when both sides exist", () => {
-    const { container } = render(
-      <GatedPublicTopicView projection={sampleProjection()} />,
-    );
-    const url = screen.getAllByRole("link", {
-      name: /very-long-source-path/i,
-    })[0]!;
-    expect(url.className).toMatch(/break-all/);
+  it("keeps comparison available without nesting source links in the compare list", () => {
+    render(<GatedPublicTopicView projection={sampleProjection()} />);
     expect(
       screen.getByRole("heading", { name: "Compare two sources" }),
     ).toBeInTheDocument();
-    // Comparison should not repeat the full source URL block.
     const compare = screen
       .getByRole("heading", { name: "Compare two sources" })
       .closest("section");
     expect(compare).toBeTruthy();
     expect(
-      within(compare!).queryByRole("link", { name: /very-long-source-path/i }),
+      within(compare!).queryByTestId("evidence-source-link"),
     ).toBeNull();
-    expect(container.querySelector(".break-words")).toBeTruthy();
   });
 });

@@ -1,10 +1,12 @@
 # Phase 4 plan — Computational democracy journey & Public Input
 
-**Status:** Active. Phase 4.1 is **owner-approved and complete** (`APPROVE PHASE 4.1 COMPLETE`, 2026-08-13; PR #17 merged). Phase **4.2** is complete in this PR and awaits owner approval before **4.3**.  
-**Baseline:** `origin/main` at `122c12c2fa7272340910fe94aed5b6b0701102a0` (PR #17 merged).  
-**Related:** [architecture-phase-4.md](./architecture-phase-4.md), [public-input-provider-assessment.md](./public-input-provider-assessment.md), [0010](./decisions/0010-computational-democracy-pipeline.md), [0011](./decisions/0011-idea-commons-formal-pipeline-separation.md), [0012](./decisions/0012-public-input-provider-boundary.md), [0013](./decisions/0013-canonical-formal-topic-page.md), [phase-3-handoff.md](./phase-3-handoff.md), [product-charter.md](./product-charter.md)
+**Status:** Active. Phase 4.1 and **4.2** are **owner-approved and complete** (`APPROVE PHASE 4.1 COMPLETE`; `APPROVE PHASE 4.2 AS COMPLETE`; PR #17 / PR #18 merged). Phase **4.3** is complete in this PR and awaits owner approval before **4.4**.  
+**Baseline:** `origin/main` at `9f3fe4221e6eafcd46eccfe8adec0cfd5e7014f7` (PR #18 Phase 4.2 merged).  
+**Related:** [architecture-phase-4.md](./architecture-phase-4.md), [public-input-provider-assessment.md](./public-input-provider-assessment.md), [0010](./decisions/0010-computational-democracy-pipeline.md), [0011](./decisions/0011-idea-commons-formal-pipeline-separation.md), [0012](./decisions/0012-public-input-provider-boundary.md), [0013](./decisions/0013-canonical-formal-topic-page.md), [0014](./decisions/0014-institutional-conversation-lifecycle.md), [0015](./decisions/0015-progressive-evidence-disclosure.md), [0016](./decisions/0016-provider-embed-activation-exact-origin.md), [0017](./decisions/0017-local-versus-remote-reset-semantics.md), [phase-3-handoff.md](./phase-3-handoff.md), [product-charter.md](./product-charter.md)
 
-This plan is a **product/engineering contract**. It is **not** legal clearance, counsel disposition, Pol.is vendor approval, production-launch approval, or authorization to install a live consultation provider.
+This plan is a **product/engineering contract**. It is **not** legal clearance, counsel disposition, Pol.is vendor approval, production-launch approval, or authorization to enable a live consultation provider.
+
+**Live Pol.is remains FAIL-CLOSED.** Engineering readiness in 4.3 (institutional lifecycle + disabled embed shell) is **not** live activation.
 
 ---
 
@@ -52,16 +54,16 @@ Authority details: [ADR 0010](./decisions/0010-computational-democracy-pipeline.
 
 ## 4. Retained Pol.is / Public Input deliverables (packages 4.2–4.4+)
 
-Phase 4 retains these deliverables from the prior MVP plan; **none are installed in 4.1**:
+Phase 4 retains these deliverables from the prior MVP plan:
 
-1. Supported hosted embed (no undocumented APIs / hidden features).
-2. Provider-neutral conversation mapping (institutional topic ID ≠ provider conversation ID).
+1. Supported hosted embed (no undocumented APIs / hidden features) — **engineering shell in 4.3; live activation still blocked**.
+2. Provider-neutral conversation mapping (institutional topic ID ≠ provider conversation ID) — adapter in 4.2; gated registry in 4.3.
 3. Conversation-scoped pseudonymous participation (no `xid` / identity-linking until approved).
 4. Moderation workflow with required reasons; no private agenda promotion.
 5. Versioned import/export and consultation reports (aggregates only in public projections).
-6. Outage, retention, reset, and audit behavior documented before install.
+6. Outage, retention, reset, and audit behavior documented before install — institutional lifecycle + local/remote reset semantics in 4.3; remote wipe verification still an activation gate.
 
-**4.1 documents** supported capabilities, vendor/data-processing approval needs, privacy constraints, and unsupported-feature prohibitions. Live Pol.is is **forbidden** until a permitted-services register addendum and owner authorization for 4.2+.
+**4.1 documents** supported capabilities, vendor/data-processing approval needs, privacy constraints, and unsupported-feature prohibitions. Live Pol.is is **forbidden** until every activation gate in `src/lib/public-input/lifecycle/activation.ts` is resolved by an explicitly authorized future package (owner language equivalent to `ENABLE LIVE POLIS FOR GATED ALPHA`), plus permitted-services register addendum and counsel dispositions where required. Owner risk acceptance is never counsel `cleared`.
 
 ---
 
@@ -70,15 +72,15 @@ Phase 4 retains these deliverables from the prior MVP plan; **none are installed
 | Package | Title | Goal |
 | --- | --- | --- |
 | **4.1** | Institutional contract and synthetic end-to-end demo | **Complete / owner-approved** (PR #17). |
-| **4.2** | Public Input provider assessment, adapter boundary, canonical topic IA | Capability/vendor assessment; provider-neutral fail-closed adapter; canonical `/formal-topics/[slug]` Overview/Evidence/Discussions; privacy carryovers; **no live embed** |
-| **4.3** | Gated conversation lifecycle and supported embed | Hosted embed behind gated mode; conversation registry; outage/reset/audit hooks |
+| **4.2** | Public Input provider assessment, adapter boundary, canonical topic IA | **Complete / owner-approved** (PR #18). |
+| **4.3** | Gated conversation lifecycle, embed activation readiness, progressive evidence disclosure | Institutional registry + fail-closed embed URL shell + evidence disclosure UI; **no live Pol.is** |
 | **4.4** | Moderation and aggregate report ingestion | Reasoned moderation; versioned aggregate import; public report projections |
 | **4.5** | Consultation-to-agenda qualification | Transparent multi-signal qualification; no composite truth/importance score |
 | **4.6** | Discussion, deliberation, and policy drafting | Bridge Formal Pipeline stages with operational gated workspace surfaces |
 | **4.7** | Member action opportunities | Post-decision civic action surfaces with sponsorship/conflict/expiry rules |
 | **4.8** | Hardening and handoff | Security/privacy/a11y hardening; Phase 4 handoff |
 
-Stop after each package for human approval. Do **not** begin 4.3 without explicit owner approval and all vendor/privacy gates. The 4.2 assessment/adapter is **not** authorization for a live embed.
+Stop after each package for human approval. Do **not** begin 4.4 without explicit owner approval. Completing 4.3 engineering is **not** authorization for a live embed.
 
 ---
 
@@ -118,10 +120,13 @@ Stop after each package for human approval. Do **not** begin 4.3 without explici
 - Cross-conversation linkage
 - Contact, identity, or verification data
 - Raw provider URLs containing secrets or access tokens
+- `providerConversationRef` / opaque provider mapping tokens
 
 Raw provider exports are **protected data**. Public reports are separate allowlisted aggregate projections. Configurable **small-cell suppression** applies; synthetic demo provisional threshold is **5**, with production threshold requiring privacy review (open question).
 
 Do **not** use `xid` or any identity-linking mechanism until supported status, purpose, retention, access control, deletion, and reidentification risk are approved.
+
+Progressive evidence disclosure (4.3) collapses **already-public** fields for readability. It is **not** a confidentiality or access-control boundary (OQ34; [ADR 0015](./decisions/0015-progressive-evidence-disclosure.md)).
 
 ---
 
@@ -161,8 +166,8 @@ Selected deliberation and policy bodies have different documented authority (cap
 
 | Lane | Rules |
 | --- | --- |
-| **public-demo** | Synthetic, unauthenticated, session-scoped, resettable; incapable of gated writes; never loads Pol.is client, `DATABASE_URL`, or Auth.js |
-| **gated** | Authenticated PostgreSQL alpha; Phase 4 provider work lands only in authorized packages after register approval |
+| **public-demo** | Synthetic, unauthenticated, session-scoped, resettable; incapable of gated writes; never loads Pol.is client, `DATABASE_URL`, or Auth.js; progressive evidence disclosure uses fixture/public projections only |
+| **gated** | Authenticated PostgreSQL alpha; conversation lifecycle domain in 4.3 (`none`/`fixture` provider kinds only); live Pol.is kinds fail closed |
 
 Call `assertEnvironmentSafe()` before any DB client. Production participant data must never enter prompts, fixtures, logs, screenshots, or test recordings.
 
@@ -180,7 +185,13 @@ Call `assertEnvironmentSafe()` before any DB client. Production participant data
 2. Deleted that obsolete remote branch (no force).
 3. Created `phase-4/4.2-public-input-adapter-and-topic-navigation` from clean baseline.
 
-**Branch-protection recommendation (do not silently alter settings):** `main` still appears unprotected. Recommend requiring PR review + required status checks, and blocking force-push and branch deletion on `main`. Owner/admin action outside this package.
+### 4.3 start
+
+1. Verified `origin/main` = `9f3fe4221e6eafcd46eccfe8adec0cfd5e7014f7` (PR #18 merged).
+2. Deleted obsolete merged remote branch `phase-4/4.2-public-input-adapter-and-topic-navigation` (squash-merged via PR #18; no force).
+3. Created / continued `phase-4/4.3-gated-conversation-lifecycle-and-evidence-disclosure` from that baseline.
+
+**Branch-protection recommendation (do not silently alter settings):** `main` still appears unprotected. Recommend requiring PR review + required status checks, and blocking force-push and branch deletion on `main`. Owner/admin action outside this package — **do not change repository settings from application PRs**.
 
 ---
 
@@ -206,16 +217,63 @@ Call `assertEnvironmentSafe()` before any DB client. Production participant data
 
 **Non-goals for 4.2:** live Pol.is; production embed; raw export ingestion; provider credentials/env vars; DB migrations; xid; altering GitHub branch-protection settings.
 
-## 12. Stop conditions
+## 11c. Phase 4.2 closure record
 
+| Item | Record |
+| --- | --- |
+| Owner instruction | `APPROVE PHASE 4.2 AS COMPLETE` (owner approved Phase 4.2 complete and started 4.3) |
+| PR #18 | Merged to `main` at `9f3fe4221e6eafcd46eccfe8adec0cfd5e7014f7` |
+| Obsolete branch | `phase-4/4.2-public-input-adapter-and-topic-navigation` deleted after squash-merge confirmation (no force) |
+| Branch protection | `main` still appears unprotected — recommend require PR review + required checks; block force-push and deletion. Do not silently modify repository settings. |
+| Live Pol.is | Remains fail-closed; 4.2 assessment/adapter ≠ live activation |
+
+## 11d. Package 4.3 — acceptance criteria
+
+1. **Progressive evidence disclosure** on Formal Topic Evidence (and related public evidence surfaces): native `<details>`/`<summary>`; default closed; no auto-open from URL/storage/session; collapsed summary shows relationship, quality, title, source org/type, contribution sentence; expanded panel holds the rest (including source link with `noopener` / `referrerPolicy=no-referrer`). Disclosure is readability only — not confidentiality ([ADR 0015](./decisions/0015-progressive-evidence-disclosure.md), OQ34).
+2. **Gated conversation registry** via migration `drizzle/0019_public_input_conversations.sql` and domain under `src/lib/public-input/lifecycle/`: one `current` conversation per topic; workflow states `draft → ready → open → commenting_closed → voting_closed → closed → archived`; recovery transitions with substantive reason + distinct audit action; administrator capabilities `consultations.create|transition|manage_provider_mapping|set_availability` ([ADR 0014](./decisions/0014-institutional-conversation-lifecycle.md)).
+3. **Institutional workflow state ≠ provider availability.** Availability enum `not_configured|available|degraded|unavailable` is independent; provider outage must not invent institutional closure.
+4. **Operational provider kinds only `none` and `fixture`.** DB CHECK + service layer reject `polis_hosted` / `polis_self_hosted`. No provider SDK, credentials, env vars, or network clients.
+5. **Fail-closed embed activation readiness** ([ADR 0016](./decisions/0016-provider-embed-activation-exact-origin.md)): exact-origin allowlist (`https://pol.is` only in production path); reject credential/query-bearing origins; opaque conversation-ref shape validation; `buildEmbedUrl` returns `EMBED_ACTIVATION_GATES_UNRESOLVED` while any gate is unresolved. All **13** gates in `LIVE_PUBLIC_INPUT_ACTIVATION_GATES` ship as `unresolved`. No iframe UI wiring and no network call in 4.3.
+6. **Public/staff DTOs never leak `providerConversationRef`** (or raw provider URLs/tokens); staff summaries expose only `hasProviderMapping: boolean`.
+7. **Alpha reset:** `public_input_conversations` and `public_input_conversation_transitions` classified **reset**; local wipe does **not** claim remote provider deletion ([ADR 0017](./decisions/0017-local-versus-remote-reset-semantics.md); OQ29).
+8. **Docs/ADRs:** phase-4 plan, architecture-phase-4, assessment, open questions (incl. OQ34), threat model, reset docs, README, ADRs 0014–0017; ADR 0012 notes lifecycle landed while live remains blocked.
+9. **Tests:** lifecycle transitions/service, embed-url fail-closed, activation gates non-vacuous / all unresolved, EvidenceDisclosure behavior; no weakening of security posture.
+10. Full verification ladder green for the package surface; docs mark 4.3 complete in this PR **awaiting owner approval** before 4.4.
+
+**Non-goals for 4.3:** enabling live Pol.is; resolving activation gates; permitted-services register install; counsel clearance; iframe UI; raw export ingest; xid; claiming remote provider deletion on alpha reset; altering GitHub branch-protection settings.
+
+### Live activation gates (remain unresolved)
+
+Engineering readiness ≠ live activation. Gates (all `unresolved` in code):
+
+1. Hosted versus self-hosted deployment selection  
+2. Data Processing Agreement and processing roles  
+3. Complete subprocessors (including report/model providers)  
+4. Data residency commitment  
+5. Retention, deletion, and export procedures  
+6. Breach and incident-notification terms  
+7. Accessibility and mobile acceptance  
+8. CSP, iframe, and third-party-script decision  
+9. Permitted-services register / addendum  
+10. Counsel review of applicable terms and AGPL implications  
+11. Confirmation that xid / stable participant identifiers will not be used  
+12. Verified handling of remote data during alpha reset  
+13. Owner authorization equivalent to `ENABLE LIVE POLIS FOR GATED ALPHA`
+
+There is no environment variable, database row, or admin toggle that can flip these gates from inside this repository.
+
+## 12. Stop conditions
 
 Stop if any of the following would be required to “finish” a package:
 
 - Installing or calling live Pol.is / undocumented provider features / `xid` without approval
 - Weakening public/protected data separation or small-cell suppression
+- Treating progressive disclosure as a confidentiality boundary (or hiding protected fields behind `<details>` alone)
+- Claiming local alpha reset deleted remote provider data without verified remote execution
 - Allowing elevated roles to privately promote pre-deliberation topics
 - Connecting public-demo to gated datastores or provider networks
 - Inventing statutory membership or board-binding authority
 - Skipping the verification ladder or weakening tests to pass
+- Silently resolving activation gates or inventing counsel clearance
 
-After 4.2 PR is green: **stop for owner review**. Do not begin 4.3 or enable a live embed without explicit owner approval and required vendor/privacy decisions.
+After 4.3 PR is green: **stop for owner review**. Do not begin 4.4 or enable a live embed without explicit owner approval and required vendor/privacy decisions.

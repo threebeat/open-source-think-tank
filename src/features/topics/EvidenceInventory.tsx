@@ -270,7 +270,11 @@ export function EvidenceInventory({ sources, claims }: EvidenceInventoryProps) {
       {results.length > 0 ? (
         <div className="grid gap-4 lg:grid-cols-2">
           {results.map((source) => (
-            <EvidenceSourceCard key={source.id} source={source} />
+            <EvidenceSourceCard
+              key={source.id}
+              source={source}
+              claims={claims}
+            />
           ))}
         </div>
       ) : (

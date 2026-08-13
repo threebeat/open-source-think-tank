@@ -1,9 +1,10 @@
 # Public Input / Pol.is capability, privacy, and vendor assessment
 
-**Status:** Phase 4.2 engineering assessment — **not** authorization for a live embed  
+**Status:** Phase 4.2 engineering assessment — **still not** authorization for a live embed. Phase **4.3** built the institutional conversation lifecycle and a **disabled** embed URL shell; live Pol.is remains fail-closed.  
 **Assessment date:** 2026-08-13  
 **Pinned upstream OSS pin:** `compdemocracy/polis` `edge` commit `5089c6bef9eb1a1e454beb34354fb29dd0a2b6f0` (fetched 2026-08-13)  
-**Related:** [ADR 0012](./decisions/0012-public-input-provider-boundary.md), [phase-4-plan.md](./phase-4-plan.md), OQ26–OQ29
+**Related:** [ADR 0012](./decisions/0012-public-input-provider-boundary.md), [ADR 0014](./decisions/0014-institutional-conversation-lifecycle.md), [ADR 0016](./decisions/0016-provider-embed-activation-exact-origin.md), [phase-4-plan.md](./phase-4-plan.md), OQ26–OQ29, OQ33  
+**Activation checklist (code):** `src/lib/public-input/lifecycle/activation.ts` — all 13 gates ship `unresolved`
 
 This document uses **primary sources only**. Old knowledge-base pages, beta export notes, browser-observed behavior, and undocumented source endpoints are **not** treated as a stable provider contract.
 
@@ -42,7 +43,7 @@ Statuses are recorded **separately** for: (H) hosted pol.is, (S) self-hosted OSS
 
 | Capability | H | S | N | Notes / sources |
 | --- | --- | --- | --- | --- |
-| Hosted iframe embedding + allowed config | supported_documented | supported_documented (self host + embed.js) | unsupported_forbidden | Embed KB: script + `.polis` div; requires third-party JS. Config via `data-*` (e.g. `data-ucv`, `data-ucw`, `data-show_vis`). Exact production allowlist for our CSP/iframe policy still needs 4.3 design. |
+| Hosted iframe embedding + allowed config | supported_documented | supported_documented (self host + embed.js) | unsupported_forbidden | Embed KB: script + `.polis` div; requires third-party JS. Config via `data-*` (e.g. `data-ucv`, `data-ucw`, `data-show_vis`). Phase 4.3 ships exact-origin validation + fail-closed `buildEmbedUrl` (no iframe UI); CSP/third-party JS acceptance remains OQ33 / activation gate. |
 | Conversation creation / configuration | unclear_requires_confirmation | supported_documented (admin UI in OSS) | unsupported_forbidden | Hosted admin API stability and org account terms need vendor confirmation. |
 | Participant commenting | supported_documented | supported_documented | unsupported_forbidden | Core product behavior in KB/README; not independently SLA-backed. |
 | Agree / disagree / pass voting | supported_documented | supported_documented | unsupported_forbidden | Embed emits vote `postMessage` (KB). |
@@ -82,7 +83,8 @@ Statuses are recorded **separately** for: (H) hosted pol.is, (S) self-hosted OSS
 | Identity linkage (xid) | Marketed / exemplified — **forbidden for us** | Possible in software — **forbidden for us** | None |
 | Privacy unknowns | DPA, subprocessors list, residency option, retention/deletion, breach SLA | Operator must supply equivalents | N/A |
 | Fit for 4.2 | Assessment only | Assessment only | **Active fallback** (`NoProvider` / fixture) |
-| Fit for 4.3+ | Blocked until gates clear | Blocked until ops + counsel gates clear | Continues as fail-closed path |
+| Fit for 4.3 | Institutional lifecycle + disabled embed shell landed; **live still blocked** | Same — live kinds non-operational | Continues as fail-closed path (`none` / `fixture` only) |
+| Fit for live activation | Blocked until activation checklist clears | Blocked until ops + counsel + activation gates clear | Continues as fail-closed path |
 
 ---
 
@@ -105,11 +107,18 @@ Statuses are recorded **separately** for: (H) hosted pol.is, (S) self-hosted OSS
 
 **Insufficient information to authorize a live Pol.is integration.**
 
+Phase 4.3 does **not** change this verdict. It adds:
+
+- Gated institutional conversation lifecycle (`public_input_conversations` + transitions)
+- Fail-closed embed URL construction behind an exhaustive unresolved activation checklist
+- Progressive evidence disclosure (readability only; unrelated to provider install)
+
 Recommended engineering posture for now:
 
-1. Keep **provider-neutral adapter** with fixture + no-provider fail-closed paths (4.2 — done in code).
-2. Do **not** add credentials, env vars, SDKs, migrations, or network clients.
-3. Prefer continuing **synthetic aggregates** on public-demo until gates clear.
-4. Before 4.3: obtain written vendor answers on blockers §4, update permitted-services register, privacy + security + counsel approvals, then owner authorization.
+1. Keep **provider-neutral adapter** with fixture + no-provider fail-closed paths (4.2 — done).
+2. Keep conversation registry limited to operational kinds **`none` / `fixture`** (4.3 — done).
+3. Do **not** add live credentials, env vars, SDKs, network clients, or iframe UI until activation.
+4. Prefer continuing **synthetic aggregates** on public-demo until gates clear.
+5. Before live activation: clear every gate in `LIVE_PUBLIC_INPUT_ACTIVATION_GATES` (see [phase-4-plan.md](./phase-4-plan.md) §11d), update the permitted-services register, obtain privacy + security + counsel approvals, then owner language equivalent to `ENABLE LIVE POLIS FOR GATED ALPHA`.
 
-Owner risk acceptance is **not** equivalent to counsel `cleared` status.
+Owner risk acceptance is **not** equivalent to counsel `cleared` status. Starting or completing Phase 4.3 engineering is **not** live-provider authorization.

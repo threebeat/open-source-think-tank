@@ -10,8 +10,13 @@ import {
 import { PublicModerationNotice } from "@/components/topics/PublicModerationNotice";
 import { PublicRevisionSummaryNotice } from "@/components/topics/RevisionHistoryPanel";
 import { PublicTime } from "@/components/topics/PublicTime";
+import { EvidenceDisclosure } from "@/features/topics/EvidenceDisclosure";
+import {
+  linkedClaimTitlesForPublicEvidence,
+  mapPublicEvidenceToDisclosure,
+  primaryRelationshipForPublicEvidence,
+} from "@/features/topics/map-evidence-disclosure";
 import { formatTopicGeography } from "@/lib/geography/tennessee-counties";
-import { groupEvidenceByRelationship } from "@/lib/topics/evidence-groups";
 import type { PublicTopicProjection } from "@/lib/topics/public-projection";
 
 function geographyLabel(geography: PublicTopicProjection["geography"]): string {
@@ -33,98 +38,6 @@ function qualityPlainLanguage(
     case "disputed":
       return "Disputed quality means reviewers recorded contested source fitness. It does not prove a claim is true or false.";
   }
-}
-
-function EvidenceBlock({
-  evidence,
-  relationship,
-  headingPrefix,
-}: {
-  evidence: PublicTopicProjection["evidence"][number];
-  relationship: "supporting" | "counterevidence";
-  headingPrefix: string;
-}) {
-  const conflictHeadingId = `${headingPrefix}-evidence-conflict`;
-
-  return (
-    <li className="min-w-0 space-y-3 border-t border-border pt-3 text-sm first:border-t-0 first:pt-0">
-      <article className="min-w-0 space-y-2">
-        <h5 className="font-heading text-base text-foreground break-words">
-          {evidence.title}
-        </h5>
-        <p className="text-muted-foreground break-words">
-          {relationship === "supporting"
-            ? "Supporting evidence"
-            : "Counterevidence"}{" "}
-          · {evidence.organization} · {evidence.authorType} ·{" "}
-          {evidence.sourceType}
-        </p>
-        <dl className="space-y-2">
-          <div>
-            <dt className="font-medium text-foreground">Evidence quality</dt>
-            <dd className="text-muted-foreground break-words">
-              {evidence.qualityStatus.replaceAll("_", " ")}.{" "}
-              {qualityPlainLanguage(evidence.qualityStatus)}
-            </dd>
-          </div>
-          {evidence.qualityPublicRationale ? (
-            <div>
-              <dt className="font-medium text-foreground">Quality rationale</dt>
-              <dd className="text-muted-foreground break-words whitespace-pre-wrap">
-                {evidence.qualityPublicRationale}
-              </dd>
-            </div>
-          ) : null}
-          {evidence.workflowPublicRationale ? (
-            <div>
-              <dt className="font-medium text-foreground">
-                Review decision (public)
-              </dt>
-              <dd className="text-muted-foreground break-words whitespace-pre-wrap">
-                {evidence.workflowPublicRationale}
-              </dd>
-            </div>
-          ) : null}
-          <div>
-            <dt className="font-medium text-foreground">Limitations</dt>
-            <dd className="text-muted-foreground break-words whitespace-pre-wrap">
-              {evidence.limitations}
-            </dd>
-          </div>
-        </dl>
-        {evidence.conflictPublicSummary ? (
-          <ConflictDisclosureCard
-            publicSummary={evidence.conflictPublicSummary}
-            title="Evidence conflict disclosure"
-            headingId={conflictHeadingId}
-          />
-        ) : null}
-        {evidence.latestRestorationNotice ? (
-          <PublicModerationNotice
-            action={evidence.latestRestorationNotice.action}
-            publicRationale={evidence.latestRestorationNotice.publicRationale}
-            recordedAt={evidence.latestRestorationNotice.recordedAt}
-            subjectKind="evidence"
-          />
-        ) : null}
-        <PublicRevisionSummaryNotice summary={evidence.revisionSummary} />
-        <p>
-          <a
-            href={evidence.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            referrerPolicy="no-referrer"
-            className="break-all text-primary underline"
-          >
-            {evidence.sourceUrl}
-          </a>
-          <span className="mt-1 block text-xs text-muted-foreground">
-            External link — not fetched by this application.
-          </span>
-        </p>
-      </article>
-    </li>
-  );
 }
 
 type GatedPublicTopicViewProps = {
@@ -233,8 +146,8 @@ export function GatedPublicTopicView({
             not popularity, consultation agreement, or institutional consensus.
           </li>
           <li>
-            Revision summaries record when content was edited. They are not
-            approval timestamps.
+            Evidence details stay collapsed until you choose “View evidence
+            details and source.” Collapsing is for readability, not privacy.
           </li>
           <li>
             Moderation visibility (hold, hide, restore) is independent from
@@ -310,14 +223,13 @@ export function GatedPublicTopicView({
                   } => Boolean(row),
                 );
 
-              const grouped = groupEvidenceByRelationship(
-                linked.map(({ link, evidence }) => ({
-                  relationship: link.relationship,
-                  evidence,
-                })),
+              const supporting = linked.filter(
+                (row) => row.link.relationship === "supporting",
+              );
+              const counterevidence = linked.filter(
+                (row) => row.link.relationship === "counterevidence",
               );
 
-              // Comparison is a compact reading aid — full fields stay in EvidenceBlock.
               const comparable: ComparableEvidenceItem[] = linked.map(
                 ({ link, evidence }) => ({
                   key: `${claimIndex}-${link.evidenceKey}`,
@@ -387,63 +299,25 @@ export function GatedPublicTopicView({
                   />
 
                   <div className="grid gap-6 lg:grid-cols-2">
-                    <section
-                      aria-labelledby={`claim-${claimIndex}-supporting`}
-                      className="min-w-0 space-y-2"
-                    >
-                      <h4
-                        id={`claim-${claimIndex}-supporting`}
-                        className="text-sm font-medium text-foreground"
-                      >
-                        Supporting evidence
-                      </h4>
-                      {grouped.supporting.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
-                          No supporting sources in this publication.
-                        </p>
-                      ) : (
-                        <ul className="space-y-3">
-                          {grouped.supporting.map(({ evidence }, index) => (
-                            <EvidenceBlock
-                              key={evidence.key}
-                              evidence={evidence}
-                              relationship="supporting"
-                              headingPrefix={`claim-${claimIndex}-support-${index}`}
-                            />
-                          ))}
-                        </ul>
-                      )}
-                    </section>
-                    <section
-                      aria-labelledby={`claim-${claimIndex}-counter`}
-                      className="min-w-0 space-y-2"
-                    >
-                      <h4
-                        id={`claim-${claimIndex}-counter`}
-                        className="text-sm font-medium text-foreground"
-                      >
-                        Counterevidence
-                      </h4>
-                      {grouped.counterevidence.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
-                          No counterevidence in this publication.
-                        </p>
-                      ) : (
-                        <ul className="space-y-3">
-                          {grouped.counterevidence.map(
-                            ({ evidence }, index) => (
-                              <EvidenceBlock
-                                key={evidence.key}
-                                evidence={evidence}
-                                relationship="counterevidence"
-                                headingPrefix={`claim-${claimIndex}-counter-${index}`}
-                              />
-                            ),
-                          )}
-                        </ul>
-                      )}
-                    </section>
+                    <CompactLinkedEvidence
+                      headingId={`claim-${claimIndex}-supporting`}
+                      heading="Supporting evidence"
+                      empty="No supporting sources in this publication."
+                      rows={supporting}
+                    />
+                    <CompactLinkedEvidence
+                      headingId={`claim-${claimIndex}-counter`}
+                      heading="Counterevidence"
+                      empty="No counterevidence in this publication."
+                      rows={counterevidence}
+                    />
                   </div>
+
+                  <p className="text-xs text-muted-foreground">
+                    Inspect individual sources in the evidence inventory below.
+                    Source links and extended metadata stay collapsed until you
+                    expand an item.
+                  </p>
 
                   {comparable.length >= 2 ? (
                     <EvidenceComparison
@@ -454,6 +328,42 @@ export function GatedPublicTopicView({
                 </article>
               );
             })}
+
+            <section
+              className="space-y-4"
+              aria-labelledby="gated-evidence-inventory-heading"
+            >
+              <h3
+                id="gated-evidence-inventory-heading"
+                className="font-heading text-xl text-foreground"
+              >
+                Evidence inventory
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Canonical place to inspect each publication-eligible source.
+                Details and external links remain collapsed by default.
+              </p>
+              <ul className="grid gap-4 lg:grid-cols-2">
+                {projection.evidence.map((evidence) => {
+                  const item = mapPublicEvidenceToDisclosure({
+                    evidence,
+                    relationship: primaryRelationshipForPublicEvidence(
+                      evidence.key,
+                      projection.claims,
+                    ),
+                    linkedClaimTitles: linkedClaimTitlesForPublicEvidence(
+                      evidence.key,
+                      projection.claims,
+                    ),
+                  });
+                  return (
+                    <li key={evidence.key}>
+                      <EvidenceDisclosure item={item} />
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
           </div>
         )}
       </section>
@@ -467,5 +377,52 @@ export function GatedPublicTopicView({
         </Link>
       </p>
     </div>
+  );
+}
+
+function CompactLinkedEvidence({
+  headingId,
+  heading,
+  empty,
+  rows,
+}: {
+  headingId: string;
+  heading: string;
+  empty: string;
+  rows: Array<{
+    evidence: PublicTopicProjection["evidence"][number];
+  }>;
+}) {
+  return (
+    <section aria-labelledby={headingId} className="min-w-0 space-y-2">
+      <h4 id={headingId} className="text-sm font-medium text-foreground">
+        {heading}
+        <span className="ml-2 font-normal text-muted-foreground">
+          ({rows.length})
+        </span>
+      </h4>
+      {rows.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{empty}</p>
+      ) : (
+        <ul className="space-y-2">
+          {rows.map(({ evidence }) => (
+            <li key={evidence.key}>
+              <a
+                href={`#${evidence.key}`}
+                className="block rounded-md border border-border px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                <span className="font-medium text-foreground break-words">
+                  {evidence.title}
+                </span>
+                <span className="mt-1 block text-xs text-muted-foreground break-words">
+                  {evidence.organization} ·{" "}
+                  {evidence.qualityStatus.replaceAll("_", " ")}
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
