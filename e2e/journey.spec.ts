@@ -61,8 +61,10 @@ test.describe("phase 4.1 computational-democracy journey", () => {
         name: "Anonymous aggregate Public Input report",
       }),
     ).toBeVisible();
-    await expect(page.getByText(/Group A/)).toBeVisible();
-    await expect(page.getByText(/provider participant IDs/i)).toBeVisible();
+    await expect(page.getByText(/Group A/).first()).toBeVisible();
+    await expect(
+      page.getByText(/provider participant IDs/i).first(),
+    ).toBeVisible();
     await expect(page.locator("body")).not.toContainText("xid=");
     await expect(page.locator("body")).not.toContainText("perPersonVotes");
 
@@ -84,12 +86,20 @@ test.describe("phase 4.1 computational-democracy journey", () => {
 
   test("deep link and keyboard focus on Idea Commons practice", async ({ page }) => {
     await page.goto("/idea-commons");
-    await page.getByLabel("Title").focus();
-    await expect(page.getByLabel("Title")).toBeFocused();
-    await page.getByLabel("Title").fill("Practice drought idea");
-    await page.getByLabel("Contribution").fill("Local practice body");
-    await page.getByRole("button", { name: "Save practice post" }).click();
-    await expect(page.getByText("Practice drought idea")).toBeVisible();
+    const practice = page.locator("form").filter({
+      has: page.getByRole("button", { name: "Save practice post" }),
+    });
+    const title = practice.getByRole("textbox", { name: "Title", exact: true });
+    await title.focus();
+    await expect(title).toBeFocused();
+    await title.fill("Practice drought idea");
+    await practice.getByRole("textbox", { name: "Contribution", exact: true }).fill(
+      "Local practice body",
+    );
+    await practice.getByRole("button", { name: "Save practice post" }).click();
+    await expect(
+      page.getByText("Practice drought idea", { exact: true }),
+    ).toBeVisible();
     await expect(page).toHaveURL(/\/idea-commons$/);
   });
 });

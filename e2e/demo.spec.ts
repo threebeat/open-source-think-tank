@@ -110,7 +110,7 @@ test.describe("guided demonstration", () => {
       /\/actions\/cedar-river-drought-surcharge\?demoStep=actions/,
     );
     await expect(
-      page.getByRole("heading", { name: "Member action opportunities" }),
+      page.getByRole("heading", { name: "Listed opportunities", exact: true }),
     ).toBeVisible();
 
     await page

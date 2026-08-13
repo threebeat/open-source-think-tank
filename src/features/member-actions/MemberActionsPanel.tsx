@@ -13,7 +13,7 @@ export function MemberActionsPanel({ opportunities, topicTitle }: Props) {
         id="member-actions-heading"
         className="font-heading text-2xl text-foreground"
       >
-        Member action opportunities
+        Listed opportunities
       </h2>
       <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
         Synthetic post-decision actions related to {topicTitle}. Recommendations

@@ -39,7 +39,9 @@ export function QualificationTracePanel({ trace }: Props) {
         ))}
       </ul>
       <div className="rounded-md border border-border px-4 py-3 text-sm">
-        <h3 className="font-heading text-lg text-foreground">Human review record</h3>
+        <h3 className="font-heading text-lg text-foreground">
+          Human review provenance
+        </h3>
         <dl className="mt-2 grid gap-2 sm:grid-cols-2">
           <div>
             <dt className="font-medium">Actor role</dt>

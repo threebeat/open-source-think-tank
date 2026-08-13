@@ -41,7 +41,7 @@ test.describe("agenda gate", () => {
       page.getByRole("heading", { name: "How This Result Was Calculated" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Human review" }),
+      page.getByRole("heading", { name: "Human review", exact: true }),
     ).toBeVisible();
     await expect(page.getByText(/Sensitivity note:/i)).toBeVisible();
     await expect(

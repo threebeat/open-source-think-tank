@@ -21,7 +21,7 @@ test.describe("responsive smoke", () => {
       await expect(page.getByRole("button", { name: "Next" })).toBeVisible();
       await page.getByRole("button", { name: "Next" }).click();
       await expect(
-        page.getByRole("heading", { name: "How Joining Works" }),
+        page.getByRole("heading", { name: "1. Idea Commons discussion" }),
       ).toBeVisible();
     });
   }
