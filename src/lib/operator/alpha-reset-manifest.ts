@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
  * Mirror of docs/alpha-reset-classification.md — keep in sync.
  */
 
-export const RESET_MANIFEST_VERSION = "3.12.1";
+export const RESET_MANIFEST_VERSION = "4.3.1";
 
 /** Fixed transaction-scoped advisory-lock key for concurrent alpha resets. */
 export const ALPHA_RESET_ADVISORY_LOCK_KEY = 3_120_845_120_012;
@@ -29,7 +29,7 @@ export type AlphaResetTableEntry = {
 
 /**
  * Every pgTable in schema.ts — exactly one class each.
- * Count must remain 35 until schema grows (assertManifestComplete).
+ * Count must remain 37 until schema grows (assertManifestComplete).
  */
 export const ALPHA_RESET_TABLES: readonly AlphaResetTableEntry[] = [
   { table: "persons", class: "reset" },
@@ -69,6 +69,11 @@ export const ALPHA_RESET_TABLES: readonly AlphaResetTableEntry[] = [
   { table: "claim_reviews", class: "reset" },
   { table: "content_revisions", class: "reset" },
   { table: "evidence_reviews", class: "reset" },
+  // Phase 4.3 — Public Input conversation lifecycle (institutional metadata
+  // only; providerConversationRef is opaque and never public — see
+  // src/lib/public-input/lifecycle/repository.ts). Fully resettable alpha data.
+  { table: "public_input_conversations", class: "reset" },
+  { table: "public_input_conversation_transitions", class: "reset" },
 ] as const;
 
 /** Children-first delete order for class=reset tables only (explicit list). */
@@ -88,6 +93,8 @@ export const DELETE_ORDER: readonly string[] = [
   "claim_evidence_links",
   "evidence_submissions",
   "claims",
+  "public_input_conversation_transitions",
+  "public_input_conversations",
   "topics",
   "operator_bootstrap_state",
   "audit_events",
@@ -133,6 +140,10 @@ export const IMMUTABLE_DELETE_TRIGGERS: readonly {
   { table: "claim_reviews", trigger: "claim_reviews_immutable" },
   { table: "evidence_reviews", trigger: "evidence_reviews_immutable" },
   { table: "content_revisions", trigger: "content_revisions_immutable" },
+  {
+    table: "public_input_conversation_transitions",
+    trigger: "public_input_conversation_transitions_immutable",
+  },
 ] as const;
 
 /** Coarse count families for audit metadata (no PII / no row ids). */
@@ -201,6 +212,13 @@ export const COUNT_FAMILIES: readonly {
       "claim_reviews",
       "content_revisions",
       "evidence_reviews",
+    ],
+  },
+  {
+    family: "public_input",
+    tables: [
+      "public_input_conversations",
+      "public_input_conversation_transitions",
     ],
   },
 ] as const;

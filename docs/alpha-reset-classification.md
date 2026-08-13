@@ -1,9 +1,9 @@
 # Alpha reset table classification (Phase 3 closure)
 
 **Status:** Operator procedure for gated invite-only alpha. Not a public-demo feature. Not production retention counsel.  
-**Manifest version:** `3.12.1`
+**Manifest version:** `4.3.1`
 
-**Scope:** Every `pgTable` in `src/db/schema.ts` (35 tables) is classified as exactly one of:
+**Scope:** Every `pgTable` in `src/db/schema.ts` (37 tables) is classified as exactly one of:
 
 | Class | Meaning |
 | --- | --- |
@@ -35,7 +35,7 @@ Machine-readable mirror: `src/lib/operator/alpha-reset-manifest.ts`.
 
 ---
 
-## Classification (35 tables)
+## Classification (37 tables)
 
 | Table | Class | Rationale |
 | --- | --- | --- |
@@ -74,6 +74,8 @@ Machine-readable mirror: `src/lib/operator/alpha-reset-manifest.ts`.
 | `claim_reviews` | reset | Claim review provenance. |
 | `content_revisions` | reset | Revision snapshots (immutable normally). |
 | `evidence_reviews` | reset | Evidence review provenance. |
+| `public_input_conversations` | reset | Public Input conversation lifecycle state (Phase 4.3). `providerConversationRef` is a protected opaque reference — never public, never logged; wiped like any other alpha row. |
+| `public_input_conversation_transitions` | reset | Append-only conversation lifecycle transition history (Phase 4.3; immutable in normal ops — operator reset disables the delete trigger like `moderation_actions`/`content_revisions`). |
 
 **Deferred:** none.
 

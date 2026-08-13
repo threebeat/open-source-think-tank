@@ -38,6 +38,10 @@ const ACTIVE_ONLY = new Set<Capability>([
   "workspace.search",
   "topics.export_staff",
   "invites.issue",
+  "consultations.create",
+  "consultations.transition",
+  "consultations.manage_provider_mapping",
+  "consultations.set_availability",
 ]);
 
 function hasPlatform(
@@ -238,6 +242,18 @@ export function authorize(
 
     case "topics.export_staff":
       if (!hasPlatform(principal, ["reviewer", "administrator"])) {
+        return deny(capability);
+      }
+      return { ok: true, principal };
+
+    case "consultations.create":
+    case "consultations.transition":
+    case "consultations.manage_provider_mapping":
+    case "consultations.set_availability":
+      // Administrator-only. Moderators do not gain these merely from
+      // moderation.act — Public Input lifecycle/provider-mapping decisions
+      // are institutional, not content-moderation, actions.
+      if (!hasPlatform(principal, ["administrator"])) {
         return deny(capability);
       }
       return { ok: true, principal };

@@ -142,6 +142,10 @@ describe("authorizeCapability assurance gate", () => {
       "account.revoke_all_sessions": "account-ostt-synth-ac-participant",
       "account.export_own": "account-ostt-synth-ac-participant",
       "account.request_closure": "account-ostt-synth-ac-participant",
+      "consultations.create": "account-ostt-synth-ac-admin",
+      "consultations.transition": "account-ostt-synth-ac-admin",
+      "consultations.manage_provider_mapping": "account-ostt-synth-ac-admin",
+      "consultations.set_availability": "account-ostt-synth-ac-admin",
     };
 
     for (const capability of MAPPED) {
@@ -254,6 +258,22 @@ describe("authorizeCapability assurance gate", () => {
       {
         accountId: "account-ostt-synth-ac-reviewer",
         capability: "topics.export_staff",
+      },
+      {
+        accountId: "account-ostt-synth-ac-admin",
+        capability: "consultations.create",
+      },
+      {
+        accountId: "account-ostt-synth-ac-admin",
+        capability: "consultations.transition",
+      },
+      {
+        accountId: "account-ostt-synth-ac-admin",
+        capability: "consultations.manage_provider_mapping",
+      },
+      {
+        accountId: "account-ostt-synth-ac-admin",
+        capability: "consultations.set_availability",
       },
     ];
 

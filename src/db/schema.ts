@@ -1537,6 +1537,188 @@ export const evidenceReviews = pgTable(
   ],
 );
 
+/* -------------------------------------------------------------------------- */
+/* Phase 4.3 — Public Input conversation lifecycle (domain/schema only).       */
+/* Live Pol.is stays fail-closed: provider_kind is DB-constrained to the two   */
+/* operational values; hosted/self-hosted values exist only so a future,      */
+/* explicitly-authorized package can migrate the CHECK — they are rejected    */
+/* by both this constraint and the service layer today. providerConversationRef*/
+/* is a protected opaque reference: never selected into public projections,   */
+/* URLs, or logs (see src/lib/public-input/lifecycle/sanitize-log.ts).          */
+/* -------------------------------------------------------------------------- */
+
+export const publicInputWorkflowStateEnum = pgEnum("public_input_workflow_state", [
+  "draft",
+  "ready",
+  "open",
+  "commenting_closed",
+  "voting_closed",
+  "closed",
+  "archived",
+]);
+
+export const publicInputProviderAvailabilityEnum = pgEnum(
+  "public_input_provider_availability",
+  ["not_configured", "available", "degraded", "unavailable"],
+);
+
+/**
+ * `polis_hosted` / `polis_self_hosted` are declared for forward schema
+ * compatibility only. A DB CHECK constraint (below) and the service layer
+ * both reject them today — no permitted-services register addendum or
+ * owner authorization exists for a live provider in Phase 4.3.
+ */
+export const publicInputProviderKindEnum = pgEnum("public_input_provider_kind", [
+  "none",
+  "fixture",
+  "polis_hosted",
+  "polis_self_hosted",
+]);
+
+export const publicInputConversationDesignationEnum = pgEnum(
+  "public_input_conversation_designation",
+  ["current", "historical"],
+);
+
+/**
+ * One row per Public Input conversation lifecycle attempt for a topic.
+ * `providerConversationRef` is a protected opaque reference — never joined
+ * into public projections. `version` guards optimistic concurrency for both
+ * workflow transitions and the independent provider-availability axis.
+ */
+export const publicInputConversations = pgTable(
+  "public_input_conversations",
+  {
+    id: text("id").primaryKey(),
+    topicId: text("topic_id")
+      .notNull()
+      .references(() => topics.id, { onDelete: "restrict" }),
+    providerKind: publicInputProviderKindEnum("provider_kind")
+      .notNull()
+      .default("none"),
+    /** Protected opaque ref — never a raw provider URL; never public. */
+    providerConversationRef: text("provider_conversation_ref"),
+    workflowState: publicInputWorkflowStateEnum("workflow_state")
+      .notNull()
+      .default("draft"),
+    providerAvailability: publicInputProviderAvailabilityEnum(
+      "provider_availability",
+    )
+      .notNull()
+      .default("not_configured"),
+    publicTitle: text("public_title").notNull(),
+    publicPrompt: text("public_prompt").notNull(),
+    configurationVersion: integer("configuration_version")
+      .notNull()
+      .default(1),
+    opensAt: timestamp("opens_at", { withTimezone: true }),
+    closesAt: timestamp("closes_at", { withTimezone: true }),
+    version: integer("version").notNull().default(1),
+    createdByAccountId: text("created_by_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    lastTransitionByAccountId: text(
+      "last_transition_by_account_id",
+    ).references(() => accounts.id, { onDelete: "set null" }),
+    designation: publicInputConversationDesignationEnum("designation")
+      .notNull()
+      .default("current"),
+    synthetic: boolean("synthetic").notNull().default(false),
+    ...timestamps,
+  },
+  (table) => [
+    index("public_input_conversations_topic_idx").on(table.topicId),
+    index("public_input_conversations_workflow_idx").on(table.workflowState),
+    index("public_input_conversations_availability_idx").on(
+      table.providerAvailability,
+    ),
+    /** At most one *current* conversation per topic (historical rows are unlimited). */
+    uniqueIndex("public_input_conversations_one_current_per_topic_uidx")
+      .on(table.topicId)
+      .where(sql`${table.designation} = 'current'`),
+    check(
+      "public_input_conversations_public_title_nonblank",
+      sql`char_length(btrim(${table.publicTitle})) > 0`,
+    ),
+    check(
+      "public_input_conversations_public_prompt_nonblank",
+      sql`char_length(btrim(${table.publicPrompt})) > 0`,
+    ),
+    check(
+      "public_input_conversations_configuration_version_positive",
+      sql`${table.configurationVersion} > 0`,
+    ),
+    check(
+      "public_input_conversations_version_positive",
+      sql`${table.version} > 0`,
+    ),
+    check(
+      "public_input_conversations_closes_after_opens",
+      sql`(
+        ${table.opensAt} IS NULL
+        OR ${table.closesAt} IS NULL
+        OR ${table.closesAt} > ${table.opensAt}
+      )`,
+    ),
+    /**
+     * Fail-closed defense in depth: only the two operational kinds may be
+     * stored, regardless of application-layer bugs. Migrating this to allow
+     * a live kind requires its own explicitly-authorized package.
+     */
+    check(
+      "public_input_conversations_kind_operational_only",
+      sql`${table.providerKind} IN ('none', 'fixture')`,
+    ),
+    check(
+      "public_input_conversations_none_kind_has_no_ref",
+      sql`(${table.providerKind} <> 'none') OR (${table.providerConversationRef} IS NULL)`,
+    ),
+  ],
+);
+
+/**
+ * Append-only conversation lifecycle history (immutable via migration trigger).
+ * `fromState` is null only for the initial creation transition into `draft`.
+ * Recovery transitions (`isRecovery = true`) always carry a reason.
+ */
+export const publicInputConversationTransitions = pgTable(
+  "public_input_conversation_transitions",
+  {
+    id: text("id").primaryKey(),
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => publicInputConversations.id, { onDelete: "restrict" }),
+    fromState: publicInputWorkflowStateEnum("from_state"),
+    toState: publicInputWorkflowStateEnum("to_state").notNull(),
+    reason: text("reason"),
+    actorAccountId: text("actor_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    isRecovery: boolean("is_recovery").notNull().default(false),
+    synthetic: boolean("synthetic").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("public_input_conversation_transitions_conversation_idx").on(
+      table.conversationId,
+      table.createdAt,
+    ),
+    index("public_input_conversation_transitions_actor_idx").on(
+      table.actorAccountId,
+    ),
+    check(
+      "public_input_conversation_transitions_recovery_requires_reason",
+      sql`(NOT ${table.isRecovery}) OR (char_length(btrim(${table.reason})) > 0)`,
+    ),
+    check(
+      "public_input_conversation_transitions_from_to_distinct",
+      sql`${table.fromState} IS NULL OR ${table.fromState} <> ${table.toState}`,
+    ),
+  ],
+);
+
 export const foundationTables = {
   persons,
   accounts,
@@ -1573,4 +1755,6 @@ export const foundationTables = {
   contentRevisions,
   claimReviews,
   evidenceReviews,
+  publicInputConversations,
+  publicInputConversationTransitions,
 };

@@ -168,6 +168,12 @@ export const CAPABILITY_ASSURANCE: Partial<
   "workspace.search": "L3_uniqueness",
   "topics.export_staff": "L3_uniqueness",
   "invites.issue": "L3_uniqueness",
+  // Phase 4.3 — Public Input conversation lifecycle: administrator-only
+  // institutional mutations, same default as topics.* above.
+  "consultations.create": "L3_uniqueness",
+  "consultations.transition": "L3_uniqueness",
+  "consultations.manage_provider_mapping": "L3_uniqueness",
+  "consultations.set_availability": "L3_uniqueness",
 };
 
 export function assuranceForCapability(
