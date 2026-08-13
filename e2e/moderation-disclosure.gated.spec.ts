@@ -217,7 +217,9 @@ test.describe("moderation and disclosure (gated)", () => {
     });
 
     await page.context().clearCookies();
-    const response = await page.goto(`/topics/${CEDAR_TOPIC_SLUG}`);
+    const response = await page.goto(
+      `/formal-topics/${CEDAR_TOPIC_SLUG}?section=evidence`,
+    );
     expect(response?.ok()).toBeTruthy();
     await expect(
       page.getByRole("heading", { name: /Claims and evidence/i }),

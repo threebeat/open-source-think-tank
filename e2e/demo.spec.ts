@@ -46,6 +46,9 @@ test.describe("guided demonstration", () => {
     await expect(page).toHaveURL(
       /\/formal-topics\/cedar-river-drought-surcharge\?demoStep=scoping/,
     );
+    await page
+      .getByText("Complete gate status and lineage", { exact: true })
+      .click();
     await expect(
       page.getByRole("heading", { name: "Gate status and lineage" }),
     ).toBeVisible();
@@ -71,13 +74,18 @@ test.describe("guided demonstration", () => {
         name: "Continue to 6. Anonymous aggregate Public Input report",
       })
       .click();
-    await expect(page).toHaveURL(/view=public-input-report/);
+    await expect(page).toHaveURL(
+      /\/formal-topics\/cedar-river-drought-surcharge/,
+    );
     await expect(
       page.getByRole("heading", {
         name: "Anonymous aggregate Public Input report",
       }),
     ).toBeVisible();
-    await expect(page.getByText(/per-person vote rows/i)).toBeVisible();
+    await expect(page.getByText(/per-person vote rows/i).first()).toBeVisible();
+    await expect(page.getByTestId("opinion-group-suppressed")).toContainText(
+      "Suppressed",
+    );
 
     await page
       .getByRole("link", { name: "Continue to 7. Agenda qualification trace" })

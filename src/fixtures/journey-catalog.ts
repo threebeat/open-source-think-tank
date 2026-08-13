@@ -624,7 +624,9 @@ export const publicInputAggregateReports: PublicInputAggregateReport[] = [
     opinionGroups: [
       { label: "Group A", share: 0.34 },
       { label: "Group B", share: 0.37 },
-      { label: "Group C", share: 0.29 },
+      { label: "Group C", share: 0.287 },
+      // Implied cell ≈ 4 at participationCount 1240 — below provisional threshold 5.
+      { label: "Group D", share: 0.003 },
     ],
     crossGroupAgreement: [
       "Publish shortage-stage thresholds before any surcharge applies.",

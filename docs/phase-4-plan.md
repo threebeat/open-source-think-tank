@@ -1,8 +1,8 @@
 # Phase 4 plan — Computational democracy journey & Public Input
 
-**Status:** Active. Phase 3 engineering closure is **owner-accepted** (`APPROVE PHASE 3 COMPLETE`, 2026-08-13). Phase 4.1 is the current package.  
-**Baseline:** `origin/main` at `7254cf5e55cb64426f93f3d7685956655af916ec` (PR #16 merged).  
-**Related:** [architecture-phase-4.md](./architecture-phase-4.md), [0010-computational-democracy-pipeline.md](./decisions/0010-computational-democracy-pipeline.md), [0011-idea-commons-formal-pipeline-separation.md](./decisions/0011-idea-commons-formal-pipeline-separation.md), [phase-3-handoff.md](./phase-3-handoff.md), [product-charter.md](./product-charter.md)
+**Status:** Active. Phase 4.1 is **owner-approved and complete** (`APPROVE PHASE 4.1 COMPLETE`, 2026-08-13; PR #17 merged). Phase **4.2** is complete in this PR and awaits owner approval before **4.3**.  
+**Baseline:** `origin/main` at `122c12c2fa7272340910fe94aed5b6b0701102a0` (PR #17 merged).  
+**Related:** [architecture-phase-4.md](./architecture-phase-4.md), [public-input-provider-assessment.md](./public-input-provider-assessment.md), [0010](./decisions/0010-computational-democracy-pipeline.md), [0011](./decisions/0011-idea-commons-formal-pipeline-separation.md), [0012](./decisions/0012-public-input-provider-boundary.md), [0013](./decisions/0013-canonical-formal-topic-page.md), [phase-3-handoff.md](./phase-3-handoff.md), [product-charter.md](./product-charter.md)
 
 This plan is a **product/engineering contract**. It is **not** legal clearance, counsel disposition, Pol.is vendor approval, production-launch approval, or authorization to install a live consultation provider.
 
@@ -69,8 +69,8 @@ Phase 4 retains these deliverables from the prior MVP plan; **none are installed
 
 | Package | Title | Goal |
 | --- | --- | --- |
-| **4.1** | Institutional contract and synthetic end-to-end demo | Docs + ADRs + guided journey recentering; Idea Commons vs Formal Pipeline; synthetic Public Input report; qualification trace; member actions; no live Pol.is |
-| **4.2** | Pol.is capability / privacy / vendor verification and adapter | Capability matrix, privacy review, vendor/DPA gate, provider-neutral adapter stubs; still no production embed without clearance |
+| **4.1** | Institutional contract and synthetic end-to-end demo | **Complete / owner-approved** (PR #17). |
+| **4.2** | Public Input provider assessment, adapter boundary, canonical topic IA | Capability/vendor assessment; provider-neutral fail-closed adapter; canonical `/formal-topics/[slug]` Overview/Evidence/Discussions; privacy carryovers; **no live embed** |
 | **4.3** | Gated conversation lifecycle and supported embed | Hosted embed behind gated mode; conversation registry; outage/reset/audit hooks |
 | **4.4** | Moderation and aggregate report ingestion | Reasoned moderation; versioned aggregate import; public report projections |
 | **4.5** | Consultation-to-agenda qualification | Transparent multi-signal qualification; no composite truth/importance score |
@@ -78,7 +78,7 @@ Phase 4 retains these deliverables from the prior MVP plan; **none are installed
 | **4.7** | Member action opportunities | Post-decision civic action surfaces with sponsorship/conflict/expiry rules |
 | **4.8** | Hardening and handoff | Security/privacy/a11y hardening; Phase 4 handoff |
 
-Stop after each package for human approval. Do **not** begin 4.2 without explicit owner review of the 4.1 PR.
+Stop after each package for human approval. Do **not** begin 4.3 without explicit owner approval and all vendor/privacy gates. The 4.2 assessment/adapter is **not** authorization for a live embed.
 
 ---
 
@@ -168,21 +168,46 @@ Call `assertEnvironmentSafe()` before any DB client. Production participant data
 
 ---
 
-## 11. Repository hygiene (4.1 Step 0)
+## 11. Repository hygiene
 
-Executed at Phase 4.1 start:
+### 4.1 start
 
-1. Verified `origin/main` = `7254cf5…` (PR #16 descendant).
-2. Inventoried remote branches vs PRs #1–#16; **no open PRs**.
-3. Deleted 15 obsolete remote branches whose PRs were merged (squash-merge divergence ignored; decision based on GitHub merged PR + no open PR).
-4. Preserved: `main` only (plus new Phase 4.1 branch).
-5. Fetched with prune.
+1. Verified `origin/main` = `7254cf5…` (PR #16 descendant); deleted obsolete merged remote branches.
 
-**Branch-protection recommendation (do not silently alter settings):** `main` currently appears unprotected. Recommend requiring PR review + required status checks, and blocking force-push and branch deletion on `main`. Owner/admin action outside this package.
+### 4.2 start
+
+1. Verified `origin/main` = `122c12c…` (PR #17 merged); no open PR on `phase-4/4.1-computational-democracy-demo-recenter`.
+2. Deleted that obsolete remote branch (no force).
+3. Created `phase-4/4.2-public-input-adapter-and-topic-navigation` from clean baseline.
+
+**Branch-protection recommendation (do not silently alter settings):** `main` still appears unprotected. Recommend requiring PR review + required status checks, and blocking force-push and branch deletion on `main`. Owner/admin action outside this package.
 
 ---
 
+## 11a. Phase 4.1 closure record
+
+| Item | Record |
+| --- | --- |
+| Owner instruction | `APPROVE PHASE 4.1 COMPLETE. START PHASE 4.2.` (2026-08-13) |
+| PR #17 | Merged to `main` at `122c12c2fa7272340910fe94aed5b6b0701102a0` |
+| Obsolete branch | `phase-4/4.1-computational-democracy-demo-recenter` deleted after merge confirmation |
+| Branch protection | `main` still appears unprotected — recommend require PR review + required checks; block force-push and deletion. Do not silently modify repository settings. |
+
+## 11b. Package 4.2 — acceptance criteria
+
+1. Dated Pol.is capability/privacy/vendor assessment exists with primary sources, pin, unknowns as blockers, hosted vs self-hosted vs no-provider comparison ([public-input-provider-assessment.md](./public-input-provider-assessment.md)).
+2. ADRs 0012 (provider boundary) and 0013 (canonical topic page) accepted.
+3. Provider-neutral adapter under `src/lib/public-input/provider/` with fixture + no-provider fail-closed paths; zero network calls; no SDK/credentials/migrations/`xid`.
+4. Canonical topic route `/formal-topics/[slug]` with Overview / Evidence / Discussions & Proposals; allowlisted `section` only; legacy redirects preserved; Formal Topics is primary nav entry.
+5. Small-cell suppression uses explicit `reported`/`suppressed` cells (never coerce suppressed → `0%`); recursive forbidden-key leak checks; cell policy documented.
+6. Overview concise; Evidence holds full eligible inventory; Discussions relationships typed/allowlisted; gated relationships empty/not-yet-operational without speculative migration.
+7. public-demo and gated loaders isolated (no slug join); provider outage does not remove Overview/Evidence.
+8. Full verification ladder green; docs mark 4.2 complete and 4.3 awaiting owner approval.
+
+**Non-goals for 4.2:** live Pol.is; production embed; raw export ingestion; provider credentials/env vars; DB migrations; xid; altering GitHub branch-protection settings.
+
 ## 12. Stop conditions
+
 
 Stop if any of the following would be required to “finish” a package:
 
@@ -193,4 +218,4 @@ Stop if any of the following would be required to “finish” a package:
 - Inventing statutory membership or board-binding authority
 - Skipping the verification ladder or weakening tests to pass
 
-After 4.1 PR is green: **stop for owner review**. Do not begin 4.2 without explicit authorization.
+After 4.2 PR is green: **stop for owner review**. Do not begin 4.3 or enable a live embed without explicit owner approval and required vendor/privacy decisions.

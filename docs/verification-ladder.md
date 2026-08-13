@@ -61,6 +61,8 @@ States: `pending` → `approved` | `denied`; `approved` → `expired` | `revoked
 | `GET /api/verification/status` | Status + ladder description |
 | `POST /api/verification/review` | Staff assign / approve / deny / revoke |
 
-## Phase 4.1 note
+## Phase 4.1–4.2 notes
 
-Public Input aggregate projections must never include verification status, artifacts, account IDs, or identity-linking fields (`xid` forbidden until approved). Member action opportunities must not be personalized from verification level or inferred identity. See [phase-4-plan.md](./phase-4-plan.md) and OQ26–OQ28.
+Public Input aggregate projections must never include verification status, artifacts, account IDs, or identity-linking fields (`xid` forbidden until approved). Nested objects/arrays are walked for forbidden keys. Suppressed opinion-group cells must never serialize or render as zero. Member action opportunities must not be personalized from verification level or inferred identity. See [phase-4-plan.md](./phase-4-plan.md), [public-input-provider-assessment.md](./public-input-provider-assessment.md), and OQ26–OQ33.
+
+Canonical topic E2E must prove Overview/Evidence/Discussions navigation, legacy redirects, public-demo vs gated loader isolation, and zero provider network calls from public-demo.

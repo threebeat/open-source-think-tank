@@ -9,7 +9,6 @@ export const primaryNav: NavItem[] = [
   { href: "/formal-topics", label: "Formal Topics" },
   { href: "/process", label: "Process" },
   { href: "/join", label: "How Joining Works" },
-  { href: "/topics", label: "Topics" },
   { href: "/agenda", label: "Agenda" },
   { href: "/transparency", label: "The Public Record" },
   { href: "/about", label: "About" },

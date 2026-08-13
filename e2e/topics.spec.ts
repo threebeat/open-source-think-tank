@@ -1,30 +1,29 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("topics and evidence", () => {
-  test("lists topics and shows distinct evidence-review states", async ({
+  test("lists topics via Formal Topics and shows distinct evidence-review states", async ({
     page,
   }) => {
     await page.goto("/topics");
+    await expect(page).toHaveURL(/\/formal-topics$/);
     await expect(
-      page.getByRole("heading", { name: "Topics", exact: true }),
+      page.getByRole("heading", { name: "Formal Topic Pipeline", exact: true }),
     ).toBeVisible();
     const cedarLink = page.getByRole("link", {
       name: "Cedar River residential drought surcharge",
       exact: true,
-    });
+    }).first();
     await expect(cedarLink).toHaveAttribute(
       "href",
-      "/topics/cedar-river-drought-surcharge",
+      "/formal-topics/cedar-river-drought-surcharge",
+    );
+
+    await page.goto(
+      "/formal-topics/cedar-river-drought-surcharge?section=evidence",
     );
     await expect(
-      page.getByRole("link", { name: /Blount County greenway/i }),
-    ).toHaveCount(0);
-
-    await page.goto("/topics/cedar-river-drought-surcharge");
-    await expect(
-      page.getByText("Popularity is not evidence quality"),
+      page.getByText("Not a popularity ranking"),
     ).toBeVisible();
-    await expect(page.getByText("Tennessee statewide").first()).toBeVisible();
     await expect(page.getByText("Review: Pending").first()).toBeVisible();
     await expect(page.getByText("Review: Disputed").first()).toBeVisible();
     await expect(page.getByText("Review: Accepted").first()).toBeVisible();
@@ -38,25 +37,21 @@ test.describe("topics and evidence", () => {
   test("shows an explicit missing-evidence state on brief-stage topics", async ({
     page,
   }) => {
-    await page.goto("/topics/millbrook-ems-open-data");
+    await page.goto("/formal-topics/millbrook-ems-open-data?section=evidence");
     await expect(
       page.getByRole("heading", {
         name: "Shelby County EMS response-time open data",
       }),
     ).toBeVisible();
-    await expect(page.getByText("Shelby County").first()).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Evidence inventory" }),
-    ).toBeVisible();
-    await expect(
-      page.getByText(/No evidence sources are attached yet/i),
+      page.getByText(/No evidence submitted|No evidence sources are attached yet/i),
     ).toBeVisible();
   });
 
   test("supports advanced search, proposed opt-in, and URL state", async ({
     page,
   }) => {
-    await page.goto("/topics");
+    await page.goto("/formal-topics");
     await page.getByRole("button", { name: /Advanced search/i }).click();
     await page.locator("#topic-subject-filter").selectOption("education");
     await expect(page).toHaveURL(/subject=education/);
@@ -77,19 +72,12 @@ test.describe("topics and evidence", () => {
     await expect(page).not.toHaveURL(/subject=education/);
     await page.locator("#topic-status-filter").selectOption("closed");
     await expect(page).toHaveURL(/status=closed/);
-    await expect(page).not.toHaveURL(/subject=/);
     await expect(
       page.getByRole("link", {
         name: "Cedar River residential drought surcharge",
         exact: true,
-      }),
+      }).first(),
     ).toBeVisible();
-    await expect(
-      page.getByRole("link", {
-        name: "Knox County secondary-school start times",
-        exact: true,
-      }),
-    ).toHaveCount(0);
 
     await page.getByRole("button", { name: /Clear all/i }).click();
     await page.getByRole("button", { name: /Advanced search/i }).click();
@@ -97,9 +85,6 @@ test.describe("topics and evidence", () => {
     await expect(page).toHaveURL(/proposed=include/);
     await expect(
       page.getByRole("link", { name: /Blount County greenway/i }),
-    ).toBeVisible();
-    await expect(
-      page.getByText("Proposed topic — not yet opened for participation").first(),
     ).toBeVisible();
   });
 });

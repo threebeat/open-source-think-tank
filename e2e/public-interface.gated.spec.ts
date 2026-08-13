@@ -25,7 +25,7 @@ test.describe("3.10 gated public interface", () => {
   test("published topics list links to hardened detail @desktop", async ({
     page,
   }) => {
-    await page.goto("/topics");
+    await page.goto("/formal-topics");
     await expect(
       page.getByRole("heading", { name: "Published topics" }),
     ).toBeVisible({ timeout: 30_000 });
@@ -40,7 +40,7 @@ test.describe("3.10 gated public interface", () => {
     await expectSeriousAxeClean(page);
 
     // Full navigation (not soft-nav) so document title metadata is applied.
-    await page.goto(`/topics/${CEDAR_TOPIC_SLUG}`);
+    await page.goto(`/formal-topics/${CEDAR_TOPIC_SLUG}?section=evidence`);
     await expect(
       page.getByRole("heading", { name: /How to read this publication/i }),
     ).toBeVisible({ timeout: 30_000 });
@@ -52,7 +52,7 @@ test.describe("3.10 gated public interface", () => {
   test("detail shows claim/evidence, evidence conflict, and revision summary only @desktop", async ({
     page,
   }) => {
-    await page.goto(`/topics/${CEDAR_TOPIC_SLUG}`);
+    await page.goto(`/formal-topics/${CEDAR_TOPIC_SLUG}?section=evidence`);
     await expect(
       page.getByTestId("gated-public-topic-view"),
     ).toBeVisible({ timeout: 30_000 });
@@ -77,9 +77,9 @@ test.describe("3.10 gated public interface", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(`/topics/${CEDAR_TOPIC_SLUG}`);
+    await page.goto(`/formal-topics/${CEDAR_TOPIC_SLUG}?section=evidence`);
     await expect(
-      page.getByRole("heading", { name: /Claims and evidence/i }),
+      page.getByRole("heading", { name: "Claims and evidence", exact: true }),
     ).toBeVisible({ timeout: 30_000 });
     await expectNoHorizontalOverflow(page);
     await expectSeriousAxeClean(page);
@@ -99,7 +99,9 @@ test.describe("3.10 gated public interface", () => {
   });
 
   test("unpublished slug remains a generic 404 @desktop", async ({ page }) => {
-    const response = await page.goto("/topics/does-not-exist-unpublished-slug");
+    const response = await page.goto(
+      "/formal-topics/does-not-exist-unpublished-slug",
+    );
     expect(response?.status()).toBe(404);
   });
 
@@ -108,13 +110,15 @@ test.describe("3.10 gated public interface", () => {
   }) => {
     // Pause≠unpublish is covered by unit tests; this visitor check avoids an
     // extra auth sign-in that can trip AUTH_RATE_LIMITED in the serial suite.
-    const response = await page.goto(`/topics/${CEDAR_TOPIC_SLUG}`);
+    const response = await page.goto(
+      `/formal-topics/${CEDAR_TOPIC_SLUG}?section=evidence`,
+    );
     expect(response?.ok()).toBeTruthy();
     await expect(page.getByTestId("gated-public-topic-view")).toBeVisible({
       timeout: 30_000,
     });
     await expect(
-      page.getByRole("heading", { name: /Claims and evidence/i }),
+      page.getByRole("heading", { name: /^Evidence$/ }),
     ).toBeVisible();
     await expect(
       page.getByText(/\(operational\)/i).first(),

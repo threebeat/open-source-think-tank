@@ -61,14 +61,15 @@ Default decision: **deny**.
 | `topics.export_staff` | active | reviewer or administrator | — | Staff topic-package export (3.11); L3 uniqueness; allowlisted projector; no private notes/disclosure detail/account IDs |
 | `invites.issue` | active | administrator | — | Hashed token at rest; raw link returned once; never public-demo |
 
-### Phase 4.1 authority notes (public-demo / pre-deliberation)
+### Phase 4.1–4.2 authority notes (public-demo / pre-deliberation)
 
-Phase 4.1 does **not** add gated capabilities for live Pol.is. Pre-deliberation product rules (see [ADR 0010](./decisions/0010-computational-democracy-pipeline.md)):
+Phase 4.1–4.2 do **not** add gated capabilities for live Pol.is. Pre-deliberation product rules (see [ADR 0010](./decisions/0010-computational-democracy-pipeline.md), [ADR 0012](./decisions/0012-public-input-provider-boundary.md)):
 
 - Moderators may perform safety/relevance/duplication/formatting/process interventions with a recorded reason.
 - Moderators, administrators, board members, and ordinary participants **cannot** assign agenda priority, privately promote proposals, directly promote pre-deliberation topics, alter consultation metrics, or receive elevated badges/ranking advantages on ordinary Idea Commons contributions.
 - Formal Topic Pipeline entry is criteria-based and auditable — never a preference shortcut.
-- Live consultation provider capabilities remain deferred to packages 4.2+ after permitted-services approval.
+- Provider adapter capabilities are engineering manifests only; live consultation provider install remains deferred to **4.3+** after permitted-services approval, vendor/privacy gates, and owner authorization.
+- Canonical topic sections are public navigation states, not new institutional capabilities.
 
 ### Operator actions (not account capabilities)
 

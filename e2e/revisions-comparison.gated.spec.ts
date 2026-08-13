@@ -54,7 +54,7 @@ test.describe("revisions and evidence comparison (gated)", () => {
   test("published topic groups supporting/counterevidence with summary-only revisions @desktop", async ({
     page,
   }) => {
-    await page.goto(`/topics/${CEDAR_TOPIC_SLUG}`);
+    await page.goto(`/formal-topics/${CEDAR_TOPIC_SLUG}?section=evidence`);
     await expect(
       page.getByRole("heading", { name: /Claims and evidence/i }),
     ).toBeVisible({ timeout: 30_000 });
@@ -95,7 +95,7 @@ test.describe("revisions and evidence comparison (gated)", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(`/topics/${CEDAR_TOPIC_SLUG}`);
+    await page.goto(`/formal-topics/${CEDAR_TOPIC_SLUG}?section=evidence`);
     await expect(
       page.getByRole("heading", { name: /Claims and evidence/i }),
     ).toBeVisible({ timeout: 30_000 });

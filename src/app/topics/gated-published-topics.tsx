@@ -27,7 +27,10 @@ export default async function GatedPublishedTopicsPage() {
     return (
       <MainContainer className="space-y-8">
         <Breadcrumbs
-          items={[{ href: "/", label: "Home" }, { label: "Topics" }]}
+          items={[
+            { href: "/", label: "Home" },
+            { label: "Formal Topics" },
+          ]}
         />
         <PublicReadUnavailable contextLabel="list" />
       </MainContainer>
@@ -39,10 +42,13 @@ export default async function GatedPublishedTopicsPage() {
   return (
     <MainContainer className="space-y-8">
       <Breadcrumbs
-        items={[{ href: "/", label: "Home" }, { label: "Topics" }]}
+        items={[
+          { href: "/", label: "Home" },
+          { label: "Formal Topics" },
+        ]}
       />
       <PageHeader
-        eyebrow="Alpha publications"
+        eyebrow="Alpha publications · Formal Topic Pipeline"
         title="Published topics"
         description="Invite-only alpha publications available to anonymous visitors. Only topics with publication status published appear here — drafts, review queues, and unpublished rows never do."
       />
@@ -77,7 +83,7 @@ export default async function GatedPublishedTopicsPage() {
               <article className="border-t border-border py-5 first:border-t-0 first:pt-0">
                 <h2 className="font-heading text-xl text-foreground break-words">
                   <Link
-                    href={`/topics/${topic.slug}`}
+                    href={`/formal-topics/${topic.slug}`}
                     className="inline-flex min-h-11 items-center text-foreground underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                   >
                     {topic.title}

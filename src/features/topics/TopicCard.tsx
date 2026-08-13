@@ -40,7 +40,7 @@ export function TopicCard({ topic, geographyLabel }: TopicCardProps) {
       </div>
       <h2 className="mt-3 font-heading text-xl text-foreground">
         <Link
-          href={`/topics/${topic.slug}`}
+          href={`/formal-topics/${topic.slug}`}
           className="rounded-sm underline-offset-4 hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
         >
           {topic.title}

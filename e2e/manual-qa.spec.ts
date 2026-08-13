@@ -114,7 +114,7 @@ test.describe("phase-1 manual QA automation", () => {
     await expect(
       page.getByRole("heading", { name: "1. Idea Commons discussion" }),
     ).toBeVisible();
-    await page.goto("/topics/cedar-river-drought-surcharge");
+    await page.goto("/formal-topics/cedar-river-drought-surcharge");
     await expect(
       page.getByRole("heading", {
         name: "Cedar River residential drought surcharge",

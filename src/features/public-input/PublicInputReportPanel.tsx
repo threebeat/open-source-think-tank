@@ -1,5 +1,8 @@
 import { DisclosureNotice } from "@/components/DisclosureNotice";
-import type { PublicInputPublicDto } from "@/features/public-input/aggregate-report";
+import {
+  formatOpinionGroupShare,
+  type PublicInputPublicDto,
+} from "@/features/public-input/aggregate-report";
 
 type Props = {
   report: PublicInputPublicDto;
@@ -46,8 +49,21 @@ export function PublicInputReportPanel({ report }: Props) {
         </h3>
         <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
           {report.opinionGroups.map((group) => (
-            <li key={group.label}>
-              {group.label}: {(group.share * 100).toFixed(0)}%
+            <li
+              key={group.label}
+              data-testid={
+                group.status === "suppressed"
+                  ? "opinion-group-suppressed"
+                  : "opinion-group-reported"
+              }
+            >
+              {group.label}: {formatOpinionGroupShare(group)}
+              {group.status === "suppressed" ? (
+                <span className="sr-only">
+                  {" "}
+                  (privacy-suppressed; not a zero share)
+                </span>
+              ) : null}
             </li>
           ))}
         </ul>

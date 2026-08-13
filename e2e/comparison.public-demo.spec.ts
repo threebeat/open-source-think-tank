@@ -5,13 +5,15 @@ test.describe("public-demo evidence comparison", () => {
   test("fixture topic page offers local comparison without gated APIs @desktop", async ({
     page,
   }) => {
-    await page.goto("/topics");
-    const topicLink = page.locator('a[href^="/topics/"]').first();
+    await page.goto("/formal-topics");
+    const topicLink = page.locator('a[href^="/formal-topics/"]').first();
     await expect(topicLink).toBeVisible({ timeout: 30_000 });
     await topicLink.click();
+    await page.getByRole("link", { name: "Evidence", exact: true }).click();
+    await expect(page).toHaveURL(/section=evidence/);
 
     await expect(
-      page.getByRole("heading", { name: /Claims and evidence/i }),
+      page.getByRole("heading", { name: /Claims and approaches/i }),
     ).toBeVisible({ timeout: 30_000 });
     await expect(
       page.getByRole("heading", { name: "Supporting evidence" }).first(),
@@ -45,7 +47,7 @@ test.describe("public-demo evidence comparison", () => {
     });
     await page.reload();
     await expect(
-      page.getByRole("heading", { name: /Claims and evidence/i }),
+      page.getByRole("heading", { name: /Claims and approaches/i }),
     ).toBeVisible({ timeout: 30_000 });
     expect(revisionApiHits).toEqual([]);
 

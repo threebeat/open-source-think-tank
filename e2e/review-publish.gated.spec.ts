@@ -41,7 +41,9 @@ test.describe("review and publish (gated)", () => {
   });
 
   test("anonymous unpublished slug is not found", async ({ page }) => {
-    const response = await page.goto("/topics/does-not-exist-unpublished-slug");
+    const response = await page.goto(
+      "/formal-topics/does-not-exist-unpublished-slug",
+    );
     expect(response?.status()).toBe(404);
   });
 });

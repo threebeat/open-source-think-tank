@@ -1,22 +1,46 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { connection } from "next/server";
 
 import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { PageHeader } from "@/components/PageHeader";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { MainContainer } from "@/components/layout/MainContainer";
+import { TopicsExplorer } from "@/features/topics/TopicsExplorer";
+import { listTopics } from "@/domain/selectors";
+import { fixtureCatalog } from "@/fixtures";
 import {
   formalTopicGateViews,
   journeyTrajectories,
 } from "@/fixtures/journey-catalog";
+import { resolveAppMode } from "@/lib/env/app-mode";
 
-export const metadata: Metadata = {
-  title: "Formal Topic Pipeline",
-  description:
-    "Topics that passed published gates — distinct from informal Idea Commons discussion.",
-};
+export const dynamic = "force-dynamic";
 
-export default function FormalTopicsPage() {
+export async function generateMetadata(): Promise<Metadata> {
+  if (resolveAppMode() === "gated") {
+    return {
+      title: "Published topics",
+      description:
+        "Allowlisted published formal topics from the gated alpha projection.",
+    };
+  }
+  return {
+    title: "Formal Topic Pipeline",
+    description:
+      "Topics that passed published gates — distinct from informal Idea Commons discussion.",
+  };
+}
+
+export default async function FormalTopicsPage() {
+  if (resolveAppMode() === "gated") {
+    await connection();
+    const { default: GatedPublishedTopicsPage } = await import(
+      "@/app/topics/gated-published-topics"
+    );
+    return <GatedPublishedTopicsPage />;
+  }
+
   return (
     <MainContainer className="space-y-10">
       <Breadcrumbs
@@ -84,7 +108,7 @@ export default function FormalTopicsPage() {
           id="formal-list-heading"
           className="font-heading text-2xl text-foreground"
         >
-          Gate views
+          Gate-passed topics
         </h2>
         <ul className="space-y-3">
           {formalTopicGateViews.map((gate) => (
@@ -93,7 +117,12 @@ export default function FormalTopicsPage() {
                 href={`/formal-topics/${gate.topicSlug}`}
                 className="font-medium text-primary underline-offset-4 hover:underline"
               >
-                {gate.topicSlug}
+                {/* Prefer human titles via gate slug map; titles load on detail. */}
+                {gate.topicSlug === "cedar-river-drought-surcharge"
+                  ? "Cedar River residential drought surcharge"
+                  : gate.topicSlug === "cedar-river-billing-ops-gap"
+                    ? "Cedar River billing-operations readiness (deferred)"
+                    : gate.topicSlug}
               </Link>
               <p className="text-sm text-muted-foreground">
                 Stage: {gate.currentStage} · {gate.originSummary}
@@ -101,6 +130,21 @@ export default function FormalTopicsPage() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section className="space-y-4" aria-labelledby="browse-briefs-heading">
+        <h2
+          id="browse-briefs-heading"
+          className="font-heading text-2xl text-foreground"
+        >
+          Browse synthetic topic briefs
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Secondary fixture browser for demonstration topics. Canonical detail
+          pages open on Overview with Evidence and Discussions &amp; Proposals
+          controls.
+        </p>
+        <TopicsExplorer topics={listTopics(fixtureCatalog)} />
       </section>
 
       <p className="text-sm text-muted-foreground">

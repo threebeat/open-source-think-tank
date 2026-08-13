@@ -129,10 +129,13 @@ function EvidenceBlock({
 
 type GatedPublicTopicViewProps = {
   projection: PublicTopicProjection;
+  /** When true, omit the page chrome so the view can embed in Evidence. */
+  embedded?: boolean;
 };
 
 export function GatedPublicTopicView({
   projection,
+  embedded = false,
 }: GatedPublicTopicViewProps) {
   const evidenceByKey = new Map(
     projection.evidence.map((row) => [row.key, row]),
@@ -142,69 +145,73 @@ export function GatedPublicTopicView({
 
   return (
     <div className="space-y-10" data-testid="gated-public-topic-view">
-      <PageHeader
-        eyebrow="Alpha publication"
-        title={projection.title}
-        description={projection.question}
-        actions={
-          <>
-            <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
-              {geographyLabel(projection.geography)}
-            </span>
-            <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
-              {projection.operationalLabel}
-            </span>
-            <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
-              <PublicTime
-                dateTime={projection.publishedAt}
-                prefix="Published "
-              />
-            </span>
-          </>
-        }
-      />
+      {!embedded ? (
+        <>
+          <PageHeader
+            eyebrow="Alpha publication"
+            title={projection.title}
+            description={projection.question}
+            actions={
+              <>
+                <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+                  {geographyLabel(projection.geography)}
+                </span>
+                <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+                  {projection.operationalLabel}
+                </span>
+                <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+                  <PublicTime
+                    dateTime={projection.publishedAt}
+                    prefix="Published "
+                  />
+                </span>
+              </>
+            }
+          />
 
-      <dl className="grid gap-3 text-sm sm:grid-cols-3">
-        <div>
-          <dt className="font-medium text-foreground">Tennessee geography</dt>
-          <dd className="mt-1 text-muted-foreground break-words">
-            {geographyLabel(projection.geography)}
-          </dd>
-        </div>
-        <div>
-          <dt className="font-medium text-foreground">Operational status</dt>
-          <dd className="mt-1 text-muted-foreground break-words">
-            {projection.operationalLabel}
-          </dd>
-        </div>
-        <div>
-          <dt className="font-medium text-foreground">Publication date</dt>
-          <dd className="mt-1 text-muted-foreground">
-            <PublicTime dateTime={projection.publishedAt} />
-          </dd>
-        </div>
-      </dl>
+          <dl className="grid gap-3 text-sm sm:grid-cols-3">
+            <div>
+              <dt className="font-medium text-foreground">Tennessee geography</dt>
+              <dd className="mt-1 text-muted-foreground break-words">
+                {geographyLabel(projection.geography)}
+              </dd>
+            </div>
+            <div>
+              <dt className="font-medium text-foreground">Operational status</dt>
+              <dd className="mt-1 text-muted-foreground break-words">
+                {projection.operationalLabel}
+              </dd>
+            </div>
+            <div>
+              <dt className="font-medium text-foreground">Publication date</dt>
+              <dd className="mt-1 text-muted-foreground">
+                <PublicTime dateTime={projection.publishedAt} />
+              </dd>
+            </div>
+          </dl>
 
-      <DisclosureNotice title="Invite-only alpha publication" tone="caution">
-        This is a resettable alpha publication from the gated environment. It is
-        not government adoption, legal authority, or truth certification. No
-        public author attribution is shown while that question remains open.
-      </DisclosureNotice>
+          <DisclosureNotice title="Invite-only alpha publication" tone="caution">
+            This is a resettable alpha publication from the gated environment. It is
+            not government adoption, legal authority, or truth certification. No
+            public author attribution is shown while that question remains open.
+          </DisclosureNotice>
 
-      <section className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-3 min-w-0">
-          <h2 className="font-heading text-xl text-foreground">Background</h2>
-          <p className="text-sm leading-6 text-muted-foreground break-words whitespace-pre-wrap">
-            {projection.background}
-          </p>
-        </div>
-        <div className="space-y-3 min-w-0">
-          <h2 className="font-heading text-xl text-foreground">Scope</h2>
-          <p className="text-sm leading-6 text-muted-foreground break-words whitespace-pre-wrap">
-            {projection.scope}
-          </p>
-        </div>
-      </section>
+          <section className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-3 min-w-0">
+              <h2 className="font-heading text-xl text-foreground">Background</h2>
+              <p className="text-sm leading-6 text-muted-foreground break-words whitespace-pre-wrap">
+                {projection.background}
+              </p>
+            </div>
+            <div className="space-y-3 min-w-0">
+              <h2 className="font-heading text-xl text-foreground">Scope</h2>
+              <p className="text-sm leading-6 text-muted-foreground break-words whitespace-pre-wrap">
+                {projection.scope}
+              </p>
+            </div>
+          </section>
+        </>
+      ) : null}
 
       <section
         className="space-y-3"
@@ -453,7 +460,7 @@ export function GatedPublicTopicView({
 
       <p>
         <Link
-          href="/topics"
+          href="/formal-topics"
           className="inline-flex min-h-11 items-center text-sm text-primary underline underline-offset-2"
         >
           Back to topics

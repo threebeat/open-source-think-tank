@@ -135,12 +135,24 @@ Controls below are **implemented** through 2.11 unless noted as still blocked.
 | Preference-based pre-deliberation promotion (4.1) | Authority helpers forbid private promotion / agenda priority / elevated badges; tests assert |
 | Public Input re-identification (4.1) | Allowlisted aggregate DTOs only; small-cell suppression; forbid xid/provider IDs/vote rows in public surfaces |
 | Civic-action profiling (4.1) | Member actions use explicit fixture geography/interests; ban vote/ideology personalization |
-| Live Pol.is from public-demo (4.1) | No provider client/network calls; synthetic fixtures only until 4.2+ register approval |
+| Live Pol.is from public-demo (4.1/4.2) | No provider client/network calls; fixture + no-provider adapters only; assessment is not install auth |
+| Suppressed cell vs zero conflation (4.2) | Explicit `status: suppressed` + `share: null`; UI “Suppressed”; recursive leak tests |
+| Nested projection leaks (4.2) | Recursive forbidden-key walker (xid, voteMatrix, tokens, rawProviderUrl, …) |
+| Provider impersonation / malicious embed origin (4.2/4.3) | Host allowlist + HTTPS + reject credential-bearing URLs in adapter; no live iframe in 4.2 |
+| Secret-bearing report/admin links (4.2) | Forbidden in public DTOs; credential query rejection in embed validator |
+| Participant re-identification / cross-conversation correlation (4.2) | Aggregates only; xid forbidden; no identity linkage fields |
+| Cookie/device-linkage (hosted provider) (4.2 blocker) | Documented in assessment; no live cookies from our app to provider in 4.2 |
+| Malicious/malformed provider exports / schema drift (4.4+) | No export ingest in 4.2; future versioned aggregate descriptors only |
+| Small-cell / differencing attacks (4.2) | Suppression policy on derived cells; production threshold still OQ27 |
+| Moderator misuse / preference promotion (4.1–4.2) | Authority rules + informal/formal distinctions on Discussions |
+| Iframe clickjacking / CSP / third-party JS (4.3 blocker) | OQ33; restrictive iframe policy documented for later package |
+| Provider outage / degraded operation (4.2) | Fail-closed `PUBLIC_INPUT_PROVIDER_UNAVAILABLE`; Overview/Evidence remain |
+| Public-demo contacting a provider (4.2) | `networkCallsAllowed: false`; zero provider packages/env vars |
 
-## Explicit non-goals for Phase 1 / Phase 2 public-demo / Phase 4.1
+## Explicit non-goals for Phase 1 / Phase 2 public-demo / Phase 4.1–4.2
 
 - Production authentication on the public demo
-- Live Pol.is install or undocumented provider features in 4.1
+- Live Pol.is install, credentials, production embed, raw export ingest, or undocumented provider features in 4.1–4.2
 - Penetration-test certification as a Phase 2 exit criterion (review in 2.12)
 - Claiming statistical representation of any population
 - Treating owner risk acceptance as counsel clearance
