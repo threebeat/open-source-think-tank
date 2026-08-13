@@ -256,6 +256,12 @@ async function deleteResetTables(db: FoundationDb): Promise<void> {
       `UPDATE ${quoteIdent("conversation_pseudonyms")} SET superseded_by_id = NULL`,
     ),
   );
+  // Break self-FK before deleting public_input_reports (Phase 4.4 supersession chain).
+  await db.execute(
+    sql.raw(
+      `UPDATE ${quoteIdent("public_input_reports")} SET superseded_by_report_id = NULL`,
+    ),
+  );
 
   for (const table of DELETE_ORDER) {
     await db.execute(sql.raw(`DELETE FROM ${quoteIdent(table)}`));

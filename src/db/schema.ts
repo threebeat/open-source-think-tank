@@ -8,6 +8,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  real,
   text,
   timestamp,
   uniqueIndex,
@@ -1719,6 +1720,446 @@ export const publicInputConversationTransitions = pgTable(
   ],
 );
 
+// ---------------------------------------------------------------------------
+// Phase 4.4 — aggregate report ingestion + Public Input moderation
+// (ADR 0018 aggregate-only import, ADR 0019 immutable versions/publication,
+// ADR 0020 provider vs institutional moderation axes, ADR 0021 complementary
+// small-cell suppression). Operational source kinds stay `fixture` |
+// `manual_aggregate` only — `polis_hosted` / `polis_self_hosted` exist for
+// forward schema compatibility and are rejected by a DB CHECK + the service
+// layer (src/lib/public-input/reports/service.ts), matching the 4.3
+// provider-kind pattern. No raw provider export / ZIP / CSV / object storage;
+// no participant rows, vote matrices, `xid`, tokens, raw URLs, or secrets are
+// ever persisted here.
+// ---------------------------------------------------------------------------
+
+export const publicInputReportSourceKindEnum = pgEnum(
+  "public_input_report_source_kind",
+  ["fixture", "manual_aggregate", "polis_hosted", "polis_self_hosted"],
+);
+
+export const publicInputReportWorkflowStateEnum = pgEnum(
+  "public_input_report_workflow_state",
+  ["imported", "validated", "under_review", "published", "rejected", "superseded"],
+);
+
+export const publicInputFindingKindEnum = pgEnum("public_input_finding_kind", [
+  "cross_group_agreement",
+  "meaningful_disagreement",
+]);
+
+export const publicInputFindingPublicationEnum = pgEnum(
+  "public_input_finding_publication",
+  ["included", "withheld", "superseded"],
+);
+
+export const publicInputProviderModerationStatusEnum = pgEnum(
+  "public_input_provider_moderation_status",
+  ["pending", "accepted", "rejected"],
+);
+
+/** Published-projection cell status for an opinion-group row (ADR 0021). */
+export const publicInputReportGroupCellStatusEnum = pgEnum(
+  "public_input_report_group_cell_status",
+  ["reported", "suppressed", "omitted"],
+);
+
+/** Institutional finding-eligibility decision kind (ADR 0020). */
+export const publicInputReportModerationActionEnum = pgEnum(
+  "public_input_report_moderation_action",
+  ["include", "withhold", "supersede_finding"],
+);
+
+/**
+ * Documentation-only axis distinction (no dedicated DB column needs this
+ * union): `provider_side_record` rows live in
+ * `public_input_provider_moderation_records` (observational provenance);
+ * `institutional_finding_decision` rows live in
+ * `public_input_report_moderation_actions` (append-only reasoned decisions).
+ * Never collapse these two axes (ADR 0020).
+ */
+export type PublicInputReportModerationAxis =
+  | "provider_side_record"
+  | "institutional_finding_decision";
+
+/**
+ * One row per validated aggregate-only import attempt (ADR 0018). Immutable
+ * after insert (trigger below) — corrections require a new import version,
+ * never an in-place edit. `canonicalHash` is the sha256 hex digest of the
+ * canonicalized import payload (src/lib/public-input/reports/hash.ts) and
+ * gives idempotent re-import within a conversation.
+ */
+export const publicInputReportImports = pgTable(
+  "public_input_report_imports",
+  {
+    id: text("id").primaryKey(),
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => publicInputConversations.id, { onDelete: "restrict" }),
+    sourceKind: publicInputReportSourceKindEnum("source_kind").notNull(),
+    schemaVersion: text("schema_version").notNull(),
+    methodVersion: text("method_version").notNull(),
+    providerExportVersionLabel: text("provider_export_version_label"),
+    canonicalHash: text("canonical_hash").notNull(),
+    generatedAt: timestamp("generated_at", { withTimezone: true }),
+    importedAt: timestamp("imported_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    importedByAccountId: text("imported_by_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    participationCount: integer("participation_count").notNull(),
+    commentCount: integer("comment_count").notNull(),
+    voteCount: integer("vote_count").notNull(),
+    participationSufficiency: text("participation_sufficiency").notNull(),
+    representationLimitations: text("representation_limitations").notNull(),
+    /** Bounded provider-side moderation summary counts only — never rejected statement text. */
+    moderationReviewedCount: integer("moderation_reviewed_count")
+      .notNull()
+      .default(0),
+    moderationAcceptedCount: integer("moderation_accepted_count")
+      .notNull()
+      .default(0),
+    moderationRejectedCount: integer("moderation_rejected_count")
+      .notNull()
+      .default(0),
+    moderationPolicyVersion: text("moderation_policy_version"),
+    synthetic: boolean("synthetic").notNull().default(false),
+  },
+  (table) => [
+    index("public_input_report_imports_conversation_idx").on(
+      table.conversationId,
+    ),
+    uniqueIndex("public_input_report_imports_conversation_hash_uidx").on(
+      table.conversationId,
+      table.canonicalHash,
+    ),
+    check(
+      "public_input_report_imports_source_kind_operational_only",
+      sql`${table.sourceKind} IN ('fixture', 'manual_aggregate')`,
+    ),
+    check(
+      "public_input_report_imports_canonical_hash_format",
+      sql`${table.canonicalHash} ~ '^[0-9a-f]{64}$'`,
+    ),
+    check(
+      "public_input_report_imports_participation_nonnegative",
+      sql`${table.participationCount} >= 0`,
+    ),
+    check(
+      "public_input_report_imports_comment_nonnegative",
+      sql`${table.commentCount} >= 0`,
+    ),
+    check(
+      "public_input_report_imports_vote_nonnegative",
+      sql`${table.voteCount} >= 0`,
+    ),
+    check(
+      "public_input_report_imports_moderation_counts_nonnegative",
+      sql`${table.moderationReviewedCount} >= 0 AND ${table.moderationAcceptedCount} >= 0 AND ${table.moderationRejectedCount} >= 0`,
+    ),
+    check(
+      "public_input_report_imports_moderation_counts_consistent",
+      sql`(${table.moderationAcceptedCount} + ${table.moderationRejectedCount}) <= ${table.moderationReviewedCount}`,
+    ),
+    check(
+      "public_input_report_imports_sufficiency_nonblank",
+      sql`char_length(btrim(${table.participationSufficiency})) > 0`,
+    ),
+    check(
+      "public_input_report_imports_limitations_nonblank",
+      sql`char_length(btrim(${table.representationLimitations})) > 0`,
+    ),
+  ],
+);
+
+/**
+ * Immutable report version (ADR 0019). Content rows (this table + groups +
+ * findings) are never updated after create — a correction is a new
+ * (conversationId, version) row. `topicId` is denormalized from the owning
+ * conversation for join safety and must equal
+ * `public_input_conversations.topic_id` (enforced by the service layer at
+ * create time — cross-table CHECKs are not expressible in SQL here).
+ * `version` is the monotonic report-version number; `concurrencyVersion` is a
+ * separate optimistic-concurrency token bumped on every workflow mutation of
+ * this same row (review/publish/reject/supersede).
+ */
+export const publicInputReports = pgTable(
+  "public_input_reports",
+  {
+    id: text("id").primaryKey(),
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => publicInputConversations.id, { onDelete: "restrict" }),
+    importId: text("import_id")
+      .notNull()
+      .references(() => publicInputReportImports.id, { onDelete: "restrict" }),
+    topicId: text("topic_id")
+      .notNull()
+      .references(() => topics.id, { onDelete: "restrict" }),
+    version: integer("version").notNull(),
+    concurrencyVersion: integer("concurrency_version").notNull().default(1),
+    workflowState: publicInputReportWorkflowStateEnum("workflow_state")
+      .notNull()
+      .default("imported"),
+    publicTitle: text("public_title").notNull(),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    /** Set at publish time; never edited by moderators. */
+    publisherAccountId: text("publisher_account_id").references(
+      () => accounts.id,
+      { onDelete: "set null" },
+    ),
+    /** Denormalized from the owning import's `importedByAccountId` (same-actor provenance checks). */
+    importerAccountId: text("importer_account_id").references(
+      () => accounts.id,
+      { onDelete: "set null" },
+    ),
+    supersededByReportId: text("superseded_by_report_id"),
+    isLatestPublished: boolean("is_latest_published").notNull().default(false),
+    synthetic: boolean("synthetic").notNull().default(false),
+    ...timestamps,
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.supersededByReportId],
+      foreignColumns: [table.id],
+      name: "public_input_reports_superseded_by_report_id_fk",
+    }),
+    index("public_input_reports_conversation_idx").on(table.conversationId),
+    index("public_input_reports_workflow_idx").on(table.workflowState),
+    index("public_input_reports_topic_idx").on(table.topicId),
+    uniqueIndex("public_input_reports_conversation_version_uidx").on(
+      table.conversationId,
+      table.version,
+    ),
+    /** At most one currently-published report per conversation. */
+    uniqueIndex("public_input_reports_one_latest_published_uidx")
+      .on(table.conversationId)
+      .where(sql`${table.isLatestPublished} = true`),
+    check(
+      "public_input_reports_version_positive",
+      sql`${table.version} > 0`,
+    ),
+    check(
+      "public_input_reports_concurrency_version_positive",
+      sql`${table.concurrencyVersion} > 0`,
+    ),
+    check(
+      "public_input_reports_public_title_nonblank",
+      sql`char_length(btrim(${table.publicTitle})) > 0`,
+    ),
+    check(
+      "public_input_reports_not_self_superseding",
+      sql`${table.supersededByReportId} IS NULL OR ${table.supersededByReportId} <> ${table.id}`,
+    ),
+    check(
+      "public_input_reports_latest_published_requires_published_state",
+      sql`(NOT ${table.isLatestPublished}) OR (${table.workflowState} = 'published')`,
+    ),
+    check(
+      "public_input_reports_published_requires_metadata",
+      sql`(${table.workflowState} <> 'published') OR (${table.publishedAt} IS NOT NULL AND ${table.publisherAccountId} IS NOT NULL)`,
+    ),
+  ],
+);
+
+/**
+ * Opinion-group rows for a report version. `rawShare` is the staff-only value
+ * from the import; `publishedShare` is the value shown in the public
+ * projection after complementary small-cell suppression is applied at
+ * publish time (src/lib/public-input/reports/suppression.ts) — `null`
+ * whenever `publishedStatus` is not `reported`. Suppressed values are never
+ * coerced to `0`.
+ */
+export const publicInputReportGroups = pgTable(
+  "public_input_report_groups",
+  {
+    id: text("id").primaryKey(),
+    reportId: text("report_id")
+      .notNull()
+      .references(() => publicInputReports.id, { onDelete: "restrict" }),
+    label: text("label").notNull(),
+    displayOrder: integer("display_order").notNull().default(0),
+    rawShare: real("raw_share").notNull(),
+    publishedStatus: publicInputReportGroupCellStatusEnum("published_status")
+      .notNull()
+      .default("reported"),
+    publishedShare: real("published_share"),
+    synthetic: boolean("synthetic").notNull().default(false),
+  },
+  (table) => [
+    index("public_input_report_groups_report_idx").on(table.reportId),
+    uniqueIndex("public_input_report_groups_report_label_uidx").on(
+      table.reportId,
+      table.label,
+    ),
+    uniqueIndex("public_input_report_groups_report_order_uidx").on(
+      table.reportId,
+      table.displayOrder,
+    ),
+    check(
+      "public_input_report_groups_label_nonblank",
+      sql`char_length(btrim(${table.label})) > 0`,
+    ),
+    check(
+      "public_input_report_groups_raw_share_bounds",
+      sql`${table.rawShare} >= 0 AND ${table.rawShare} <= 1`,
+    ),
+    check(
+      "public_input_report_groups_published_share_bounds",
+      sql`${table.publishedShare} IS NULL OR (${table.publishedShare} >= 0 AND ${table.publishedShare} <= 1)`,
+    ),
+    check(
+      "public_input_report_groups_published_share_matches_status",
+      sql`(${table.publishedStatus} = 'reported' AND ${table.publishedShare} IS NOT NULL) OR (${table.publishedStatus} <> 'reported' AND ${table.publishedShare} IS NULL)`,
+    ),
+  ],
+);
+
+/**
+ * Cross-group agreement / meaningful disagreement finding rows for a report
+ * version. `publicationStatus` is the current eligibility projection;
+ * `public_input_report_moderation_actions` holds the append-only reasoned
+ * history behind each change (ADR 0020).
+ */
+export const publicInputReportFindings = pgTable(
+  "public_input_report_findings",
+  {
+    id: text("id").primaryKey(),
+    reportId: text("report_id")
+      .notNull()
+      .references(() => publicInputReports.id, { onDelete: "restrict" }),
+    kind: publicInputFindingKindEnum("kind").notNull(),
+    statementText: text("statement_text").notNull(),
+    publicationStatus: publicInputFindingPublicationEnum("publication_status")
+      .notNull()
+      .default("included"),
+    displayOrder: integer("display_order").notNull().default(0),
+    synthetic: boolean("synthetic").notNull().default(false),
+    ...timestamps,
+  },
+  (table) => [
+    index("public_input_report_findings_report_kind_idx").on(
+      table.reportId,
+      table.kind,
+    ),
+    uniqueIndex("public_input_report_findings_report_kind_order_uidx").on(
+      table.reportId,
+      table.kind,
+      table.displayOrder,
+    ),
+    check(
+      "public_input_report_findings_statement_nonblank",
+      sql`char_length(btrim(${table.statementText})) > 0`,
+    ),
+    check(
+      "public_input_report_findings_statement_bounded",
+      sql`char_length(${table.statementText}) <= 500`,
+    ),
+  ],
+);
+
+/**
+ * Append-only institutional finding-eligibility decisions (ADR 0020).
+ * Immutable via trigger below. `findingId` is nullable in the column
+ * definition for forward compatibility, but every action kind implemented
+ * today is finding-scoped (CHECK below requires it).
+ */
+export const publicInputReportModerationActions = pgTable(
+  "public_input_report_moderation_actions",
+  {
+    id: text("id").primaryKey(),
+    reportId: text("report_id")
+      .notNull()
+      .references(() => publicInputReports.id, { onDelete: "restrict" }),
+    findingId: text("finding_id").references(
+      () => publicInputReportFindings.id,
+      { onDelete: "restrict" },
+    ),
+    action: publicInputReportModerationActionEnum("action").notNull(),
+    /** Required for withhold/supersede_finding; optional for include. */
+    publicRationale: text("public_rationale"),
+    privateNote: text("private_note"),
+    actorAccountId: text("actor_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    synthetic: boolean("synthetic").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("public_input_report_moderation_actions_report_idx").on(
+      table.reportId,
+      table.createdAt,
+    ),
+    index("public_input_report_moderation_actions_finding_idx").on(
+      table.findingId,
+    ),
+    check(
+      "public_input_report_moderation_actions_finding_scoped",
+      sql`${table.findingId} IS NOT NULL`,
+    ),
+    check(
+      "public_input_report_moderation_actions_rationale_required",
+      sql`(${table.action} = 'include') OR (char_length(btrim(${table.publicRationale})) > 0)`,
+    ),
+  ],
+);
+
+/**
+ * Provider-side comment-moderation shadow (ADR 0020) — observational
+ * provenance only, never a live remote execution. `opaqueStatementRef` is a
+ * protected fingerprint (never the statement text itself, and never public).
+ * Rejected statement text is never stored anywhere in this row.
+ */
+export const publicInputProviderModerationRecords = pgTable(
+  "public_input_provider_moderation_records",
+  {
+    id: text("id").primaryKey(),
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => publicInputConversations.id, { onDelete: "restrict" }),
+    opaqueStatementRef: text("opaque_statement_ref").notNull(),
+    status: publicInputProviderModerationStatusEnum("status")
+      .notNull()
+      .default("pending"),
+    reasonCode: text("reason_code").notNull(),
+    privateNote: text("private_note"),
+    actorAccountId: text("actor_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    synthetic: boolean("synthetic").notNull().default(false),
+    recordedAt: timestamp("recorded_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("public_input_provider_moderation_records_conversation_idx").on(
+      table.conversationId,
+      table.status,
+    ),
+    uniqueIndex(
+      "public_input_provider_moderation_records_conversation_ref_uidx",
+    ).on(table.conversationId, table.opaqueStatementRef),
+    check(
+      "public_input_provider_moderation_records_ref_nonblank",
+      sql`char_length(btrim(${table.opaqueStatementRef})) > 0`,
+    ),
+    check(
+      "public_input_provider_moderation_records_ref_bounded",
+      sql`char_length(${table.opaqueStatementRef}) <= 200`,
+    ),
+    check(
+      "public_input_provider_moderation_records_reason_code_nonblank",
+      sql`char_length(btrim(${table.reasonCode})) > 0`,
+    ),
+  ],
+);
+
 export const foundationTables = {
   persons,
   accounts,
@@ -1757,4 +2198,10 @@ export const foundationTables = {
   evidenceReviews,
   publicInputConversations,
   publicInputConversationTransitions,
+  publicInputReportImports,
+  publicInputReports,
+  publicInputReportGroups,
+  publicInputReportFindings,
+  publicInputReportModerationActions,
+  publicInputProviderModerationRecords,
 };

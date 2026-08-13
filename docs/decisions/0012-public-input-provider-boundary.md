@@ -1,8 +1,8 @@
 # ADR 0012 — Public Input provider-neutral adapter boundary
 
-**Status:** Accepted for Phase 4.2 engineering contract (amended Phase 4.3)  
+**Status:** Accepted for Phase 4.2 engineering contract (amended Phase 4.3 / 4.4)  
 **Date:** 2026-08-13  
-**Related:** [phase-4-plan.md](../phase-4-plan.md), [public-input-provider-assessment.md](../public-input-provider-assessment.md), [ADR 0010](./0010-computational-democracy-pipeline.md), [ADR 0013](./0013-canonical-formal-topic-page.md), [ADR 0014](./0014-institutional-conversation-lifecycle.md), [ADR 0016](./0016-provider-embed-activation-exact-origin.md)
+**Related:** [phase-4-plan.md](../phase-4-plan.md), [public-input-provider-assessment.md](../public-input-provider-assessment.md), [ADR 0010](./0010-computational-democracy-pipeline.md), [ADR 0013](./0013-canonical-formal-topic-page.md), [ADR 0014](./0014-institutional-conversation-lifecycle.md), [ADR 0016](./0016-provider-embed-activation-exact-origin.md), [ADR 0018](./0018-aggregate-only-canonical-import-format.md)
 
 ## Context
 
@@ -23,8 +23,13 @@ Phase 4.1 shipped synthetic Public Input aggregate reports only. Phase 4.2 must 
 
 Package **4.3** landed the gated institutional conversation lifecycle ([ADR 0014](./0014-institutional-conversation-lifecycle.md)) and a disabled embed activation shell. Operational provider kinds remain **`none` / `fixture` only**. **Live Pol.is remains FAIL-CLOSED** — every activation gate ships `unresolved`. Engineering readiness is not live activation.
 
+### Phase 4.4 amendment
+
+Package **4.4** authorizes **aggregate-only report import** and institutional moderation engineering ([ADR 0018](./0018-aggregate-only-canonical-import-format.md)–[0021](./0021-complementary-small-cell-suppression.md)). That is **not** live Pol.is activation, not raw provider-export retention authorization, and not permission to add SDKs, credentials, network clients, or iframe UI. Operational provider kinds remain **`none` / `fixture` only**; activation gates remain unresolved.
+
 ## Consequences
 
 - Public-demo and gated Overview/Evidence continue when the provider is unavailable.
 - Adding a live network client requires a new package authorization, register addendum, resolved activation gates, and owner language equivalent to `ENABLE LIVE POLIS FOR GATED ALPHA`.
 - Unknown vendor answers remain explicit LIVE blockers (OQ26–OQ29, OQ33).
+- Aggregate ingest and moderation tables may exist while the live provider path stays fail-closed.

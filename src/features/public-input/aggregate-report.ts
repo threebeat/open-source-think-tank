@@ -3,39 +3,28 @@ import {
   type PublicInputAggregateReport,
   publicInputAggregateReports,
 } from "@/fixtures/journey-catalog";
+import {
+  PUBLIC_INPUT_FORBIDDEN_KEYS,
+  findForbiddenPublicInputKeys,
+} from "@/lib/public-input/reports/forbidden-keys";
+import {
+  applyComplementarySmallCellSuppression,
+  SMALL_CELL_POLICY_VERSION,
+  type SuppressedGroupCell,
+} from "@/lib/public-input/reports/suppression";
 
 /**
  * Keys that must never appear anywhere in a public Public Input DTO
  * (including nested objects/arrays). Case-sensitive exact key match.
+ * Re-exported from the shared lib list so the fixture path and the gated
+ * report path can never drift apart (ADR 0018/0021).
  */
-export const PUBLIC_INPUT_FORBIDDEN_PUBLIC_KEYS = [
-  "providerParticipantId",
-  "providerParticipantIds",
-  "accountId",
-  "accountIds",
-  "voteRows",
-  "perPersonVotes",
-  "voteMatrix",
-  "individualGroupMembership",
-  "groupMembershipByPerson",
-  "authorProviderLinkage",
-  "crossConversationLinkage",
-  "contact",
-  "identity",
-  "verification",
-  "rawProviderUrl",
-  "accessToken",
-  "reportSecret",
-  "embedSecret",
-  "xid",
-] as const;
+export const PUBLIC_INPUT_FORBIDDEN_PUBLIC_KEYS = PUBLIC_INPUT_FORBIDDEN_KEYS;
 
-export type OpinionGroupCell =
-  | { label: string; status: "reported"; share: number }
-  | { label: string; status: "suppressed"; share: null };
+export type OpinionGroupCell = SuppressedGroupCell;
 
 export type PublicInputPublicDto = {
-  synthetic: true;
+  synthetic: boolean;
   topicSlug: string;
   /** Always reportable aggregate totals (not per-person). */
   participationCount: number;
@@ -51,6 +40,9 @@ export type PublicInputPublicDto = {
   smallCellSuppressionThreshold: number;
   smallCellSuppressionNotice: string;
   suppressedCells: number;
+  /** True when the whole opinion-group partition was omitted for insufficient participation. */
+  groupsOmitted: boolean;
+  smallCellSuppressionPolicyVersion: string;
   providerNotice: string;
   /**
    * Documentation of which totals are always reportable, suppressible, or never public.
@@ -75,29 +67,32 @@ export const PUBLIC_INPUT_CELL_POLICY = {
   ],
   suppressible: [
     "opinionGroups[].share when implied cell size is positive and below threshold",
+    "opinionGroups[].share complementary victim when exactly one cell would otherwise be reconstructible",
   ],
   neverPublic: [...PUBLIC_INPUT_FORBIDDEN_PUBLIC_KEYS],
 } as const;
 
 /**
- * Apply small-cell suppression to group shares when implied cell size < threshold.
- * Demo provisional threshold is 5; production threshold requires privacy review.
- * Returns explicit status so a genuine zero and a suppressed cell are never the same value.
+ * Apply complementary small-cell suppression to group shares. Demo
+ * provisional threshold is 5; production threshold requires privacy review
+ * (OQ27, OQ35). Returns explicit status so a genuine zero and a suppressed
+ * cell are never the same value, and so a lone suppressed cell can never be
+ * reconstructed from the remaining reported shares (ADR 0021).
  */
-export function applySmallCellSuppression(
+export function applyComplementarySuppressionToReport(
   report: PublicInputAggregateReport,
-  threshold = SMALL_CELL_SUPPRESSION_THRESHOLD,
-): { groups: OpinionGroupCell[]; suppressedCells: number } {
-  let suppressedCells = 0;
-  const groups: OpinionGroupCell[] = report.opinionGroups.map((group) => {
-    const implied = Math.round(group.share * report.participationCount);
-    if (implied > 0 && implied < threshold) {
-      suppressedCells += 1;
-      return { label: group.label, status: "suppressed", share: null };
-    }
-    return { label: group.label, status: "reported", share: group.share };
-  });
-  return { groups, suppressedCells };
+  threshold: number = SMALL_CELL_SUPPRESSION_THRESHOLD,
+): { groups: OpinionGroupCell[]; suppressedCells: number; groupsOmitted: boolean } {
+  const result = applyComplementarySmallCellSuppression(
+    report.opinionGroups,
+    report.participationCount,
+    { threshold },
+  );
+  return {
+    groups: result.groups,
+    suppressedCells: result.suppressedCells,
+    groupsOmitted: result.groupsOmitted,
+  };
 }
 
 export function formatOpinionGroupShare(cell: OpinionGroupCell): string {
@@ -107,12 +102,24 @@ export function formatOpinionGroupShare(cell: OpinionGroupCell): string {
   return `${(cell.share * 100).toFixed(0)}%`;
 }
 
-export function toPublicInputPublicDto(
+/**
+ * Lane-agnostic builder: assembles the public DTO shape from any aggregate
+ * report-like input, given an explicit `synthetic` flag. The fixture path
+ * (`toPublicInputPublicDto`) always passes `synthetic: true`; a future gated
+ * projection can reuse this with `synthetic: false` for a real (non-fixture)
+ * `manual_aggregate` import without duplicating suppression/DTO logic.
+ */
+export function buildPublicInputPublicDto(
   report: PublicInputAggregateReport,
+  options: { synthetic: boolean } = { synthetic: true },
 ): PublicInputPublicDto {
-  const { groups, suppressedCells } = applySmallCellSuppression(report);
+  const { groups, suppressedCells, groupsOmitted } =
+    applyComplementarySuppressionToReport(
+      report,
+      report.smallCellSuppressionThreshold,
+    );
   return {
-    synthetic: true,
+    synthetic: options.synthetic,
     topicSlug: report.topicSlug,
     participationCount: report.participationCount,
     commentTotal: report.commentTotal,
@@ -127,6 +134,8 @@ export function toPublicInputPublicDto(
     smallCellSuppressionThreshold: report.smallCellSuppressionThreshold,
     smallCellSuppressionNotice: report.smallCellSuppressionNotice,
     suppressedCells,
+    groupsOmitted,
+    smallCellSuppressionPolicyVersion: SMALL_CELL_POLICY_VERSION,
     providerNotice:
       "Synthetic Public Input report only. Not connected to Pol.is. Pol.is is an input, not a decision-maker.",
     cellPolicy: {
@@ -135,6 +144,12 @@ export function toPublicInputPublicDto(
       neverPublic: [...PUBLIC_INPUT_CELL_POLICY.neverPublic],
     },
   };
+}
+
+export function toPublicInputPublicDto(
+  report: PublicInputAggregateReport,
+): PublicInputPublicDto {
+  return buildPublicInputPublicDto(report, { synthetic: true });
 }
 
 export function getPublicInputPublicDto(
@@ -151,33 +166,9 @@ export function getPublicInputPublicDto(
 
 /**
  * Recursive walker: collect forbidden keys found at any depth in objects/arrays.
+ * Re-exported from the shared lib walker (see src/lib/public-input/reports/forbidden-keys.ts).
  */
-export function findForbiddenPublicKeys(
-  value: unknown,
-  path: string[] = [],
-): string[] {
-  const hits: string[] = [];
-  if (value == null) {
-    return hits;
-  }
-  if (Array.isArray(value)) {
-    value.forEach((item, index) => {
-      hits.push(...findForbiddenPublicKeys(item, [...path, String(index)]));
-    });
-    return hits;
-  }
-  if (typeof value === "object") {
-    for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
-      if (
-        (PUBLIC_INPUT_FORBIDDEN_PUBLIC_KEYS as readonly string[]).includes(key)
-      ) {
-        hits.push([...path, key].join("."));
-      }
-      hits.push(...findForbiddenPublicKeys(nested, [...path, key]));
-    }
-  }
-  return hits;
-}
+export const findForbiddenPublicKeys = findForbiddenPublicInputKeys;
 
 /** @deprecated Prefer findForbiddenPublicKeys for nested coverage. */
 export function assertNoForbiddenPublicKeys(dto: object): string[] {

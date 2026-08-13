@@ -42,6 +42,10 @@ const ACTIVE_ONLY = new Set<Capability>([
   "consultations.transition",
   "consultations.manage_provider_mapping",
   "consultations.set_availability",
+  "consultations.reports.import",
+  "consultations.reports.review",
+  "consultations.reports.publish",
+  "consultations.moderation.record",
 ]);
 
 function hasPlatform(
@@ -254,6 +258,26 @@ export function authorize(
       // moderation.act — Public Input lifecycle/provider-mapping decisions
       // are institutional, not content-moderation, actions.
       if (!hasPlatform(principal, ["administrator"])) {
+        return deny(capability);
+      }
+      return { ok: true, principal };
+
+    case "consultations.reports.import":
+    case "consultations.reports.review":
+    case "consultations.reports.publish":
+      // Administrator-only — aggregate-only import validation, review, and
+      // publish are institutional report-lifecycle mutations. Moderators
+      // never gain these merely from moderation.act or from holding
+      // consultations.moderation.record (ADR 0020: distinct axes).
+      if (!hasPlatform(principal, ["administrator"])) {
+        return deny(capability);
+      }
+      return { ok: true, principal };
+
+    case "consultations.moderation.record":
+      // Moderator OR administrator — provider-side observational records
+      // and institutional finding-eligibility rationale, never publish.
+      if (!hasPlatform(principal, ["moderator", "administrator"])) {
         return deny(capability);
       }
       return { ok: true, principal };

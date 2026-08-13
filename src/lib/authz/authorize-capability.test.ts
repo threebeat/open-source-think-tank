@@ -146,6 +146,10 @@ describe("authorizeCapability assurance gate", () => {
       "consultations.transition": "account-ostt-synth-ac-admin",
       "consultations.manage_provider_mapping": "account-ostt-synth-ac-admin",
       "consultations.set_availability": "account-ostt-synth-ac-admin",
+      "consultations.reports.import": "account-ostt-synth-ac-admin",
+      "consultations.reports.review": "account-ostt-synth-ac-admin",
+      "consultations.reports.publish": "account-ostt-synth-ac-admin",
+      "consultations.moderation.record": "account-ostt-synth-ac-moderator",
     };
 
     for (const capability of MAPPED) {

@@ -67,6 +67,14 @@ export const CAPABILITIES = [
   "consultations.transition",
   "consultations.manage_provider_mapping",
   "consultations.set_availability",
+  // Phase 4.4 — aggregate-only report ingestion + Public Input moderation.
+  // Import/review/publish are administrator-only institutional mutations;
+  // moderation.record is the one capability moderators also hold, and it
+  // never grants publish (see src/lib/authz/authorize.ts).
+  "consultations.reports.import",
+  "consultations.reports.review",
+  "consultations.reports.publish",
+  "consultations.moderation.record",
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];

@@ -26,7 +26,7 @@ No environment variables, API keys, or third-party accounts are required for pub
 - Local PostgreSQL 16 via Docker Compose (`npm run db:up`) when exercising gated paths
 - `APP_MODE=gated` and documented secrets only in gated environments — see [`docs/secrets-and-operations.md`](docs/secrets-and-operations.md)
 - Managed PostgreSQL host and production email vendors remain **blocked** pending register addenda
-- Phase 3 operational topic/evidence workflow is implemented on the gated foundation; see [`docs/phase-3-plan.md`](docs/phase-3-plan.md) and [`docs/phase-3-handoff.md`](docs/phase-3-handoff.md). Phase 3, 4.1, and 4.2 are owner-accepted; Phase **4.3** adds gated conversation lifecycle, progressive evidence disclosure, and a fail-closed embed shell (**still no live Pol.is**).
+- Phase 3 operational topic/evidence workflow is implemented on the gated foundation; see [`docs/phase-3-plan.md`](docs/phase-3-plan.md) and [`docs/phase-3-handoff.md`](docs/phase-3-handoff.md). Phase 3 and 4.1–**4.3** are owner-accepted; Phase **4.4** is aggregate report ingest + moderation engineering (**still no live Pol.is**).
 
 ## Setup
 
@@ -146,9 +146,9 @@ Direct product URLs still work without presentation mode.
 | [`docs/architecture-phase-2.md`](docs/architecture-phase-2.md) | Phase 2 environments, adapters, data-flow |
 | [`docs/phase-3-plan.md`](docs/phase-3-plan.md) | Phase 3 operational alpha work packages |
 | [`docs/phase-3-handoff.md`](docs/phase-3-handoff.md) | Phase 3 evidence handoff (owner-accepted) |
-| [`docs/phase-4-plan.md`](docs/phase-4-plan.md) | Phase 4 packages (4.3 current; awaiting owner approval) |
-| [`docs/architecture-phase-4.md`](docs/architecture-phase-4.md) | Phase 4 routes, lifecycle, evidence disclosure, embed fail-closed shell |
-| [`docs/public-input-provider-assessment.md`](docs/public-input-provider-assessment.md) | Pol.is capability/vendor assessment (not live-install auth) |
+| [`docs/phase-4-plan.md`](docs/phase-4-plan.md) | Phase 4 packages (4.4 active: moderation + aggregate ingest) |
+| [`docs/architecture-phase-4.md`](docs/architecture-phase-4.md) | Phase 4 routes, lifecycle, report ingest, moderation axes, embed fail-closed shell |
+| [`docs/public-input-provider-assessment.md`](docs/public-input-provider-assessment.md) | Pol.is capability/vendor assessment (not live-install auth; 4.4 ingest ≠ live) |
 | [`docs/alpha-reset-runbook.md`](docs/alpha-reset-runbook.md) | Operator alpha wipe CLI runbook |
 | [`docs/alpha-reset-classification.md`](docs/alpha-reset-classification.md) | Table-by-table reset/retain/regenerate manifest |
 | [`docs/architecture-phase-3.md`](docs/architecture-phase-3.md) | Phase 3 services, tables, projections |
@@ -162,5 +162,5 @@ Direct product URLs still work without presentation mode.
 - **Phase 1** demonstration MVP is complete (tag `phase-1-demonstration`). Public-demo mode remains synthetic and separately deployable.
 - **Phase 2** invite-only foundation packages 2.1–2.12 are in place (tag `phase-2-foundation`; see [`docs/phase-2-handoff.md`](docs/phase-2-handoff.md)). Gated auth, roles, assent, verification, audit, and isolation are the baseline for alpha engineering.
 - **Phase 3** packages **3.1–3.12** are implemented and **owner-accepted**.
-- **Phase 4.1** and **4.2** are **owner-approved and complete** (PR #17 / PR #18). **Phase 4.3** (gated conversation lifecycle, progressive evidence disclosure, fail-closed embed activation readiness) is implemented in the current PR and awaits owner approval before 4.4. **Live Pol.is remains fail-closed** — engineering readiness ≠ live activation.
+- **Phase 4.1–4.3** are **owner-approved and complete** (PR #17 / PR #18 / PR #19). **Phase 4.4** (moderation + aggregate-only report ingestion) is the active package — **not** live Pol.is authorization. **Live Pol.is remains fail-closed**.
 - Public recruitment, live Pol.is, payments, analytics, AI APIs, managed production PostgreSQL, and unsettled legal formation claims remain out of scope until their gates clear. Alpha-test data must stay fully resettable via the operator CLI (local wipe never claims remote provider deletion).

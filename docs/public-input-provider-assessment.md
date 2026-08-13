@@ -1,9 +1,9 @@
 # Public Input / Pol.is capability, privacy, and vendor assessment
 
-**Status:** Phase 4.2 engineering assessment — **still not** authorization for a live embed. Phase **4.3** built the institutional conversation lifecycle and a **disabled** embed URL shell; live Pol.is remains fail-closed.  
+**Status:** Phase 4.2 engineering assessment — **still not** authorization for a live embed. Phase **4.3** built the institutional conversation lifecycle and a **disabled** embed URL shell. Phase **4.4** authorizes **aggregate-only report ingest + moderation engineering** — that does **not** authorize live Pol.is. Live Pol.is remains fail-closed.  
 **Assessment date:** 2026-08-13  
 **Pinned upstream OSS pin:** `compdemocracy/polis` `edge` commit `5089c6bef9eb1a1e454beb34354fb29dd0a2b6f0` (fetched 2026-08-13)  
-**Related:** [ADR 0012](./decisions/0012-public-input-provider-boundary.md), [ADR 0014](./decisions/0014-institutional-conversation-lifecycle.md), [ADR 0016](./decisions/0016-provider-embed-activation-exact-origin.md), [phase-4-plan.md](./phase-4-plan.md), OQ26–OQ29, OQ33  
+**Related:** [ADR 0012](./decisions/0012-public-input-provider-boundary.md), [ADR 0014](./decisions/0014-institutional-conversation-lifecycle.md), [ADR 0016](./decisions/0016-provider-embed-activation-exact-origin.md), [ADR 0018](./decisions/0018-aggregate-only-canonical-import-format.md), [phase-4-plan.md](./phase-4-plan.md), OQ26–OQ29, OQ33, OQ35  
 **Activation checklist (code):** `src/lib/public-input/lifecycle/activation.ts` — all 13 gates ship `unresolved`
 
 This document uses **primary sources only**. Old knowledge-base pages, beta export notes, browser-observed behavior, and undocumented source endpoints are **not** treated as a stable provider contract.
@@ -49,7 +49,7 @@ Statuses are recorded **separately** for: (H) hosted pol.is, (S) self-hosted OSS
 | Agree / disagree / pass voting | supported_documented | supported_documented | unsupported_forbidden | Embed emits vote `postMessage` (KB). |
 | Strict / permissive moderation | unclear_requires_confirmation | unclear_requires_confirmation | unsupported_forbidden | Moderation exists conceptually; contractual behavior for our workflows unconfirmed. |
 | Report generation | supported_documented (product) | supported_documented (product) | unsupported_forbidden | Privacy policy discloses LLM processors for report contextualization (OpenAI, Anthropic, Gemini) — **privacy gate**. |
-| Export availability + schema stability | unclear_requires_confirmation | unclear_requires_confirmation | unsupported_forbidden | pro.pol.is markets “raw data export via API (15-minute intervals)” — marketing, not schema contract. Versioned aggregate ingest remains a 4.4 design. |
+| Export availability + schema stability | unclear_requires_confirmation | unclear_requires_confirmation | unsupported_forbidden | pro.pol.is markets “raw data export via API (15-minute intervals)” — marketing, not schema contract. Phase **4.4** defines an **institutional aggregate-only** canonical import ([ADR 0018](./decisions/0018-aggregate-only-canonical-import-format.md)); that is **not** a live vendor export API integration and **not** live Pol.is authorization. |
 | Auth + anonymous participation | unclear_requires_confirmation | supported_documented (JWT keys in OSS README) | unsupported_forbidden | Hosted anonymous cookie continuity vs account auth needs confirmation. |
 | Cookies / device continuity | supported_documented | unclear_requires_confirmation | n/a | Privacy policy: cookies and automatic collection (IP, device, actions). |
 | OIDC / JWT support (current OSS) | unclear_requires_confirmation | observed_unsupported / unclear | unsupported_forbidden | OSS README mentions JWT keys for participant authentication; OIDC as a stable integration for our stack is unconfirmed. |
@@ -84,6 +84,7 @@ Statuses are recorded **separately** for: (H) hosted pol.is, (S) self-hosted OSS
 | Privacy unknowns | DPA, subprocessors list, residency option, retention/deletion, breach SLA | Operator must supply equivalents | N/A |
 | Fit for 4.2 | Assessment only | Assessment only | **Active fallback** (`NoProvider` / fixture) |
 | Fit for 4.3 | Institutional lifecycle + disabled embed shell landed; **live still blocked** | Same — live kinds non-operational | Continues as fail-closed path (`none` / `fixture` only) |
+| Fit for 4.4 | Aggregate-only ingest + moderation engineering authorized; **still not live** | Same — no live admin/export API | Continues as fail-closed path; synthetic aggregates on public-demo |
 | Fit for live activation | Blocked until activation checklist clears | Blocked until ops + counsel + activation gates clear | Continues as fail-closed path |
 
 ---
@@ -96,7 +97,7 @@ Statuses are recorded **separately** for: (H) hosted pol.is, (S) self-hosted OSS
 4. **Retention, deletion, and export** aligned with alpha wipe (OQ29).
 5. **xid / single-use identity URL patterns** — forbidden until OQ28.
 6. **Accessibility conformance** evidence for participant/admin/report UIs.
-7. **Export schema versioning** for aggregate-only ingest (4.4).
+7. **Export schema versioning** for vendor-side dumps mapping into the institutional aggregate-only canonical import (4.4 defines the institutional side; vendor contract still unconfirmed).
 8. **CSP / iframe / third-party JS** threat acceptance (see threat-model 4.2 amendments).
 9. **Permitted-services register addendum** in [phase-2-plan.md](./phase-2-plan.md) §4 — still required before install.
 10. **Counsel disposition** for AGPL self-host vs hosted ToS risk.
@@ -107,18 +108,22 @@ Statuses are recorded **separately** for: (H) hosted pol.is, (S) self-hosted OSS
 
 **Insufficient information to authorize a live Pol.is integration.**
 
-Phase 4.3 does **not** change this verdict. It adds:
+Phase 4.3 and Phase 4.4 do **not** change this verdict. They add:
 
-- Gated institutional conversation lifecycle (`public_input_conversations` + transitions)
-- Fail-closed embed URL construction behind an exhaustive unresolved activation checklist
-- Progressive evidence disclosure (readability only; unrelated to provider install)
+- Gated institutional conversation lifecycle (`public_input_conversations` + transitions) — 4.3
+- Fail-closed embed URL construction behind an exhaustive unresolved activation checklist — 4.3
+- Progressive evidence disclosure (readability only; unrelated to provider install) — 4.3
+- Aggregate-only report ingest, immutable report versioning/publication, institutional vs provider moderation records, complementary small-cell suppression — 4.4
+
+**Phase 4.4 aggregate ingest does not authorize live Pol.is.** It does not install credentials, SDKs, network clients, iframe UI, or a vendor export API. Operational provider kinds remain `none` / `fixture` only.
 
 Recommended engineering posture for now:
 
 1. Keep **provider-neutral adapter** with fixture + no-provider fail-closed paths (4.2 — done).
 2. Keep conversation registry limited to operational kinds **`none` / `fixture`** (4.3 — done).
-3. Do **not** add live credentials, env vars, SDKs, network clients, or iframe UI until activation.
-4. Prefer continuing **synthetic aggregates** on public-demo until gates clear.
-5. Before live activation: clear every gate in `LIVE_PUBLIC_INPUT_ACTIVATION_GATES` (see [phase-4-plan.md](./phase-4-plan.md) §11d), update the permitted-services register, obtain privacy + security + counsel approvals, then owner language equivalent to `ENABLE LIVE POLIS FOR GATED ALPHA`.
+3. Keep report ingest on the **aggregate-only canonical** path (4.4); reject raw exports as ingest format.
+4. Do **not** add live credentials, env vars, SDKs, network clients, or iframe UI until activation.
+5. Prefer continuing **synthetic aggregates** on public-demo until gates clear.
+6. Before live activation: clear every gate in `LIVE_PUBLIC_INPUT_ACTIVATION_GATES` (see [phase-4-plan.md](./phase-4-plan.md) §11d), update the permitted-services register, obtain privacy + security + counsel approvals, then owner language equivalent to `ENABLE LIVE POLIS FOR GATED ALPHA`.
 
-Owner risk acceptance is **not** equivalent to counsel `cleared` status. Starting or completing Phase 4.3 engineering is **not** live-provider authorization.
+Owner risk acceptance is **not** equivalent to counsel `cleared` status. Starting or completing Phase 4.3 / 4.4 engineering is **not** live-provider authorization.

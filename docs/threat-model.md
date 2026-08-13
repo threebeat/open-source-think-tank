@@ -135,30 +135,36 @@ Controls below are **implemented** through 2.11 unless noted as still blocked.
 | Preference-based pre-deliberation promotion (4.1) | Authority helpers forbid private promotion / agenda priority / elevated badges; tests assert |
 | Public Input re-identification (4.1) | Allowlisted aggregate DTOs only; small-cell suppression; forbid xid/provider IDs/vote rows in public surfaces |
 | Civic-action profiling (4.1) | Member actions use explicit fixture geography/interests; ban vote/ideology personalization |
-| Live Pol.is from public-demo (4.1–4.3) | No provider client/network calls; fixture + no-provider adapters only; assessment/lifecycle ≠ install auth |
-| Suppressed cell vs zero conflation (4.2) | Explicit `status: suppressed` + `share: null`; UI “Suppressed”; recursive leak tests |
-| Nested projection leaks (4.2) | Recursive forbidden-key walker (xid, voteMatrix, tokens, rawProviderUrl, …) |
-| Provider impersonation / malicious embed origin (4.2/4.3) | Exact-origin allowlist (`https://pol.is` only) + HTTPS + reject credential-bearing URLs; no suffix match; no live iframe in 4.3 |
-| Secret-bearing report/admin links (4.2/4.3) | Forbidden in public DTOs; credential query rejection in embed validator |
-| Provider conversation ref leakage (4.3) | `providerConversationRef` omitted from public/staff DTOs; staff sees `hasProviderMapping` only; log sanitizer + DTO leak asserts |
-| Premature live embed enablement (4.3) | `buildEmbedUrl` fail-closed while any of 13 activation gates unresolved; live kinds forbidden by DB CHECK + service |
+| Live Pol.is from public-demo (4.1–4.4) | No provider client/network calls; fixture + no-provider adapters only; assessment/lifecycle/aggregate ingest ≠ install auth |
+| Suppressed cell vs zero conflation (4.2/4.4) | Explicit `status: suppressed` + `share: null`; UI “Suppressed”; recursive leak tests |
+| Nested projection leaks (4.2/4.4) | Recursive forbidden-key walker (xid, voteMatrix, tokens, rawProviderUrl, …) |
+| Provider impersonation / malicious embed origin (4.2/4.3) | Exact-origin allowlist (`https://pol.is` only) + HTTPS + reject credential-bearing URLs; no suffix match; no live iframe |
+| Secret-bearing report/admin links (4.2–4.4) | Forbidden in public DTOs; credential query rejection in embed validator; rejected by aggregate import validation |
+| Provider conversation ref leakage (4.3/4.4) | `providerConversationRef` omitted from public/staff DTOs; staff sees `hasProviderMapping` only; log sanitizer + DTO leak asserts |
+| Premature live embed enablement (4.3/4.4) | `buildEmbedUrl` fail-closed while any of 13 activation gates unresolved; live kinds forbidden by DB CHECK + service; 4.4 ingest ≠ activation |
 | Progressive disclosure mistaken for confidentiality (4.3) | Disclosure collapses already-public fields only; protected data filtered upstream (OQ34) |
-| Participant re-identification / cross-conversation correlation (4.2/4.3) | Aggregates only; xid forbidden; no identity linkage fields |
-| Cookie/device-linkage (hosted provider) (4.2/4.3 blocker) | Documented in assessment; no live cookies from our app to provider in 4.3 |
-| Local reset misreported as remote wipe (4.3) | Local alpha reset deletes institutional rows only; never claim remote provider deletion (OQ29 / ADR 0017) |
-| Malicious/malformed provider exports / schema drift (4.4+) | No export ingest in 4.2–4.3; future versioned aggregate descriptors only |
-| Small-cell / differencing attacks (4.2) | Suppression policy on derived cells; production threshold still OQ27 |
-| Moderator misuse / preference promotion (4.1–4.3) | Authority rules + informal/formal distinctions on Discussions; conversation transitions are admin ops, not agenda promotion |
+| Participant re-identification / cross-conversation correlation (4.2–4.4) | Aggregates only; xid forbidden; no identity linkage fields |
+| Cookie/device-linkage (hosted provider) (4.2–4.4 blocker) | Documented in assessment; no live cookies from our app to provider in 4.4 |
+| Local reset misreported as remote wipe (4.3/4.4) | Local alpha reset deletes institutional + report/moderation rows only; never claim remote provider deletion (OQ29 / ADR 0017) |
+| Malicious/malformed provider exports / schema drift (4.4) | Aggregate-only canonical descriptor; recursive forbidden-key reject; raw exports not accepted ingest format (ADR 0018) |
+| Small-cell / differencing / reconstruction attacks (4.2/4.4) | Per-cell + **complementary** suppression (ADR 0021); production threshold still OQ27 + owner approval OQ35 |
+| Cross-version differencing of published reports (4.4) | Each public history projection re-applies complementary suppression; no “diff to recover” path |
+| Self-dealing provenance / silent overwrite (4.4) | Immutable report versions; import ≠ publish; audit actor/role/timestamp/method versions; no in-place metric edits |
+| Provider moderation mistaken for institutional endorsement (4.4) | Separate `provider_moderation_records` vs `report_moderation_actions` axes (ADR 0020) |
+| Collapsing independent governance axes (4.4) | Lifecycle, availability, provider moderation, finding eligibility, import validation, publication, evidence quality, agenda qualification stay separate |
+| Moderator misuse / preference promotion (4.1–4.4) | Authority rules + informal/formal distinctions; lifecycle/report ops are not agenda promotion; moderators cannot edit consultation metrics |
 | Iframe clickjacking / CSP / third-party JS (LIVE blocker) | OQ33; exact-origin shell in 4.3; iframe UI + CSP acceptance still required before live embed |
-| Provider outage / degraded operation (4.2/4.3) | Fail-closed adapter; availability axis independent of institutional workflow; Overview/Evidence remain |
-| Public-demo contacting a provider (4.2/4.3) | `networkCallsAllowed: false`; lifecycle service denies public-demo; zero live provider packages/env vars |
+| Provider outage / degraded operation (4.2–4.4) | Fail-closed adapter; availability axis independent of institutional workflow; Overview/Evidence/published reports remain |
+| Public-demo contacting a provider (4.2–4.4) | `networkCallsAllowed: false`; lifecycle/report services deny public-demo; zero live provider packages/env vars |
+| Public-demo report ingest / moderation writes (4.4) | Fixture projections only; gated import/review/publish/moderation capabilities never load in public-demo |
 
-## Explicit non-goals for Phase 1 / Phase 2 public-demo / Phase 4.1–4.3
+## Explicit non-goals for Phase 1 / Phase 2 public-demo / Phase 4.1–4.4
 
 - Production authentication on the public demo
-- Live Pol.is install, credentials, production embed UI, raw export ingest, or undocumented provider features in 4.1–4.3
+- Live Pol.is install, credentials, production embed UI, raw export ingest as first-class format, or undocumented provider features in 4.1–4.4
 - Resolving activation gates or inventing counsel clearance inside an engineering package
 - Claiming local alpha reset deleted remote provider data
+- Settling production small-cell threshold without privacy review + owner approval (OQ27 / OQ35)
 - Penetration-test certification as a Phase 2 exit criterion (review in 2.12)
 - Claiming statistical representation of any population
 - Treating owner risk acceptance as counsel clearance
