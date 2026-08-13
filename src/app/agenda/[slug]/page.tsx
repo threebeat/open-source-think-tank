@@ -6,12 +6,14 @@ import { PageHeader } from "@/components/PageHeader";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { MainContainer } from "@/components/layout/MainContainer";
 import { AgendaDetail } from "@/features/agenda/AgendaDetail";
+import { QualificationTracePanel } from "@/features/agenda-qualification/QualificationTracePanel";
 import {
   getAgendaItemBySlug,
   getTopicById,
   listAgendaItems,
 } from "@/domain/selectors";
 import { fixtureCatalog } from "@/fixtures";
+import { qualificationTraces } from "@/fixtures/journey-catalog";
 
 type AgendaDetailPageProps = {
   params: Promise<{ slug: string }>;
@@ -47,6 +49,9 @@ export default async function AgendaDetailPage({
   if (!topic) {
     notFound();
   }
+  const qualificationTrace = qualificationTraces.find(
+    (trace) => trace.topicSlug === item.slug,
+  );
 
   return (
     <MainContainer className="space-y-10">
@@ -60,8 +65,11 @@ export default async function AgendaDetailPage({
       <PageHeader
         eyebrow="Synthetic agenda calculation"
         title={item.title}
-        description={`Topic: ${topic.title}. This page shows separate thresholds, a fixed calculation trace, and the human review record.`}
+        description={`Topic: ${topic.title}. Independent qualification signals stay separate from evidence quality and from any composite popularity score.`}
       />
+      {qualificationTrace ? (
+        <QualificationTracePanel trace={qualificationTrace} />
+      ) : null}
       <AgendaDetail item={item} topic={topic} />
       {item.state === "qualified" ? (
         <p className="text-sm text-muted-foreground">

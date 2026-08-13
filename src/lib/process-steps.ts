@@ -2,38 +2,43 @@ import type { ProcessStep } from "@/components/ProcessStepper";
 
 export const institutionalProcessSteps: ProcessStep[] = [
   {
-    id: "join",
-    label: "How Joining Works",
-    description: "Eligibility and assent placeholders",
+    id: "idea-commons",
+    label: "Idea Commons",
+    description: "Informal discussion and early proposals",
   },
   {
-    id: "evidence",
-    label: "Fact-Check & Research",
-    description: "Claims and source review",
+    id: "proposal",
+    label: "Qualified proposal",
+    description: "Scoping criteria before formal entry",
   },
   {
     id: "consultation",
     label: "Public Input",
-    description: "Areas of agreement and disagreement (simulated)",
+    description: "Aggregate consultation (Pol.is when approved)",
   },
   {
     id: "agenda",
-    label: "Decide What Moves Forward",
-    description: "Public criteria plus human review",
+    label: "Agenda qualification",
+    description: "Independent published signals + human review",
   },
   {
     id: "deliberation",
-    label: "State-Level Policy Drafting",
-    description: "Capacity-limited council view",
+    label: "Deliberation",
+    description: "Capacity-limited policy drafting",
   },
   {
     id: "decision",
-    label: "Recommendation & Council Vote",
-    description: "Record, dissent, review date",
+    label: "Policy recommendation",
+    description: "Council recommendation record",
+  },
+  {
+    id: "actions",
+    label: "Member actions",
+    description: "Civic follow-through opportunities",
   },
   {
     id: "transparency",
-    label: "The Public Record",
-    description: "Activity history and protected data",
+    label: "Review & lineage",
+    description: "Public audit and follow-up topics",
   },
 ];

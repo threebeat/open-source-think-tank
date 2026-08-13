@@ -1,6 +1,6 @@
-# Product Charter — Open-Source Think Tank (Phase 1)
+# Product Charter — Open-Source Think Tank
 
-**Status:** Proposed project and demonstration prototype. This is not a claim that an organization is incorporated, tax-exempt, legally reviewed, or accepting members.
+**Status:** Proposed project and demonstration prototype (Phase 1–3 foundation complete; Phase 4 computational-democracy journey active). This is not a claim that an organization is incorporated, tax-exempt, legally reviewed, or accepting members.
 
 **Working name:** Open-Source Think Tank (proposed project name, not a legal entity name)
 
@@ -71,19 +71,22 @@ Do not call every platform account a legal or corporate “member.” That term 
 
 ---
 
-## Institutional stages (demonstration pipeline)
+## Institutional stages (computational-democracy journey)
 
-The Phase 1 journey, in order:
+Primary visitor task: **Follow an idea from community discussion to collective action.**
 
-1. **Join preview** — Eligibility, verification ladder preview, conduct and privacy assent placeholders (nonfunctional; no data collected).
-2. **Topic and evidence** — Neutral brief, competing claims, sources, counterevidence, disclosures.
-3. **Consultation** — Simulated Pol.is-style statement voting and mock opinion-group results.
-4. **Agenda** — Published thresholds, calculation trace, evidence readiness, human review.
-5. **Deliberation** — Public-observer view of council discussion, amendments, evidence requests, conflicts, recusals.
-6. **Decision** — Final proposal, vote, rationale, minority report, revision or review date.
-7. **Transparency** — Audit log, method versions, governance map, open-by-default vs protected-by-necessity data.
+1. **Idea Commons** — Informal discussion, questions, early ideas, and unqualified proposals (clearly not Formal Topic Pipeline).
+2. **Qualified proposal / scoping** — Published criteria before formal entry; no preference-based promotion by elevated roles.
+3. **Public Input** — Structured consultation; when approved, powered by Pol.is as an **input**, not a decision-maker (synthetic aggregates in the public demo).
+4. **Agenda qualification** — Independent published signals + human review with recorded reasons; no composite truth/importance score.
+5. **Deliberation** — Capacity-limited council discussion, amendments, evidence requests, conflicts, recusals.
+6. **Policy recommendation** — Final proposal, vote, rationale, minority report, revision or review date (not enacted law / not board adoption).
+7. **Member action opportunities** — Civic follow-through with sponsorship/conflict and non-endorsement labels; no personalization from individual votes or inferred ideology.
+8. **Review and lineage** — Audit log, topic lineage (advance / merge-split / defer), method versions, open-by-default vs protected-by-necessity data.
 
-Roles along this path: Visitor → Community participant (consultation) → Deliberation council → Policy council → Governing board (authority pending counsel). Algorithms and fixtures may recommend or organize; they do not silently replace human institutional decisions.
+Join preview remains available as an eligibility/assent placeholder. Roles along this path: Visitor → Community participant → Deliberation council → Policy council → Governing board (authority pending counsel). Algorithms and fixtures may recommend or organize; they do not silently replace human institutional decisions.
+
+See [phase-4-plan.md](./phase-4-plan.md), [ADR 0010](./decisions/0010-computational-democracy-pipeline.md), and [ADR 0011](./decisions/0011-idea-commons-formal-pipeline-separation.md).
 
 ---
 

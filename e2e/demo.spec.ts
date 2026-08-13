@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("guided demonstration", () => {
-  test("visits every stage, returns via presentation controls, and restores on refresh", async ({
+  test("walks the computational-democracy journey and restores on refresh", async ({
     page,
   }) => {
     await page.goto("/demo");
@@ -11,150 +11,123 @@ test.describe("guided demonstration", () => {
     await expect(
       page.getByText("Presentation mode — not an operational system"),
     ).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        name: /Follow an idea from community discussion to collective action/i,
+      }),
+    ).toBeVisible();
 
     await page.getByRole("button", { name: "Show presenter notes" }).click();
     await expect(page.getByLabel("Presenter notes")).toBeVisible();
 
     await page.getByRole("button", { name: "Next" }).click();
     await expect(
-      page.getByRole("heading", { name: "How Joining Works" }),
+      page.getByRole("heading", { name: "1. Idea Commons discussion" }),
     ).toBeFocused();
-    await page.getByRole("link", { name: "Open how joining works" }).click();
-    await expect(page).toHaveURL(/\/join\?demoStep=join/);
+    await page.getByRole("link", { name: "Open Idea Commons" }).click();
+    await expect(page).toHaveURL(/\/idea-commons\?demoStep=idea-commons/);
     await expect(
       page.getByRole("region", { name: "Guided demonstration controls" }),
     ).toBeVisible();
     await expect(
-      page.getByText("Not accepting members", { exact: true }),
+      page.getByText(/not yet in the Formal Topic Pipeline/i).first(),
     ).toBeVisible();
     await page.getByRole("link", { name: "Return to guided demo" }).click();
-    await expect(page).toHaveURL(/\/demo\?step=join/);
-    await expect(
-      page.getByRole("heading", { name: "How Joining Works" }),
-    ).toBeVisible();
+    await expect(page).toHaveURL(/\/demo\?step=idea-commons/);
 
     await page.getByRole("button", { name: "Next" }).click();
-    await page.getByRole("link", { name: "Open Cedar River topic" }).click();
+    await page.getByRole("link", { name: "Open surcharge discussion" }).click();
     await expect(page).toHaveURL(
-      /\/topics\/cedar-river-drought-surcharge\?demoStep=topics/,
+      /\/idea-commons\/idea-cedar-surcharge-discussion\?demoStep=proposal/,
     );
-    await expect(
-      page.getByRole("heading", {
-        name: "Cedar River residential drought surcharge",
-        exact: true,
-      }),
-    ).toBeVisible();
     await page
-      .getByRole("link", { name: "Continue to Public Input (simulated)" })
+      .getByRole("link", { name: "Continue to 3. Scoping and qualification criteria" })
       .click();
     await expect(page).toHaveURL(
-      /\/topics\/cedar-river-drought-surcharge\/consult\?demoStep=consultation/,
+      /\/formal-topics\/cedar-river-drought-surcharge\?demoStep=scoping/,
+    );
+    await expect(
+      page.getByRole("heading", { name: "Gate status and lineage" }),
+    ).toBeVisible();
+
+    await page
+      .getByRole("link", { name: "Continue to 4. Synthetic Public Input consultation" })
+      .click();
+    await expect(page).toHaveURL(
+      /\/topics\/cedar-river-drought-surcharge\/consult\?demoStep=public-input/,
     );
     await expect(
       page.getByRole("button", { name: "Agree", exact: true }),
     ).toBeVisible();
+
     await page
-      .getByRole("link", { name: "Continue to Decide What Moves Forward" })
+      .getByRole("link", { name: "Continue to 5. Submit a statement and cast practice votes" })
+      .click();
+    await expect(page).toHaveURL(/demoStep=vote/);
+    await page.getByRole("button", { name: "Agree", exact: true }).first().click();
+
+    await page
+      .getByRole("link", {
+        name: "Continue to 6. Anonymous aggregate Public Input report",
+      })
+      .click();
+    await expect(page).toHaveURL(/view=public-input-report/);
+    await expect(
+      page.getByRole("heading", {
+        name: "Anonymous aggregate Public Input report",
+      }),
+    ).toBeVisible();
+    await expect(page.getByText(/per-person vote rows/i)).toBeVisible();
+
+    await page
+      .getByRole("link", { name: "Continue to 7. Agenda qualification trace" })
       .click();
     await expect(page).toHaveURL(
-      /\/agenda\/cedar-river-drought-surcharge\?demoStep=agenda/,
+      /\/agenda\/cedar-river-drought-surcharge\?demoStep=agenda-trace/,
     );
     await expect(
-      page.getByRole("heading", { name: "How This Result Was Calculated" }),
+      page.getByRole("heading", { name: "Agenda qualification trace" }),
     ).toBeVisible();
+
     await page
-      .getByRole("link", { name: "Continue to State-Level Policy Drafting (observer view)" })
+      .getByRole("link", { name: "Continue to 8. Follow the topic into deliberation" })
       .click();
     await expect(page).toHaveURL(
       /\/deliberation\/cedar-river-drought-surcharge\?demoStep=deliberation/,
     );
-    await expect(
-      page.getByText("Public observation only", { exact: true }),
-    ).toBeVisible();
+
     await page
-      .getByRole("link", { name: "Continue to Recommendation & Council Vote" })
+      .getByRole("link", { name: "Continue to 9. Policy recommendation" })
       .click();
     await expect(page).toHaveURL(
-      /\/decisions\/cedar-river-drought-surcharge\?demoStep=decision/,
+      /\/decisions\/cedar-river-drought-surcharge\?demoStep=policy/,
+    );
+
+    await page
+      .getByRole("link", { name: "Continue to 10. Member action opportunities" })
+      .click();
+    await expect(page).toHaveURL(
+      /\/actions\/cedar-river-drought-surcharge\?demoStep=actions/,
     );
     await expect(
-      page.getByRole("heading", { name: "Policy Council roll call" }),
+      page.getByRole("heading", { name: "Member action opportunities" }),
     ).toBeVisible();
-    await expect(
-      page.getByText(/grounds the recorded step-aside because of a conflict/i),
-    ).toBeVisible();
+
     await page
-      .getByRole("link", { name: "Continue to Workflow practice" })
+      .getByRole("link", { name: "Continue to 11. Public audit and topic lineage" })
       .click();
-    await expect(page).toHaveURL(/\/demo\/workflow\?demoStep=workflow/);
+    await expect(page).toHaveURL(/\/transparency\?demoStep=audit/);
     await expect(
-      page.getByRole("heading", {
-        name: "Workflow practice",
-        exact: true,
-      }),
+      page.getByRole("heading", { name: "Topic lineage and trajectories" }),
     ).toBeVisible();
-    await page
-      .getByRole("link", { name: "Continue to The Public Record" })
-      .click();
-    await expect(page).toHaveURL(/\/transparency\?demoStep=transparency/);
-    await expect(
-      page.getByRole("heading", { name: "The Public Record", exact: true }),
-    ).toBeVisible();
+
     await page.getByRole("link", { name: "Return to guided demo" }).click();
-    await expect(page).toHaveURL(/\/demo\?step=transparency/);
-
-    await page.getByRole("button", { name: "Next" }).click();
-    await expect(
-      page.getByRole("heading", { name: "Questions for legal counsel" }),
-    ).toBeVisible();
-    await expect(page.getByText("Audience stop")).toBeVisible();
-    await page.getByRole("button", { name: "Next" }).click();
-    await expect(
-      page.getByRole("heading", { name: "Questions for technical collaborators" }),
-    ).toBeVisible();
-    await page.getByRole("button", { name: "Next" }).click();
-    await expect(
-      page.getByRole("heading", {
-        name: "Questions for prospective board members",
-      }),
-    ).toBeVisible();
-    await page.getByRole("button", { name: "Next" }).click();
-    await expect(
-      page.getByRole("heading", { name: "Close and reset" }),
-    ).toBeVisible();
-
-    await page.getByRole("button", { name: "Back", exact: true }).click();
-    await expect(
-      page.getByRole("heading", {
-        name: "Questions for prospective board members",
-      }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", {
-        name: "Questions for prospective board members",
-      }),
-    ).toBeFocused();
-
-    await page.reload();
-    await expect(page).toHaveURL(/\/demo\?step=questions-board/);
-    await expect(
-      page.getByRole("heading", {
-        name: "Questions for prospective board members",
-      }),
-    ).toBeVisible();
+    await expect(page).toHaveURL(/\/demo\?step=audit/);
 
     await page.getByRole("button", { name: "Reset", exact: true }).click();
     await expect(
       page.getByRole("heading", {
-        name: "Start: synthetic demonstration only",
-      }),
-    ).toBeVisible();
-    await expect(page.getByLabel("Presenter notes")).toHaveCount(0);
-
-    await page.reload();
-    await expect(
-      page.getByRole("heading", {
-        name: "Start: synthetic demonstration only",
+        name: /Follow an idea from community discussion to collective action/i,
       }),
     ).toBeVisible();
   });

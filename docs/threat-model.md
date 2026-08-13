@@ -131,11 +131,16 @@ Controls below are **implemented** through 2.11 unless noted as still blocked.
 | Multi-role search href confusion (3.12) | Internal admission class picks href; owner drafts → owner surfaces even for staff multi-role principals; class never in DTOs |
 | Thrown search/export exception leakage (3.12) | Sanitized `WORKSPACE_SEARCH_UNAVAILABLE` / `ACCOUNT_EXPORT_UNAVAILABLE` / `STAFF_EXPORT_UNAVAILABLE`; no SQL/config/IDs/stacks |
 | Accidental alpha wipe / wrong DB (3.12) | Dry-run default; fingerprint confirm; refuse `ostt_dev` in smoke; advisory lock; transactional deletes; no public reset route; metadata-only receipt |
+| Idea Commons mistaken for formal topics (4.1) | Distinct routes/copy; informal banners; Formal Pipeline gate disclosures |
+| Preference-based pre-deliberation promotion (4.1) | Authority helpers forbid private promotion / agenda priority / elevated badges; tests assert |
+| Public Input re-identification (4.1) | Allowlisted aggregate DTOs only; small-cell suppression; forbid xid/provider IDs/vote rows in public surfaces |
+| Civic-action profiling (4.1) | Member actions use explicit fixture geography/interests; ban vote/ideology personalization |
+| Live Pol.is from public-demo (4.1) | No provider client/network calls; synthetic fixtures only until 4.2+ register approval |
 
-## Explicit non-goals for Phase 1 / Phase 2 public-demo
+## Explicit non-goals for Phase 1 / Phase 2 public-demo / Phase 4.1
 
 - Production authentication on the public demo
-- Live Pol.is threat integration
+- Live Pol.is install or undocumented provider features in 4.1
 - Penetration-test certification as a Phase 2 exit criterion (review in 2.12)
 - Claiming statistical representation of any population
 - Treating owner risk acceptance as counsel clearance

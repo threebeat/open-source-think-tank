@@ -386,7 +386,7 @@ Items below may be completed later **without** silently weakening core authoriza
 | D6 | Rich-text authoring dependencies | Plain text / Markdown-as-text TBD later without inventing legal HTML policy |
 | D7 | Full-text search engine vendor | **Deferred** — 3.11 uses SQL `ILIKE` with wildcard escaping and simple indexes; no Elasticsearch/vendor |
 | D8 | Notifications (email/push) beyond invite/auth | Forbidden until designed |
-| D9 | Pol.is-powered Public Input | **Planned Phase 4 alpha integration** — not installed or called in Phase 3; hosted vs self-hosted remains an open permitted-service decision |
+| D9 | Pol.is-powered Public Input | **Phase 4** — 4.1 documents contract + synthetic demo; live install deferred to 4.2+ after register approval; hosted vs self-hosted remains open |
 | D10 | AI APIs, analytics, payments | Forbidden |
 | D11 | Penetration test / formal security review | Before later pilot—not Phase 3 exit fiction |
 | D12 | Manual NVDA sign-off on new workspace UI | Track in handoff |

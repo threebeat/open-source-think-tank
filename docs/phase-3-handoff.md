@@ -1,8 +1,9 @@
 # Phase 3 handoff — operational invite-only alpha
 
-**Status:** **Phase 3 engineering closure candidate; awaiting explicit owner acceptance before Phase 4.**  
-**Reviewed baseline (PR #15 / 3.12 merge):** `33874e8a9ea9d3ddc690dc69de4d015861e41fcb`  
-**This document is engineering handoff evidence.** It is **not** production-launch approval, penetration-test certification, legal clearance, counsel disposition, real off-device alpha deployment approval, or Phase 4 / Pol.is authorization.
+**Status:** **Phase 3 owner-accepted** (`APPROVE PHASE 3 COMPLETE`, 2026-08-13). Phase 4.1 is active under [phase-4-plan.md](./phase-4-plan.md).  
+**Reviewed baseline (PR #16 merge on `main`):** `7254cf5e55cb64426f93f3d7685956655af916ec`  
+**Prior 3.12 merge (PR #15):** `33874e8a9ea9d3ddc690dc69de4d015861e41fcb`  
+**This document is engineering handoff evidence.** It is **not** production-launch approval, penetration-test certification, legal clearance, counsel disposition, real off-device alpha deployment approval, or live Pol.is authorization.
 
 Related: [phase-3-plan.md](./phase-3-plan.md), [architecture-phase-3.md](./architecture-phase-3.md), [alpha-reset-classification.md](./alpha-reset-classification.md), [alpha-reset-runbook.md](./alpha-reset-runbook.md), [capability-matrix.md](./capability-matrix.md), [open-questions.md](./open-questions.md)
 
@@ -24,10 +25,10 @@ Related: [phase-3-plan.md](./phase-3-plan.md), [architecture-phase-3.md](./archi
 | 3.10 | Complete |
 | 3.11 | Complete (PR #14) |
 | 3.12 | Complete (PR #15) |
-| Phase 3 closure corrections | Engineering candidate (this handoff) — **not** Work Package 3.13; **not** Phase 4 |
+| Phase 3 closure corrections | Complete (PR #16) — **not** Work Package 3.13 |
 
 **Owner waivers:** none.  
-**Stop condition:** Human review before Phase 4 (explicit owner acceptance).
+**Owner acceptance:** `APPROVE PHASE 3 COMPLETE` recorded 2026-08-13; Phase 4.1 authorized to start.
 
 ---
 
@@ -91,7 +92,7 @@ Living table: [architecture-phase-3.md](./architecture-phase-3.md) §11. **None 
 | D6 | Rich-text authoring deps | Deferred |
 | D7 | Full-text search engine vendor | Deferred (3.11/3.12 use SQL ILIKE) |
 | D8 | Notifications beyond invite/auth | Deferred |
-| D9 | Pol.is Public Input | **Phase 4** — not started |
+| D9 | Pol.is Public Input | **Phase 4** — contract/demo in 4.1; live install deferred to 4.2+ |
 | D10 | AI APIs, analytics, payments | Forbidden / deferred |
 | D11 | Penetration test / formal security review | Deferred |
 | D12 | Manual NVDA sign-off on new workspace UI | Deferred |
@@ -115,10 +116,10 @@ Relevant open questions remain open in [open-questions.md](./open-questions.md).
 
 ---
 
-## 6. Recommended Phase 4 entry criteria
+## 6. Phase 4 entry criteria — status
 
-1. Explicit owner acceptance of this Phase 3 engineering closure (`APPROVE PHASE 3 COMPLETE`).
-2. Explicit owner decision to start Phase 4 **Public Input** packaging (Pol.is) with vendor register addendum — not assumed here.
+1. Explicit owner acceptance of Phase 3 engineering closure (`APPROVE PHASE 3 COMPLETE`) — **satisfied 2026-08-13**.
+2. Explicit owner decision to start Phase 4.1 institutional contract + synthetic demo — **satisfied** (`START PHASE 4.1`). Live Pol.is install still requires a later vendor register addendum (4.2+).
 3. Counsel gates for any production-adjacent data processing remain blocking where marked in phase-2-plan §7.
 4. Do not treat alpha reset or handoff evidence as production readiness.
 
@@ -130,9 +131,9 @@ Relevant open questions remain open in [open-questions.md](./open-questions.md).
 - No penetration-test certification.
 - No legal/counsel clearance.
 - No real off-device alpha deployment approval.
-- No Phase 4 or Pol.is work started or authorized.
+- Live Pol.is install/call remains unauthorized until Phase 4.2+ vendor clearance.
 - No managed PostgreSQL / production email / analytics / AI / payments / remote source fetching / file uploads introduced.
-- Phase 3 is **not** owner-approved in repository prose until the owner replies with `APPROVE PHASE 3 COMPLETE`.
+- Phase 3 is owner-accepted; see [phase-4-plan.md](./phase-4-plan.md) for active Phase 4 packages.
 
 ---
 

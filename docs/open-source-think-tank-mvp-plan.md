@@ -55,9 +55,9 @@ Add real accounts, role-based permissions, versioned conduct assent, privacy con
 
 Build the real system for creating topic briefs, submitting claims, attaching sources, recording counterevidence, reviewing source quality, disclosing conflicts, moderating submissions, and preserving revision history. Keep evidence quality separate from popularity and consensus.
 
-### Phase 4 — Pol.is consultation integration
+### Phase 4 — Computational democracy journey & Public Input
 
-Embed hosted Pol.is conversations, connect participants through conversation-specific pseudonymous identifiers, implement the moderation workflow, import or export results, and publish understandable consultation reports. Avoid relying on undocumented Pol.is APIs; begin with supported embeds and manual administration.
+Recenter the product around Idea Commons → qualified proposal → Public Input (Pol.is when approved) → transparent agenda qualification → deliberation → policy recommendation → member actions → review/lineage. Retain Pol.is deliverables (supported hosted embed; provider-neutral mapping; conversation-scoped pseudonyms; moderation; versioned import/export and reports; outage/retention/reset/audit) across packages 4.2–4.4+. Package **4.1** ships the institutional contract and synthetic end-to-end demo only — **no live Pol.is**. See [`docs/phase-4-plan.md`](./phase-4-plan.md).
 
 ### Phase 5 — Agenda engine and algorithm laboratory
 
