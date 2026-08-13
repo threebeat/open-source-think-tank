@@ -172,7 +172,9 @@ test.describe("consultation aggregate reports (gated 4.4)", () => {
       );
       expect(publicReport?.status()).toBe(200);
       await expect(page.getByTestId("public-input-report-panel")).toBeVisible();
-      await expect(page.getByTestId("opinion-group-suppressed")).toBeVisible();
+      await expect(
+        page.getByTestId("opinion-group-suppressed").first(),
+      ).toBeVisible();
       await expect(page.locator("iframe")).toHaveCount(0);
     }
 

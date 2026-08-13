@@ -30,9 +30,12 @@ test.describe("canonical formal topic page", () => {
         page.getByRole("heading", { name: "What this topic needs next" }),
       ).toBeVisible();
       await expect(page.getByText("Explore evidence")).toBeVisible();
-      await expect(page.getByTestId("opinion-group-suppressed")).toContainText(
+      await expect(page.getByTestId("opinion-group-suppressed").first()).toContainText(
         "Suppressed",
       );
+      // Complementary suppression (ADR 0021) suppresses at least two cells when
+      // a lone small cell would otherwise be reconstructible by subtraction.
+      await expect(page.getByTestId("opinion-group-suppressed")).toHaveCount(2);
       await expect(page.getByRole("heading", { name: "Claims and approaches" })).toHaveCount(
         0,
       );

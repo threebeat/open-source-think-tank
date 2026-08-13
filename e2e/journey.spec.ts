@@ -69,9 +69,10 @@ test.describe("phase 4.1 computational-democracy journey", () => {
       }),
     ).toBeVisible();
     await expect(page.getByText(/Group A/).first()).toBeVisible();
-    await expect(page.getByTestId("opinion-group-suppressed")).toContainText(
+    await expect(page.getByTestId("opinion-group-suppressed").first()).toContainText(
       "Suppressed",
     );
+    await expect(page.getByTestId("opinion-group-suppressed")).toHaveCount(2);
     await expect(
       page.getByText(/provider participant IDs/i).first(),
     ).toBeVisible();
