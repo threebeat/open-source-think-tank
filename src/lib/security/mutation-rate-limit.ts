@@ -17,7 +17,9 @@ export type MutationRateLimitFamily =
   | "claim_evidence_review_quality"
   | "moderation_action"
   /** Account-holder privacy mutations (closure/deletion requests). Single-instance alpha only (OQ14). */
-  | "privacy_request";
+  | "privacy_request"
+  /** Phase 4.3 — Public Input conversation lifecycle transitions / provider mapping / availability. Administrator-only. */
+  | "consultation_lifecycle";
 
 export type MutationRateLimitPolicy = {
   accountLimit: number;
@@ -55,6 +57,12 @@ export const MUTATION_RATE_LIMIT_POLICY: Record<
   privacy_request: {
     accountLimit: 5,
     originLimit: 15,
+    windowMs: 15 * 60 * 1000,
+  },
+  // Administrator-only institutional mutations; same shape as moderation_action.
+  consultation_lifecycle: {
+    accountLimit: 30,
+    originLimit: 90,
     windowMs: 15 * 60 * 1000,
   },
 };

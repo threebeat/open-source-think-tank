@@ -60,15 +60,20 @@ Default decision: **deny**.
 | `workspace.search` | active | participant, reviewer, moderator, or administrator | — | Gated workspace metadata search (3.11); L3 uniqueness; auditor-only `audit.read_restricted` does **not** grant this; audience rules in architecture §5 / phase-3-plan 3.11 |
 | `topics.export_staff` | active | reviewer or administrator | — | Staff topic-package export (3.11); L3 uniqueness; allowlisted projector; no private notes/disclosure detail/account IDs |
 | `invites.issue` | active | administrator | — | Hashed token at rest; raw link returned once; never public-demo |
+| `consultations.create` | active | administrator | — | Create current Public Input conversation for a topic (4.3); gated only; not live Pol.is |
+| `consultations.transition` | active | administrator | — | Forward + recovery lifecycle transitions (4.3); reason required for close/archive/recovery |
+| `consultations.manage_provider_mapping` | active | administrator | — | Attach/rotate/remove opaque provider refs; operational kinds `none`/`fixture` only (4.3) |
+| `consultations.set_availability` | active | administrator | — | Set provider availability independently of institutional workflow (4.3) |
 
-### Phase 4.1–4.2 authority notes (public-demo / pre-deliberation)
+### Phase 4.1–4.3 authority notes (public-demo / pre-deliberation / consultation ops)
 
-Phase 4.1–4.2 do **not** add gated capabilities for live Pol.is. Pre-deliberation product rules (see [ADR 0010](./decisions/0010-computational-democracy-pipeline.md), [ADR 0012](./decisions/0012-public-input-provider-boundary.md)):
+Phase 4.1–4.3 do **not** authorize live Pol.is. Pre-deliberation product rules (see [ADR 0010](./decisions/0010-computational-democracy-pipeline.md), [ADR 0012](./decisions/0012-public-input-provider-boundary.md), [ADR 0014](./decisions/0014-institutional-conversation-lifecycle.md)):
 
 - Moderators may perform safety/relevance/duplication/formatting/process interventions with a recorded reason.
 - Moderators, administrators, board members, and ordinary participants **cannot** assign agenda priority, privately promote proposals, directly promote pre-deliberation topics, alter consultation metrics, or receive elevated badges/ranking advantages on ordinary Idea Commons contributions.
 - Formal Topic Pipeline entry is criteria-based and auditable — never a preference shortcut.
-- Provider adapter capabilities are engineering manifests only; live consultation provider install remains deferred to **4.3+** after permitted-services approval, vendor/privacy gates, and owner authorization.
+- Phase **4.3** adds gated administrator capabilities `consultations.create`, `consultations.transition`, `consultations.manage_provider_mapping`, and `consultations.set_availability` for the institutional lifecycle (`none`/`fixture` only). These are **not** live-provider install authorization.
+- Live consultation provider activation remains blocked until the activation checklist, permitted-services register addendum, vendor/privacy gates, and owner `ENABLE LIVE POLIS…` authorization clear.
 - Canonical topic sections are public navigation states, not new institutional capabilities.
 
 ### Operator actions (not account capabilities)

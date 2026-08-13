@@ -1,9 +1,9 @@
-# Alpha reset table classification (Phase 3 closure)
+# Alpha reset table classification (Phase 3 closure + Phase 4.3 Public Input)
 
 **Status:** Operator procedure for gated invite-only alpha. Not a public-demo feature. Not production retention counsel.  
-**Manifest version:** `3.12.1`
+**Manifest version:** `4.3.1`
 
-**Scope:** Every `pgTable` in `src/db/schema.ts` (35 tables) is classified as exactly one of:
+**Scope:** Every `pgTable` in `src/db/schema.ts` (37 tables) is classified as exactly one of:
 
 | Class | Meaning |
 | --- | --- |
@@ -35,7 +35,7 @@ Machine-readable mirror: `src/lib/operator/alpha-reset-manifest.ts`.
 
 ---
 
-## Classification (35 tables)
+## Classification (37 tables)
 
 | Table | Class | Rationale |
 | --- | --- | --- |
@@ -74,8 +74,21 @@ Machine-readable mirror: `src/lib/operator/alpha-reset-manifest.ts`.
 | `claim_reviews` | reset | Claim review provenance. |
 | `content_revisions` | reset | Revision snapshots (immutable normally). |
 | `evidence_reviews` | reset | Evidence review provenance. |
+| `public_input_conversations` | reset | Public Input conversation lifecycle state (Phase 4.3). `providerConversationRef` is a protected opaque reference — never public, never logged; wiped like any other alpha row. **Local wipe only** — does not delete remote provider conversations ([ADR 0017](./decisions/0017-local-versus-remote-reset-semantics.md)). |
+| `public_input_conversation_transitions` | reset | Append-only conversation lifecycle transition history (Phase 4.3; immutable in normal ops — operator reset disables the delete trigger like `moderation_actions`/`content_revisions`). Local wipe only. |
 
 **Deferred:** none.
+
+---
+
+## Local versus remote reset semantics (Phase 4.3)
+
+| Scope | What reset does | What reset must never claim |
+| --- | --- | --- |
+| **Local (this database)** | Deletes `public_input_conversations` / `public_input_conversation_transitions` (and other reset-classified tables) inside the gated alpha DB | — |
+| **Remote consultation provider** | **Nothing automatic.** No Pol.is/admin API call is made from the reset ceremony | That remote conversations, votes, cookies, or exports were deleted |
+
+Until activation gate `remote_alpha_reset_verified` is cleared and a verified remote procedure exists, operators must treat any former remote mapping as **possibly retained by the vendor** after local wipe. See [alpha-reset-runbook.md](./alpha-reset-runbook.md) and OQ29.
 
 ---
 

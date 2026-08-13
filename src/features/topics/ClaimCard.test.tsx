@@ -46,7 +46,7 @@ const disputed: EvidenceSource = {
 };
 
 describe("ClaimCard", () => {
-  it("gives opposing evidence the same card treatment and explains review states", () => {
+  it("shows compact evidence references without duplicating full source details", () => {
     render(
       <ClaimCard
         claim={claim}
@@ -57,25 +57,20 @@ describe("ClaimCard", () => {
 
     expect(screen.getByText("Approach 1")).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Supporting evidence" }),
+      screen.getByRole("heading", { name: /Supporting evidence/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Counterevidence" }),
+      screen.getByRole("heading", { name: /Counterevidence/i }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Review: Pending")).toBeInTheDocument();
-    expect(screen.getByText("Review: Disputed")).toBeInTheDocument();
-    expect(screen.getAllByText("Supporting").length).toBeGreaterThan(0);
-    expect(
-      screen.getAllByText("Evidence Against This Claim").length,
-    ).toBeGreaterThan(0);
+    expect(screen.getByText(/Review: Pending/i)).toBeInTheDocument();
+    expect(screen.getByText(/Review: Disputed/i)).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Compare two sources" }),
     ).toBeInTheDocument();
+    // Full limitations / review explanations stay in the inventory disclosure.
+    expect(screen.queryByText(/Not yet reviewed/i)).not.toBeInTheDocument();
     expect(
-      screen.getByText(/Submitted for research review; not yet relied on/i),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Material objections remain/i),
+      screen.getByText(/Full source details, limitations, and conflict disclosures/i),
     ).toBeInTheDocument();
   });
 });

@@ -100,13 +100,13 @@ Phase 2 decision register and counsel gates: [phase-2-plan.md](./phase-2-plan.md
 
 ## Phase 4 computational democracy / Public Input
 
-26. **Pol.is vendor / data-processing approval** — Unresolved / **blocker for 4.3**. Phase 4.2 recorded a sourced assessment ([public-input-provider-assessment.md](./public-input-provider-assessment.md)) with verdict **insufficient information**. Hosted vs self-hosted, written DPA, subprocessors (incl. LLM report processors), residency, retention/deletion, breach/SLA, and export schema must clear the permitted-services register before any live install ([phase-4-plan.md](./phase-4-plan.md), [ADR 0012](./decisions/0012-public-input-provider-boundary.md)).
+26. **Pol.is vendor / data-processing approval** — Unresolved / **blocker for LIVE activation** (not for 4.3 engineering). Phase 4.2 recorded a sourced assessment ([public-input-provider-assessment.md](./public-input-provider-assessment.md)) with verdict **insufficient information**. Phase 4.3 landed the institutional lifecycle and a fail-closed embed shell; live install remains blocked until hosted vs self-hosted selection, written DPA, subprocessors (incl. LLM report processors), residency, retention/deletion, breach/SLA, export schema, permitted-services register addendum, and owner `ENABLE LIVE POLIS…` authorization clear ([phase-4-plan.md](./phase-4-plan.md) §11d, [ADR 0012](./decisions/0012-public-input-provider-boundary.md), activation checklist in `src/lib/public-input/lifecycle/activation.ts`).
 
 27. **Production small-cell suppression threshold** — Unresolved. Synthetic demo uses a provisional threshold of **5**; production threshold requires privacy review. Phase 4.2 requires suppressed cells to render as explicit “Suppressed” (share `null`), never as `0%`.
 
-28. **`xid` / identity-linking mechanisms** — Unresolved / forbidden until approved. Supported status, purpose, retention, access control, deletion behavior, and reidentification risk must be explicit before any use. Embed examples and marketing are not authorization.
+28. **`xid` / identity-linking mechanisms** — Unresolved / forbidden until approved. Supported status, purpose, retention, access control, deletion behavior, and reidentification risk must be explicit before any use. Embed examples and marketing are not authorization. Remains activation gate `xid_forbidden_confirmed`.
 
-29. **Raw provider export retention vs alpha wipe** — Unresolved. Raw Pol.is/provider exports are protected data; how long gated alpha may retain them versus wipe/report copies remains open (related to OQ19 / D15). No raw export ingest in 4.2.
+29. **Raw provider export retention vs alpha wipe** — Unresolved / **blocker for LIVE activation**. Raw Pol.is/provider exports are protected data; how long gated alpha may retain them versus wipe/report copies remains open (related to OQ19 / D15). Phase 4.3 documents that **local** alpha reset deletes institutional conversation rows only and must **never claim remote provider deletion** without verified remote execution ([ADR 0017](./decisions/0017-local-versus-remote-reset-semantics.md); activation gate `remote_alpha_reset_verified`). No raw export ingest in 4.2–4.3.
 
 30. **Member-action personalization beyond explicit interests** — Unresolved. 4.1 allows only explicit fixture geography/interests with explained basis. Any richer matching (without votes/ideology inference) needs a later privacy review.
 
@@ -114,7 +114,9 @@ Phase 2 decision register and counsel gates: [phase-2-plan.md](./phase-2-plan.md
 
 32. **Gated public discussion/proposal relationships** — Unresolved / not yet operational. Phase 4.2 shows an honest empty state for gated publications; no speculative schema migration. Whether and how Idea Commons–style relationships are persisted for alpha remains a later package decision (must not pre-empt OQ20 visibility rules).
 
-33. **Provider embed CSP / third-party JS acceptance** — Unresolved / blocker for 4.3. Official embed requires third-party JavaScript to create a responsive iframe ([compdemocracy embed KB](https://compdemocracy.org/embed-code/)). Restrictive iframe policy, host allowlist, and clickjacking controls need security acceptance before live embed.
+33. **Provider embed CSP / third-party JS acceptance** — Unresolved / **blocker for LIVE activation**. Official embed requires third-party JavaScript to create a responsive iframe ([compdemocracy embed KB](https://compdemocracy.org/embed-code/)). Phase 4.3 ships exact-origin allowlisting and fail-closed URL construction with **no iframe UI wiring** ([ADR 0016](./decisions/0016-provider-embed-activation-exact-origin.md)). Restrictive iframe policy, CSP `frame-src` / script decisions, and clickjacking controls still need security acceptance before any live embed (activation gate `csp_iframe_third_party_script`).
+
+34. **Progressive evidence disclosure vs confidentiality** — Clarified for product engineering; remains listed so reviewers do not re-litigate silently. Phase 4.3 progressive disclosure (`<details>`/`<summary>`) is a **readability** pattern over fields that are already public in the projection. It is **not** a confidentiality, redaction, or access-control boundary. Protected fields must be filtered before they reach the disclosure model ([ADR 0015](./decisions/0015-progressive-evidence-disclosure.md)). If a future package needs true confidentiality controls, that is a separate design — not “keep it inside closed `<details>`.”
 
 ---
 

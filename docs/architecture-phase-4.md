@@ -1,9 +1,9 @@
 # Architecture — Phase 4 (computational democracy)
 
-**Status:** Work Package **4.2** complete in PR (awaiting owner approval before 4.3). Builds on [architecture-phase-3.md](./architecture-phase-3.md) and Phase 2 dual-mode isolation.  
-**Related:** [phase-4-plan.md](./phase-4-plan.md), [public-input-provider-assessment.md](./public-input-provider-assessment.md), [ADR 0010](./decisions/0010-computational-democracy-pipeline.md), [ADR 0011](./decisions/0011-idea-commons-formal-pipeline-separation.md), [ADR 0012](./decisions/0012-public-input-provider-boundary.md), [ADR 0013](./decisions/0013-canonical-formal-topic-page.md)
+**Status:** Work Package **4.3** complete in this PR (awaiting owner approval before 4.4). Builds on [architecture-phase-3.md](./architecture-phase-3.md) and Phase 2 dual-mode isolation.  
+**Related:** [phase-4-plan.md](./phase-4-plan.md), [public-input-provider-assessment.md](./public-input-provider-assessment.md), [ADR 0010](./decisions/0010-computational-democracy-pipeline.md), [ADR 0011](./decisions/0011-idea-commons-formal-pipeline-separation.md), [ADR 0012](./decisions/0012-public-input-provider-boundary.md), [ADR 0013](./decisions/0013-canonical-formal-topic-page.md), [ADR 0014](./decisions/0014-institutional-conversation-lifecycle.md), [ADR 0015](./decisions/0015-progressive-evidence-disclosure.md), [ADR 0016](./decisions/0016-provider-embed-activation-exact-origin.md), [ADR 0017](./decisions/0017-local-versus-remote-reset-semantics.md)
 
-This document describes the Phase 4 product/architecture contract. **Public Input remains synthetic/demo-only.** The 4.2 adapter boundary and Pol.is assessment do **not** authorize a live embed. Live Pol.is remains blocked until 4.3 owner approval and vendor/privacy gates.
+This document describes the Phase 4 product/architecture contract. **Public Input remains fail-closed for live Pol.is.** Package 4.3 lands the gated institutional conversation lifecycle, a disabled embed URL shell, and progressive evidence disclosure. Engineering readiness is **not** live activation — every gate in `LIVE_PUBLIC_INPUT_ACTIVATION_GATES` remains `unresolved`.
 
 ---
 
@@ -17,7 +17,7 @@ Institutional journey stages:
 
 1. Idea Commons (informal discussion / early ideas)
 2. Qualified proposal (nomination + published scoping criteria)
-3. Public Input (Pol.is-powered when approved; synthetic in 4.1)
+3. Public Input (Pol.is-powered when approved; synthetic / fail-closed in 4.1–4.3)
 4. Transparent agenda qualification (multi-signal, versioned)
 5. Deliberation (capacity-limited)
 6. Policy recommendation
@@ -28,7 +28,7 @@ Secondary: existing snapshot / workflow explorer remains available under `/demo/
 
 ---
 
-## 2. Route and data-flow map (4.1)
+## 2. Route and data-flow map (4.1–4.3)
 
 ### Public-demo routes
 
@@ -56,6 +56,7 @@ Fixed journey fixtures (repo)
         ├─► Idea Commons UI  ◄── sessionStorage practice posts/replies/proposals
         │
         ├─► Formal Topic projections (gate + lineage + criteria)
+        │         └─► EvidenceDisclosure (progressive; already-public fields only)
         │
         ├─► Public Input practice votes (sessionStorage)
         │         └─► sealed aggregate report DTO (allowlist; small-cell suppression)
@@ -65,15 +66,23 @@ Fixed journey fixtures (repo)
         └─► Member action opportunities (fixture geography/interests; explicit basis)
 ```
 
-**Forbidden in public-demo:** gated DB/auth clients, Pol.is network calls, provider exports in public DTOs, free text / identifiers / raw URLs / opinion data in query strings.
+**Forbidden in public-demo:** gated DB/auth clients, Pol.is network calls, conversation lifecycle writes, provider exports in public DTOs, free text / identifiers / raw URLs / opinion data in query strings.
 
-### Gated lane (4.2)
+### Gated lane (4.3)
 
-PostgreSQL + Auth.js alpha remains for Phase 3 operational surfaces. Canonical gated topic pages load **only** the published allowlisted projection (no synthetic slug fallback). Public discussion relationships are not yet in schema — honest empty state. Conversation mapping tables / live adapters remain deferred; **no DB migration in 4.2**. Public-demo never imports gated DB/auth/provider network clients.
+PostgreSQL + Auth.js alpha remains for Phase 3 operational surfaces plus the **Public Input conversation lifecycle domain**:
+
+- Tables: `public_input_conversations`, `public_input_conversation_transitions` (migration `0019`)
+- Service: `src/lib/public-input/lifecycle/service.ts` (gated-only; `assertEnvironmentSafe()`)
+- Operational `provider_kind` values: **`none` | `fixture` only** (DB CHECK + service)
+- Live kinds `polis_hosted` / `polis_self_hosted` exist for forward compatibility labels only — never writable/operational
+- Embed URL builder is domain-only and **always fail-closed** while activation gates are unresolved
+- Canonical gated topic pages still load the published allowlisted projection; public discussion relationships remain empty/not-yet-operational
+- Public-demo never imports gated DB/auth/provider network clients
 
 ---
 
-## 3. Module map (4.1–4.2)
+## 3. Module map (4.1–4.3)
 
 | Module | Responsibility |
 | --- | --- |
@@ -81,20 +90,100 @@ PostgreSQL + Auth.js alpha remains for Phase 3 operational surfaces. Canonical g
 | `src/features/journey/*` | Guided-step content helpers, formal-topic panels, lineage, authority rules |
 | `src/features/idea-commons/*` | Idea Commons UI + sessionStorage practice state |
 | `src/features/public-input/*` | Allowlisted aggregate report projection + explicit suppressible cells + recursive leak checks |
-| `src/lib/public-input/provider/*` | Provider-neutral adapter (fixture / no-provider); zero network |
+| `src/lib/public-input/provider/*` | Provider-neutral adapter (fixture / no-provider); exact-origin embed validator; zero network |
+| `src/lib/public-input/lifecycle/*` | Conversation registry, transitions, availability, opaque mapping, embed URL shell, activation gates |
 | `src/features/formal-topics/*` | Canonical topic shell, section nav, Overview/Evidence/Discussions, dual-mode loaders |
+| `src/features/topics/EvidenceDisclosure.tsx` | Progressive evidence disclosure UI (`<details>`/`<summary>`) |
+| `src/features/topics/evidence-disclosure-model.ts` | Presentation model (readability, not confidentiality) |
 | `src/features/agenda-qualification/*` | Independent-signal trace rendering |
 | `src/features/member-actions/*` | Post-decision action surface |
 | `src/features/demo/*` | Guided demo stepper (recentered steps); Reset clears journey local state |
 
 ---
 
-## 4. Public Input privacy architecture
+## 4. Conversation registry (4.3)
+
+Institutional topic IDs remain the source of truth. Provider conversation references are opaque, protected, and never appear on public or staff DTOs ([ADR 0014](./decisions/0014-institutional-conversation-lifecycle.md)).
+
+### Workflow states (institutional)
 
 ```
-Protected: raw provider export / per-person votes / membership maps
+draft → ready → open → commenting_closed → voting_closed → closed → archived
+```
+
+- Ordinary forward transitions use capability `consultations.transition`.
+- `archive` may be reached from any non-archived state with a substantive reason.
+- Recovery (out-of-pipeline) moves require a substantive reason, set `is_recovery = true`, and audit as `consultations.recovery_transition` — never reused for routine forward work.
+- At most one `designation = 'current'` conversation per topic (partial unique index).
+
+### Provider availability (independent axis)
+
+| Availability | Meaning |
+| --- | --- |
+| `not_configured` | No usable provider mapping / not set up |
+| `available` | Provider path believed usable (fixture path only in 4.3) |
+| `degraded` | Partial impairment; institutional workflow unchanged unless staff acts |
+| `unavailable` | Provider path not usable; Overview/Evidence remain |
+
+**Do not** auto-close or archive a conversation solely because availability becomes `unavailable` / `degraded`. Institutional state and provider health are separate.
+
+### Projections
+
+| Projection | Contains | Never contains |
+| --- | --- | --- |
+| `PublicConsultationView` | topicId, workflowState, providerAvailability, public title/prompt, schedule, configurationVersion | `providerConversationRef`, internal conversation id, account ids |
+| `StaffConsultationSummary` | conversationId, topicId, states, `hasProviderMapping`, titles, versions | raw `providerConversationRef` |
+
+Draft conversations have no public projection.
+
+### Capabilities
+
+| Capability | Actor | Purpose |
+| --- | --- | --- |
+| `consultations.create` | administrator | Create current conversation for a topic |
+| `consultations.transition` | administrator | Forward + recovery workflow transitions |
+| `consultations.manage_provider_mapping` | administrator | Attach / rotate / remove opaque refs (`none`/`fixture` only) |
+| `consultations.set_availability` | administrator | Set provider availability with reason when required |
+
+---
+
+## 5. Embed exact-origin policy (fail-closed)
+
+Domain module: `src/lib/public-input/lifecycle/embed-url.ts` + `validateEmbedOrigin` in the provider adapter ([ADR 0016](./decisions/0016-provider-embed-activation-exact-origin.md)).
+
+Rules:
+
+1. **Exact origin allowlist** — production path allows only `https://pol.is` (never hostname suffix / `endsWith` matching).
+2. **HTTPS required** — localhost only with explicit `OSTT_ALLOW_LOCALHOST_EMBED_ORIGIN=1` and non-production `NODE_ENV`.
+3. **Reject credential-bearing / query-string origins** (tokens, `xid`, secrets, etc.).
+4. **Opaque conversation refs only** — shape `kind:token`; reject URL-like, email-like, or forbidden substrings (`xid`, `session`, `token`, …).
+5. **Live provider kinds never construct URLs** — `polis_hosted` / `polis_self_hosted` return `LIVE_PROVIDER_KIND_FORBIDDEN`.
+6. **Activation checklist** — after input validation, `buildEmbedUrl` still returns `EMBED_ACTIVATION_GATES_UNRESOLVED` unless every gate is resolved. In 4.3 all 13 gates are hardcoded `unresolved`; the success path is intentionally unreachable.
+7. **No UI iframe / no network** in this package — shell only.
+
+Activation gate list: see [phase-4-plan.md](./phase-4-plan.md) §11d and `src/lib/public-input/lifecycle/activation.ts`.
+
+---
+
+## 6. Progressive evidence disclosure
+
+Presentation-only collapse of **already-public** evidence fields ([ADR 0015](./decisions/0015-progressive-evidence-disclosure.md)):
+
+- Default closed; keyboard/screen-reader accessible via native disclosure.
+- Never auto-opens from query strings, localStorage, or sessionStorage.
+- Collapsed: relationship, quality, title, source organization/type, contribution sentence.
+- Expanded: metadata, rationales, limitations, public conflict summary, revision/moderation notices, linked claims, external source link (when present).
+- Source anchors use `rel="noopener noreferrer"` and `referrerPolicy="no-referrer"`; the app does not fetch remote sources.
+- **Not** an access-control or confidentiality mechanism — protected fields must be filtered before they reach the disclosure model (OQ34).
+
+---
+
+## 7. Public Input privacy architecture
+
+```
+Protected: raw provider export / per-person votes / membership maps / providerConversationRef
                 │
-                │ versioned ingest (4.4+) — not in 4.1
+                │ versioned ingest (4.4+) — not in 4.3
                 ▼
 Allowlisted public report DTO
   - participation totals
@@ -105,13 +194,13 @@ Allowlisted public report DTO
   - small-cell suppression with status reported|suppressed (demo provisional n < 5; suppressed share is null, never 0)
 ```
 
-Never in public DTOs/URLs/logs/exports: provider participant IDs, account IDs, per-person vote rows, individual group membership, cross-conversation linkage, contact/identity/verification data, secret-bearing provider URLs. Recursive forbidden-key walkers must reject nested leaks.
+Never in public DTOs/URLs/logs/exports: provider participant IDs, account IDs, per-person vote rows, individual group membership, cross-conversation linkage, contact/identity/verification data, secret-bearing provider URLs, `providerConversationRef`. Recursive forbidden-key walkers must reject nested leaks.
 
 `xid` and other identity-linking mechanisms are **unsupported** until an explicit approval package.
 
 ---
 
-## 5. Agenda qualification architecture
+## 8. Agenda qualification architecture
 
 Qualification produces a **versioned trace** of independent signals — not a single score:
 
@@ -129,13 +218,13 @@ Human deferral/override appends: public reason, actor role, timestamp, conflicts
 
 ---
 
-## 6. Authority boundaries
+## 9. Authority boundaries
 
 | Actor | Pre-deliberation | During/after deliberation |
 | --- | --- | --- |
 | Visitor / community participant | Idea Commons contributions; ordinary proposals | Observe; no secret promotion |
 | Moderator | Safety/relevance/duplication/formatting/process with recorded reason; **no** agenda priority | Same process limits; does not become agenda authority |
-| Administrator | Operational publish/workflow (gated); **no** preference-based promotion | Does not replace council seats |
+| Administrator | Operational publish/workflow (gated); conversation lifecycle ops; **no** preference-based promotion | Does not replace council seats |
 | Deliberation council | — | Capacity-limited discussion, amendments, evidence requests |
 | Policy council | — | Recommendation records (not enacted law / not board adoption) |
 | Governing board | Unresolved / counsel-gated | Unresolved / counsel-gated |
@@ -144,7 +233,7 @@ Ordinary contributions by moderators or senior members use the **same** particip
 
 ---
 
-## 7. Member action opportunities
+## 10. Member action opportunities
 
 Post-decision surface examples: town hall, interest-group meeting, public comment, local agency proposal review, follow-up evidence session.
 
@@ -154,7 +243,7 @@ Each opportunity records: organizer; date/location; source link; eligibility; wh
 
 ---
 
-## 7a. Canonical topic loaders (4.2)
+## 10a. Canonical topic loaders (4.2+)
 
 ```
 public-demo                          gated
@@ -166,14 +255,23 @@ loadPublicDemoCanonicalTopic         loadGatedCanonicalTopic
         │                                      │
         └──────────► CanonicalTopicPage ◄──────┘
                      section=overview|evidence|discussions
+                              │
+                              └─ Evidence section → EvidenceDisclosure
 ```
 
 Never join public-demo and gated records by slug at runtime. Provider outage / no-provider must not remove Overview or Evidence.
 
-## 8. Deferred to later Phase 4 packages
+---
 
-- Live hosted Pol.is embed and vendor DPA / register addendum (**4.3+**; assessment in 4.2 is not authorization)
-- Operational conversation lifecycle, outage, retention jobs (4.3)
+## 10b. Local versus remote reset (4.3)
+
+Alpha reset deletes local gated rows for `public_input_conversations` and `public_input_conversation_transitions`. That **does not** delete data held by a remote consultation provider. Operators must never claim remote deletion from a local wipe ([ADR 0017](./decisions/0017-local-versus-remote-reset-semantics.md); OQ29). Verified remote handling remains activation gate `remote_alpha_reset_verified`.
+
+---
+
+## 11. Deferred to later Phase 4 packages
+
+- Live hosted Pol.is embed enablement (vendor DPA / register addendum / resolved activation gates) — **blocked after 4.3 engineering**
 - Aggregate ingest + moderation ops (4.4)
 - Production agenda qualification services (4.5)
 - Gated deliberation/policy drafting bridges (4.6)
@@ -184,6 +282,6 @@ Phase 5 (agenda laboratory) may tune methods under shadow mode but **cannot eras
 
 ---
 
-## 9. Repository settings note
+## 12. Repository settings note
 
 `main` currently appears unprotected. Architecture recommendation: require PR reviews + CI status checks; block force-push and deletion on `main`. Changing GitHub settings is an owner/admin action — **out of band** for application PRs.

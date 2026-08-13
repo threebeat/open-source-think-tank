@@ -947,6 +947,277 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
     },
   ),
 
+  // Phase 4.3 — Public Input conversation lifecycle (institutional metadata
+  // only: workflow states, capability, account ids, counters. NEVER
+  // providerConversationRef, embed URLs, participant ids, votes, or
+  // comments — see src/lib/public-input/lifecycle/sanitize-log.ts and
+  // docs/phase-4-plan.md §7. No public projectors: consultation lifecycle
+  // audit is staff/administrator-only.
+  "consultations.created": def(
+    "consultations.created",
+    "Public Input conversation draft created",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          capability: z.literal("consultations.create"),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "consultations.marked_ready": def(
+    "consultations.marked_ready",
+    "Public Input conversation marked ready",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          capability: z.literal("consultations.transition"),
+          previousWorkflowState: z.literal("draft"),
+          nextWorkflowState: z.literal("ready"),
+          actorAccountId: z.string(),
+          isRecovery: z.literal(false),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "consultations.opened": def(
+    "consultations.opened",
+    "Public Input conversation opened",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          capability: z.literal("consultations.transition"),
+          previousWorkflowState: z.literal("ready"),
+          nextWorkflowState: z.literal("open"),
+          actorAccountId: z.string(),
+          isRecovery: z.literal(false),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "consultations.commenting_closed": def(
+    "consultations.commenting_closed",
+    "Public Input conversation commenting closed",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          capability: z.literal("consultations.transition"),
+          previousWorkflowState: z.literal("open"),
+          nextWorkflowState: z.literal("commenting_closed"),
+          actorAccountId: z.string(),
+          isRecovery: z.literal(false),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "consultations.voting_closed": def(
+    "consultations.voting_closed",
+    "Public Input conversation voting closed",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          capability: z.literal("consultations.transition"),
+          previousWorkflowState: z.literal("commenting_closed"),
+          nextWorkflowState: z.literal("voting_closed"),
+          actorAccountId: z.string(),
+          isRecovery: z.literal(false),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "consultations.closed": def(
+    "consultations.closed",
+    "Public Input conversation closed",
+    {
+      requireActorAccount: true,
+      requireReason: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          capability: z.literal("consultations.transition"),
+          previousWorkflowState: z.literal("voting_closed"),
+          nextWorkflowState: z.literal("closed"),
+          actorAccountId: z.string(),
+          isRecovery: z.literal(false),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "consultations.archived": def(
+    "consultations.archived",
+    "Public Input conversation archived",
+    {
+      requireActorAccount: true,
+      requireReason: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          capability: z.literal("consultations.transition"),
+          previousWorkflowState: z.enum([
+            "draft",
+            "ready",
+            "open",
+            "commenting_closed",
+            "voting_closed",
+            "closed",
+          ]),
+          nextWorkflowState: z.literal("archived"),
+          actorAccountId: z.string(),
+          isRecovery: z.literal(false),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "consultations.recovery_transition": def(
+    "consultations.recovery_transition",
+    "Public Input conversation recovery transition (out-of-pipeline correction)",
+    {
+      requireActorAccount: true,
+      requireReason: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          capability: z.literal("consultations.transition"),
+          previousWorkflowState: z.enum([
+            "draft",
+            "ready",
+            "open",
+            "commenting_closed",
+            "voting_closed",
+            "closed",
+            "archived",
+          ]),
+          nextWorkflowState: z.enum([
+            "draft",
+            "ready",
+            "open",
+            "commenting_closed",
+            "voting_closed",
+            "closed",
+            "archived",
+          ]),
+          actorAccountId: z.string(),
+          isRecovery: z.literal(true),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "consultations.provider_availability_changed": def(
+    "consultations.provider_availability_changed",
+    "Public Input provider availability changed",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          capability: z.literal("consultations.set_availability"),
+          previousAvailability: z.enum([
+            "not_configured",
+            "available",
+            "degraded",
+            "unavailable",
+          ]),
+          nextAvailability: z.enum([
+            "not_configured",
+            "available",
+            "degraded",
+            "unavailable",
+          ]),
+          unchangedWorkflowState: z.string(),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "consultations.mapping_attached": def(
+    "consultations.mapping_attached",
+    "Public Input provider mapping attached (ref never audited)",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          capability: z.literal("consultations.manage_provider_mapping"),
+          providerKind: z.enum([
+            "none",
+            "fixture",
+            "polis_hosted",
+            "polis_self_hosted",
+          ]),
+          hasProviderMapping: z.boolean(),
+          configurationVersion: z.number().int().positive(),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "consultations.mapping_rotated": def(
+    "consultations.mapping_rotated",
+    "Public Input provider mapping rotated (ref never audited)",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          capability: z.literal("consultations.manage_provider_mapping"),
+          providerKind: z.enum([
+            "none",
+            "fixture",
+            "polis_hosted",
+            "polis_self_hosted",
+          ]),
+          hasProviderMapping: z.boolean(),
+          configurationVersion: z.number().int().positive(),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "consultations.mapping_removed": def(
+    "consultations.mapping_removed",
+    "Public Input provider mapping removed",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          capability: z.literal("consultations.manage_provider_mapping"),
+          providerKind: z.enum([
+            "none",
+            "fixture",
+            "polis_hosted",
+            "polis_self_hosted",
+          ]),
+          hasProviderMapping: z.boolean(),
+          configurationVersion: z.number().int().positive(),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+
   // Phase 3.12 operator alpha reset (CLI-only; no public projector)
   "alpha.reset_executed": def(
     "alpha.reset_executed",

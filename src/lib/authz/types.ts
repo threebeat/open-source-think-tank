@@ -61,6 +61,12 @@ export const CAPABILITIES = [
   "workspace.search",
   "topics.export_staff",
   "invites.issue",
+  // Phase 4.3 — Public Input conversation lifecycle (administrator-only;
+  // never granted by moderation.act — see src/lib/authz/authorize.ts).
+  "consultations.create",
+  "consultations.transition",
+  "consultations.manage_provider_mapping",
+  "consultations.set_availability",
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];

@@ -57,11 +57,33 @@ test.describe("3.10 gated public interface", () => {
       page.getByTestId("gated-public-topic-view"),
     ).toBeVisible({ timeout: 30_000 });
     await expect(
-      page.getByRole("heading", { name: "Supporting evidence" }).first(),
+      page.getByRole("heading", { name: /Supporting evidence/i }).first(),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Counterevidence" }).first(),
+      page.getByRole("heading", { name: /Counterevidence/i }).first(),
     ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Evidence inventory" }),
+    ).toBeVisible();
+
+    // Progressive disclosure: conflict + source details stay collapsed until expanded.
+    const disclosures = page.getByTestId("evidence-disclosure-details");
+    await expect(disclosures.first()).toBeVisible();
+    await expect
+      .poll(async () =>
+        disclosures.first().evaluate((el: HTMLDetailsElement) => el.open),
+      )
+      .toBe(false);
+    await expect(
+      page.getByRole("heading", { name: "Evidence conflict disclosure" }),
+    ).toHaveCount(0);
+
+    await disclosures.first().locator("summary").click();
+    await expect
+      .poll(async () =>
+        disclosures.first().evaluate((el: HTMLDetailsElement) => el.open),
+      )
+      .toBe(true);
     await expect(
       page.getByRole("heading", { name: "Evidence conflict disclosure" }),
     ).toBeVisible();

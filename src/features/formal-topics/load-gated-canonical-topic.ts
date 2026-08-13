@@ -47,13 +47,13 @@ export async function loadGatedCanonicalTopic(
           ? `Statewide · ${projection.geography.stateCode}`
           : `County · ${projection.geography.stateCode}`,
       disclosure:
-        "Gated alpha published topic. Public Input provider not live in Phase 4.2.",
+        "Gated alpha published topic. Public Input live provider remains fail-closed in Phase 4.3.",
       lastPublicUpdate: projection.publishedAt,
       advancingState: "advancing",
       whoCanActNow:
         "Authorized participants may contribute through gated workspace surfaces when the topic workflow allows. Preference totals cannot replace evidence or process requirements.",
       nextTransition:
-        "Follow the published operational label and workspace workflow. Live Public Input embed remains blocked pending 4.3 authorization.",
+        "Follow the published operational label and workspace workflow. Live Public Input embed remains blocked until every activation gate is cleared.",
       unmetCriteria: [],
       criteriaMet: ["Published allowlisted projection available"],
       evidenceSummary: {
