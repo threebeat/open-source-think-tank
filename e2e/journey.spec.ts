@@ -56,12 +56,16 @@ test.describe("phase 4.1 computational-democracy journey", () => {
     await page.goto(
       "/formal-topics/cedar-river-drought-surcharge?view=public-input-report",
     );
+    await expect(page).toHaveURL(
+      /\/formal-topics\/cedar-river-drought-surcharge$/,
+    );
     await expect(
       page.getByRole("heading", {
         name: "Anonymous aggregate Public Input report",
       }),
     ).toBeVisible();
     await expect(page.getByText(/Group A/).first()).toBeVisible();
+    await expect(page.getByText("Suppressed", { exact: true })).toBeVisible();
     await expect(
       page.getByText(/provider participant IDs/i).first(),
     ).toBeVisible();

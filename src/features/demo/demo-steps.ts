@@ -76,7 +76,7 @@ export const demoSteps: DemoStep[] = [
     title: "6. Anonymous aggregate Public Input report",
     summary:
       "View the allowlisted aggregate report: participation totals, neutrally named groups, agreement/disagreement, sufficiency, representation limits, method version. No per-person votes or group membership.",
-    href: "/formal-topics/cedar-river-drought-surcharge?view=public-input-report",
+    href: "/formal-topics/cedar-river-drought-surcharge#public-input-report",
     linkLabel: "Open aggregate report",
     presenterNotes:
       "Point to small-cell suppression notice (provisional threshold 5).",

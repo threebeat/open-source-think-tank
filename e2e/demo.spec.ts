@@ -71,13 +71,16 @@ test.describe("guided demonstration", () => {
         name: "Continue to 6. Anonymous aggregate Public Input report",
       })
       .click();
-    await expect(page).toHaveURL(/view=public-input-report/);
+    await expect(page).toHaveURL(
+      /\/formal-topics\/cedar-river-drought-surcharge/,
+    );
     await expect(
       page.getByRole("heading", {
         name: "Anonymous aggregate Public Input report",
       }),
     ).toBeVisible();
-    await expect(page.getByText(/per-person vote rows/i)).toBeVisible();
+    await expect(page.getByText(/per-person vote rows/i).first()).toBeVisible();
+    await expect(page.getByText("Suppressed", { exact: true })).toBeVisible();
 
     await page
       .getByRole("link", { name: "Continue to 7. Agenda qualification trace" })

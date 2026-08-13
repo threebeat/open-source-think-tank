@@ -100,17 +100,21 @@ Phase 2 decision register and counsel gates: [phase-2-plan.md](./phase-2-plan.md
 
 ## Phase 4 computational democracy / Public Input
 
-26. **Pol.is vendor / data-processing approval** — Unresolved. Hosted vs self-hosted, DPA, subprocessors, retention, outage, and export obligations must clear the permitted-services register before 4.2+ install ([phase-4-plan.md](./phase-4-plan.md), [ADR 0010](./decisions/0010-computational-democracy-pipeline.md)).
+26. **Pol.is vendor / data-processing approval** — Unresolved / **blocker for 4.3**. Phase 4.2 recorded a sourced assessment ([public-input-provider-assessment.md](./public-input-provider-assessment.md)) with verdict **insufficient information**. Hosted vs self-hosted, written DPA, subprocessors (incl. LLM report processors), residency, retention/deletion, breach/SLA, and export schema must clear the permitted-services register before any live install ([phase-4-plan.md](./phase-4-plan.md), [ADR 0012](./decisions/0012-public-input-provider-boundary.md)).
 
-27. **Production small-cell suppression threshold** — Unresolved. Synthetic demo uses a provisional threshold of **5**; production threshold requires privacy review.
+27. **Production small-cell suppression threshold** — Unresolved. Synthetic demo uses a provisional threshold of **5**; production threshold requires privacy review. Phase 4.2 requires suppressed cells to render as explicit “Suppressed” (share `null`), never as `0%`.
 
-28. **`xid` / identity-linking mechanisms** — Unresolved / forbidden until approved. Supported status, purpose, retention, access control, deletion behavior, and reidentification risk must be explicit before any use.
+28. **`xid` / identity-linking mechanisms** — Unresolved / forbidden until approved. Supported status, purpose, retention, access control, deletion behavior, and reidentification risk must be explicit before any use. Embed examples and marketing are not authorization.
 
-29. **Raw provider export retention vs alpha wipe** — Unresolved. Raw Pol.is/provider exports are protected data; how long gated alpha may retain them versus wipe/report copies remains open (related to OQ19 / D15).
+29. **Raw provider export retention vs alpha wipe** — Unresolved. Raw Pol.is/provider exports are protected data; how long gated alpha may retain them versus wipe/report copies remains open (related to OQ19 / D15). No raw export ingest in 4.2.
 
 30. **Member-action personalization beyond explicit interests** — Unresolved. 4.1 allows only explicit fixture geography/interests with explained basis. Any richer matching (without votes/ideology inference) needs a later privacy review.
 
 31. **Formal-gate numeric thresholds as published method registry candidates** — Unresolved. Fixture numbers are educational; which become candidates for a later published method registry is not decided (extends OQ8).
+
+32. **Gated public discussion/proposal relationships** — Unresolved / not yet operational. Phase 4.2 shows an honest empty state for gated publications; no speculative schema migration. Whether and how Idea Commons–style relationships are persisted for alpha remains a later package decision (must not pre-empt OQ20 visibility rules).
+
+33. **Provider embed CSP / third-party JS acceptance** — Unresolved / blocker for 4.3. Official embed requires third-party JavaScript to create a responsive iframe ([compdemocracy embed KB](https://compdemocracy.org/embed-code/)). Restrictive iframe policy, host allowlist, and clickjacking controls need security acceptance before live embed.
 
 ---
 

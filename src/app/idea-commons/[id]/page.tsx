@@ -7,7 +7,10 @@ import { PageHeader } from "@/components/PageHeader";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { MainContainer } from "@/components/layout/MainContainer";
 import { IdeaCommonsPractice } from "@/features/idea-commons/IdeaCommonsPractice";
+import { listTopics } from "@/domain/selectors";
+import { fixtureCatalog } from "@/fixtures";
 import {
+  formalTopicGateViews,
   ideaCommonsPosts,
   journeyInformalNotice,
   journeyTrajectories,
@@ -16,6 +19,20 @@ import {
 type Props = {
   params: Promise<{ id: string }>;
 };
+
+function formalTopicTitle(slug: string): string {
+  if (slug === "cedar-river-billing-ops-gap") {
+    return "Cedar River billing-operations readiness (deferred)";
+  }
+  const fromCatalog = listTopics(fixtureCatalog).find(
+    (topic) => topic.slug === slug,
+  )?.title;
+  if (fromCatalog) {
+    return fromCatalog;
+  }
+  const hasGate = formalTopicGateViews.some((gate) => gate.topicSlug === slug);
+  return hasGate ? slug.replace(/-/g, " ") : slug;
+}
 
 export async function generateStaticParams() {
   return ideaCommonsPosts.map((post) => ({ id: post.id }));
@@ -131,7 +148,7 @@ export default async function IdeaCommonsDetailPage({ params }: Props) {
             href={`/formal-topics/${trajectory.formalTopicSlug}`}
             className="font-medium text-primary underline-offset-4 hover:underline"
           >
-            {trajectory.formalTopicSlug}
+            {formalTopicTitle(trajectory.formalTopicSlug)}
           </Link>
         </p>
       ) : null}

@@ -26,7 +26,7 @@ No environment variables, API keys, or third-party accounts are required for pub
 - Local PostgreSQL 16 via Docker Compose (`npm run db:up`) when exercising gated paths
 - `APP_MODE=gated` and documented secrets only in gated environments — see [`docs/secrets-and-operations.md`](docs/secrets-and-operations.md)
 - Managed PostgreSQL host and production email vendors remain **blocked** pending register addenda
-- Phase 3 operational topic/evidence workflow is implemented on the gated foundation; see [`docs/phase-3-plan.md`](docs/phase-3-plan.md) and [`docs/phase-3-handoff.md`](docs/phase-3-handoff.md). Phase 3 is owner-accepted; Phase 4.1 recenters the public demo (no live Pol.is).
+- Phase 3 operational topic/evidence workflow is implemented on the gated foundation; see [`docs/phase-3-plan.md`](docs/phase-3-plan.md) and [`docs/phase-3-handoff.md`](docs/phase-3-handoff.md). Phase 3 and Phase 4.1 are owner-accepted; Phase **4.2** adds the Public Input adapter boundary and canonical topic IA (still no live Pol.is).
 
 ## Setup
 
@@ -86,13 +86,13 @@ Serve that build behind ordinary HTTPS in deployment so phone browsers can open 
 | `/idea-commons` | Informal Idea Commons (not Formal Topic Pipeline) |
 | `/idea-commons/[id]` | Informal discussion / proposal lineage |
 | `/formal-topics` | Gate-passed Formal Topic Pipeline + three trajectories |
-| `/formal-topics/[slug]` | Stage, criteria, lineage, optional aggregate Public Input report |
+| `/formal-topics/[slug]` | Canonical Formal Topic — Overview / Evidence / Discussions (`?section=`) |
 | `/about` | Project framing (mission, commitments, limitations, contact placeholder) |
 | `/process` | Institutional stage map |
 | `/join` | Nonfunctional join / assent preview |
-| `/topics` | Topic list (formal-stage briefs) |
-| `/topics/[slug]` | Topic brief, claims, evidence |
-| `/topics/[slug]/consult` | Simulated Public Input |
+| `/topics` | Redirect → `/formal-topics` |
+| `/topics/[slug]` | Redirect → `/formal-topics/[slug]` |
+| `/topics/[slug]/consult` | Simulated Public Input participation/stage (preserved) |
 | `/agenda` | Agenda list by human-review state |
 | `/agenda/[slug]` | Independent qualification signals + human review |
 | `/deliberation/[slug]` | Public deliberation observer |
@@ -145,7 +145,10 @@ Direct product URLs still work without presentation mode.
 | [`docs/phase-2-handoff.md`](docs/phase-2-handoff.md) | Phase 2 foundation evidence and alpha-test posture |
 | [`docs/architecture-phase-2.md`](docs/architecture-phase-2.md) | Phase 2 environments, adapters, data-flow |
 | [`docs/phase-3-plan.md`](docs/phase-3-plan.md) | Phase 3 operational alpha work packages |
-| [`docs/phase-3-handoff.md`](docs/phase-3-handoff.md) | Phase 3 evidence handoff (awaiting human review before Phase 4) |
+| [`docs/phase-3-handoff.md`](docs/phase-3-handoff.md) | Phase 3 evidence handoff (owner-accepted) |
+| [`docs/phase-4-plan.md`](docs/phase-4-plan.md) | Phase 4 packages (4.2 current) |
+| [`docs/architecture-phase-4.md`](docs/architecture-phase-4.md) | Phase 4 routes, loaders, Public Input boundary |
+| [`docs/public-input-provider-assessment.md`](docs/public-input-provider-assessment.md) | Pol.is capability/vendor assessment (not live-install auth) |
 | [`docs/alpha-reset-runbook.md`](docs/alpha-reset-runbook.md) | Operator alpha wipe CLI runbook |
 | [`docs/alpha-reset-classification.md`](docs/alpha-reset-classification.md) | Table-by-table reset/retain/regenerate manifest |
 | [`docs/architecture-phase-3.md`](docs/architecture-phase-3.md) | Phase 3 services, tables, projections |
@@ -158,5 +161,6 @@ Direct product URLs still work without presentation mode.
 
 - **Phase 1** demonstration MVP is complete (tag `phase-1-demonstration`). Public-demo mode remains synthetic and separately deployable.
 - **Phase 2** invite-only foundation packages 2.1–2.12 are in place (tag `phase-2-foundation`; see [`docs/phase-2-handoff.md`](docs/phase-2-handoff.md)). Gated auth, roles, assent, verification, audit, and isolation are the baseline for alpha engineering.
-- **Phase 3** packages **3.1–3.12** are implemented on the gated foundation ([`docs/phase-3-handoff.md`](docs/phase-3-handoff.md)). **Phase 3 engineering closure candidate; awaiting explicit owner acceptance before Phase 4.**
+- **Phase 3** packages **3.1–3.12** are implemented and **owner-accepted**.
+- **Phase 4.1** is **owner-approved and complete** (PR #17). **Phase 4.2** (provider assessment, adapter boundary, canonical topic page) is in progress. **4.3** (live embed) remains blocked pending owner approval and vendor/privacy gates.
 - Public recruitment, live Pol.is, payments, analytics, AI APIs, managed production PostgreSQL, and unsettled legal formation claims remain out of scope until their gates clear. Alpha-test data must stay fully resettable via the operator CLI.
