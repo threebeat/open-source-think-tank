@@ -24,6 +24,12 @@ export const accountLifecycleEnum = pgEnum("account_lifecycle_state", [
   "anonymization-pending",
 ]);
 
+/** How the account was created. Existing rows default to invite. */
+export const accountEnrollmentKindEnum = pgEnum("account_enrollment_kind", [
+  "invite",
+  "open",
+]);
+
 export const platformRoleEnum = pgEnum("platform_role", [
   "participant",
   "reviewer",
@@ -132,6 +138,9 @@ export const accounts = pgTable(
       .references(() => persons.id, { onDelete: "restrict" }),
     contactChannel: text("contact_channel").notNull(),
     lifecycleState: accountLifecycleEnum("lifecycle_state").notNull(),
+    enrollmentKind: accountEnrollmentKindEnum("enrollment_kind")
+      .notNull()
+      .default("invite"),
     synthetic: boolean("synthetic").notNull().default(true),
     contactVerifiedAt: timestamp("contact_verified_at", { withTimezone: true }),
     activatedAt: timestamp("activated_at", { withTimezone: true }),
@@ -152,6 +161,33 @@ export const accounts = pgTable(
         OR (${table.lifecycleState} = 'closed' AND ${table.closedAt} IS NOT NULL)
         OR (${table.lifecycleState} = 'anonymization-pending' AND ${table.closedAt} IS NOT NULL)
       )`,
+    ),
+  ],
+);
+
+/**
+ * Password credentials for gated open enrollment (Phase 2).
+ * Never selected by public projections. Hash only — never plaintext.
+ */
+export const accountCredentials = pgTable(
+  "account_credentials",
+  {
+    accountId: text("account_id")
+      .primaryKey()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    passwordHash: text("password_hash").notNull(),
+    passwordScheme: text("password_scheme").notNull(),
+    rotatedAt: timestamp("rotated_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    check(
+      "account_credentials_scheme_scrypt",
+      sql`${table.passwordScheme} = 'scrypt_n32768'`,
+    ),
+    check(
+      "account_credentials_hash_nonblank",
+      sql`char_length(btrim(${table.passwordHash})) > 0`,
     ),
   ],
 );
@@ -2727,6 +2763,7 @@ export const appointmentConflictsAndRecusals = pgTable(
 export const foundationTables = {
   persons,
   accounts,
+  accountCredentials,
   profiles,
   invitations,
   roleAssignments,

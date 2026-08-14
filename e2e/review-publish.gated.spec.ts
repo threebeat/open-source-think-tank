@@ -40,10 +40,11 @@ test.describe("review and publish (gated)", () => {
     ).toBeVisible();
   });
 
-  test("anonymous unpublished slug is not found", async ({ page }) => {
-    const response = await page.goto(
-      "/formal-topics/does-not-exist-unpublished-slug",
-    );
-    expect(response?.status()).toBe(404);
+  test("anonymous unpublished slug is account-gated (V2-21)", async ({
+    page,
+  }) => {
+    await page.goto("/formal-topics/does-not-exist-unpublished-slug");
+    await expect(page).toHaveURL(/\/auth\/sign-in/);
+    await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
   });
 });

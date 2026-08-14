@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 
-import { organizationMemberships } from "@/db/schema";
+import { organizationMembershipEvents, organizationMemberships } from "@/db/schema";
 import type { FoundationDb } from "@/db/types";
 import { requireOrganizationId } from "@/lib/organizations/ids";
 import type { OrganizationMembershipStatus } from "@/lib/organizations/types";
@@ -52,6 +52,36 @@ export async function listMembershipsForAccount(
     })
     .from(organizationMemberships)
     .where(eq(organizationMemberships.accountId, accountId));
+  return rows;
+}
+
+export async function listMembershipEventsForAccount(
+  db: FoundationDb,
+  accountId: string,
+): Promise<
+  Array<{
+    id: string;
+    organizationId: string;
+    eventKind: string;
+    reason: string | null;
+    ruleVersion: string;
+    at: Date;
+  }>
+> {
+  if (!accountId.trim()) {
+    throw new Error("ACCOUNT_ID_REQUIRED");
+  }
+  const rows = await db
+    .select({
+      id: organizationMembershipEvents.id,
+      organizationId: organizationMembershipEvents.organizationId,
+      eventKind: organizationMembershipEvents.eventKind,
+      reason: organizationMembershipEvents.reason,
+      ruleVersion: organizationMembershipEvents.ruleVersion,
+      at: organizationMembershipEvents.at,
+    })
+    .from(organizationMembershipEvents)
+    .where(eq(organizationMembershipEvents.accountId, accountId));
   return rows;
 }
 

@@ -167,7 +167,15 @@ ok("secret pattern scan completed");
       const full = path.join(dir, entry);
       const st = statSync(full);
       if (st.isDirectory()) {
-        if (entry === "api" || entry === "workspace" || entry === "account") {
+        // Account-gated product surfaces may import auth/db. Public landing,
+        // demo, and join remain scanned. URL is never authorization.
+        if (
+          entry === "api" ||
+          entry === "workspace" ||
+          entry === "account" ||
+          entry === "(member)" ||
+          entry === "org"
+        ) {
           continue;
         }
         walkApp(full);

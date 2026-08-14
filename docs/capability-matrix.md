@@ -81,6 +81,13 @@ Default decision: **deny**.
 - Community membership is not granted in Phase 1; `/join` stays invite-only.
 - Live Chamber, live Council, open enrollment, elevated portal, and hosted Pol.is stay disabled.
 
+### Commonhall v2 Phase 2 authority notes
+
+- Gated open enrollment (`COMMONHALL_V2_OPEN_ENROLLMENT` default on unless `off`) creates an organization **community** membership on the synthetic primary organization only.
+- Community membership still does **not** grant Chamber, Council, moderator, organization-admin, or service-admin capability. Negative `authorize` / `authorizeOrganization` tests cover this.
+- Public-demo never constructs a database or auth enrollment client.
+- Hosted Pol.is, live Chamber, live Council, and the elevated organization portal remain disabled. `/org/**` is not authorization.
+
 ### Phase 4.1–4.4 authority notes (public-demo / pre-deliberation / consultation ops)
 
 Phase 4.1–4.4 do **not** authorize live Pol.is. Pre-deliberation product rules (see [ADR 0010](./decisions/0010-computational-democracy-pipeline.md), [ADR 0012](./decisions/0012-public-input-provider-boundary.md), [ADR 0014](./decisions/0014-institutional-conversation-lifecycle.md), [ADR 0018](./decisions/0018-aggregate-only-canonical-import-format.md)–[0021](./decisions/0021-complementary-small-cell-suppression.md)):

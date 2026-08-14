@@ -1,16 +1,19 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { PageHeader } from "@/components/PageHeader";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { MainContainer } from "@/components/layout/MainContainer";
+import { requireMemberSession } from "@/lib/auth/guard";
+import { PRE_ALPHA_ASSIGNMENT_EXPLANATION } from "@/lib/auth/community-standards";
 import { resolveAppMode } from "@/lib/env/app-mode";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Account",
-  description: "Gated account holder status (invite-only foundation).",
+  description: "Commonhall account, membership, and privacy controls.",
 };
 
 export default async function AccountPage() {
@@ -18,13 +21,7 @@ export default async function AccountPage() {
     redirect("/");
   }
 
-  const { requireGatedSession } = await import("@/lib/auth/guard");
-  const gated = await requireGatedSession();
-  if (!gated.ok) {
-    redirect("/auth/sign-in");
-  }
-
-  const { session } = gated;
+  const session = await requireMemberSession();
 
   return (
     <MainContainer className="space-y-8">
@@ -32,13 +29,12 @@ export default async function AccountPage() {
         items={[{ href: "/", label: "Home" }, { label: "Account" }]}
       />
       <PageHeader
-        eyebrow="Invite-only foundation"
-        title="Account holder status"
-        description="Authentication does not grant institutional active capabilities. Activation is owned by later work packages after assent and verification."
+        eyebrow="Community account"
+        title="Your account"
+        description="Community membership is organization service membership in this pre-alpha synthetic hall. It is not nonprofit or statutory membership."
       />
-      <DisclosureNotice title="Pending institutional activation" tone="caution">
-        This account is authenticated for onboarding only. Community participant
-        status is not a settled legal membership category.
+      <DisclosureNotice title="Assignment explanation" tone="neutral">
+        {PRE_ALPHA_ASSIGNMENT_EXPLANATION}
       </DisclosureNotice>
       <dl className="grid gap-4 text-sm sm:grid-cols-2">
         <div>
@@ -46,31 +42,30 @@ export default async function AccountPage() {
           <dd className="font-medium">{session.lifecycleState}</dd>
         </div>
         <div>
-          <dt className="text-muted-foreground">Synthetic fixture</dt>
+          <dt className="text-muted-foreground">Synthetic pre-alpha row</dt>
           <dd className="font-medium">{session.synthetic ? "yes" : "no"}</dd>
         </div>
-        <div className="sm:col-span-2">
-          <dt className="text-muted-foreground">Account id</dt>
-          <dd className="font-mono text-xs break-all">{session.accountId}</dd>
-        </div>
       </dl>
-      <p className="text-sm">
-        <a className="underline" href="/account/onboarding">
-          Onboarding progress
-        </a>
-        {" · "}
-        <a className="underline" href="/account/assent">
-          View assent history
-        </a>
-        {" · "}
-        <a className="underline" href="/account/verification">
-          View verification status
-        </a>
-        {" · "}
-        <a className="underline" href="/account/privacy">
-          Privacy controls
-        </a>
-      </p>
+      <nav aria-label="Account sections" className="flex flex-wrap gap-4 text-sm">
+        <Link className="underline" href="/account/profile">
+          Profile
+        </Link>
+        <Link className="underline" href="/account/membership">
+          Membership
+        </Link>
+        <Link className="underline" href="/account/history">
+          History
+        </Link>
+        <Link className="underline" href="/account/privacy">
+          Privacy
+        </Link>
+        <Link className="underline" href="/account/onboarding">
+          Onboarding
+        </Link>
+        <Link className="underline" href="/account/assent">
+          Assent
+        </Link>
+      </nav>
     </MainContainer>
   );
 }

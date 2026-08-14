@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
  * Mirror of docs/alpha-reset-classification.md — keep in sync.
  */
 
-export const RESET_MANIFEST_VERSION = "v2.1.0";
+export const RESET_MANIFEST_VERSION = "v2.2.0";
 
 /** Fixed transaction-scoped advisory-lock key for concurrent alpha resets. */
 export const ALPHA_RESET_ADVISORY_LOCK_KEY = 3_120_845_120_012;
@@ -29,11 +29,12 @@ export type AlphaResetTableEntry = {
 
 /**
  * Every pgTable in schema.ts — exactly one class each.
- * Count must remain 52 until schema grows (assertManifestComplete).
+ * Count must remain 53 until schema grows (assertManifestComplete).
  */
 export const ALPHA_RESET_TABLES: readonly AlphaResetTableEntry[] = [
   { table: "persons", class: "reset" },
   { table: "accounts", class: "reset" },
+  { table: "account_credentials", class: "reset" },
   { table: "profiles", class: "reset" },
   { table: "invitations", class: "reset" },
   { table: "operator_bootstrap_state", class: "reset" },
@@ -146,6 +147,7 @@ export const DELETE_ORDER: readonly string[] = [
   "role_assignments",
   "invitations",
   "profiles",
+  "account_credentials",
   "accounts",
   "persons",
 ] as const;
