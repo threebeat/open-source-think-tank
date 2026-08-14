@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
  * Mirror of docs/alpha-reset-classification.md — keep in sync.
  */
 
-export const RESET_MANIFEST_VERSION = "v2.2.0";
+export const RESET_MANIFEST_VERSION = "v2.3.0";
 
 /** Fixed transaction-scoped advisory-lock key for concurrent alpha resets. */
 export const ALPHA_RESET_ADVISORY_LOCK_KEY = 3_120_845_120_012;
@@ -29,7 +29,7 @@ export type AlphaResetTableEntry = {
 
 /**
  * Every pgTable in schema.ts — exactly one class each.
- * Count must remain 53 until schema grows (assertManifestComplete).
+ * Count must remain 55 until schema grows (assertManifestComplete).
  */
 export const ALPHA_RESET_TABLES: readonly AlphaResetTableEntry[] = [
   { table: "persons", class: "reset" },
@@ -94,10 +94,15 @@ export const ALPHA_RESET_TABLES: readonly AlphaResetTableEntry[] = [
   { table: "organization_config_versions", class: "reset" },
   { table: "organization_service_areas", class: "reset" },
   { table: "organizations", class: "reset" },
+  // Commonhall v2 Phase 3 Commons — synthetic/alpha discussion catalog.
+  { table: "commons_discussion_revisions", class: "reset" },
+  { table: "commons_discussions", class: "reset" },
 ] as const;
 
 /** Children-first delete order for class=reset tables only (explicit list). */
 export const DELETE_ORDER: readonly string[] = [
+  "commons_discussion_revisions",
+  "commons_discussions",
   "appointment_conflicts_and_recusals",
   "topic_governance_events",
   "topic_governance_records",
@@ -211,6 +216,10 @@ export const IMMUTABLE_DELETE_TRIGGERS: readonly {
     table: "topic_governance_events",
     trigger: "topic_governance_events_immutable",
   },
+  {
+    table: "commons_discussion_revisions",
+    trigger: "commons_discussion_revisions_immutable",
+  },
 ] as const;
 
 /** Coarse count families for audit metadata (no PII / no row ids). */
@@ -312,6 +321,10 @@ export const COUNT_FAMILIES: readonly {
       "organization_service_areas",
       "organizations",
     ],
+  },
+  {
+    family: "commons",
+    tables: ["commons_discussion_revisions", "commons_discussions"],
   },
 ] as const;
 

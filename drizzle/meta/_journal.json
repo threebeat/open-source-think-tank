@@ -176,6 +176,13 @@
       "when": 1786560000000,
       "tag": "0024_open_enrollment",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1786570000000,
+      "tag": "0025_commons_posts",
+      "breakpoints": true
     }
   ]
 }

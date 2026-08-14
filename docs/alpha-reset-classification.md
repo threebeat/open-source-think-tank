@@ -1,7 +1,7 @@
 # Alpha reset table classification (Phase 3 closure + Phase 4.3–4.4 Public Input + v2 organization kernel)
 
 **Status:** Operator procedure for gated pre-alpha. Not a public-demo feature. Not production retention counsel.  
-**Manifest version:** `v2.2.0` — Commonhall v2 Phase 2 adds `account_credentials` classified **reset** below; `RESET_MANIFEST_VERSION` in `alpha-reset-manifest.ts` and this document stay in sync.
+**Manifest version:** `v2.3.0` — Commonhall v2 Phase 3 adds `commons_discussions` and `commons_discussion_revisions` classified **reset** below; `RESET_MANIFEST_VERSION` in `alpha-reset-manifest.ts` and this document stay in sync.
 
 **Scope:** Every `pgTable` in `src/db/schema.ts` must be classified as exactly one of:
 
@@ -35,7 +35,7 @@ Machine-readable mirror: `src/lib/operator/alpha-reset-manifest.ts`.
 
 ---
 
-## Classification (53 tables)
+## Classification (55 tables)
 
 | Table | Class | Rationale |
 | --- | --- | --- |
@@ -92,6 +92,8 @@ Machine-readable mirror: `src/lib/operator/alpha-reset-manifest.ts`.
 | `organization_config_versions` | reset | Versioned organization configuration (synthetic). |
 | `organization_service_areas` | reset | Coarse region codes only. |
 | `organizations` | reset | Organization tenants. |
+| `commons_discussion_revisions` | reset | Append-only Commons revision snapshots (immutable in normal ops). Local wipe only. |
+| `commons_discussions` | reset | Organization-scoped Commons discussions/proposals (Phase 3). Synthetic catalog and member posts. |
 
 **Deferred:** none.
 
