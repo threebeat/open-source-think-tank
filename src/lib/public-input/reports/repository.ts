@@ -781,7 +781,7 @@ export async function updateFindingPublicationStatus(
         ),
       ),
     )
-    .returning({ id: publicInputReports.id });
+    .returning();
 
   if (!locked) {
     return {
