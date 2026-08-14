@@ -1218,6 +1218,196 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
     },
   ),
 
+  // Phase 4.4 — aggregate-only report ingestion + Public Input moderation
+  // (institutional metadata only: workflow states, capability, account ids,
+  // counts, hashes/policy versions. NEVER raw import bodies, participant
+  // rows, vote matrices, xid, tokens, raw URLs, or secrets — see
+  // src/lib/public-input/reports/service.ts. No public projectors: report
+  // ingest/review/publish and moderation audit is staff/administrator-only.
+  "consultations.reports.imported": def(
+    "consultations.reports.imported",
+    "Public Input aggregate report import validated and stored",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          importId: z.string(),
+          reportId: z.string(),
+          capability: z.literal("consultations.reports.import"),
+          sourceKind: z.enum(["fixture", "manual_aggregate"]),
+          schemaVersion: z.string(),
+          canonicalHash: z.string(),
+          reportVersion: z.number().int().positive(),
+          isIdempotentReplay: z.boolean(),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "consultations.reports.validated": def(
+    "consultations.reports.validated",
+    "Public Input aggregate report import passed canonical validation",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          importId: z.string(),
+          reportId: z.string(),
+          capability: z.literal("consultations.reports.import"),
+          previousWorkflowState: z.literal("imported"),
+          nextWorkflowState: z.literal("validated"),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "consultations.reports.review_started": def(
+    "consultations.reports.review_started",
+    "Public Input aggregate report moved under review",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          reportId: z.string(),
+          capability: z.literal("consultations.reports.review"),
+          previousWorkflowState: z.literal("validated"),
+          nextWorkflowState: z.literal("under_review"),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "consultations.reports.published": def(
+    "consultations.reports.published",
+    "Public Input aggregate report published",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          reportId: z.string(),
+          capability: z.literal("consultations.reports.publish"),
+          previousWorkflowState: z.literal("under_review"),
+          nextWorkflowState: z.literal("published"),
+          reportVersion: z.number().int().positive(),
+          supersededReportId: z.string().nullable(),
+          suppressedCellCount: z.number().int().nonnegative(),
+          smallCellPolicyVersion: z.string(),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "consultations.reports.rejected": def(
+    "consultations.reports.rejected",
+    "Public Input aggregate report rejected",
+    {
+      requireActorAccount: true,
+      requireReason: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          reportId: z.string(),
+          capability: z.literal("consultations.reports.review"),
+          previousWorkflowState: z.enum(["validated", "under_review"]),
+          nextWorkflowState: z.literal("rejected"),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "consultations.reports.superseded": def(
+    "consultations.reports.superseded",
+    "Public Input aggregate report superseded by a newer published version",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          reportId: z.string(),
+          capability: z.literal("consultations.reports.publish"),
+          previousWorkflowState: z.literal("published"),
+          nextWorkflowState: z.literal("superseded"),
+          supersededByReportId: z.string(),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "consultations.moderation.provider_recorded": def(
+    "consultations.moderation.provider_recorded",
+    "Provider-side Public Input moderation record recorded (observational only; opaque ref never audited)",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          moderationRecordId: z.string(),
+          capability: z.literal("consultations.moderation.record"),
+          previousStatus: z.enum(["pending", "accepted", "rejected"]).nullable(),
+          nextStatus: z.enum(["pending", "accepted", "rejected"]),
+          reasonCode: z.string(),
+          hasPrivateNote: z.boolean(),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "consultations.reports.finding_withheld": def(
+    "consultations.reports.finding_withheld",
+    "Public Input report finding withheld from public projection",
+    {
+      requireActorAccount: true,
+      requireReason: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          reportId: z.string(),
+          findingId: z.string(),
+          moderationActionId: z.string(),
+          capability: z.literal("consultations.reports.review"),
+          previousPublicationStatus: z.enum(["included", "withheld", "superseded"]),
+          nextPublicationStatus: z.enum(["withheld", "superseded"]),
+          hasPublicRationale: z.literal(true),
+          hasPrivateNote: z.boolean(),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  "consultations.reports.finding_included": def(
+    "consultations.reports.finding_included",
+    "Public Input report finding (re)included in public projection",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          reportId: z.string(),
+          findingId: z.string(),
+          moderationActionId: z.string(),
+          capability: z.literal("consultations.reports.review"),
+          previousPublicationStatus: z.enum(["included", "withheld", "superseded"]),
+          nextPublicationStatus: z.literal("included"),
+          hasPrivateNote: z.boolean(),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+
   // Phase 3.12 operator alpha reset (CLI-only; no public projector)
   "alpha.reset_executed": def(
     "alpha.reset_executed",

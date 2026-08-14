@@ -162,6 +162,13 @@ export function ConsultationSurface({
           Back to topic overview
         </Link>
         <Link
+          href={`/formal-topics/${topicSlug}/consultation/report`}
+          className="text-primary underline underline-offset-2"
+          data-testid="consultation-report-link"
+        >
+          Published aggregate report
+        </Link>
+        <Link
           href={`/formal-topics/${topicSlug}?section=discussions`}
           className="text-primary underline underline-offset-2"
         >

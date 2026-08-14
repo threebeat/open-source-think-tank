@@ -1,12 +1,12 @@
 # Phase 4 plan — Computational democracy journey & Public Input
 
-**Status:** Active. Phase 4.1 and **4.2** are **owner-approved and complete** (`APPROVE PHASE 4.1 COMPLETE`; `APPROVE PHASE 4.2 AS COMPLETE`; PR #17 / PR #18 merged). Phase **4.3** is complete in this PR and awaits owner approval before **4.4**.  
-**Baseline:** `origin/main` at `9f3fe4221e6eafcd46eccfe8adec0cfd5e7014f7` (PR #18 Phase 4.2 merged).  
-**Related:** [architecture-phase-4.md](./architecture-phase-4.md), [public-input-provider-assessment.md](./public-input-provider-assessment.md), [0010](./decisions/0010-computational-democracy-pipeline.md), [0011](./decisions/0011-idea-commons-formal-pipeline-separation.md), [0012](./decisions/0012-public-input-provider-boundary.md), [0013](./decisions/0013-canonical-formal-topic-page.md), [0014](./decisions/0014-institutional-conversation-lifecycle.md), [0015](./decisions/0015-progressive-evidence-disclosure.md), [0016](./decisions/0016-provider-embed-activation-exact-origin.md), [0017](./decisions/0017-local-versus-remote-reset-semantics.md), [phase-3-handoff.md](./phase-3-handoff.md), [product-charter.md](./product-charter.md)
+**Status:** Active. Phase 4.1–**4.3** are **owner-approved and complete** (`APPROVE PHASE 4.1 COMPLETE`; `APPROVE PHASE 4.2 AS COMPLETE`; `APPROVE PHASE 4.3 COMPLETE. START PHASE 4.4.`; PR #17 / PR #18 / PR #19 merged). Phase **4.4** (moderation + aggregate report ingestion) is the active package.  
+**Baseline:** `origin/main` at `9aba076e09b60ea95e2c69d42380494a1c4398ac` (PR #19 Phase 4.3 merged).  
+**Related:** [architecture-phase-4.md](./architecture-phase-4.md), [public-input-provider-assessment.md](./public-input-provider-assessment.md), [0010](./decisions/0010-computational-democracy-pipeline.md), [0011](./decisions/0011-idea-commons-formal-pipeline-separation.md), [0012](./decisions/0012-public-input-provider-boundary.md), [0013](./decisions/0013-canonical-formal-topic-page.md), [0014](./decisions/0014-institutional-conversation-lifecycle.md), [0015](./decisions/0015-progressive-evidence-disclosure.md), [0016](./decisions/0016-provider-embed-activation-exact-origin.md), [0017](./decisions/0017-local-versus-remote-reset-semantics.md), [0018](./decisions/0018-aggregate-only-canonical-import-format.md), [0019](./decisions/0019-immutable-report-versioning-and-publication.md), [0020](./decisions/0020-public-input-moderation-versus-provider-moderation.md), [0021](./decisions/0021-complementary-small-cell-suppression.md), [phase-3-handoff.md](./phase-3-handoff.md), [product-charter.md](./product-charter.md)
 
 This plan is a **product/engineering contract**. It is **not** legal clearance, counsel disposition, Pol.is vendor approval, production-launch approval, or authorization to enable a live consultation provider.
 
-**Live Pol.is remains FAIL-CLOSED.** Engineering readiness in 4.3 (institutional lifecycle + disabled embed shell) is **not** live activation.
+**Live Pol.is remains FAIL-CLOSED.** Package **4.4** authorizes **aggregate import + moderation engineering only**. It is **not** live activation, raw-export retention authorization, or counsel clearance.
 
 ---
 
@@ -73,14 +73,14 @@ Phase 4 retains these deliverables from the prior MVP plan:
 | --- | --- | --- |
 | **4.1** | Institutional contract and synthetic end-to-end demo | **Complete / owner-approved** (PR #17). |
 | **4.2** | Public Input provider assessment, adapter boundary, canonical topic IA | **Complete / owner-approved** (PR #18). |
-| **4.3** | Gated conversation lifecycle, embed activation readiness, progressive evidence disclosure | Institutional registry + fail-closed embed URL shell + evidence disclosure UI; **no live Pol.is** |
-| **4.4** | Moderation and aggregate report ingestion | Reasoned moderation; versioned aggregate import; public report projections |
+| **4.3** | Gated conversation lifecycle, embed activation readiness, progressive evidence disclosure | **Complete / owner-approved** (PR #19). |
+| **4.4** | Moderation and aggregate report ingestion | Reasoned moderation; versioned aggregate-only import; complementary suppression; public report projections; **no live Pol.is** |
 | **4.5** | Consultation-to-agenda qualification | Transparent multi-signal qualification; no composite truth/importance score |
 | **4.6** | Discussion, deliberation, and policy drafting | Bridge Formal Pipeline stages with operational gated workspace surfaces |
 | **4.7** | Member action opportunities | Post-decision civic action surfaces with sponsorship/conflict/expiry rules |
 | **4.8** | Hardening and handoff | Security/privacy/a11y hardening; Phase 4 handoff |
 
-Stop after each package for human approval. Do **not** begin 4.4 without explicit owner approval. Completing 4.3 engineering is **not** authorization for a live embed.
+Stop after each package for human approval. Do **not** begin 4.5 without explicit owner approval. Completing 4.4 aggregate ingest / moderation engineering is **not** authorization for a live embed.
 
 ---
 
@@ -122,7 +122,7 @@ Stop after each package for human approval. Do **not** begin 4.4 without explici
 - Raw provider URLs containing secrets or access tokens
 - `providerConversationRef` / opaque provider mapping tokens
 
-Raw provider exports are **protected data**. Public reports are separate allowlisted aggregate projections. Configurable **small-cell suppression** applies; synthetic demo provisional threshold is **5**, with production threshold requiring privacy review (open question).
+Raw provider exports are **protected data**. Public reports are separate allowlisted aggregate projections. Configurable **small-cell suppression** (including **complementary** suppression — [ADR 0021](./decisions/0021-complementary-small-cell-suppression.md)) applies; synthetic demo provisional threshold is **5**. Production threshold still requires privacy review (**OQ27**) and explicit owner approval of the numeric value (**OQ35**).
 
 Do **not** use `xid` or any identity-linking mechanism until supported status, purpose, retention, access control, deletion, and reidentification risk are approved.
 
@@ -166,8 +166,8 @@ Selected deliberation and policy bodies have different documented authority (cap
 
 | Lane | Rules |
 | --- | --- |
-| **public-demo** | Synthetic, unauthenticated, session-scoped, resettable; incapable of gated writes; never loads Pol.is client, `DATABASE_URL`, or Auth.js; progressive evidence disclosure uses fixture/public projections only |
-| **gated** | Authenticated PostgreSQL alpha; conversation lifecycle domain in 4.3 (`none`/`fixture` provider kinds only); live Pol.is kinds fail closed |
+| **public-demo** | Synthetic, unauthenticated, session-scoped, resettable; incapable of gated writes; never loads Pol.is client, `DATABASE_URL`, or Auth.js; progressive evidence disclosure and aggregate reports use fixture/public projections only |
+| **gated** | Authenticated PostgreSQL alpha; conversation lifecycle (4.3) + aggregate report ingest / moderation (4.4) with `none`/`fixture` provider kinds only; live Pol.is kinds fail closed |
 
 Call `assertEnvironmentSafe()` before any DB client. Production participant data must never enter prompts, fixtures, logs, screenshots, or test recordings.
 
@@ -191,7 +191,13 @@ Call `assertEnvironmentSafe()` before any DB client. Production participant data
 2. Deleted obsolete merged remote branch `phase-4/4.2-public-input-adapter-and-topic-navigation` (squash-merged via PR #18; no force).
 3. Created / continued `phase-4/4.3-gated-conversation-lifecycle-and-evidence-disclosure` from that baseline.
 
-**Branch-protection recommendation (do not silently alter settings):** `main` still appears unprotected. Recommend requiring PR review + required status checks, and blocking force-push and branch deletion on `main`. Owner/admin action outside this package — **do not change repository settings from application PRs**.
+### 4.4 start
+
+1. Verified `origin/main` = `9aba076e09b60ea95e2c69d42380494a1c4398ac` (PR #19 Phase 4.3 merged).
+2. Deleted obsolete merged remote branch `phase-4/4.3-gated-conversation-lifecycle-and-evidence-disclosure` (squash-merged via PR #19; no force).
+3. Created / continued `phase-4/4.4-moderation-and-aggregate-report-ingestion` from that baseline.
+
+**Branch-protection recommendation (do not silently alter settings):** `main` branch-protection settings read returned **403** (owner/admin task). Recommend requiring PR review + required status checks, and blocking force-push and branch deletion on `main`. Owner/admin action outside this package — **do not change repository settings from application PRs**.
 
 ---
 
@@ -238,7 +244,7 @@ Call `assertEnvironmentSafe()` before any DB client. Production participant data
 7. **Alpha reset:** `public_input_conversations` and `public_input_conversation_transitions` classified **reset**; local wipe does **not** claim remote provider deletion ([ADR 0017](./decisions/0017-local-versus-remote-reset-semantics.md); OQ29).
 8. **Docs/ADRs:** phase-4 plan, architecture-phase-4, assessment, open questions (incl. OQ34), threat model, reset docs, README, ADRs 0014–0017; ADR 0012 notes lifecycle landed while live remains blocked.
 9. **Tests:** lifecycle transitions/service, embed-url fail-closed, activation gates non-vacuous / all unresolved, EvidenceDisclosure behavior; no weakening of security posture.
-10. Full verification ladder green for the package surface; docs mark 4.3 complete in this PR **awaiting owner approval** before 4.4.
+10. Full verification ladder green for the package surface; docs mark 4.3 complete; **owner-approved** before 4.4 (see closure record below).
 
 **Non-goals for 4.3:** enabling live Pol.is; resolving activation gates; permitted-services register install; counsel clearance; iframe UI; raw export ingest; xid; claiming remote provider deletion on alpha reset; altering GitHub branch-protection settings.
 
@@ -262,12 +268,58 @@ Engineering readiness ≠ live activation. Gates (all `unresolved` in code):
 
 There is no environment variable, database row, or admin toggle that can flip these gates from inside this repository.
 
+### Phase 4.3 closure record
+
+| Item | Record |
+| --- | --- |
+| Owner instruction | `APPROVE PHASE 4.3 COMPLETE. START PHASE 4.4.` |
+| PR #19 | Merged to `main` at `9aba076e09b60ea95e2c69d42380494a1c4398ac` |
+| Obsolete branch | `phase-4/4.3-gated-conversation-lifecycle-and-evidence-disclosure` deleted after squash-merge confirmation (no force) |
+| Branch protection | `main` settings read returned **403** — recommend require PR review + required checks; block force-push and deletion. Owner/admin task; do not silently modify repository settings. |
+| Live Pol.is | Remains fail-closed; 4.3 lifecycle/embed shell ≠ live activation |
+
+## 11e. Package 4.4 — acceptance criteria
+
+1. **ADRs 0018–0021** accepted: aggregate-only canonical import ([0018](./decisions/0018-aggregate-only-canonical-import-format.md)); immutable report versioning/publication ([0019](./decisions/0019-immutable-report-versioning-and-publication.md)); public-input moderation vs provider moderation ([0020](./decisions/0020-public-input-moderation-versus-provider-moderation.md)); complementary small-cell suppression ([0021](./decisions/0021-complementary-small-cell-suppression.md)).
+2. **Independent axes** remain visibly separate in docs, domain model, and UI copy — mutating one must not silently mutate another:
+   - conversation lifecycle  
+   - provider availability  
+   - provider-side comment moderation  
+   - institutional finding publication eligibility  
+   - report import validation  
+   - report publication  
+   - evidence quality  
+   - agenda qualification (still deferred to 4.5; 4.4 must not invent qualification writes)
+3. **Aggregate-only ingest:** gated import accepts only the versioned canonical aggregate descriptor; recursive forbidden-key rejection for vote rows/matrices, membership maps, provider participant IDs, account IDs, `xid`, raw provider URLs/tokens; raw provider exports are not an accepted ingest format in 4.4.
+4. **Immutable versions:** successful validation creates immutable `public_input_reports` (+ `public_input_report_groups`, `public_input_report_findings`) tied to `public_input_report_imports`; corrections require a new import version; import never auto-publishes.
+5. **Publication:** `consultations.reports.review` and `consultations.reports.publish` gate review/publish; public projection is allowlisted only; at most one current published report per the documented conversation/topic rule; public route `/formal-topics/[slug]/consultation/report` without leaking `providerConversationRef` or staff-only fields; drafts/import/review return generic not-found.
+6. **Moderation:** `consultations.moderation.record` appends reasoned institutional actions to `public_input_report_moderation_actions`; provider-originated signals (fixture/staff observational only while live is blocked) land in `public_input_provider_moderation_records`; neither axis assigns agenda priority or edits consultation metrics.
+7. **Complementary small-cell suppression:** public DTOs suppress reconstruction-enabling complementary cells; suppressed `share` is `null` (never `0`); demo provisional threshold remains **5**; production threshold still OQ27 + OQ35.
+8. **Capabilities** registered: `consultations.reports.import`, `consultations.reports.review`, `consultations.reports.publish`, `consultations.moderation.record` (see [capability-matrix.md](./capability-matrix.md)).
+9. **Alpha reset:** six new tables classified **reset** — `public_input_report_imports`, `public_input_reports`, `public_input_report_groups`, `public_input_report_findings`, `public_input_report_moderation_actions`, `public_input_provider_moderation_records` — local wipe only; never claim remote provider deletion ([ADR 0017](./decisions/0017-local-versus-remote-reset-semantics.md)).
+10. **Dual-mode isolation:** public-demo cannot import/publish/moderate gated reports; synthetic reports remain fixture-backed; zero Pol.is network calls; operational provider kinds remain `none`/`fixture` only.
+11. **Docs:** phase-4 plan, architecture-phase-4, open questions (OQ27 note + OQ35), threat model, reset docs, capability matrix, provider assessment, README updated; assessment explicitly states 4.4 aggregate ingest ≠ live Pol.is authorization.
+12. Full verification ladder green for the package surface; docs mark 4.4 engineering complete in this PR **awaiting owner approval** before 4.5.
+
+### 4.4 engineering closure (awaiting owner approval)
+
+| Item | Record |
+| --- | --- |
+| Baseline main | `9aba076e09b60ea95e2c69d42380494a1c4398ac` (PR #19) |
+| Branch | `phase-4/4.4-moderation-and-aggregate-report-ingestion` |
+| ADRs | 0018–0021 |
+| Migration | `drizzle/0020_public_input_reports.sql` (six reset-classified tables) |
+| Live Pol.is | Still fail-closed; aggregate ingest ≠ activation |
+| Next | Stop for owner review; do not begin 4.5 without explicit approval |
+
+**Non-goals for 4.4:** enabling live Pol.is; resolving activation gates; permitted-services register install; counsel clearance; iframe UI; raw provider-export retention as first-class ingest; `xid`; agenda qualification services (4.5); claiming remote provider deletion on alpha reset; settling production small-cell threshold; altering GitHub branch-protection settings.
+
 ## 12. Stop conditions
 
 Stop if any of the following would be required to “finish” a package:
 
 - Installing or calling live Pol.is / undocumented provider features / `xid` without approval
-- Weakening public/protected data separation or small-cell suppression
+- Weakening public/protected data separation, aggregate-only ingest, or complementary small-cell suppression
 - Treating progressive disclosure as a confidentiality boundary (or hiding protected fields behind `<details>` alone)
 - Claiming local alpha reset deleted remote provider data without verified remote execution
 - Allowing elevated roles to privately promote pre-deliberation topics
@@ -275,5 +327,7 @@ Stop if any of the following would be required to “finish” a package:
 - Inventing statutory membership or board-binding authority
 - Skipping the verification ladder or weakening tests to pass
 - Silently resolving activation gates or inventing counsel clearance
+- Collapsing independent axes (lifecycle, availability, provider moderation, finding eligibility, import validation, report publication, evidence quality, agenda qualification)
+- Auto-publishing imports or silently overwriting immutable report versions
 
-After 4.3 PR is green: **stop for owner review**. Do not begin 4.4 or enable a live embed without explicit owner approval and required vendor/privacy decisions.
+After 4.4 PR is green: **stop for owner review**. Do not begin 4.5 or enable a live embed without explicit owner approval and required vendor/privacy decisions.

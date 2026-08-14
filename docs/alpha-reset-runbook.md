@@ -1,4 +1,4 @@
-# Alpha reset runbook (Phase 3 closure + Phase 4.3 Public Input)
+# Alpha reset runbook (Phase 3 closure + Phase 4.3–4.4 Public Input)
 
 **Audience:** Environment operators of a **gated** invite-only alpha.  
 **Not** a browser feature. **Not** public-demo. **Not** counsel-approved production retention.
@@ -17,7 +17,7 @@ Local vs remote semantics: [ADR 0017](./decisions/0017-local-versus-remote-reset
 5. Never commit dumps, credentials, or reset stdout containing alpha PII.
 6. Never fetch remote source URLs during reset.
 7. Never copy live data into public-demo fixtures, prompts, screenshots, or handoff prose.
-8. **Never claim remote provider deletion.** Local reset wipes institutional Public Input rows (`public_input_conversations`, `public_input_conversation_transitions`) in **this** database only. It does not call Pol.is or any remote admin API, and must not be described as deleting remote conversations, votes, or exports (OQ29; activation gate `remote_alpha_reset_verified` remains unresolved).
+8. **Never claim remote provider deletion.** Local reset wipes institutional Public Input rows in **this** database only — conversation lifecycle tables (`public_input_conversations`, `public_input_conversation_transitions`) and Phase 4.4 report/moderation tables (`public_input_report_imports`, `public_input_reports`, `public_input_report_groups`, `public_input_report_findings`, `public_input_report_moderation_actions`, `public_input_provider_moderation_records`). It does not call Pol.is or any remote admin API, and must not be described as deleting remote conversations, votes, or exports (OQ29; activation gate `remote_alpha_reset_verified` remains unresolved). Local ≠ remote.
 
 ---
 
@@ -84,11 +84,12 @@ On success, the audit ledger contains a **new** chain rooted at `alpha.reset_exe
 
 1. Confirm accounts/topics/claims/evidence/assent records/sessions/invitations are empty.
 2. Confirm `public_input_conversations` and `public_input_conversation_transitions` are empty (Phase 4.3).
-3. Confirm **operational** published assent documents were regenerated (catalog in `src/lib/operator/operational-assent-documents.ts`) — provisional placeholders, not counsel-approved legal language.
-4. Confirm retention defaults and `operator_bootstrap_state = not_started`.
-5. Re-run first-administrator bootstrap: `npm run operator:bootstrap` (no synthetic seed required for recovery).
-6. Reseed synthetic fixtures **only** in disposable/local drills if desired: `npm run db:seed` (gated env). Synthetic reseeding is **not** the proof that the environment is recoverable.
-7. If any remote consultation provider data ever existed outside this database, handle it under a **separate, verified** remote procedure — do not treat local reset success as remote wipe confirmation.
+3. Confirm Phase 4.4 report/moderation tables are empty when present: `public_input_report_imports`, `public_input_reports`, `public_input_report_groups`, `public_input_report_findings`, `public_input_report_moderation_actions`, `public_input_provider_moderation_records`.
+4. Confirm **operational** published assent documents were regenerated (catalog in `src/lib/operator/operational-assent-documents.ts`) — provisional placeholders, not counsel-approved legal language.
+5. Confirm retention defaults and `operator_bootstrap_state = not_started`.
+6. Re-run first-administrator bootstrap: `npm run operator:bootstrap` (no synthetic seed required for recovery).
+7. Reseed synthetic fixtures **only** in disposable/local drills if desired: `npm run db:seed` (gated env). Synthetic reseeding is **not** the proof that the environment is recoverable.
+8. If any remote consultation provider data ever existed outside this database, handle it under a **separate, verified** remote procedure — do not treat local reset success as remote wipe confirmation.
 
 ---
 

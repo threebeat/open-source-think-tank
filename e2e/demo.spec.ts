@@ -75,7 +75,7 @@ test.describe("guided demonstration", () => {
       })
       .click();
     await expect(page).toHaveURL(
-      /\/formal-topics\/cedar-river-drought-surcharge/,
+      /\/formal-topics\/cedar-river-drought-surcharge(\/consultation\/report)?/,
     );
     await expect(
       page.getByRole("heading", {
@@ -83,9 +83,10 @@ test.describe("guided demonstration", () => {
       }),
     ).toBeVisible();
     await expect(page.getByText(/per-person vote rows/i).first()).toBeVisible();
-    await expect(page.getByTestId("opinion-group-suppressed")).toContainText(
+    await expect(page.getByTestId("opinion-group-suppressed").first()).toContainText(
       "Suppressed",
     );
+    await expect(page.getByTestId("opinion-group-suppressed")).toHaveCount(2);
 
     await page
       .getByRole("link", { name: "Continue to 7. Agenda qualification trace" })

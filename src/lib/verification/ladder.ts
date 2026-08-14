@@ -174,6 +174,12 @@ export const CAPABILITY_ASSURANCE: Partial<
   "consultations.transition": "L3_uniqueness",
   "consultations.manage_provider_mapping": "L3_uniqueness",
   "consultations.set_availability": "L3_uniqueness",
+  // Phase 4.4 — aggregate report ingest / moderation: same institutional
+  // default as topics.* / consultations.* above.
+  "consultations.reports.import": "L3_uniqueness",
+  "consultations.reports.review": "L3_uniqueness",
+  "consultations.reports.publish": "L3_uniqueness",
+  "consultations.moderation.record": "L3_uniqueness",
 };
 
 export function assuranceForCapability(

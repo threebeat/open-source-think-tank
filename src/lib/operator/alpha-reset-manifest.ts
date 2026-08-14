@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
  * Mirror of docs/alpha-reset-classification.md — keep in sync.
  */
 
-export const RESET_MANIFEST_VERSION = "4.3.1";
+export const RESET_MANIFEST_VERSION = "4.4.1";
 
 /** Fixed transaction-scoped advisory-lock key for concurrent alpha resets. */
 export const ALPHA_RESET_ADVISORY_LOCK_KEY = 3_120_845_120_012;
@@ -29,7 +29,7 @@ export type AlphaResetTableEntry = {
 
 /**
  * Every pgTable in schema.ts — exactly one class each.
- * Count must remain 37 until schema grows (assertManifestComplete).
+ * Count must remain 43 until schema grows (assertManifestComplete).
  */
 export const ALPHA_RESET_TABLES: readonly AlphaResetTableEntry[] = [
   { table: "persons", class: "reset" },
@@ -74,6 +74,15 @@ export const ALPHA_RESET_TABLES: readonly AlphaResetTableEntry[] = [
   // src/lib/public-input/lifecycle/repository.ts). Fully resettable alpha data.
   { table: "public_input_conversations", class: "reset" },
   { table: "public_input_conversation_transitions", class: "reset" },
+  // Phase 4.4 — aggregate-only report ingestion + Public Input moderation
+  // (ADRs 0018–0021). All six tables are local alpha data only; local wipe
+  // never claims remote provider deletion (ADR 0017).
+  { table: "public_input_report_imports", class: "reset" },
+  { table: "public_input_reports", class: "reset" },
+  { table: "public_input_report_groups", class: "reset" },
+  { table: "public_input_report_findings", class: "reset" },
+  { table: "public_input_report_moderation_actions", class: "reset" },
+  { table: "public_input_provider_moderation_records", class: "reset" },
 ] as const;
 
 /** Children-first delete order for class=reset tables only (explicit list). */
@@ -93,6 +102,15 @@ export const DELETE_ORDER: readonly string[] = [
   "claim_evidence_links",
   "evidence_submissions",
   "claims",
+  // Phase 4.4 — children of public_input_reports / public_input_conversations
+  // first (moderation actions reference both reports and findings; provider
+  // moderation records reference conversations directly).
+  "public_input_report_moderation_actions",
+  "public_input_provider_moderation_records",
+  "public_input_report_findings",
+  "public_input_report_groups",
+  "public_input_reports",
+  "public_input_report_imports",
   "public_input_conversation_transitions",
   "public_input_conversations",
   "topics",
@@ -143,6 +161,14 @@ export const IMMUTABLE_DELETE_TRIGGERS: readonly {
   {
     table: "public_input_conversation_transitions",
     trigger: "public_input_conversation_transitions_immutable",
+  },
+  {
+    table: "public_input_report_imports",
+    trigger: "public_input_report_imports_immutable",
+  },
+  {
+    table: "public_input_report_moderation_actions",
+    trigger: "public_input_report_moderation_actions_immutable",
   },
 ] as const;
 
@@ -219,6 +245,17 @@ export const COUNT_FAMILIES: readonly {
     tables: [
       "public_input_conversations",
       "public_input_conversation_transitions",
+    ],
+  },
+  {
+    family: "public_input_reports",
+    tables: [
+      "public_input_report_imports",
+      "public_input_reports",
+      "public_input_report_groups",
+      "public_input_report_findings",
+      "public_input_report_moderation_actions",
+      "public_input_provider_moderation_records",
     ],
   },
 ] as const;

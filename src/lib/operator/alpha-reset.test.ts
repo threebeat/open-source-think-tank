@@ -77,7 +77,7 @@ describe("alpha reset (Phase 3 closure)", () => {
     );
     expect(tablesByClass("reset")).not.toContain("document_versions");
     expect(hashManifest()).toHaveLength(64);
-    expect(RESET_MANIFEST_VERSION).toBe("4.3.1");
+    expect(RESET_MANIFEST_VERSION).toBe("4.4.1");
   });
 
   it("fingerprints host+port+dbname only", () => {

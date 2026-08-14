@@ -1,9 +1,9 @@
-# Alpha reset table classification (Phase 3 closure + Phase 4.3 Public Input)
+# Alpha reset table classification (Phase 3 closure + Phase 4.3–4.4 Public Input)
 
 **Status:** Operator procedure for gated invite-only alpha. Not a public-demo feature. Not production retention counsel.  
-**Manifest version:** `4.3.1`
+**Manifest version:** `4.4.1` — Phase **4.4** adds six report/moderation tables classified **reset** below; `RESET_MANIFEST_VERSION` in `alpha-reset-manifest.ts` and `docs/alpha-reset-classification.md` are kept in sync.
 
-**Scope:** Every `pgTable` in `src/db/schema.ts` (37 tables) is classified as exactly one of:
+**Scope:** Every `pgTable` in `src/db/schema.ts` must be classified as exactly one of:
 
 | Class | Meaning |
 | --- | --- |
@@ -35,7 +35,7 @@ Machine-readable mirror: `src/lib/operator/alpha-reset-manifest.ts`.
 
 ---
 
-## Classification (37 tables)
+## Classification (43 tables)
 
 | Table | Class | Rationale |
 | --- | --- | --- |
@@ -76,16 +76,22 @@ Machine-readable mirror: `src/lib/operator/alpha-reset-manifest.ts`.
 | `evidence_reviews` | reset | Evidence review provenance. |
 | `public_input_conversations` | reset | Public Input conversation lifecycle state (Phase 4.3). `providerConversationRef` is a protected opaque reference — never public, never logged; wiped like any other alpha row. **Local wipe only** — does not delete remote provider conversations ([ADR 0017](./decisions/0017-local-versus-remote-reset-semantics.md)). |
 | `public_input_conversation_transitions` | reset | Append-only conversation lifecycle transition history (Phase 4.3; immutable in normal ops — operator reset disables the delete trigger like `moderation_actions`/`content_revisions`). Local wipe only. |
+| `public_input_report_imports` | reset | Aggregate-only import provenance (Phase 4.4). Local wipe only. |
+| `public_input_reports` | reset | Immutable report versions (Phase 4.4). Local wipe only. |
+| `public_input_report_groups` | reset | Opinion-group rows for report versions (Phase 4.4). Local wipe only. |
+| `public_input_report_findings` | reset | Agreement/disagreement finding rows (Phase 4.4). Local wipe only. |
+| `public_input_report_moderation_actions` | reset | Institutional Public Input moderation / finding-eligibility actions (Phase 4.4; append-only in normal ops). Local wipe only. |
+| `public_input_provider_moderation_records` | reset | Provider-side moderation observational records (Phase 4.4). Local wipe only — never implies remote provider deletion. |
 
 **Deferred:** none.
 
 ---
 
-## Local versus remote reset semantics (Phase 4.3)
+## Local versus remote reset semantics (Phase 4.3–4.4)
 
 | Scope | What reset does | What reset must never claim |
 | --- | --- | --- |
-| **Local (this database)** | Deletes `public_input_conversations` / `public_input_conversation_transitions` (and other reset-classified tables) inside the gated alpha DB | — |
+| **Local (this database)** | Deletes conversation lifecycle tables, the six Phase 4.4 report/moderation tables, and other reset-classified tables inside the gated alpha DB | — |
 | **Remote consultation provider** | **Nothing automatic.** No Pol.is/admin API call is made from the reset ceremony | That remote conversations, votes, cookies, or exports were deleted |
 
 Until activation gate `remote_alpha_reset_verified` is cleared and a verified remote procedure exists, operators must treat any former remote mapping as **possibly retained by the vendor** after local wipe. See [alpha-reset-runbook.md](./alpha-reset-runbook.md) and OQ29.
@@ -94,7 +100,7 @@ Until activation gate `remote_alpha_reset_verified` is cleared and a verified re
 
 ## Delete order
 
-Children first; see `DELETE_ORDER` in `alpha-reset-manifest.ts` (class=`reset` only). Self-referential FKs (e.g. `conversation_pseudonyms.superseded_by_id`) are nulled before delete. `document_versions` are cleared inside the regenerate step after assent child tables are gone.
+Children first; see `DELETE_ORDER` in `alpha-reset-manifest.ts` (class=`reset` only). Self-referential FKs (e.g. `conversation_pseudonyms.superseded_by_id`, `public_input_reports.superseded_by_report_id`) are nulled before delete. `document_versions` are cleared inside the regenerate step after assent child tables are gone.
 
 ---
 

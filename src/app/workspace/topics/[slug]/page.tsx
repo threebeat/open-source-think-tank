@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { DisclosureNotice } from "@/components/DisclosureNotice";
@@ -197,6 +198,26 @@ export default async function WorkspaceTopicDetailPage({ params }: PageProps) {
           />
         </section>
       ) : null}
+
+      <section className="space-y-3" aria-labelledby="topic-consultation-reports-heading">
+        <h2
+          id="topic-consultation-reports-heading"
+          className="font-heading text-xl text-foreground"
+        >
+          Consultation reports
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Aggregate-only import, institutional finding review, and publication.
+          Raw provider exports are not accepted. Live Pol.is remains disabled.
+        </p>
+        <Link
+          href={`/workspace/topics/${topic.slug}/consultation-reports`}
+          className="inline-flex min-h-11 items-center text-primary underline underline-offset-2"
+          data-testid="workspace-consultation-reports-link"
+        >
+          Open consultation report workspace
+        </Link>
+      </section>
     </MainContainer>
   );
 }

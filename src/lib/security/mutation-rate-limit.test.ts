@@ -45,6 +45,11 @@ describe("mutation rate limiter (3.9)", () => {
       originLimit: 90,
       windowMs: 15 * 60 * 1000,
     });
+    expect(MUTATION_RATE_LIMIT_POLICY.consultation_reports).toEqual({
+      accountLimit: 30,
+      originLimit: 90,
+      windowMs: 15 * 60 * 1000,
+    });
   });
 
   it("isolates limits by family and account", () => {

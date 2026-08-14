@@ -120,3 +120,127 @@ describe("Phase 4.3 Public Input capability contracts", () => {
     }
   });
 });
+
+/**
+ * Phase 4.4 — aggregate report ingestion (administrator-only) and Public
+ * Input moderation (moderator | administrator). Moderators must never gain
+ * import/review/publish merely by holding consultations.moderation.record —
+ * these are distinct axes (ADR 0020).
+ */
+const PHASE4_4_ADMIN_ONLY_REPORT_CAPABILITIES = [
+  "consultations.reports.import",
+  "consultations.reports.review",
+  "consultations.reports.publish",
+] as const satisfies readonly Capability[];
+
+const PHASE4_4_MODERATION_CAPABILITY = "consultations.moderation.record" as const satisfies Capability;
+
+describe("Phase 4.4 Public Input report/moderation capability contracts", () => {
+  it("registers every Phase 4.4 capability in CAPABILITIES", () => {
+    for (const capability of [
+      ...PHASE4_4_ADMIN_ONLY_REPORT_CAPABILITIES,
+      PHASE4_4_MODERATION_CAPABILITY,
+    ]) {
+      expect(CAPABILITIES).toContain(capability);
+    }
+  });
+
+  it.each(PHASE4_4_ADMIN_ONLY_REPORT_CAPABILITIES)(
+    "%s is administrator-only (moderators explicitly denied)",
+    (capability) => {
+      expect(authorize(principal(["administrator"]), capability).ok).toBe(
+        true,
+      );
+      for (const role of [
+        "participant",
+        "reviewer",
+        "moderator",
+        "auditor",
+      ] as const) {
+        const decision = authorize(principal([role]), capability);
+        expect(decision.ok).toBe(false);
+        if (!decision.ok) {
+          expect(decision.code).toBe("AUTHZ_DENIED");
+        }
+      }
+    },
+  );
+
+  it("consultations.moderation.record is moderator OR administrator, never participant/reviewer/auditor", () => {
+    expect(
+      authorize(principal(["moderator"]), PHASE4_4_MODERATION_CAPABILITY).ok,
+    ).toBe(true);
+    expect(
+      authorize(principal(["administrator"]), PHASE4_4_MODERATION_CAPABILITY)
+        .ok,
+    ).toBe(true);
+    for (const role of ["participant", "reviewer", "auditor"] as const) {
+      const decision = authorize(principal([role]), PHASE4_4_MODERATION_CAPABILITY);
+      expect(decision.ok).toBe(false);
+      if (!decision.ok) {
+        expect(decision.code).toBe("AUTHZ_DENIED");
+      }
+    }
+  });
+
+  it("moderators never gain report import/review/publish merely from consultations.moderation.record or moderation.act", () => {
+    const moderator = principal(["moderator"]);
+    expect(authorize(moderator, "consultations.moderation.record").ok).toBe(
+      true,
+    );
+    expect(authorize(moderator, "moderation.act").ok).toBe(true);
+    for (const capability of PHASE4_4_ADMIN_ONLY_REPORT_CAPABILITIES) {
+      expect(authorize(moderator, capability).ok).toBe(false);
+    }
+  });
+
+  it.each([
+    ...PHASE4_4_ADMIN_ONLY_REPORT_CAPABILITIES,
+    PHASE4_4_MODERATION_CAPABILITY,
+  ])("%s requires an active lifecycle state", (capability) => {
+    const pending = authorize(
+      principal(["administrator", "moderator"], "pending_onboarding"),
+      capability,
+    );
+    expect(pending.ok).toBe(false);
+    if (!pending.ok) {
+      expect(pending.code).toBe("AUTHZ_ACTIVE_REQUIRED");
+    }
+  });
+
+  it.each([
+    ...PHASE4_4_ADMIN_ONLY_REPORT_CAPABILITIES,
+    PHASE4_4_MODERATION_CAPABILITY,
+  ])("%s has an explicit L3 assurance decision", (capability) => {
+    expect(CAPABILITY_ASSURANCE[capability]).toBe("L3_uniqueness");
+  });
+
+  it("registers 4.4 report/moderation audit actions without public projectors", () => {
+    for (const action of [
+      "consultations.reports.imported",
+      "consultations.reports.validated",
+      "consultations.reports.review_started",
+      "consultations.reports.published",
+      "consultations.reports.rejected",
+      "consultations.reports.superseded",
+      "consultations.moderation.provider_recorded",
+      "consultations.reports.finding_withheld",
+      "consultations.reports.finding_included",
+    ]) {
+      expect(isRegisteredAuditAction(action)).toBe(true);
+    }
+  });
+
+  it("does not grant Phase 4.4 capabilities to an unauthenticated principal", () => {
+    for (const capability of [
+      ...PHASE4_4_ADMIN_ONLY_REPORT_CAPABILITIES,
+      PHASE4_4_MODERATION_CAPABILITY,
+    ]) {
+      const decision = authorize(null, capability);
+      expect(decision.ok).toBe(false);
+      if (!decision.ok) {
+        expect(decision.code).toBe("AUTH_REQUIRED");
+      }
+    }
+  });
+});

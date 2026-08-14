@@ -75,7 +75,7 @@ export function TopicOverviewSection({ model }: Props) {
               model.publicInputReport
                 ? `${model.publicInputReport.participationCount.toLocaleString("en-US")} participants (aggregate)`
                 : model.lane === "gated"
-                  ? "Provider not live (4.2)"
+                  ? "No published aggregate report (live provider blocked)"
                   : "No sealed report"
             }
             axis="consultation"
@@ -173,10 +173,27 @@ export function TopicOverviewSection({ model }: Props) {
       </section>
 
       {model.publicInputReport ? (
-        <div id="public-input-report">
+        <div id="public-input-report" className="space-y-3">
           <PublicInputReportPanel report={model.publicInputReport} />
+          <Link
+            href={`/formal-topics/${model.slug}/consultation/report`}
+            className={cn(buttonVariants({ size: "lg" }), "min-h-11 px-4")}
+            data-testid="consultation-report-link"
+          >
+            Open full Public Input report
+          </Link>
         </div>
-      ) : null}
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          No published Public Input aggregate report is available yet.{" "}
+          <Link
+            href={`/formal-topics/${model.slug}/consultation`}
+            className="text-primary underline underline-offset-2"
+          >
+            View consultation surface
+          </Link>
+        </p>
+      )}
 
       {model.qualificationTrace ? (
         <details className="rounded-md border border-border px-4 py-3">
