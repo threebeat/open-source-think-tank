@@ -9,6 +9,9 @@ test.describe("about", () => {
       page.getByRole("heading", { name: "About this demonstration" }),
     ).toBeVisible();
     await expect(
+      page.getByText("Commonhall v2 is not operational yet"),
+    ).toBeVisible();
+    await expect(
       page.getByRole("heading", { name: "Mission (proposed)" }),
     ).toBeVisible();
     await expect(

@@ -25,6 +25,29 @@ Do not silently settle these in application code. A decision needs an owner, dat
 | V2-19 | Existing alpha-account migration | Require new assent/assignment; do not auto-convert | Open enrollment rollout |
 | V2-20 | Representation claims and geographic scope | Describe participants, never claim population mandate | Public impact language |
 
+## Phase 1 fail-closed postures (not settlements)
+
+Phase 1 records these engineering postures. They do **not** close the decisions above.
+
+| ID | Phase 1 posture |
+| --- | --- |
+| V2-01 | Public copy uses “Commonhall v2” as a working name only. |
+| V2-02 | UI states community membership is not nonprofit/statutory membership. Enrollment stays invite-only. |
+| V2-03 | Service administrator cannot cast organization actions or self-appoint. |
+| V2-04 | Service areas store coarse region codes (`US-TN`) only. No assignment launch. |
+| V2-05 | Schema allows one primary membership; no transfer product. |
+| V2-06 | Qualification remains kernel-only; no formal submission launch. |
+| V2-07 | Non-synthetic config that includes `consultationThresholds` is rejected. |
+| V2-08 | `retention_deadline_at` may be null; expiration worker is disabled. |
+| V2-09 | Chamber appointments may persist; `COMMONHALL_V2_CHAMBER_LIVE` cannot enable live process. |
+| V2-10 | Council appointments may persist; live Council transitions are refused. |
+| V2-11–V2-13 | Hosted Pol.is cannot be enabled in flags or published config. |
+| V2-14–V2-16 | No live aggregate map or dishonorable public metadata product. |
+| V2-17 | No federation protocol. |
+| V2-18 | No new production vendors. |
+| V2-19 | Alpha accounts are not auto-converted to organization community members. |
+| V2-20 | Public copy does not claim population mandate or production readiness. |
+
 ## Decision record template
 
 ```md

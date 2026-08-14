@@ -49,6 +49,14 @@ export default function AboutPage() {
         approved terms. Formation and board authority remain counsel questions.
       </DisclosureNotice>
 
+      <DisclosureNotice title="Commonhall v2 is not operational yet" tone="caution">
+        Commonhall v2 organization tenancy is being built in the repository. Open
+        enrollment, Chamber, organization Council, and hosted Pol.is are not
+        operational. Community membership, when later enabled, will mean
+        membership in a participating organization’s Commonhall community — not
+        nonprofit or statutory membership in the service.
+      </DisclosureNotice>
+
       <section className="space-y-3" aria-labelledby="mission-heading">
         <h2 id="mission-heading" className="font-heading text-2xl text-foreground">
           Mission (proposed)
