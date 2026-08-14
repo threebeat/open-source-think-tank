@@ -44,7 +44,7 @@ describe("account gate (V2-21)", () => {
     expect(unauthenticatedProductRedirect("/auth/accept", { APP_MODE: "gated" })).toBeNull();
   });
 
-  it("maps authenticated legacy think-tank URLs onto member placeholders", () => {
+  it("maps authenticated legacy think-tank URLs onto member halls", () => {
     expect(authenticatedLegacyRedirect("/idea-commons")).toBe("/commons");
     expect(authenticatedLegacyRedirect("/formal-topics/cedar")).toBe("/commons");
     expect(authenticatedLegacyRedirect("/deliberation/x")).toBe("/chamber");

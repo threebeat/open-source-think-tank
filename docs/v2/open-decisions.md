@@ -88,6 +88,19 @@ Phase 2 records these engineering postures for the gated pre-alpha. They do **no
 | Hosted Pol.is | Remains impossible to enable. |
 | Elevated portal | `/org/**` does not grant organization-admin capability; community membership is redirected away. |
 
+## Phase 3 fail-closed postures (not settlements)
+
+Phase 3 records these engineering postures for the gated pre-alpha Commons. They do **not** close V2-06, V2-21–V2-23, or related legal/vendor decisions.
+
+| ID | Phase 3 posture |
+| --- | --- |
+| V2-06 | Members may submit topic/approach proposals via kernel `submit_for_formal_review` only. Qualification remains a separate moderator record. Authors cannot qualify their own proposal. |
+| V2-21 | `/commons` and `/commons/discussions/[id]` remain account-gated. Unauthenticated visitors still redirect. |
+| V2-23 | Commons posting uses the in-process `commons_post` mutation limiter. No bot vendor. |
+| Synthetic seed | `COMMONHALL_SYNTHETIC_SEED` defaults on in gated; `off` omits `synthetic=true` catalog rows from member list DTOs. Member-created posts are not catalog rows. |
+| Formal flag | Members cannot set `formal=true` or post in formal categories. Formal is a projection of category rules. |
+| Hosted Pol.is / Agenda / Chamber | Remain out of this phase. |
+
 ## Decision record template
 
 ```md

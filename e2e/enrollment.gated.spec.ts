@@ -29,9 +29,13 @@ test.describe("gated open enrollment", () => {
     await expect(page.getByText(/assignment/i).first()).toBeVisible();
 
     await page.goto("/commons");
+    await expect(page.getByRole("heading", { name: "Commons" })).toBeVisible();
     await expect(
-      page.getByText(/opens in a later commonhall phase/i),
+      page.getByText(
+        /Informal conversations may not have been reviewed by a moderator/,
+      ),
     ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Create a post" })).toBeVisible();
 
     await page.goto("/org/ostt-synth-alpha/settings");
     await expect(page).not.toHaveURL(/\/org\/ostt-synth-alpha\/settings/);

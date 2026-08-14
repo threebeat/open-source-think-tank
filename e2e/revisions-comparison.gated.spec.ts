@@ -72,7 +72,7 @@ test.describe("revisions and evidence comparison (gated)", () => {
     expect(serious, JSON.stringify(serious, null, 2)).toEqual([]);
   });
 
-  test("authenticated formal-topics evidence URLs map to the Commons placeholder", async ({
+  test("authenticated formal-topics evidence URLs map to Commons", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -81,8 +81,13 @@ test.describe("revisions and evidence comparison (gated)", () => {
     await expect(page).toHaveURL(/\/commons/);
     await expect(page.getByRole("heading", { name: "Commons" })).toBeVisible();
     await expect(
-      page.getByText(/opens in a later commonhall phase/i),
+      page.getByText(
+        /Informal conversations may not have been reviewed by a moderator/,
+      ),
     ).toBeVisible();
+    await expect(
+      page.getByText(/opens in a later commonhall phase/i),
+    ).toHaveCount(0);
     await expect(
       page.getByText(
         "Synthetic prior summary before the recorded content revision.",

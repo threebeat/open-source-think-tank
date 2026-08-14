@@ -6,7 +6,7 @@ test.describe("3.10 gated public interface", () => {
     await expect(page).toHaveURL(/\/auth\/sign-in/);
   });
 
-  test("authenticated legacy formal-topics redirect to Commons placeholder", async ({
+  test("authenticated legacy formal-topics redirect to Commons", async ({
     page,
   }) => {
     const { signInWithCapturedEmail } = await import("./gated-helpers");
@@ -15,7 +15,12 @@ test.describe("3.10 gated public interface", () => {
     await expect(page).toHaveURL(/\/commons/);
     await expect(page.getByRole("heading", { name: "Commons" })).toBeVisible();
     await expect(
-      page.getByText(/opens in a later commonhall phase/i),
+      page.getByText(
+        /Informal conversations may not have been reviewed by a moderator/,
+      ),
     ).toBeVisible();
+    await expect(
+      page.getByText(/opens in a later commonhall phase/i),
+    ).toHaveCount(0);
   });
 });
