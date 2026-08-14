@@ -95,11 +95,15 @@ Keep a compatibility test only while a redirect/adapter is intentionally support
 
 ### Phase 6 — legacy retirement and delivery
 
-- old think-tank routes gone or hard-redirected;
-- active tests match Commonhall architecture;
-- backup/restore/reset by organization;
-- `docs/v2/final_overview.md` lists vendor/legal holds;
-- full browser/accessibility/security matrix.
+Implemented pending human review:
+
+- leftover think-tank routes are redirect-only onto Commons, Agenda, Chamber, Council, Records, and `/demo`;
+- public e2e asserts Commonhall landing/demo and redirects, not retired Idea Commons / Formal Topics page content;
+- gated e2e covers enrollment, Commons posts, Agenda positions, Chamber/Council/Records, and a member walkthrough;
+- kernel, isolation, enrollment abuse, report-integrity, and reset completeness remain required;
+- operator reset classifies every `pgTable` (manifest `v2.5.0`); `COMMONHALL_SYNTHETIC_SEED` documented;
+- `docs/v2/final_overview.md` lists every V2-01–V2-23 hold as **OPEN**;
+- hosted Pol.is, email, analytics, and identity vendors remain disabled.
 
 ## CI policy
 

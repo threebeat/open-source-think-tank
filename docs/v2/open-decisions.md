@@ -126,6 +126,23 @@ Phase 5 records these engineering postures for the gated pre-alpha Chamber and C
 | Synthetic seed | `COMMONHALL_SYNTHETIC_SEED=off` omits synthetic Chamber/Council/Records catalog rows from member list/detail DTOs. |
 | Appointments | Seeded Chamber/Council seats are new `organization_appointments` rows, not copies of legacy `deliberation_council`. Dual-control / no self-grant remains. `trustedSystem` is seed/playback only. |
 
+## Phase 6 fail-closed postures (not settlements)
+
+Phase 6 records these engineering postures for Commonhall pre-alpha delivery. They do **not** close V2-01–V2-23.
+
+| ID | Phase 6 posture |
+| --- | --- |
+| V2-01 | Working name Commonhall v2; UI wordmark may say Commonhall. |
+| V2-02 | Enrollment and tour copy: organization community membership, not nonprofit/statutory membership. |
+| V2-11–V2-13 | `isHostedPolisEnabled()` remains false. No `pol.is/embed.js` load. Local reset never claims remote deletion. |
+| V2-18 | No email, analytics, or identity vendor. |
+| V2-19 | Historical invite-only alpha accounts are not auto-converted. |
+| V2-21 | Unauthenticated visitors: `/`, `/demo/**`, `/join`, `/auth/**` only. Leftover think-tank URLs redirect. |
+| V2-22 | Identifier + password; no outbound email. |
+| V2-23 | In-process rate limit, honeypot, minimum fill, duplicate identifier. |
+| Synthetic seed | `COMMONHALL_SYNTHETIC_SEED` defaults on in gated; `off` hides synthetic catalog DTOs. Operator reset is the pre-alpha → alpha wipe. |
+| Leftover IA | Think-tank pages are redirect-only. Workspace/staff stay out of member nav. |
+
 ## Decision record template
 
 ```md

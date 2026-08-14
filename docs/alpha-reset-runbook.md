@@ -1,7 +1,13 @@
-# Alpha reset runbook (Phase 3 closure + Phase 4.3–4.4 Public Input)
+# Alpha reset runbook (gated Commonhall pre-alpha)
 
-**Audience:** Environment operators of a **gated** invite-only alpha.  
-**Not** a browser feature. **Not** public-demo. **Not** counsel-approved production retention.
+**Audience:** Environment operators of a **gated Commonhall pre-alpha** (open local enrollment + disableable synthetic seed).  
+**Not** a browser feature. **Not** public-demo. **Not** counsel-approved production retention. **Not** a remote Pol.is wipe.
+
+Use this ceremony to wipe a disposable gated database before an alpha. Open enrollment (`COMMONHALL_V2_OPEN_ENROLLMENT`) and the synthetic catalog (`COMMONHALL_SYNTHETIC_SEED`) are pre-alpha engineering postures; they do not close V2-18/V2-19 or related legal/vendor holds.
+
+Full table classification: [alpha-reset-classification.md](./alpha-reset-classification.md).  
+Local vs remote semantics: [ADR 0017](./decisions/0017-local-versus-remote-reset-semantics.md).  
+Council delivery overview: [v2/final_overview.md](./v2/final_overview.md).
 
 Full table classification: [alpha-reset-classification.md](./alpha-reset-classification.md).  
 Local vs remote semantics: [ADR 0017](./decisions/0017-local-versus-remote-reset-semantics.md).
@@ -17,7 +23,7 @@ Local vs remote semantics: [ADR 0017](./decisions/0017-local-versus-remote-reset
 5. Never commit dumps, credentials, or reset stdout containing alpha PII.
 6. Never fetch remote source URLs during reset.
 7. Never copy live data into public-demo fixtures, prompts, screenshots, or handoff prose.
-8. **Never claim remote provider deletion.** Local reset wipes institutional Public Input rows in **this** database only — conversation lifecycle tables (`public_input_conversations`, `public_input_conversation_transitions`) and Phase 4.4 report/moderation tables (`public_input_report_imports`, `public_input_reports`, `public_input_report_groups`, `public_input_report_findings`, `public_input_report_moderation_actions`, `public_input_provider_moderation_records`). It does not call Pol.is or any remote admin API, and must not be described as deleting remote conversations, votes, or exports (OQ29; activation gate `remote_alpha_reset_verified` remains unresolved). Local ≠ remote.
+8. **Never claim remote provider deletion.** Local reset wipes institutional Public Input rows in **this** database only — conversation lifecycle tables (`public_input_conversations`, `public_input_conversation_transitions`) and report/moderation tables (`public_input_report_imports`, `public_input_reports`, `public_input_report_groups`, `public_input_report_findings`, `public_input_report_moderation_actions`, `public_input_provider_moderation_records`). It does not call Pol.is or any remote admin API, and must not be described as deleting remote conversations, votes, or exports (OQ29; activation gate `remote_alpha_reset_verified` remains unresolved). Local ≠ remote. Hosted Pol.is cannot be enabled in this pre-alpha (`isHostedPolisEnabled()` is always false).
 
 ---
 
@@ -55,6 +61,15 @@ export SOURCE_COMMIT_SHA="$(git rev-parse HEAD)"
 
 `OPERATOR_RESET_SECRET` is distinct from `OPERATOR_BOOTSTRAP_SECRET`.
 
+### Commonhall pre-alpha flags (not production settlements)
+
+| Flag | Gated default | Notes |
+| --- | --- | --- |
+| `COMMONHALL_SYNTHETIC_SEED` | on | `off` hides synthetic catalog rows from member DTOs. Reset still wipes the rows. Reseed with `npm run db:seed` only on disposable databases. |
+| `COMMONHALL_V2_OPEN_ENROLLMENT` | on | `off` stops new local identifier+password enrollment. Always off in public-demo. |
+| `COMMONHALL_V2_KERNEL` | on | `off` refuses organization/governance writes. Always off in public-demo. |
+| Hosted Pol.is | impossible | Cannot be enabled. Local reset never claims remote deletion. |
+
 ---
 
 ## Dry-run (default)
@@ -88,8 +103,9 @@ On success, the audit ledger contains a **new** chain rooted at `alpha.reset_exe
 4. Confirm **operational** published assent documents were regenerated (catalog in `src/lib/operator/operational-assent-documents.ts`) — provisional placeholders, not counsel-approved legal language.
 5. Confirm retention defaults and `operator_bootstrap_state = not_started`.
 6. Re-run first-administrator bootstrap: `npm run operator:bootstrap` (no synthetic seed required for recovery).
-7. Reseed synthetic fixtures **only** in disposable/local drills if desired: `npm run db:seed` (gated env). Synthetic reseeding is **not** the proof that the environment is recoverable.
-8. If any remote consultation provider data ever existed outside this database, handle it under a **separate, verified** remote procedure — do not treat local reset success as remote wipe confirmation.
+7. Reseed the synthetic catalog **only** in disposable/local drills if desired: `npm run db:seed` (gated env). `COMMONHALL_SYNTHETIC_SEED=off` hides that catalog from member UI without deleting it. Synthetic reseeding is **not** the proof that the environment is recoverable.
+8. Confirm Commons discussions, member statement positions, and Chamber/Council session tables are empty before optional reseed.
+9. If any remote consultation provider data ever existed outside this database, handle it under a **separate, verified** remote procedure — do not treat local reset success as remote wipe confirmation. Hosted Pol.is remains impossible to enable.
 
 ---
 

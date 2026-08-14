@@ -131,6 +131,8 @@ Members can observe a complete seeded path from closed consultation through Cham
 
 ## Phase 6 — legacy retirement, test-suite rewrite, reset, and delivery evidence
 
+**Status:** Implemented pending human review (do not claim merged).
+
 ### Goal
 
 Commonhall is the only active product surface. Legacy think-tank routes, copy, and duplicate tests are gone. Reset is ready for pre-alpha → alpha. Vendor/legal holds are explicit.

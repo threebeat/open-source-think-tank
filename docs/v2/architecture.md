@@ -194,12 +194,27 @@ Authenticated member routes (account required; URL is never authorization):
 /member/proposals
 ```
 
-Unauthenticated product, account, and legacy think-tank paths redirect (V2-21 pre-alpha, not production public-observer law):
+Unauthenticated product, account, and leftover think-tank paths redirect (V2-21 pre-alpha, not production public-observer law):
 
 - public-demo → `/`
 - gated → `/auth/sign-in`
 
-Authenticated legacy paths map onto member placeholders or the demo: `/idea-commons` and `/formal-topics` → `/commons`; `/deliberation` → `/chamber`; `/decisions` → `/council`; `/transparency` and `/actions` → `/records`; `/topics` → `/agenda`; `/process` → `/demo`; `/about` → `/`. Remove remaining duplicates in Phase 6.
+Authenticated leftover think-tank paths are thin redirects only (no duplicate handlers):
+
+```text
+/idea-commons, /idea-commons/[id]          → /commons
+/formal-topics                             → /agenda
+/formal-topics/[slug] (+ consultation/report) → /agenda/topics/[slug]
+/deliberation/[slug]                       → /chamber/topics/[slug]
+/decisions/[slug]                          → /council/topics/[slug]
+/transparency                              → /records
+/actions/[slug]                            → /records/topics/[slug]
+/topics, /topics/[slug], /topics/[slug]/consult → /agenda / /agenda/topics/[slug]
+/process, /demo/workflow                   → /demo
+/about                                     → /
+```
+
+Workspace (`/workspace`, `/staff`) remains account-gated staff tooling and is not in public or member primary navigation. `/auth/accept` remains the staff/bootstrap invite path.
 
 Elevated organization portal (Phase 5 seed / later expansion):
 
