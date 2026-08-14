@@ -14,9 +14,7 @@ test.describe("3.10 gated public interface", () => {
     await page.goto("/formal-topics");
     await expect(page).toHaveURL(/\/agenda$/);
     await expect(page.getByRole("heading", { name: "Agenda" })).toBeVisible();
-    await expect(
-      page.getByText(/hosted pol\.is is unavailable/i),
-    ).toBeVisible();
+    await expect(page.getByTestId("hosted-polis-unavailable")).toBeVisible();
     await expect(
       page.getByText(/opens in a later commonhall phase/i),
     ).toHaveCount(0);

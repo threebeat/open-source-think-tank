@@ -52,7 +52,8 @@ test.describe("gated Chamber, Council, and Records", () => {
     await expect(page.getByText(/^yes$/i).first()).toBeVisible();
     await expect(page.getByText(/^no$/i).first()).toBeVisible();
     await expect(page.getByText(/^recused$/i).first()).toBeVisible();
-    await expect(page.getByText(/America\/Chicago|CDT|CST/)).toBeVisible();
+    await expect(page.getByRole("time").first()).toBeVisible();
+    await expect(page.getByRole("time").first()).toHaveText(/CDT|CST|CT|Chicago/i);
 
     await page.goto("/council/topics/ostt-synth-sidewalk-repair");
     await expect(

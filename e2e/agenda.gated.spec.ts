@@ -26,9 +26,7 @@ test.describe("gated Agenda member deliberation", () => {
 
     await page.goto("/agenda");
     await expect(page.getByRole("heading", { name: "Agenda" })).toBeVisible();
-    await expect(
-      page.getByText(/hosted pol\.is is unavailable/i),
-    ).toBeVisible();
+    await expect(page.getByTestId("hosted-polis-unavailable")).toBeVisible();
     await expect(
       page.getByRole("link", {
         name: /synthetic qualified topic: evening transit reliability/i,

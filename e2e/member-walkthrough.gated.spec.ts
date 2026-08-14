@@ -32,7 +32,8 @@ test.describe("gated member walkthrough", () => {
     await expect(
       page.getByRole("heading", { name: "Commons", exact: true }),
     ).toBeVisible();
-    await page.getByLabel(/^category$/i).selectOption("general_discussion");
+    await expect(page.getByRole("heading", { name: "Create a post" })).toBeVisible();
+    await page.locator("select[name='category']").selectOption("general_discussion");
     await page.getByLabel(/^title$/i).fill(title);
     await page.getByLabel(/^body$/i).fill(
       "Should the hall add lighting on the river walkway?",

@@ -21,16 +21,20 @@ test.describe("gated Commons member posts", () => {
 
     await page.goto("/commons");
     await expect(page.getByRole("heading", { name: "Commons", exact: true })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Formal Commons" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Formal Commons", exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByText(
         /Informal conversations may not have been reviewed by a moderator/,
       ),
     ).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Informal Commons" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Informal Commons", exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole("heading", { name: "Create a post" })).toBeVisible();
 
-    await page.getByLabel(/^category$/i).selectOption("general_discussion");
+    await page.locator("select[name='category']").selectOption("general_discussion");
     await page.getByLabel(/^title$/i).fill(title);
     await page.getByLabel(/^body$/i).fill(
       "Should the hall map high-water marks on the river path?",
