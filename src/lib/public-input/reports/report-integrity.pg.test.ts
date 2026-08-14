@@ -350,13 +350,14 @@ describe.skipIf(!reachable)(
       });
       expect(secondValidated.ok).toBe(true);
       if (!secondValidated.ok) throw new Error("second validate failed");
-      const second = await beginReview(db, {
+      const secondReviewed = await beginReview(db, {
         actorAccountId: ADMIN,
         reportId: secondImport.value.reportId,
         expectedConcurrencyVersion: secondValidated.value.concurrencyVersion,
       });
-      expect(second.ok).toBe(true);
-      if (!second.ok) throw new Error("second review failed");
+      expect(secondReviewed.ok).toBe(true);
+      if (!secondReviewed.ok) throw new Error("second review failed");
+      const second = secondReviewed.value;
 
       await closeConversation(conversationId);
 
