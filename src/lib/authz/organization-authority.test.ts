@@ -73,6 +73,36 @@ describe("organization authority matrix", () => {
     ).toBe(false);
   });
 
+  it("does not grant organization authority from community membership alone", () => {
+    const member = principal({
+      platformRoles: ["participant"],
+      organizationMemberships: [
+        {
+          organizationId: "org_ostt_synth_alpha_internal",
+          status: "active",
+          isPrimary: true,
+        },
+      ],
+    });
+    expect(
+      authorizeOrganization(
+        member,
+        "org_ostt_synth_alpha_internal",
+        "organization.appointment.grant",
+      ).ok,
+    ).toBe(false);
+    expect(
+      authorizeOrganization(
+        member,
+        "org_ostt_synth_alpha_internal",
+        "organization.governance.transition",
+      ).ok,
+    ).toBe(false);
+    expect(authorize(member, "institutional.council_deliberation").ok).toBe(
+      false,
+    );
+  });
+
   it("does not treat a legacy deliberation_council seat as v2 governance authority", () => {
     const seated = principal({
       platformRoles: ["participant"],

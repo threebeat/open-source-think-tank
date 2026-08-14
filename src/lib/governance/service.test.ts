@@ -57,6 +57,22 @@ describe("governance service kernel", () => {
     }
   });
 
+  it("refuses system_from_published_rule without a trusted in-process caller", async () => {
+    const admin = await loadPrincipal(db, "account-ostt-synth-staff-admin");
+    const impersonated = await transitionGovernanceRecord(db, {
+      principal: admin,
+      organizationId: SYNTHETIC_ORG_ALPHA_ID,
+      recordId: "govrec_ostt_synth_alpha_informal",
+      action: "queue_for_chamber",
+      actor: "system_from_published_rule",
+      synthetic: true,
+    });
+    expect(impersonated.ok).toBe(false);
+    if (!impersonated.ok) {
+      expect(impersonated.code).toBe("GOVERNANCE_SYSTEM_ACTOR_UNTRUSTED");
+    }
+  });
+
   it("refuses kernel writes when the kill switch is off", async () => {
     process.env.COMMONHALL_V2_KERNEL = "off";
     const admin = await loadPrincipal(db, "account-ostt-synth-staff-admin");

@@ -135,6 +135,11 @@ export async function transitionGovernanceRecord(
     metricsSnapshot?: Record<string, unknown> | null;
     verdict?: Record<string, unknown> | null;
     synthetic: boolean;
+    /**
+     * In-process published-rule engine only. HTTP/API handlers must never
+     * set this. Platform administrators cannot impersonate the system actor.
+     */
+    trustedSystem?: boolean;
   },
 ): Promise<AdapterResult<{ to: string }>> {
   assertOrganizationMutationAllowed();
@@ -156,7 +161,14 @@ export async function transitionGovernanceRecord(
   }
 
   if (input.actor === "system_from_published_rule") {
-    // System rule application is not a platform-admin organization action.
+    if (input.trustedSystem !== true) {
+      return {
+        ok: false,
+        code: "GOVERNANCE_SYSTEM_ACTOR_UNTRUSTED",
+        error:
+          "system_from_published_rule may only be invoked by the trusted in-process rule engine",
+      };
+    }
   } else if (input.actor === "community_member") {
     const memberships = input.principal?.organizationMemberships ?? [];
     const member = memberships.some(
@@ -242,7 +254,10 @@ export async function transitionGovernanceRecord(
     toState: evaluated.value.to,
     action: evaluated.value.action,
     actorPrincipalKind: actorPrincipalKind(input.actor),
-    actorAccountId: input.principal?.accountId ?? null,
+    actorAccountId:
+      input.actor === "system_from_published_rule"
+        ? null
+        : input.principal?.accountId ?? null,
     reason: input.reason ?? null,
     criteriaTrace: input.criteriaTrace ?? null,
     metricsSnapshot: input.metricsSnapshot ?? null,
@@ -261,7 +276,10 @@ export async function transitionGovernanceRecord(
   const org = await getOrganization(db, organizationId);
   await appendAuthAudit(db, {
     actorRole: actorPrincipalKind(input.actor),
-    actorAccountId: input.principal?.accountId ?? null,
+    actorAccountId:
+      input.actor === "system_from_published_rule"
+        ? null
+        : input.principal?.accountId ?? null,
     action: "organization.governance.transitioned",
     subjectType: "topic_governance_record",
     subjectId: record.id,

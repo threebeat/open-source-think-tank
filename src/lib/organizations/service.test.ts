@@ -188,11 +188,28 @@ describe("organization services", () => {
     const admin = await loadPrincipal(db, "account-ostt-synth-staff-admin");
     expect(admin).not.toBeNull();
     if (!admin) return;
+    const authorId = "account-ostt-synth-author-mod";
+    const personId = newEntityId("person");
+    await db.insert(persons).values({
+      id: personId,
+      synthetic: true,
+      displayLabel: "ostt-synth author-moderator",
+    });
+    await db.insert(accounts).values({
+      id: authorId,
+      personId,
+      contactChannel: "author-mod@ostt.synth.test",
+      lifecycleState: "active",
+      synthetic: true,
+      contactVerifiedAt: new Date("2026-08-01T00:00:00.000Z"),
+      activatedAt: new Date("2026-08-02T00:00:00.000Z"),
+    });
+
     const created = await createGovernanceRecord(db, {
       organizationId: ALPHA,
       publicId: "gov-ostt-synth-self-review",
       configVersionId: "orgcfg_ostt_synth_alpha_v1",
-      authorAccountId: "account-ostt-synth-ada",
+      authorAccountId: authorId,
       synthetic: true,
     });
     expect(created.ok).toBe(true);
@@ -208,11 +225,11 @@ describe("organization services", () => {
     });
     expect(submitted.ok).toBe(false);
 
-    const ada = await loadPrincipal(db, "account-ostt-synth-ada");
-    expect(ada).not.toBeNull();
-    if (!ada) return;
-    const qualify = await transitionGovernanceRecord(db, {
-      principal: ada,
+    const author = await loadPrincipal(db, authorId);
+    expect(author).not.toBeNull();
+    if (!author) return;
+    const qualifyWithoutSeat = await transitionGovernanceRecord(db, {
+      principal: author,
       organizationId: ALPHA,
       recordId: created.value.recordId,
       action: "qualify",
@@ -220,7 +237,37 @@ describe("organization services", () => {
       criteriaTrace: { criterion: "completeness", result: "met" },
       synthetic: true,
     });
-    expect(qualify.ok).toBe(false);
+    expect(qualifyWithoutSeat.ok).toBe(false);
+
+    const orgAdmin = await loadPrincipal(db, "account-ostt-synth-org-admin-a");
+    expect(orgAdmin).not.toBeNull();
+    if (!orgAdmin) return;
+    const moderatorSeat = await grantOrganizationAppointment(db, {
+      principal: orgAdmin,
+      organizationId: ALPHA,
+      subjectAccountId: authorId,
+      appointmentKind: "moderator",
+      termStartsAt: new Date("2026-08-01T00:00:00.000Z"),
+      synthetic: true,
+    });
+    expect(moderatorSeat.ok).toBe(true);
+
+    const authorModerator = await loadPrincipal(db, authorId);
+    expect(authorModerator).not.toBeNull();
+    if (!authorModerator) return;
+    const selfQualify = await transitionGovernanceRecord(db, {
+      principal: authorModerator,
+      organizationId: ALPHA,
+      recordId: created.value.recordId,
+      action: "qualify",
+      actor: "moderator",
+      criteriaTrace: { criterion: "completeness", result: "met" },
+      synthetic: true,
+    });
+    expect(selfQualify.ok).toBe(false);
+    if (!selfQualify.ok) {
+      expect(selfQualify.code).toBe("GOVERNANCE_SELF_REVIEW_FORBIDDEN");
+    }
   });
 
   it("does not attach legacy council seats to v2 organizations", async () => {
