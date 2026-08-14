@@ -5,13 +5,20 @@ export function reportMutationStatusFor(code: string): number {
     code === "AUTHZ_DENIED" ||
     code === "AUTHZ_ACTIVE_REQUIRED" ||
     code === "AUTHZ_ASSURANCE_REQUIRED" ||
-    code === "AUTHZ_ACCOUNT_DISABLED"
+    code === "AUTHZ_ACCOUNT_DISABLED" ||
+    // Production small-cell suppression has not cleared privacy review — an
+    // explicit operator approval gate, not a workflow-state conflict (4.5A.1).
+    code === "PUBLIC_INPUT_REPORT_PRODUCTION_PRIVACY_UNAPPROVED"
   ) {
     return 403;
   }
   if (
     code === "PUBLIC_INPUT_REPORT_STATE_CONFLICT" ||
-    code === "CONSULTATION_VERSION_CONFLICT"
+    code === "CONSULTATION_VERSION_CONFLICT" ||
+    // Workflow-shape conflicts — the request is well-formed and authorized
+    // but the report is not in a state that allows it right now (4.5A.1).
+    code === "PUBLIC_INPUT_REPORT_NOT_UNDER_REVIEW" ||
+    code === "PUBLIC_INPUT_REPORT_REQUIRES_REIMPORT"
   ) {
     return 409;
   }

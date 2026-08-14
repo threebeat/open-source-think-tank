@@ -245,16 +245,11 @@ export async function decideFindingPublication(
         throw new Error("PUBLIC_INPUT_REPORT_STATE_CONFLICT");
       }
 
-      const auditAction =
-        input.action === "include"
-          ? "consultations.reports.finding_included"
-          : "consultations.reports.finding_withheld";
-
-      if (auditAction === "consultations.reports.finding_included") {
+      if (input.action === "include") {
         await appendAuthAudit(tx, {
           actorRole: "administrator",
           actorAccountId: decision.principal.accountId,
-          action: auditAction,
+          action: "consultations.reports.finding_included",
           subjectType: "public_input_report_finding",
           subjectId: updatedFinding.value.id,
           summary: "Public Input report finding (re)included in public projection.",
@@ -272,11 +267,11 @@ export async function decideFindingPublication(
           },
           synthetic: decision.principal.synthetic,
         });
-      } else {
+      } else if (input.action === "withhold") {
         await appendAuthAudit(tx, {
           actorRole: "administrator",
           actorAccountId: decision.principal.accountId,
-          action: auditAction,
+          action: "consultations.reports.finding_withheld",
           subjectType: "public_input_report_finding",
           subjectId: updatedFinding.value.id,
           summary: "Public Input report finding withheld from public projection.",
@@ -289,7 +284,34 @@ export async function decideFindingPublication(
             moderationActionId: inserted.value.id,
             capability: "consultations.reports.review",
             previousPublicationStatus,
-            nextPublicationStatus: updatedFinding.value.publicationStatus,
+            nextPublicationStatus: "withheld",
+            hasPublicRationale: true as const,
+            hasPrivateNote: Boolean(inserted.value.privateNote),
+            actorAccountId: decision.principal.accountId,
+          },
+          synthetic: decision.principal.synthetic,
+        });
+      } else {
+        // supersede_finding (4.5A.1) — distinct audit action from withhold so
+        // "a newer finding replaced this one" is never misreported as
+        // "this finding failed institutional review".
+        await appendAuthAudit(tx, {
+          actorRole: "administrator",
+          actorAccountId: decision.principal.accountId,
+          action: "consultations.reports.finding_superseded",
+          subjectType: "public_input_report_finding",
+          subjectId: updatedFinding.value.id,
+          summary: "Public Input report finding superseded in public projection.",
+          reason: input.publicRationale?.trim(),
+          privatePayload: {
+            conversationId: report.value.conversationId,
+            topicId: report.value.topicId,
+            reportId: report.value.id,
+            findingId: updatedFinding.value.id,
+            moderationActionId: inserted.value.id,
+            capability: "consultations.reports.review",
+            previousPublicationStatus,
+            nextPublicationStatus: "superseded",
             hasPublicRationale: true as const,
             hasPrivateNote: Boolean(inserted.value.privateNote),
             actorAccountId: decision.principal.accountId,

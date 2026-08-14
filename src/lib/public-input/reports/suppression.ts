@@ -17,6 +17,14 @@
 
 export const SMALL_CELL_POLICY_VERSION = "4.5.1-exact-count-complementary";
 
+/**
+ * Algorithm-version snapshot persisted alongside `SMALL_CELL_POLICY_VERSION`
+ * on every publish (4.5A.1). Currently identical to the policy version — kept
+ * as a distinct named constant so the algorithm implementation can version
+ * independently of the policy document in a future package.
+ */
+export const SMALL_CELL_ALGORITHM_VERSION = SMALL_CELL_POLICY_VERSION;
+
 /** Synthetic public-demo provisional value only — NOT a production privacy decision (OQ27, OQ35). */
 export const PROVISIONAL_DEMO_SMALL_CELL_THRESHOLD = 5;
 

@@ -333,6 +333,60 @@ describe("Public Input moderation service (4.5A)", () => {
     expect(reincluded.value.publicationStatus).toBe("included");
   });
 
+  it("logs a distinct consultations.reports.finding_superseded audit action for supersede_finding (never finding_withheld)", async () => {
+    const topicId = await freshTopicId();
+    const conversationId = await freshVotingClosedConversationId(topicId);
+    const { imported, reviewed } =
+      await importThroughUnderReview(conversationId);
+
+    const findings = await getReportFindingsByReportId(
+      db,
+      imported.value.reportId,
+    );
+    expect(findings.ok).toBe(true);
+    if (!findings.ok) return;
+    const agreementFinding = findings.value.find(
+      (f) => f.kind === "cross_group_agreement",
+    );
+    expect(agreementFinding).toBeTruthy();
+    if (!agreementFinding) return;
+
+    const superseded = await decideFindingPublication(db, {
+      actorAccountId: ADMIN,
+      reportId: imported.value.reportId,
+      findingId: agreementFinding.id,
+      action: "supersede_finding",
+      expectedConcurrencyVersion: reviewed.value.concurrencyVersion,
+      publicRationale:
+        "Replaced by an updated cross-group agreement finding in a newer import.",
+    });
+    expect(superseded.ok).toBe(true);
+    if (!superseded.ok) return;
+    expect(superseded.value.publicationStatus).toBe("superseded");
+
+    const [supersededAudit] = await db
+      .select()
+      .from(auditEvents)
+      .where(
+        and(
+          eq(auditEvents.subjectId, agreementFinding.id),
+          eq(auditEvents.action, "consultations.reports.finding_superseded"),
+        ),
+      );
+    expect(supersededAudit).toBeTruthy();
+
+    const [misclassifiedAudit] = await db
+      .select()
+      .from(auditEvents)
+      .where(
+        and(
+          eq(auditEvents.subjectId, agreementFinding.id),
+          eq(auditEvents.action, "consultations.reports.finding_withheld"),
+        ),
+      );
+    expect(misclassifiedAudit).toBeUndefined();
+  });
+
   it("denies finding publication decisions after the report is published", async () => {
     const topicId = await freshTopicId();
     const conversationId = await freshVotingClosedConversationId(topicId);

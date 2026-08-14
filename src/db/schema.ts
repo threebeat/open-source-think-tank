@@ -1771,6 +1771,28 @@ export const publicInputReportModerationActionEnum = pgEnum(
 );
 
 /**
+ * Content data provenance (4.5A.1). Distinct from `accounts.synthetic` /
+ * `auditEvents.synthetic` (actor provenance) — this is a data-derived mirror
+ * describing the *content* row's origin. `synthetic_fixture` mirrors to
+ * `synthetic = true` on the owning row; `manual_aggregate` never does, even
+ * when the importing actor happens to be a synthetic seed account.
+ */
+export const publicInputReportDataProvenanceEnum = pgEnum(
+  "public_input_report_data_provenance",
+  ["synthetic_fixture", "manual_aggregate"],
+);
+
+/**
+ * Per-group count provenance (4.5A.1). `legacy_estimated` marks pre-@1.1
+ * FLOOR-derived backfill counts that are not exact and force
+ * `public_input_reports.requiresReimport` on the owning report.
+ */
+export const publicInputReportCountProvenanceEnum = pgEnum(
+  "public_input_report_count_provenance",
+  ["exact", "legacy_estimated"],
+);
+
+/**
  * Documentation-only axis distinction (no dedicated DB column needs this
  * union): `provider_side_record` rows live in
  * `public_input_provider_moderation_records` (observational provenance);
@@ -1824,6 +1846,10 @@ export const publicInputReportImports = pgTable(
       .notNull()
       .default(0),
     moderationPolicyVersion: text("moderation_policy_version"),
+    /** Derived from `sourceKind` at import time (4.5A.1) — never independently overridable. */
+    dataProvenance: publicInputReportDataProvenanceEnum(
+      "data_provenance",
+    ).notNull(),
     synthetic: boolean("synthetic").notNull().default(false),
   },
   (table) => [
@@ -1916,6 +1942,22 @@ export const publicInputReports = pgTable(
     ),
     supersededByReportId: text("superseded_by_report_id"),
     isLatestPublished: boolean("is_latest_published").notNull().default(false),
+    /** Derived from the owning import's `dataProvenance` at create time (4.5A.1). Immutable. */
+    dataProvenance: publicInputReportDataProvenanceEnum(
+      "data_provenance",
+    ).notNull(),
+    /**
+     * Set true by migration 0022 for reports whose group counts are
+     * `legacy_estimated` or whose import predates schema `@1.1`. A report
+     * with `requiresReimport = true` may never publish (CHECK below);
+     * correcting it requires a brand-new import version (ADR 0019).
+     */
+    requiresReimport: boolean("requires_reimport").notNull().default(false),
+    /** Suppression-policy snapshot — written only on the under_review -> published transition. */
+    smallCellPolicyVersion: text("small_cell_policy_version"),
+    smallCellAlgorithmVersion: text("small_cell_algorithm_version"),
+    smallCellThreshold: integer("small_cell_threshold"),
+    smallCellMinParticipation: integer("small_cell_min_participation"),
     synthetic: boolean("synthetic").notNull().default(false),
     ...timestamps,
   },
@@ -1960,6 +2002,22 @@ export const publicInputReports = pgTable(
       "public_input_reports_published_requires_metadata",
       sql`(${table.workflowState} <> 'published') OR (${table.publishedAt} IS NOT NULL AND ${table.publisherAccountId} IS NOT NULL)`,
     ),
+    check(
+      "public_input_reports_small_cell_threshold_positive",
+      sql`${table.smallCellThreshold} IS NULL OR ${table.smallCellThreshold} > 0`,
+    ),
+    check(
+      "public_input_reports_small_cell_min_participation_positive",
+      sql`${table.smallCellMinParticipation} IS NULL OR ${table.smallCellMinParticipation} > 0`,
+    ),
+    check(
+      "public_input_reports_published_suppression_complete",
+      sql`(${table.workflowState} <> 'published' AND ${table.workflowState} <> 'superseded') OR (${table.smallCellPolicyVersion} IS NOT NULL AND ${table.smallCellAlgorithmVersion} IS NOT NULL AND ${table.smallCellThreshold} IS NOT NULL AND ${table.smallCellMinParticipation} IS NOT NULL)`,
+    ),
+    check(
+      "public_input_reports_no_publish_when_reimport_required",
+      sql`(NOT ${table.requiresReimport}) OR (${table.workflowState} <> 'published' AND ${table.workflowState} <> 'superseded')`,
+    ),
   ],
 );
 
@@ -1986,6 +2044,14 @@ export const publicInputReportGroups = pgTable(
       .notNull()
       .default("reported"),
     publishedShare: real("published_share"),
+    /** `exact` for every group inserted since schema `@1.1`; `legacy_estimated` for pre-4.5A FLOOR backfills (4.5A.1). */
+    countProvenance: publicInputReportCountProvenanceEnum(
+      "count_provenance",
+    ).notNull(),
+    /** Derived from the owning report's `dataProvenance` at create time (4.5A.1). Immutable. */
+    dataProvenance: publicInputReportDataProvenanceEnum(
+      "data_provenance",
+    ).notNull(),
     synthetic: boolean("synthetic").notNull().default(false),
   },
   (table) => [
@@ -2040,6 +2106,10 @@ export const publicInputReportFindings = pgTable(
       .notNull()
       .default("included"),
     displayOrder: integer("display_order").notNull().default(0),
+    /** Derived from the owning report's `dataProvenance` at create time (4.5A.1). Immutable. */
+    dataProvenance: publicInputReportDataProvenanceEnum(
+      "data_provenance",
+    ).notNull(),
     synthetic: boolean("synthetic").notNull().default(false),
     ...timestamps,
   },

@@ -11,6 +11,7 @@ import {
 import {
   validateCanonicalAggregateImport,
   type CanonicalAggregateImport,
+  type CanonicalImportSourceKind,
 } from "@/lib/public-input/reports/canonical-schema";
 import {
   findReportImportByCanonicalHash,
@@ -32,6 +33,7 @@ import {
   supersedeReport,
   updateReportGroupPublication,
   updateReportWorkflowState,
+  type PublicInputReportDataProvenance,
   type ReportRecord,
 } from "@/lib/public-input/reports/repository";
 import {
@@ -42,6 +44,8 @@ import {
 } from "@/lib/public-input/reports/projection";
 import {
   applyComplementarySmallCellSuppression,
+  PROVISIONAL_DEMO_SMALL_CELL_THRESHOLD,
+  SMALL_CELL_ALGORITHM_VERSION,
   SMALL_CELL_POLICY_VERSION,
 } from "@/lib/public-input/reports/suppression";
 
@@ -49,6 +53,41 @@ const MIN_REJECT_REASON_LENGTH = 8;
 
 /** Conversation workflow states from which an aggregate-only import may be accepted (ADR 0018 §5). */
 const IMPORT_ELIGIBLE_CONVERSATION_STATES = ["voting_closed", "closed"] as const;
+
+/**
+ * Content data provenance is derived exclusively from the validated
+ * canonical payload's `sourceKind` — never independently overridable
+ * (4.5A.1). The canonical schema is `.strict()`, so any payload attempting
+ * to smuggle its own `dataProvenance` key already fails schema validation
+ * before reaching this function; this switch is an exhaustive defense
+ * against a future non-operational `sourceKind` ever being derived silently.
+ */
+function deriveDataProvenance(
+  sourceKind: CanonicalImportSourceKind,
+): PublicInputReportDataProvenance {
+  switch (sourceKind) {
+    case "fixture":
+      return "synthetic_fixture";
+    case "manual_aggregate":
+      return "manual_aggregate";
+    default: {
+      const exhaustive: never = sourceKind;
+      throw new Error(`IMPORT_SOURCE_KIND_PROVENANCE_CONTRADICTION:${String(exhaustive)}`);
+    }
+  }
+}
+
+/**
+ * Fail-closed operator escape hatch (4.5A.1). Production small-cell
+ * suppression parameters have not cleared privacy review (OQ27/OQ35), so
+ * every non-synthetic (`manual_aggregate`) report publish — and any custom
+ * suppression override on one — is refused unless this is explicitly set.
+ */
+function allowsNonSyntheticReportPublish(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  return env.OSTT_ALLOW_NON_SYNTHETIC_REPORT_PUBLISH === "1";
+}
 
 function gatedOrDeny(): AdapterResult<never> | null {
   if (assertEnvironmentSafe() !== "gated") {
@@ -211,6 +250,10 @@ export async function importAggregateReport(
 
       const payload: CanonicalAggregateImport = validated.value;
       const disclosure = payload.aggregateModerationDisclosure ?? null;
+      // Content-row provenance/synthetic is derived from the validated
+      // payload's sourceKind only — never from the importing actor's own
+      // synthetic flag, which is reserved for audit events (4.5A.1).
+      const dataProvenance = deriveDataProvenance(payload.sourceKind);
 
       const insertedImport = await insertReportImport(tx, {
         conversationId: input.conversationId,
@@ -230,7 +273,7 @@ export async function importAggregateReport(
         moderationAcceptedCount: disclosure?.acceptedCount ?? 0,
         moderationRejectedCount: disclosure?.rejectedCount ?? 0,
         moderationPolicyVersion: disclosure?.policyVersion ?? null,
-        synthetic: decision.principal.synthetic,
+        dataProvenance,
       });
       if (!insertedImport.ok) {
         throw new Error(insertedImport.code);
@@ -243,7 +286,7 @@ export async function importAggregateReport(
         version: nextVersion.value,
         publicTitle,
         importerAccountId: decision.principal.accountId,
-        synthetic: decision.principal.synthetic,
+        dataProvenance,
       });
       if (!insertedReport.ok) {
         throw new Error(insertedReport.code);
@@ -252,7 +295,7 @@ export async function importAggregateReport(
       const groupsInserted = await insertReportGroups(tx, {
         reportId: insertedReport.value.id,
         participationCount: payload.participationCount,
-        synthetic: decision.principal.synthetic,
+        dataProvenance,
         groups: payload.opinionGroups.map((group, index) => ({
           label: group.label,
           participantCount: group.participantCount,
@@ -277,7 +320,7 @@ export async function importAggregateReport(
       ];
       const findingsInserted = await insertReportFindings(tx, {
         reportId: insertedReport.value.id,
-        synthetic: decision.principal.synthetic,
+        dataProvenance,
         findings: findingsInput,
       });
       if (!findingsInserted.ok) {
@@ -488,6 +531,24 @@ export async function publishReport(
         throw new Error("PUBLIC_INPUT_REPORT_STATE_CONFLICT");
       }
 
+      // Legacy-estimated / pre-@1.1 reports may never publish — a correction
+      // requires a brand-new import version (ADR 0019, 4.5A.1). The DB CHECK
+      // enforces this too; this fails closed earlier with a clearer code.
+      if (current.requiresReimport) {
+        throw new Error("PUBLIC_INPUT_REPORT_REQUIRES_REIMPORT");
+      }
+
+      // Production small-cell suppression has not cleared privacy review
+      // (OQ27/OQ35) — every non-synthetic (manual_aggregate) publish, and
+      // any custom threshold/minParticipation override on one, is refused
+      // unless an operator has explicitly opted in via the escape-hatch env
+      // var. This blocks both the general publish and the override case in
+      // one fail-closed gate (4.5A.1).
+      const isSyntheticReport = current.dataProvenance === "synthetic_fixture";
+      if (!isSyntheticReport && !allowsNonSyntheticReportPublish()) {
+        throw new Error("PUBLIC_INPUT_REPORT_PRODUCTION_PRIVACY_UNAPPROVED");
+      }
+
       const conversation = await getConversationById(tx, current.conversationId);
       if (!conversation.ok) throw new Error(conversation.code);
       if (!conversation.value) throw new Error("CONSULTATION_NOT_FOUND");
@@ -505,6 +566,10 @@ export async function publishReport(
       const orderedGroups = [...groups.value].sort(
         (a, b) => a.displayOrder - b.displayOrder,
       );
+      const resolvedThreshold =
+        input.smallCellThreshold ?? PROVISIONAL_DEMO_SMALL_CELL_THRESHOLD;
+      const resolvedMinParticipation =
+        input.minParticipationForGroups ?? resolvedThreshold;
       const suppression = applyComplementarySmallCellSuppression(
         orderedGroups.map((g) => ({
           label: g.label,
@@ -512,8 +577,8 @@ export async function publishReport(
         })),
         reportImport.value.participationCount,
         {
-          threshold: input.smallCellThreshold,
-          minParticipationForGroups: input.minParticipationForGroups,
+          threshold: resolvedThreshold,
+          minParticipationForGroups: resolvedMinParticipation,
         },
       );
 
@@ -576,6 +641,10 @@ export async function publishReport(
         expectedConcurrencyVersion: input.expectedConcurrencyVersion,
         publisherAccountId: decision.principal.accountId,
         publishedAt,
+        smallCellPolicyVersion: SMALL_CELL_POLICY_VERSION,
+        smallCellAlgorithmVersion: SMALL_CELL_ALGORITHM_VERSION,
+        smallCellThreshold: resolvedThreshold,
+        smallCellMinParticipation: resolvedMinParticipation,
       });
       if (!published.ok) throw new Error(published.code);
       if (!published.value) throw new Error("PUBLIC_INPUT_REPORT_STATE_CONFLICT");
@@ -914,6 +983,16 @@ function mapServiceError(
     PUBLIC_INPUT_REPORT_IMPORT_ORPHANED: {
       error: "Report import provenance is missing",
       code: "PUBLIC_INPUT_REPORT_IMPORT_ORPHANED",
+    },
+    PUBLIC_INPUT_REPORT_REQUIRES_REIMPORT: {
+      error:
+        "Report has legacy estimated counts and requires a new import version before it can publish",
+      code: "PUBLIC_INPUT_REPORT_REQUIRES_REIMPORT",
+    },
+    PUBLIC_INPUT_REPORT_PRODUCTION_PRIVACY_UNAPPROVED: {
+      error:
+        "Publishing a non-synthetic (manual_aggregate) report requires explicit operator approval pending production small-cell privacy review",
+      code: "PUBLIC_INPUT_REPORT_PRODUCTION_PRIVACY_UNAPPROVED",
     },
   };
   if (KNOWN[message]) {

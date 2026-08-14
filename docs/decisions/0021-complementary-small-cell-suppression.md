@@ -19,9 +19,9 @@ Phase 4.2 already forbids rendering a suppressed opinion-group share as `0%`. Wh
 7. Differencing across **report versions** must not re-expose a previously suppressed cell: publication/review UX and public history views apply suppression consistently (including complementary rules) to each version’s public projection.
 8. This ADR does **not** settle the production threshold, authorize live Pol.is, or weaken forbidden-key / aggregate-only rules.
 
-### Amendment — Phase 4.5A (2026-08-14)
+### Amendment — Phase 4.5A.1 (2026-08-14)
 
-Replaces share-rounding inference with exact counts (owner-review P0). Import schema `@1.1` validates partition consistency before storage.
+Publish stores policy version, algorithm version, threshold, and minimum reporting floor on the report. Historical projections must use those stored values, never the current runtime constant.
 
 ## Consequences
 

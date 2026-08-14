@@ -16,6 +16,19 @@ import {
 
 export type PublicInputReportSourceKind = "fixture" | "manual_aggregate";
 
+/**
+ * Content data provenance (4.5A.1) — a data-derived mirror of the row's
+ * origin, distinct from the *actor's* synthetic flag. Never set from
+ * `decision.principal.synthetic`; every insert function below derives its
+ * row's `synthetic` column from this value instead (see each function).
+ */
+export type PublicInputReportDataProvenance =
+  | "synthetic_fixture"
+  | "manual_aggregate";
+
+/** Per-group count provenance (4.5A.1); `legacy_estimated` forces `ReportRecord.requiresReimport`. */
+export type PublicInputReportCountProvenance = "exact" | "legacy_estimated";
+
 export type PublicInputReportWorkflowState =
   | "imported"
   | "validated"
@@ -63,6 +76,7 @@ export type ReportImportRecord = {
   moderationAcceptedCount: number;
   moderationRejectedCount: number;
   moderationPolicyVersion: string | null;
+  dataProvenance: PublicInputReportDataProvenance;
   synthetic: boolean;
 };
 
@@ -80,6 +94,14 @@ export type ReportRecord = {
   importerAccountId: string | null;
   supersededByReportId: string | null;
   isLatestPublished: boolean;
+  dataProvenance: PublicInputReportDataProvenance;
+  /** True forces publish to fail closed — a new import version is required (4.5A.1). */
+  requiresReimport: boolean;
+  /** Suppression-policy snapshot — non-null only once the report has published at least once. */
+  smallCellPolicyVersion: string | null;
+  smallCellAlgorithmVersion: string | null;
+  smallCellThreshold: number | null;
+  smallCellMinParticipation: number | null;
   synthetic: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -94,6 +116,8 @@ export type ReportGroupRecord = {
   rawShare: number;
   publishedStatus: PublicInputReportGroupCellStatus;
   publishedShare: number | null;
+  countProvenance: PublicInputReportCountProvenance;
+  dataProvenance: PublicInputReportDataProvenance;
   synthetic: boolean;
 };
 
@@ -104,6 +128,7 @@ export type ReportFindingRecord = {
   statementText: string;
   publicationStatus: PublicInputFindingPublicationStatus;
   displayOrder: number;
+  dataProvenance: PublicInputReportDataProvenance;
   synthetic: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -144,6 +169,7 @@ function mapImport(
     moderationAcceptedCount: row.moderationAcceptedCount,
     moderationRejectedCount: row.moderationRejectedCount,
     moderationPolicyVersion: row.moderationPolicyVersion,
+    dataProvenance: row.dataProvenance,
     synthetic: row.synthetic,
   };
 }
@@ -163,6 +189,12 @@ function mapReport(row: typeof publicInputReports.$inferSelect): ReportRecord {
     importerAccountId: row.importerAccountId,
     supersededByReportId: row.supersededByReportId,
     isLatestPublished: row.isLatestPublished,
+    dataProvenance: row.dataProvenance,
+    requiresReimport: row.requiresReimport,
+    smallCellPolicyVersion: row.smallCellPolicyVersion,
+    smallCellAlgorithmVersion: row.smallCellAlgorithmVersion,
+    smallCellThreshold: row.smallCellThreshold,
+    smallCellMinParticipation: row.smallCellMinParticipation,
     synthetic: row.synthetic,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -181,6 +213,8 @@ function mapGroup(
     rawShare: row.rawShare,
     publishedStatus: row.publishedStatus,
     publishedShare: row.publishedShare,
+    countProvenance: row.countProvenance,
+    dataProvenance: row.dataProvenance,
     synthetic: row.synthetic,
   };
 }
@@ -195,6 +229,7 @@ function mapFinding(
     statementText: row.statementText,
     publicationStatus: row.publicationStatus,
     displayOrder: row.displayOrder,
+    dataProvenance: row.dataProvenance,
     synthetic: row.synthetic,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -257,7 +292,7 @@ export async function insertReportImport(
     moderationAcceptedCount: number;
     moderationRejectedCount: number;
     moderationPolicyVersion: string | null;
-    synthetic: boolean;
+    dataProvenance: PublicInputReportDataProvenance;
   },
 ): Promise<AdapterResult<ReportImportRecord>> {
   const denied = requireGatedPersistence();
@@ -285,7 +320,10 @@ export async function insertReportImport(
       moderationAcceptedCount: input.moderationAcceptedCount,
       moderationRejectedCount: input.moderationRejectedCount,
       moderationPolicyVersion: input.moderationPolicyVersion,
-      synthetic: input.synthetic,
+      dataProvenance: input.dataProvenance,
+      // Content-row synthetic is a data-derived mirror of dataProvenance —
+      // never the importing actor's own synthetic flag (4.5A.1).
+      synthetic: input.dataProvenance === "synthetic_fixture",
     })
     .returning();
 
@@ -323,7 +361,7 @@ export async function insertReport(
     version: number;
     publicTitle: string;
     importerAccountId: string;
-    synthetic: boolean;
+    dataProvenance: PublicInputReportDataProvenance;
   },
 ): Promise<AdapterResult<ReportRecord>> {
   const denied = requireGatedPersistence();
@@ -346,7 +384,10 @@ export async function insertReport(
       importerAccountId: input.importerAccountId,
       supersededByReportId: null,
       isLatestPublished: false,
-      synthetic: input.synthetic,
+      dataProvenance: input.dataProvenance,
+      // Every newly created report is a fresh exact-count import (4.5A.1).
+      requiresReimport: false,
+      synthetic: input.dataProvenance === "synthetic_fixture",
     })
     .returning();
 
@@ -365,7 +406,7 @@ export async function insertReportGroups(
   input: {
     reportId: string;
     participationCount: number;
-    synthetic: boolean;
+    dataProvenance: PublicInputReportDataProvenance;
     groups: {
       label: string;
       participantCount: number;
@@ -379,6 +420,7 @@ export async function insertReportGroups(
     return { ok: true, value: [] };
   }
 
+  const synthetic = input.dataProvenance === "synthetic_fixture";
   const rows = await db
     .insert(publicInputReportGroups)
     .values(
@@ -396,7 +438,12 @@ export async function insertReportGroups(
           rawShare,
           publishedStatus: "reported" as const,
           publishedShare: rawShare,
-          synthetic: input.synthetic,
+          // Every group inserted here comes from a schema@1.1 exact-count
+          // import — never inferred/floored (4.5A.1). Legacy estimated rows
+          // only ever exist via the 0022 backfill, never via this path.
+          countProvenance: "exact" as const,
+          dataProvenance: input.dataProvenance,
+          synthetic,
         };
       }),
     )
@@ -409,7 +456,7 @@ export async function insertReportFindings(
   db: GatedDb,
   input: {
     reportId: string;
-    synthetic: boolean;
+    dataProvenance: PublicInputReportDataProvenance;
     findings: {
       kind: PublicInputFindingKind;
       statementText: string;
@@ -423,6 +470,7 @@ export async function insertReportFindings(
     return { ok: true, value: [] };
   }
 
+  const synthetic = input.dataProvenance === "synthetic_fixture";
   const rows = await db
     .insert(publicInputReportFindings)
     .values(
@@ -433,7 +481,8 @@ export async function insertReportFindings(
         statementText: finding.statementText,
         publicationStatus: "included" as const,
         displayOrder: finding.displayOrder,
-        synthetic: input.synthetic,
+        dataProvenance: input.dataProvenance,
+        synthetic,
       })),
     )
     .returning();
@@ -616,7 +665,13 @@ export async function updateReportWorkflowState(
   return { ok: true, value: row ? mapReport(row) : null };
 }
 
-/** Publish transition: sets published metadata + isLatestPublished together. */
+/**
+ * Publish transition: sets published metadata + isLatestPublished together,
+ * plus the suppression-policy snapshot (4.5A.1). The DB root-guard trigger
+ * only allows these small_cell_* columns to change on this exact
+ * under_review -> published transition, so they must be written in the same
+ * UPDATE as the workflow-state change.
+ */
 export async function publishReportWorkflow(
   db: GatedDb,
   input: {
@@ -624,6 +679,10 @@ export async function publishReportWorkflow(
     expectedConcurrencyVersion: number;
     publisherAccountId: string;
     publishedAt: Date;
+    smallCellPolicyVersion: string;
+    smallCellAlgorithmVersion: string;
+    smallCellThreshold: number;
+    smallCellMinParticipation: number;
   },
 ): Promise<AdapterResult<ReportRecord | null>> {
   const denied = requireGatedPersistence();
@@ -636,6 +695,10 @@ export async function publishReportWorkflow(
       isLatestPublished: true,
       publishedAt: input.publishedAt,
       publisherAccountId: input.publisherAccountId,
+      smallCellPolicyVersion: input.smallCellPolicyVersion,
+      smallCellAlgorithmVersion: input.smallCellAlgorithmVersion,
+      smallCellThreshold: input.smallCellThreshold,
+      smallCellMinParticipation: input.smallCellMinParticipation,
       concurrencyVersion: input.expectedConcurrencyVersion + 1,
       updatedAt: new Date(),
     })

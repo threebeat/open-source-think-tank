@@ -27,6 +27,10 @@ Imported aggregates must be auditable. Editing a published report in place would
 
 Closes owner-review P0/P1 defects: finding lock + concurrency, current-consultation selection, serialized imports, title-in-hash alignment with ADR 0018 `@1.1`, and unavailable vs not-found on the public report route.
 
+### Amendment — Phase 4.5A.1 (2026-08-14)
+
+Report-root and child INSERT/UPDATE/DELETE guards enforce the immutability contract at the database boundary. Publish persists suppression-policy provenance on the report row; public DTOs project stored values. Non-synthetic publication remains fail-closed until production privacy gates clear (OQ27/OQ35/OQ36) or an explicit operator allow env is set for engineering.
+
 ## Consequences
 
 - Institutions can correct mistakes by versioning, not silent overwrite.

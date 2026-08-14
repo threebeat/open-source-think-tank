@@ -26,6 +26,8 @@ function sampleReport(): PublicReportDto {
     importTimestamp: "2026-08-13T11:00:00.000Z",
     smallCellSuppressionPolicyVersion: "4.5.1-exact-count-complementary",
     smallCellSuppressionNotice: "Complementary suppression applied.",
+    smallCellThreshold: 5,
+    smallCellMinParticipation: 5,
     suppressedCells: 1,
     groupsOmitted: false,
     moderationDisclosure: {
@@ -51,6 +53,10 @@ describe("mapPublicReportDtoToPanelDto", () => {
       share: null,
     });
     expect(dto.moderationDisclosure?.reviewedCount).toBe(10);
+    // Publish-time snapshot from the stored report row (4.5A.1) — never a
+    // runtime constant, so a policy change can't silently rewrite what an
+    // already-published report claims to have done.
+    expect(dto.smallCellSuppressionThreshold).toBe(5);
     expect(findForbiddenPublicKeys(dto)).toEqual([]);
     expect(JSON.stringify(dto)).not.toContain("topicId");
     expect(JSON.stringify(dto)).not.toContain("conversationId");
