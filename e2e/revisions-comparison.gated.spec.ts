@@ -79,7 +79,7 @@ test.describe("revisions and evidence comparison (gated)", () => {
     await signInWithCapturedEmail(page, "staff-admin@ostt.synth.test");
     await page.goto(`/formal-topics/${CEDAR_TOPIC_SLUG}?section=evidence`);
     await expect(page).toHaveURL(/\/commons/);
-    await expect(page.getByRole("heading", { name: "Commons" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Commons", exact: true })).toBeVisible();
     await expect(
       page.getByText(
         /Informal conversations may not have been reviewed by a moderator/,

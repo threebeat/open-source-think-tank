@@ -29,7 +29,7 @@ test.describe("gated open enrollment", () => {
     await expect(page.getByText(/assignment/i).first()).toBeVisible();
 
     await page.goto("/commons");
-    await expect(page.getByRole("heading", { name: "Commons" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Commons", exact: true })).toBeVisible();
     await expect(
       page.getByText(
         /Informal conversations may not have been reviewed by a moderator/,

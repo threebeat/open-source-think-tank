@@ -20,7 +20,7 @@ test.describe("gated Commons member posts", () => {
     await expect(page).toHaveURL(/\/account/, { timeout: 30_000 });
 
     await page.goto("/commons");
-    await expect(page.getByRole("heading", { name: "Commons" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Commons", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Formal Commons" })).toBeVisible();
     await expect(
       page.getByText(
@@ -53,7 +53,7 @@ test.describe("gated Commons member posts", () => {
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload();
-    await expect(page.getByRole("heading", { name: "Commons" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Commons", exact: true })).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
 });

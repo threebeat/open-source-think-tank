@@ -20,6 +20,7 @@ import {
   SYNTHETIC_ORG_BETA_ID,
 } from "@/db/seeds/v2-organizations";
 import { newEntityId } from "@/lib/auth/tokens";
+import { ROLLBACK_0026 } from "@/lib/db/migration-rollback-sql";
 import { listPublicAgendaRecords } from "@/lib/governance/repository";
 
 const ADMIN_URL =
@@ -82,26 +83,6 @@ async function postgresReachable(): Promise<boolean> {
   }
 }
 
-const ROLLBACK_0026 = `
-DROP TRIGGER IF EXISTS ostt_member_position_parent_match ON member_statement_positions;
-DROP FUNCTION IF EXISTS ostt_member_position_parent_match();
-DROP TABLE IF EXISTS member_statement_positions;
-DROP TYPE IF EXISTS member_statement_position;
-DROP INDEX IF EXISTS topic_governance_records_org_slug_uidx;
-DROP INDEX IF EXISTS topic_governance_records_org_provider_entity_uidx;
-ALTER TABLE topic_governance_records
-  DROP CONSTRAINT IF EXISTS topic_governance_records_fixture_conversation_fk,
-  DROP CONSTRAINT IF EXISTS topic_governance_records_slug_nonblank,
-  DROP CONSTRAINT IF EXISTS topic_governance_records_title_nonblank,
-  DROP COLUMN IF EXISTS slug,
-  DROP COLUMN IF EXISTS title,
-  DROP COLUMN IF EXISTS question,
-  DROP COLUMN IF EXISTS overview,
-  DROP COLUMN IF EXISTS synthetic_evidence,
-  DROP COLUMN IF EXISTS synthetic_statements,
-  DROP COLUMN IF EXISTS fixture_conversation_id,
-  DROP COLUMN IF EXISTS current_provider_entity_id;
-`;
 
 const reachable = await postgresReachable();
 if (REQUIRE_PG && !reachable) {

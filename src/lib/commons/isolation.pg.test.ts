@@ -18,6 +18,7 @@ import {
 } from "@/db/seeds/v2-organizations";
 import { newEntityId } from "@/lib/auth/tokens";
 import { listDiscussionsForOrganization } from "@/lib/commons/repository";
+import { ROLLBACK_0025 } from "@/lib/db/migration-rollback-sql";
 
 const ADMIN_URL =
   process.env.OSTT_PG_ADMIN_URL?.trim() ||
@@ -79,17 +80,6 @@ async function postgresReachable(): Promise<boolean> {
   }
 }
 
-const ROLLBACK_0025 = `
-DROP TRIGGER IF EXISTS commons_discussion_revisions_immutable ON commons_discussion_revisions;
-DROP TRIGGER IF EXISTS ostt_commons_revision_parent_match ON commons_discussion_revisions;
-DROP TRIGGER IF EXISTS ostt_commons_parent_discussion_match ON commons_discussions;
-DROP FUNCTION IF EXISTS ostt_commons_revision_parent_match();
-DROP FUNCTION IF EXISTS ostt_commons_parent_discussion_match();
-DROP TABLE IF EXISTS commons_discussion_revisions;
-DROP TABLE IF EXISTS commons_discussions;
-DROP TYPE IF EXISTS commons_discussion_visibility;
-DROP TYPE IF EXISTS commons_discussion_category;
-`;
 
 const reachable = await postgresReachable();
 if (REQUIRE_PG && !reachable) {

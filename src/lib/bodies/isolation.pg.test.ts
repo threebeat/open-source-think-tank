@@ -19,6 +19,7 @@ import {
 } from "@/db/seeds/v2-organizations";
 import { newEntityId } from "@/lib/auth/tokens";
 import { listChamber } from "@/lib/bodies/service";
+import { ROLLBACK_0027 } from "@/lib/db/migration-rollback-sql";
 
 const ADMIN_URL =
   process.env.OSTT_PG_ADMIN_URL?.trim() ||
@@ -80,30 +81,6 @@ async function postgresReachable(): Promise<boolean> {
   }
 }
 
-const ROLLBACK_0027 = `
-DROP TRIGGER IF EXISTS ostt_council_roll_call_parent_match ON council_roll_calls;
-DROP TRIGGER IF EXISTS ostt_chamber_roll_call_parent_match ON chamber_roll_calls;
-DROP TRIGGER IF EXISTS ostt_council_recommendation_parent_match ON council_recommendation_versions;
-DROP TRIGGER IF EXISTS ostt_chamber_verdict_parent_match ON chamber_verdict_versions;
-DROP TRIGGER IF EXISTS ostt_council_session_parent_match ON council_sessions;
-DROP TRIGGER IF EXISTS ostt_chamber_session_parent_match ON chamber_sessions;
-DROP FUNCTION IF EXISTS ostt_council_roll_call_parent_match();
-DROP FUNCTION IF EXISTS ostt_chamber_roll_call_parent_match();
-DROP FUNCTION IF EXISTS ostt_council_recommendation_parent_match();
-DROP FUNCTION IF EXISTS ostt_chamber_verdict_parent_match();
-DROP FUNCTION IF EXISTS ostt_council_session_parent_match();
-DROP FUNCTION IF EXISTS ostt_chamber_session_parent_match();
-DROP TABLE IF EXISTS council_roll_calls;
-DROP TABLE IF EXISTS chamber_roll_calls;
-DROP TABLE IF EXISTS council_recommendation_versions;
-DROP TABLE IF EXISTS chamber_verdict_versions;
-DROP TABLE IF EXISTS council_sessions;
-DROP TABLE IF EXISTS chamber_sessions;
-DROP TYPE IF EXISTS chamber_verdict_outcome;
-DROP TYPE IF EXISTS council_session_status;
-DROP TYPE IF EXISTS chamber_session_status;
-DROP TYPE IF EXISTS public_roll_call_position;
-`;
 
 const reachable = await postgresReachable();
 if (REQUIRE_PG && !reachable) {
