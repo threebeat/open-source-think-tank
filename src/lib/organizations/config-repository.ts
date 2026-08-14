@@ -94,6 +94,14 @@ export async function insertConfigVersion(
   return created;
 }
 
+export async function getPublishedConfigVersion(
+  db: FoundationDb,
+  organizationId: string,
+): Promise<OrganizationConfigRecord | null> {
+  const versions = await listConfigVersions(db, organizationId);
+  return versions.find((row) => row.status === "published") ?? null;
+}
+
 export async function publishConfigVersion(
   db: FoundationDb,
   input: {

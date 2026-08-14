@@ -24,6 +24,12 @@ export const accountLifecycleEnum = pgEnum("account_lifecycle_state", [
   "anonymization-pending",
 ]);
 
+/** How the account was created. Existing rows default to invite. */
+export const accountEnrollmentKindEnum = pgEnum("account_enrollment_kind", [
+  "invite",
+  "open",
+]);
+
 export const platformRoleEnum = pgEnum("platform_role", [
   "participant",
   "reviewer",
@@ -132,6 +138,9 @@ export const accounts = pgTable(
       .references(() => persons.id, { onDelete: "restrict" }),
     contactChannel: text("contact_channel").notNull(),
     lifecycleState: accountLifecycleEnum("lifecycle_state").notNull(),
+    enrollmentKind: accountEnrollmentKindEnum("enrollment_kind")
+      .notNull()
+      .default("invite"),
     synthetic: boolean("synthetic").notNull().default(true),
     contactVerifiedAt: timestamp("contact_verified_at", { withTimezone: true }),
     activatedAt: timestamp("activated_at", { withTimezone: true }),
@@ -152,6 +161,33 @@ export const accounts = pgTable(
         OR (${table.lifecycleState} = 'closed' AND ${table.closedAt} IS NOT NULL)
         OR (${table.lifecycleState} = 'anonymization-pending' AND ${table.closedAt} IS NOT NULL)
       )`,
+    ),
+  ],
+);
+
+/**
+ * Password credentials for gated open enrollment (Phase 2).
+ * Never selected by public projections. Hash only — never plaintext.
+ */
+export const accountCredentials = pgTable(
+  "account_credentials",
+  {
+    accountId: text("account_id")
+      .primaryKey()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    passwordHash: text("password_hash").notNull(),
+    passwordScheme: text("password_scheme").notNull(),
+    rotatedAt: timestamp("rotated_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    check(
+      "account_credentials_scheme_scrypt",
+      sql`${table.passwordScheme} = 'scrypt_n32768'`,
+    ),
+    check(
+      "account_credentials_hash_nonblank",
+      sql`char_length(btrim(${table.passwordHash})) > 0`,
     ),
   ],
 );
@@ -2305,6 +2341,27 @@ export const appointmentConflictKindEnum = pgEnum("appointment_conflict_kind", [
   "recusal",
 ]);
 
+/** Formal/informal Commons categories — docs/v2/community-standards.md. */
+export const commonsDiscussionCategoryEnum = pgEnum(
+  "commons_discussion_category",
+  [
+    "moderator_communications",
+    "council_communications",
+    "qualified_topic_discussions",
+    "qualified_approach_discussions",
+    "community_actions",
+    "topic_proposals",
+    "approach_proposals",
+    "general_discussion",
+    "disqualified_topics",
+  ],
+);
+
+export const commonsDiscussionVisibilityEnum = pgEnum(
+  "commons_discussion_visibility",
+  ["listed", "hidden"],
+);
+
 export const topicGovernanceStateEnum = pgEnum("topic_governance_state", [
   "informal_draft",
   "formal_review_pending",
@@ -2322,6 +2379,13 @@ export const topicGovernanceStateEnum = pgEnum("topic_governance_state", [
   "council_declined",
   "honorably_disqualified",
   "dishonorably_disqualified",
+]);
+
+/** In-house member deliberation on synthetic statements — not Pol.is. */
+export const memberStatementPositionEnum = pgEnum("member_statement_position", [
+  "agree",
+  "disagree",
+  "pass",
 ]);
 
 export const topicGovernanceActionEnum = pgEnum("topic_governance_action", [
@@ -2593,6 +2657,31 @@ export const topicGovernanceRecords = pgTable(
       onDelete: "restrict",
     }),
     predecessorRecordId: text("predecessor_record_id"),
+    slug: text("slug"),
+    title: text("title"),
+    question: text("question"),
+    overview: text("overview"),
+    /** Labeled synthetic evidence copy when no legacy_topic_id link exists. */
+    syntheticEvidence: jsonb("synthetic_evidence").$type<{
+      labeledSynthetic: true;
+      items: Array<{
+        title: string;
+        summary: string;
+        qualityStatus: "accepted" | "limited" | "disputed" | "pending";
+        limitations: string;
+      }>;
+    }>(),
+    /** Fixture consultation statements for in-house agree/disagree/pass. */
+    syntheticStatements: jsonb("synthetic_statements").$type<
+      Array<{ publicId: string; text: string }>
+    >(),
+    /** Optional fixture Public Input conversation — never a live Pol.is mapping. */
+    fixtureConversationId: text("fixture_conversation_id").references(
+      () => publicInputConversations.id,
+      { onDelete: "restrict" },
+    ),
+    /** Local opaque current provider entity. Not an XID. Never public. */
+    currentProviderEntityId: text("current_provider_entity_id"),
     synthetic: boolean("synthetic").notNull().default(true),
     ...timestamps,
   },
@@ -2605,6 +2694,12 @@ export const topicGovernanceRecords = pgTable(
       table.organizationId,
       table.publicId,
     ),
+    uniqueIndex("topic_governance_records_org_slug_uidx")
+      .on(table.organizationId, table.slug)
+      .where(sql`${table.slug} IS NOT NULL`),
+    uniqueIndex("topic_governance_records_org_provider_entity_uidx")
+      .on(table.organizationId, table.currentProviderEntityId)
+      .where(sql`${table.currentProviderEntityId} IS NOT NULL`),
     foreignKey({
       name: "topic_governance_records_org_config_fk",
       columns: [table.organizationId, table.configVersionId],
@@ -2621,6 +2716,14 @@ export const topicGovernanceRecords = pgTable(
     check(
       "topic_governance_records_public_id_nonblank",
       sql`char_length(btrim(${table.publicId})) > 0`,
+    ),
+    check(
+      "topic_governance_records_slug_nonblank",
+      sql`${table.slug} IS NULL OR char_length(btrim(${table.slug})) > 0`,
+    ),
+    check(
+      "topic_governance_records_title_nonblank",
+      sql`${table.title} IS NULL OR char_length(btrim(${table.title})) > 0`,
     ),
   ],
 );
@@ -2724,9 +2827,599 @@ export const appointmentConflictsAndRecusals = pgTable(
   ],
 );
 
+/**
+ * Organization-scoped Commons discussions (Phase 3).
+ * `formal` is a projection of category rules — members cannot freely set it.
+ */
+export const commonsDiscussions = pgTable(
+  "commons_discussions",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "restrict" }),
+    publicId: text("public_id").notNull(),
+    category: commonsDiscussionCategoryEnum("category").notNull(),
+    formal: boolean("formal").notNull(),
+    visibility: commonsDiscussionVisibilityEnum("visibility")
+      .notNull()
+      .default("listed"),
+    authorAccountId: text("author_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    parentDiscussionId: text("parent_discussion_id"),
+    topicGovernanceRecordId: text("topic_governance_record_id"),
+    synthetic: boolean("synthetic").notNull().default(false),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("commons_discussions_org_id_key").on(
+      table.organizationId,
+      table.id,
+    ),
+    uniqueIndex("commons_discussions_org_public_id_uidx").on(
+      table.organizationId,
+      table.publicId,
+    ),
+    index("commons_discussions_org_category_idx").on(
+      table.organizationId,
+      table.category,
+      table.createdAt,
+    ),
+    foreignKey({
+      name: "commons_discussions_parent_fk",
+      columns: [table.organizationId, table.parentDiscussionId],
+      foreignColumns: [table.organizationId, table.id],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "commons_discussions_org_governance_fk",
+      columns: [table.organizationId, table.topicGovernanceRecordId],
+      foreignColumns: [
+        topicGovernanceRecords.organizationId,
+        topicGovernanceRecords.id,
+      ],
+    }).onDelete("restrict"),
+    check(
+      "commons_discussions_public_id_nonblank",
+      sql`char_length(btrim(${table.publicId})) > 0`,
+    ),
+    check(
+      "commons_discussions_title_nonblank",
+      sql`char_length(btrim(${table.title})) > 0`,
+    ),
+    check(
+      "commons_discussions_body_nonblank",
+      sql`char_length(btrim(${table.body})) > 0`,
+    ),
+    check(
+      "commons_discussions_formal_matches_category",
+      sql`(
+        (
+          ${table.formal} = true AND ${table.category} IN (
+            'moderator_communications',
+            'council_communications',
+            'qualified_topic_discussions',
+            'qualified_approach_discussions',
+            'community_actions'
+          )
+        ) OR (
+          ${table.formal} = false AND ${table.category} IN (
+            'topic_proposals',
+            'approach_proposals',
+            'general_discussion',
+            'disqualified_topics'
+          )
+        )
+      )`,
+    ),
+  ],
+);
+
+/**
+ * Append-only Commons discussion revisions. Discussion rows may be edited;
+ * revision snapshots are immutable in ordinary operations.
+ */
+export const commonsDiscussionRevisions = pgTable(
+  "commons_discussion_revisions",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id").notNull(),
+    discussionId: text("discussion_id").notNull(),
+    revisionNumber: integer("revision_number").notNull(),
+    editorAccountId: text("editor_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    category: commonsDiscussionCategoryEnum("category").notNull(),
+    synthetic: boolean("synthetic").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("commons_revisions_discussion_number_uidx").on(
+      table.organizationId,
+      table.discussionId,
+      table.revisionNumber,
+    ),
+    index("commons_revisions_discussion_idx").on(
+      table.organizationId,
+      table.discussionId,
+      table.createdAt,
+    ),
+    foreignKey({
+      name: "commons_discussion_revisions_org_discussion_fk",
+      columns: [table.organizationId, table.discussionId],
+      foreignColumns: [
+        commonsDiscussions.organizationId,
+        commonsDiscussions.id,
+      ],
+    }).onDelete("restrict"),
+    check(
+      "commons_discussion_revisions_title_nonblank",
+      sql`char_length(btrim(${table.title})) > 0`,
+    ),
+    check(
+      "commons_discussion_revisions_body_nonblank",
+      sql`char_length(btrim(${table.body})) > 0`,
+    ),
+    check(
+      "commons_discussion_revisions_number_positive",
+      sql`${table.revisionNumber} > 0`,
+    ),
+  ],
+);
+
+/**
+ * Organization-scoped in-house member positions on synthetic consultation
+ * statements (Phase 4). Not Pol.is. No XID. No provider mapping.
+ */
+export const publicRollCallPositionEnum = pgEnum("public_roll_call_position", [
+  "yes",
+  "no",
+  "abstain",
+  "recused",
+  "absent",
+]);
+
+export const chamberSessionStatusEnum = pgEnum("chamber_session_status", [
+  "scheduled",
+  "in_session",
+  "closed",
+]);
+
+export const councilSessionStatusEnum = pgEnum("council_session_status", [
+  "scheduled",
+  "in_session",
+  "closed",
+]);
+
+export const chamberVerdictOutcomeEnum = pgEnum("chamber_verdict_outcome", [
+  "accepted",
+  "disputed",
+]);
+
+/**
+ * Organization-scoped Chamber sessions (Phase 5). Synthetic fixtures only;
+ * not a production size/quorum policy (V2-09).
+ */
+export const chamberSessions = pgTable(
+  "chamber_sessions",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "restrict" }),
+    publicId: text("public_id").notNull(),
+    topicGovernanceRecordId: text("topic_governance_record_id").notNull(),
+    status: chamberSessionStatusEnum("status").notNull(),
+    timezone: text("timezone").notNull(),
+    scheduledOpensAt: timestamp("scheduled_opens_at", {
+      withTimezone: true,
+    }).notNull(),
+    scheduledClosesAt: timestamp("scheduled_closes_at", {
+      withTimezone: true,
+    }).notNull(),
+    synthetic: boolean("synthetic").notNull().default(true),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("chamber_sessions_org_id_key").on(
+      table.organizationId,
+      table.id,
+    ),
+    uniqueIndex("chamber_sessions_org_public_id_uidx").on(
+      table.organizationId,
+      table.publicId,
+    ),
+    uniqueIndex("chamber_sessions_org_topic_uidx").on(
+      table.organizationId,
+      table.topicGovernanceRecordId,
+    ),
+    index("chamber_sessions_org_status_idx").on(
+      table.organizationId,
+      table.status,
+      table.scheduledOpensAt,
+    ),
+    foreignKey({
+      name: "chamber_sessions_org_governance_fk",
+      columns: [table.organizationId, table.topicGovernanceRecordId],
+      foreignColumns: [
+        topicGovernanceRecords.organizationId,
+        topicGovernanceRecords.id,
+      ],
+    }).onDelete("restrict"),
+    check(
+      "chamber_sessions_public_id_nonblank",
+      sql`char_length(btrim(${table.publicId})) > 0`,
+    ),
+    check(
+      "chamber_sessions_timezone_nonblank",
+      sql`char_length(btrim(${table.timezone})) > 0`,
+    ),
+    check(
+      "chamber_sessions_schedule_order",
+      sql`${table.scheduledClosesAt} > ${table.scheduledOpensAt}`,
+    ),
+  ],
+);
+
+export const chamberVerdictVersions = pgTable(
+  "chamber_verdict_versions",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "restrict" }),
+    sessionId: text("session_id").notNull(),
+    topicGovernanceRecordId: text("topic_governance_record_id").notNull(),
+    version: integer("version").notNull(),
+    outcome: chamberVerdictOutcomeEnum("outcome").notNull(),
+    rationale: text("rationale").notNull(),
+    minorityReasoning: text("minority_reasoning"),
+    publishedAt: timestamp("published_at", { withTimezone: true }).notNull(),
+    rosterSnapshot: jsonb("roster_snapshot")
+      .$type<Array<{ memberPublicId: string; appointmentKind: string }>>()
+      .notNull(),
+    synthetic: boolean("synthetic").notNull().default(true),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("chamber_verdict_versions_org_id_key").on(
+      table.organizationId,
+      table.id,
+    ),
+    uniqueIndex("chamber_verdict_versions_org_session_version_uidx").on(
+      table.organizationId,
+      table.sessionId,
+      table.version,
+    ),
+    foreignKey({
+      name: "chamber_verdict_versions_org_session_fk",
+      columns: [table.organizationId, table.sessionId],
+      foreignColumns: [chamberSessions.organizationId, chamberSessions.id],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "chamber_verdict_versions_org_governance_fk",
+      columns: [table.organizationId, table.topicGovernanceRecordId],
+      foreignColumns: [
+        topicGovernanceRecords.organizationId,
+        topicGovernanceRecords.id,
+      ],
+    }).onDelete("restrict"),
+    check(
+      "chamber_verdict_versions_version_positive",
+      sql`${table.version} > 0`,
+    ),
+    check(
+      "chamber_verdict_versions_rationale_nonblank",
+      sql`char_length(btrim(${table.rationale})) > 0`,
+    ),
+  ],
+);
+
+export const chamberRollCalls = pgTable(
+  "chamber_roll_calls",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "restrict" }),
+    sessionId: text("session_id").notNull(),
+    verdictVersionId: text("verdict_version_id").notNull(),
+    appointmentId: text("appointment_id").notNull(),
+    memberPublicId: text("member_public_id").notNull(),
+    position: publicRollCallPositionEnum("position").notNull(),
+    recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull(),
+    synthetic: boolean("synthetic").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("chamber_roll_calls_org_id_key").on(
+      table.organizationId,
+      table.id,
+    ),
+    uniqueIndex("chamber_roll_calls_org_verdict_appointment_uidx").on(
+      table.organizationId,
+      table.verdictVersionId,
+      table.appointmentId,
+    ),
+    uniqueIndex("chamber_roll_calls_org_verdict_member_uidx").on(
+      table.organizationId,
+      table.verdictVersionId,
+      table.memberPublicId,
+    ),
+    index("chamber_roll_calls_org_session_idx").on(
+      table.organizationId,
+      table.sessionId,
+    ),
+    foreignKey({
+      name: "chamber_roll_calls_org_session_fk",
+      columns: [table.organizationId, table.sessionId],
+      foreignColumns: [chamberSessions.organizationId, chamberSessions.id],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "chamber_roll_calls_org_verdict_fk",
+      columns: [table.organizationId, table.verdictVersionId],
+      foreignColumns: [
+        chamberVerdictVersions.organizationId,
+        chamberVerdictVersions.id,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "chamber_roll_calls_org_appointment_fk",
+      columns: [table.organizationId, table.appointmentId],
+      foreignColumns: [
+        organizationAppointments.organizationId,
+        organizationAppointments.id,
+      ],
+    }).onDelete("restrict"),
+    check(
+      "chamber_roll_calls_member_public_id_nonblank",
+      sql`char_length(btrim(${table.memberPublicId})) > 0`,
+    ),
+  ],
+);
+
+/**
+ * Organization-scoped Council sessions (Phase 5). Synthetic fixtures only;
+ * not a production cadence/quorum policy (V2-10).
+ */
+export const councilSessions = pgTable(
+  "council_sessions",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "restrict" }),
+    publicId: text("public_id").notNull(),
+    topicGovernanceRecordId: text("topic_governance_record_id").notNull(),
+    status: councilSessionStatusEnum("status").notNull(),
+    timezone: text("timezone").notNull(),
+    scheduledOpensAt: timestamp("scheduled_opens_at", {
+      withTimezone: true,
+    }).notNull(),
+    scheduledClosesAt: timestamp("scheduled_closes_at", {
+      withTimezone: true,
+    }).notNull(),
+    intakeReason: text("intake_reason"),
+    synthetic: boolean("synthetic").notNull().default(true),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("council_sessions_org_id_key").on(
+      table.organizationId,
+      table.id,
+    ),
+    uniqueIndex("council_sessions_org_public_id_uidx").on(
+      table.organizationId,
+      table.publicId,
+    ),
+    uniqueIndex("council_sessions_org_topic_uidx").on(
+      table.organizationId,
+      table.topicGovernanceRecordId,
+    ),
+    index("council_sessions_org_status_idx").on(
+      table.organizationId,
+      table.status,
+      table.scheduledOpensAt,
+    ),
+    foreignKey({
+      name: "council_sessions_org_governance_fk",
+      columns: [table.organizationId, table.topicGovernanceRecordId],
+      foreignColumns: [
+        topicGovernanceRecords.organizationId,
+        topicGovernanceRecords.id,
+      ],
+    }).onDelete("restrict"),
+    check(
+      "council_sessions_public_id_nonblank",
+      sql`char_length(btrim(${table.publicId})) > 0`,
+    ),
+    check(
+      "council_sessions_timezone_nonblank",
+      sql`char_length(btrim(${table.timezone})) > 0`,
+    ),
+    check(
+      "council_sessions_schedule_order",
+      sql`${table.scheduledClosesAt} > ${table.scheduledOpensAt}`,
+    ),
+  ],
+);
+
+export const councilRecommendationVersions = pgTable(
+  "council_recommendation_versions",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "restrict" }),
+    sessionId: text("session_id").notNull(),
+    topicGovernanceRecordId: text("topic_governance_record_id").notNull(),
+    version: integer("version").notNull(),
+    rationale: text("rationale").notNull(),
+    minorityReasoning: text("minority_reasoning"),
+    publishedAt: timestamp("published_at", { withTimezone: true }).notNull(),
+    rosterSnapshot: jsonb("roster_snapshot")
+      .$type<Array<{ memberPublicId: string; appointmentKind: string }>>()
+      .notNull(),
+    synthetic: boolean("synthetic").notNull().default(true),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("council_recommendation_versions_org_id_key").on(
+      table.organizationId,
+      table.id,
+    ),
+    uniqueIndex("council_recommendation_versions_org_session_version_uidx").on(
+      table.organizationId,
+      table.sessionId,
+      table.version,
+    ),
+    foreignKey({
+      name: "council_recommendation_versions_org_session_fk",
+      columns: [table.organizationId, table.sessionId],
+      foreignColumns: [councilSessions.organizationId, councilSessions.id],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "council_recommendation_versions_org_governance_fk",
+      columns: [table.organizationId, table.topicGovernanceRecordId],
+      foreignColumns: [
+        topicGovernanceRecords.organizationId,
+        topicGovernanceRecords.id,
+      ],
+    }).onDelete("restrict"),
+    check(
+      "council_recommendation_versions_version_positive",
+      sql`${table.version} > 0`,
+    ),
+    check(
+      "council_recommendation_versions_rationale_nonblank",
+      sql`char_length(btrim(${table.rationale})) > 0`,
+    ),
+  ],
+);
+
+export const councilRollCalls = pgTable(
+  "council_roll_calls",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "restrict" }),
+    sessionId: text("session_id").notNull(),
+    recommendationVersionId: text("recommendation_version_id").notNull(),
+    appointmentId: text("appointment_id").notNull(),
+    memberPublicId: text("member_public_id").notNull(),
+    position: publicRollCallPositionEnum("position").notNull(),
+    recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull(),
+    synthetic: boolean("synthetic").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("council_roll_calls_org_id_key").on(
+      table.organizationId,
+      table.id,
+    ),
+    uniqueIndex("council_roll_calls_org_recommendation_appointment_uidx").on(
+      table.organizationId,
+      table.recommendationVersionId,
+      table.appointmentId,
+    ),
+    uniqueIndex("council_roll_calls_org_recommendation_member_uidx").on(
+      table.organizationId,
+      table.recommendationVersionId,
+      table.memberPublicId,
+    ),
+    index("council_roll_calls_org_session_idx").on(
+      table.organizationId,
+      table.sessionId,
+    ),
+    foreignKey({
+      name: "council_roll_calls_org_session_fk",
+      columns: [table.organizationId, table.sessionId],
+      foreignColumns: [councilSessions.organizationId, councilSessions.id],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "council_roll_calls_org_recommendation_fk",
+      columns: [table.organizationId, table.recommendationVersionId],
+      foreignColumns: [
+        councilRecommendationVersions.organizationId,
+        councilRecommendationVersions.id,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "council_roll_calls_org_appointment_fk",
+      columns: [table.organizationId, table.appointmentId],
+      foreignColumns: [
+        organizationAppointments.organizationId,
+        organizationAppointments.id,
+      ],
+    }).onDelete("restrict"),
+    check(
+      "council_roll_calls_member_public_id_nonblank",
+      sql`char_length(btrim(${table.memberPublicId})) > 0`,
+    ),
+  ],
+);
+
+export const memberStatementPositions = pgTable(
+  "member_statement_positions",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "restrict" }),
+    topicGovernanceRecordId: text("topic_governance_record_id").notNull(),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    statementPublicId: text("statement_public_id").notNull(),
+    position: memberStatementPositionEnum("position").notNull(),
+    synthetic: boolean("synthetic").notNull().default(false),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("member_statement_positions_org_id_key").on(
+      table.organizationId,
+      table.id,
+    ),
+    uniqueIndex("member_statement_positions_org_record_account_statement_uidx").on(
+      table.organizationId,
+      table.topicGovernanceRecordId,
+      table.accountId,
+      table.statementPublicId,
+    ),
+    index("member_statement_positions_org_record_idx").on(
+      table.organizationId,
+      table.topicGovernanceRecordId,
+    ),
+    foreignKey({
+      name: "member_statement_positions_org_governance_fk",
+      columns: [table.organizationId, table.topicGovernanceRecordId],
+      foreignColumns: [
+        topicGovernanceRecords.organizationId,
+        topicGovernanceRecords.id,
+      ],
+    }).onDelete("restrict"),
+    check(
+      "member_statement_positions_statement_nonblank",
+      sql`char_length(btrim(${table.statementPublicId})) > 0`,
+    ),
+  ],
+);
+
 export const foundationTables = {
   persons,
   accounts,
+  accountCredentials,
   profiles,
   invitations,
   roleAssignments,
@@ -2777,4 +3470,13 @@ export const foundationTables = {
   topicGovernanceRecords,
   topicGovernanceEvents,
   appointmentConflictsAndRecusals,
+  commonsDiscussions,
+  commonsDiscussionRevisions,
+  memberStatementPositions,
+  chamberSessions,
+  chamberVerdictVersions,
+  chamberRollCalls,
+  councilSessions,
+  councilRecommendationVersions,
+  councilRollCalls,
 };

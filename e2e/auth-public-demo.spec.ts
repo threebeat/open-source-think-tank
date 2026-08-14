@@ -56,6 +56,27 @@ test.describe("auth isolation in public-demo", () => {
       { data: { disclosureChoice: "none" } },
     );
     expect(disclosurePatch.status()).toBe(404);
+
+    const enroll = await page.request.post("/api/auth/enroll", {
+      data: {
+        identifier: "public@ostt.synth.test",
+        password: "a-sufficiently-long-pass",
+        communityStandardsAssent: true,
+        formOpenedAt: Date.now() - 2000,
+      },
+    });
+    expect(enroll.status()).toBe(404);
+    expect(JSON.stringify(await enroll.json()).toLowerCase()).not.toMatch(
+      /password_hash|scrypt/,
+    );
+
+    const passwordSignIn = await page.request.post("/api/auth/password-sign-in", {
+      data: {
+        identifier: "public@ostt.synth.test",
+        password: "a-sufficiently-long-pass",
+      },
+    });
+    expect(passwordSignIn.status()).toBe(404);
   });
 
   test("workspace topic and submission pages are not found in public-demo", async ({
@@ -78,10 +99,10 @@ test.describe("auth isolation in public-demo", () => {
   test("public join preview still cannot enroll", async ({ page }) => {
     await page.goto("/join");
     await expect(
-      page.getByText(/does not create an account, issue an invitation/i),
+      page.getByRole("heading", { name: "How joining works" }),
     ).toBeVisible();
     await expect(
-      page.getByText(/fixed fixtures, not other current visitors/i),
+      page.getByText(/cannot create accounts or open a database/i),
     ).toBeVisible();
     await page.getByRole("button", { name: /Stronger verification/i }).click();
     await expect(

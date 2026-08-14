@@ -2,14 +2,14 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Open-Source Think Tank Demonstration",
-    short_name: "OSTT Demo",
+    name: "Commonhall (pre-alpha)",
+    short_name: "Commonhall",
     description:
-      "Phase 1 browser demonstration of a proposed open-source think tank using synthetic data only.",
+      "Proposed computational-democracy digital town hall. This pre-alpha uses synthetic data only.",
     start_url: "/",
     display: "browser",
-    background_color: "#f3f4f0",
-    theme_color: "#2f6f73",
+    background_color: "#f4f6fb",
+    theme_color: "#2c4a8c",
     lang: "en",
   };
 }

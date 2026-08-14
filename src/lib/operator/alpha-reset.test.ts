@@ -22,7 +22,7 @@ import { requireOperatorResetEnv } from "@/lib/operator/secrets";
 
 const RESET_SECRET = "ostt-synth-operator-reset-secret-32chars!!!!";
 
-describe("alpha reset (Phase 3 closure)", () => {
+describe("alpha reset (Phase 5 closure)", () => {
   let client: Awaited<ReturnType<typeof createTestDatabase>>["client"];
   let db: Awaited<ReturnType<typeof createTestDatabase>>["db"];
   let previousEnv: Record<string, string | undefined>;
@@ -77,7 +77,7 @@ describe("alpha reset (Phase 3 closure)", () => {
     );
     expect(tablesByClass("reset")).not.toContain("document_versions");
     expect(hashManifest()).toHaveLength(64);
-    expect(RESET_MANIFEST_VERSION).toBe("v2.1.0");
+    expect(RESET_MANIFEST_VERSION).toBe("v2.5.0");
   });
 
   it("fingerprints host+port+dbname only", () => {

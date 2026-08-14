@@ -3,87 +3,83 @@ import Link from "next/link";
 
 import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { PageHeader } from "@/components/PageHeader";
-import { ProcessStepper } from "@/components/ProcessStepper";
-import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { MainContainer } from "@/components/layout/MainContainer";
 import { buttonVariants } from "@/components/ui/button";
-import { institutionalProcessSteps } from "@/lib/process-steps";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Home",
+  title: "Commonhall",
   description:
-    "Follow an idea from community discussion to collective action — synthetic computational-democracy demonstration.",
+    "A proposed computational-democracy digital town hall. Tour the synthetic demo or create an account in the gated pre-alpha.",
 };
 
 export default function Home() {
   return (
     <MainContainer className="space-y-10">
-      <Breadcrumbs items={[{ label: "Home" }]} />
       <PageHeader
-        eyebrow="Proposed project · Phase 4 demonstration"
-        title="Open-Source Think Tank"
-        description="Follow an idea from community discussion to collective action."
+        eyebrow="Working name · Commonhall v2"
+        title="Commonhall"
+        description="A proposed public, nonpartisan digital town hall. Open community discussion, structured consultation, a public Chamber, and an organization Council stay on separate axes — algorithms organize, named humans decide."
         actions={
           <>
             <Link
               href="/demo"
               className={cn(buttonVariants({ size: "lg" }), "min-h-11 px-4")}
             >
-              Start the guided journey
+              Tour the demo
             </Link>
             <Link
-              href="/idea-commons"
+              href="/join"
               className={cn(
                 buttonVariants({ variant: "outline", size: "lg" }),
                 "min-h-11 px-4",
               )}
             >
-              Explore Idea Commons
+              Create an account
             </Link>
             <Link
-              href="/formal-topics"
+              href="/auth/sign-in"
               className={cn(
                 buttonVariants({ variant: "outline", size: "lg" }),
                 "min-h-11 px-4",
               )}
             >
-              Formal Topic Pipeline
+              Sign in
             </Link>
           </>
         }
       />
 
-      <p className="max-w-3xl text-base leading-7 text-muted-foreground">
-        Idea Commons → qualified proposal → Public Input → transparent agenda
-        qualification → deliberation → policy recommendation → member actions →
-        review and follow-up. Preference, agreement, and evidence quality stay
-        separate. Algorithms organize or recommend; humans decide.
-      </p>
-
-      <DisclosureNotice title="Demonstration of a proposed project" tone="caution">
-        All people, evidence, votes, and decisions in this prototype are synthetic.
-        Public-demo mode never connects to Pol.is or the gated alpha datastore.
-        Idea Commons is informal; the Formal Topic Pipeline contains only
-        gate-passed topics.
+      <DisclosureNotice title="Pre-alpha demonstration" tone="caution">
+        This is not a live town hall. People, topics, and outcomes you will see
+        are synthetic. Hosted Pol.is is unavailable. Community membership here
+        is organization service membership in a seeded synthetic hall — not
+        nonprofit membership, statutory membership, or government standing.
       </DisclosureNotice>
 
-      <DisclosureNotice title="Commonhall v2 is not operational yet" tone="caution">
-        The Commonhall v2 organization kernel is under construction. Open
-        enrollment, the organization Chamber, the organization Council, and hosted
-        Pol.is are not operational. Community membership is still invite-only and
-        is not nonprofit or statutory membership. This demonstration remains a
-        synthetic historical think-tank journey.
-      </DisclosureNotice>
-
-      <section className="space-y-4">
-        <h2 className="font-heading text-2xl text-foreground">
-          The democratic journey
+      <section className="space-y-3" aria-labelledby="mission-heading">
+        <h2 id="mission-heading" className="font-heading text-2xl text-foreground">
+          Mission (proposed)
         </h2>
-        <ProcessStepper
-          steps={institutionalProcessSteps}
-          currentStepId="idea-commons"
-        />
+        <p className="max-w-3xl text-base leading-7 text-muted-foreground">
+          Build a public process for examining shared questions with open
+          evidence, community consultation, published criteria, and accountable
+          recommendations. Preference, cross-group agreement, evidence quality,
+          Chamber verdicts, and Council recommendations remain visibly separate.
+        </p>
+      </section>
+
+      <section className="space-y-3" aria-labelledby="how-heading">
+        <h2 id="how-heading" className="font-heading text-2xl text-foreground">
+          How the hall works
+        </h2>
+        <ol className="max-w-3xl list-decimal space-y-2 pl-5 text-base leading-7 text-muted-foreground">
+          <li>Commons: formal categories first, then informal discussion.</li>
+          <li>Qualification: published criteria, not moderator agreement.</li>
+          <li>Consultation: fixture aggregates only in this pre-alpha.</li>
+          <li>Chamber: appointed deliberation with a full roll call.</li>
+          <li>Council: intake, recommendations, and public records.</li>
+        </ol>
       </section>
     </MainContainer>
   );

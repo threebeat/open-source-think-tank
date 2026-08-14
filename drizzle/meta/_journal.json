@@ -169,6 +169,34 @@
       "when": 1786550000000,
       "tag": "0023_organization_kernel",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1786560000000,
+      "tag": "0024_open_enrollment",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1786570000000,
+      "tag": "0025_commons_posts",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1786580000000,
+      "tag": "0026_member_positions",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1786590000000,
+      "tag": "0027_chamber_council",
+      "breakpoints": true
     }
   ]
 }

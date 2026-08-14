@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, or } from "drizzle-orm";
 
 import { topicGovernanceEvents, topicGovernanceRecords } from "@/db/schema";
 import type { FoundationDb } from "@/db/types";
@@ -6,7 +6,23 @@ import type {
   TopicGovernanceAction,
   TopicGovernanceState,
 } from "@/lib/governance/contract";
+import { PUBLIC_AGENDA_STATES } from "@/lib/governance/contract";
 import { requireOrganizationId } from "@/lib/organizations/ids";
+
+export type SyntheticEvidenceCopy = {
+  labeledSynthetic: true;
+  items: Array<{
+    title: string;
+    summary: string;
+    qualityStatus: "accepted" | "limited" | "disputed" | "pending";
+    limitations: string;
+  }>;
+};
+
+export type SyntheticStatement = {
+  publicId: string;
+  text: string;
+};
 
 export type GovernanceRecordRow = {
   id: string;
@@ -18,8 +34,58 @@ export type GovernanceRecordRow = {
   retentionDeadlineAt: Date | null;
   legacyTopicId: string | null;
   predecessorRecordId: string | null;
+  slug: string | null;
+  title: string | null;
+  question: string | null;
+  overview: string | null;
+  syntheticEvidence: SyntheticEvidenceCopy | null;
+  syntheticStatements: SyntheticStatement[] | null;
+  fixtureConversationId: string | null;
+  currentProviderEntityId: string | null;
   synthetic: boolean;
 };
+
+export type GovernanceEventRow = {
+  id: string;
+  organizationId: string;
+  recordId: string;
+  fromState: TopicGovernanceState;
+  toState: TopicGovernanceState;
+  action: TopicGovernanceAction;
+  actorPrincipalKind:
+    | "service_operator"
+    | "organization_officer"
+    | "community_member"
+    | "system";
+  at: Date;
+  reason: string | null;
+  metricsSnapshot: Record<string, unknown> | null;
+  ruleVersion: string;
+  synthetic: boolean;
+};
+
+function mapRecord(row: typeof topicGovernanceRecords.$inferSelect): GovernanceRecordRow {
+  return {
+    id: row.id,
+    organizationId: row.organizationId,
+    publicId: row.publicId,
+    state: row.state,
+    configVersionId: row.configVersionId,
+    authorAccountId: row.authorAccountId,
+    retentionDeadlineAt: row.retentionDeadlineAt,
+    legacyTopicId: row.legacyTopicId,
+    predecessorRecordId: row.predecessorRecordId,
+    slug: row.slug,
+    title: row.title,
+    question: row.question,
+    overview: row.overview,
+    syntheticEvidence: row.syntheticEvidence ?? null,
+    syntheticStatements: row.syntheticStatements ?? null,
+    fixtureConversationId: row.fixtureConversationId,
+    currentProviderEntityId: row.currentProviderEntityId,
+    synthetic: row.synthetic,
+  };
+}
 
 export async function getGovernanceRecord(
   db: FoundationDb,
@@ -37,20 +103,116 @@ export async function getGovernanceRecord(
       ),
     )
     .limit(1);
-  return row
-    ? {
-        id: row.id,
-        organizationId: row.organizationId,
-        publicId: row.publicId,
-        state: row.state,
-        configVersionId: row.configVersionId,
-        authorAccountId: row.authorAccountId,
-        retentionDeadlineAt: row.retentionDeadlineAt,
-        legacyTopicId: row.legacyTopicId,
-        predecessorRecordId: row.predecessorRecordId,
-        synthetic: row.synthetic,
-      }
-    : null;
+  return row ? mapRecord(row) : null;
+}
+
+export async function getGovernanceRecordBySlugOrPublicId(
+  db: FoundationDb,
+  organizationId: string,
+  slugOrPublicId: string,
+): Promise<GovernanceRecordRow | null> {
+  const id = requireOrganizationId(organizationId);
+  const key = slugOrPublicId.trim();
+  if (!key) {
+    return null;
+  }
+  const [row] = await db
+    .select()
+    .from(topicGovernanceRecords)
+    .where(
+      and(
+        eq(topicGovernanceRecords.organizationId, id),
+        or(
+          eq(topicGovernanceRecords.slug, key),
+          eq(topicGovernanceRecords.publicId, key),
+          eq(topicGovernanceRecords.id, key),
+        ),
+      ),
+    )
+    .limit(1);
+  return row ? mapRecord(row) : null;
+}
+
+export async function listGovernanceRecordsByStates(
+  db: FoundationDb,
+  organizationId: string,
+  states: readonly TopicGovernanceState[],
+  options: { includeSynthetic: boolean } = { includeSynthetic: true },
+): Promise<GovernanceRecordRow[]> {
+  const id = requireOrganizationId(organizationId);
+  if (states.length === 0) {
+    return [];
+  }
+  const conditions = [
+    eq(topicGovernanceRecords.organizationId, id),
+    inArray(topicGovernanceRecords.state, [...states]),
+    isNotNull(topicGovernanceRecords.slug),
+    isNotNull(topicGovernanceRecords.title),
+  ];
+  if (!options.includeSynthetic) {
+    conditions.push(eq(topicGovernanceRecords.synthetic, false));
+  }
+  const rows = await db
+    .select()
+    .from(topicGovernanceRecords)
+    .where(and(...conditions))
+    .orderBy(asc(topicGovernanceRecords.title));
+  return rows.map(mapRecord);
+}
+
+export async function listPublicAgendaRecords(
+  db: FoundationDb,
+  organizationId: string,
+  options: { includeSynthetic: boolean } = { includeSynthetic: true },
+): Promise<GovernanceRecordRow[]> {
+  const id = requireOrganizationId(organizationId);
+  const conditions = [
+    eq(topicGovernanceRecords.organizationId, id),
+    inArray(topicGovernanceRecords.state, [...PUBLIC_AGENDA_STATES]),
+    isNotNull(topicGovernanceRecords.slug),
+    isNotNull(topicGovernanceRecords.title),
+  ];
+  if (!options.includeSynthetic) {
+    conditions.push(eq(topicGovernanceRecords.synthetic, false));
+  }
+  const rows = await db
+    .select()
+    .from(topicGovernanceRecords)
+    .where(and(...conditions))
+    .orderBy(asc(topicGovernanceRecords.title));
+  return rows.map(mapRecord);
+}
+
+export async function listGovernanceEventsForRecord(
+  db: FoundationDb,
+  organizationId: string,
+  recordId: string,
+): Promise<GovernanceEventRow[]> {
+  const id = requireOrganizationId(organizationId);
+  const rows = await db
+    .select()
+    .from(topicGovernanceEvents)
+    .where(
+      and(
+        eq(topicGovernanceEvents.organizationId, id),
+        eq(topicGovernanceEvents.recordId, recordId),
+      ),
+    )
+    .orderBy(asc(topicGovernanceEvents.at), asc(topicGovernanceEvents.id));
+  return rows.map((row) => ({
+    id: row.id,
+    organizationId: row.organizationId,
+    recordId: row.recordId,
+    fromState: row.fromState,
+    toState: row.toState,
+    action: row.action,
+    actorPrincipalKind: row.actorPrincipalKind,
+    at: row.at,
+    reason: row.reason,
+    metricsSnapshot: row.metricsSnapshot,
+    ruleVersion: row.ruleVersion,
+    synthetic: row.synthetic,
+  }));
 }
 
 export async function insertGovernanceRecord(
@@ -65,6 +227,14 @@ export async function insertGovernanceRecord(
     retentionDeadlineAt?: Date | null;
     legacyTopicId?: string | null;
     predecessorRecordId?: string | null;
+    slug?: string | null;
+    title?: string | null;
+    question?: string | null;
+    overview?: string | null;
+    syntheticEvidence?: SyntheticEvidenceCopy | null;
+    syntheticStatements?: SyntheticStatement[] | null;
+    fixtureConversationId?: string | null;
+    currentProviderEntityId?: string | null;
     synthetic: boolean;
   },
 ): Promise<GovernanceRecordRow> {
@@ -79,6 +249,14 @@ export async function insertGovernanceRecord(
     retentionDeadlineAt: input.retentionDeadlineAt ?? null,
     legacyTopicId: input.legacyTopicId ?? null,
     predecessorRecordId: input.predecessorRecordId ?? null,
+    slug: input.slug ?? null,
+    title: input.title ?? null,
+    question: input.question ?? null,
+    overview: input.overview ?? null,
+    syntheticEvidence: input.syntheticEvidence ?? null,
+    syntheticStatements: input.syntheticStatements ?? null,
+    fixtureConversationId: input.fixtureConversationId ?? null,
+    currentProviderEntityId: input.currentProviderEntityId ?? null,
     synthetic: input.synthetic,
   });
   const created = await getGovernanceRecord(db, organizationId, input.id);

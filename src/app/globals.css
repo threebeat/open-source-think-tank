@@ -61,16 +61,16 @@
 }
 
 :root {
-  /* Warm neutral surface, dark ink, restrained teal primary, amber accent */
-  --background: oklch(0.965 0.012 95);
-  --foreground: oklch(0.23 0.02 55);
-  --ink: oklch(0.2 0.025 50);
-  --surface: oklch(0.99 0.006 95);
-  --surface-muted: oklch(0.94 0.014 95);
-  --teal: oklch(0.42 0.07 185);
-  --teal-foreground: oklch(0.98 0.01 185);
-  --amber: oklch(0.84 0.11 85);
-  --amber-foreground: oklch(0.28 0.05 60);
+  /* Cool paper, deep ink-blue primary, copper caution accent */
+  --background: oklch(0.97 0.01 250);
+  --foreground: oklch(0.22 0.04 265);
+  --ink: oklch(0.2 0.045 268);
+  --surface: oklch(0.99 0.006 250);
+  --surface-muted: oklch(0.94 0.012 250);
+  --teal: oklch(0.38 0.1 255);
+  --teal-foreground: oklch(0.98 0.01 250);
+  --amber: oklch(0.86 0.08 70);
+  --amber-foreground: oklch(0.3 0.06 55);
 
   --card: var(--surface);
   --card-foreground: var(--ink);
@@ -81,24 +81,24 @@
   --secondary: oklch(0.93 0.02 95);
   --secondary-foreground: var(--ink);
   --muted: var(--surface-muted);
-  --muted-foreground: oklch(0.42 0.02 55);
+  --muted-foreground: oklch(0.42 0.03 260);
   --accent: var(--amber);
   --accent-foreground: var(--amber-foreground);
   --destructive: oklch(0.5 0.16 25);
-  --border: oklch(0.86 0.02 95);
-  --input: oklch(0.9 0.015 95);
-  --ring: oklch(0.5 0.06 185);
+  --border: oklch(0.86 0.02 250);
+  --input: oklch(0.9 0.015 250);
+  --ring: oklch(0.48 0.08 255);
 
-  --chart-1: oklch(0.55 0.08 185);
-  --chart-2: oklch(0.7 0.1 85);
-  --chart-3: oklch(0.45 0.04 55);
-  --chart-4: oklch(0.62 0.05 145);
-  --chart-5: oklch(0.35 0.03 55);
+  --chart-1: oklch(0.48 0.1 255);
+  --chart-2: oklch(0.7 0.1 70);
+  --chart-3: oklch(0.45 0.04 265);
+  --chart-4: oklch(0.55 0.06 200);
+  --chart-5: oklch(0.35 0.04 265);
 
   --radius: 0.5rem;
   --page-x: clamp(1rem, 4vw, 2rem);
   --section-y: clamp(1.5rem, 4vw, 3rem);
-  --focus-ring: 0 0 0 3px oklch(0.7 0.08 185 / 45%);
+  --focus-ring: 0 0 0 3px oklch(0.65 0.08 255 / 45%);
   --motion-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --motion-fast: 120ms;
   --motion-base: 220ms;
@@ -136,7 +136,7 @@
   }
 
   :focus-visible {
-    outline: 3px solid oklch(0.55 0.08 185);
+    outline: 3px solid oklch(0.48 0.1 255);
     outline-offset: 2px;
     box-shadow: var(--focus-ring);
   }
