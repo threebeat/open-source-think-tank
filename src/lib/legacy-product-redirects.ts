@@ -54,8 +54,5 @@ export function legacyProductRedirect(pathname: string): string | null {
   if (pathname === "/process" || pathname.startsWith("/process/")) {
     return "/demo";
   }
-  if (pathname === "/about" || pathname.startsWith("/about/")) {
-    return "/";
-  }
   return null;
 }

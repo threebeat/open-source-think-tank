@@ -15,6 +15,10 @@ export function SiteFooter() {
             Tour the demo
           </Link>
           {" · "}
+          <Link href="/about" className="text-primary underline-offset-4 hover:underline">
+            About
+          </Link>
+          {" · "}
           <Link href="/join" className="text-primary underline-offset-4 hover:underline">
             Create an account
           </Link>

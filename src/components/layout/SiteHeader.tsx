@@ -5,14 +5,22 @@ import { usePathname } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import type { NavItem } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
-type SiteHeaderProps = {
-  items: NavItem[];
+export type SiteHeaderAccount = {
+  href: string;
+  label: string;
+  detail?: string;
 };
 
-export function SiteHeader({ items }: SiteHeaderProps) {
+type SiteHeaderProps = {
+  items: NavItem[];
+  account?: SiteHeaderAccount | null;
+};
+
+export function SiteHeader({ items, account }: SiteHeaderProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -68,17 +76,37 @@ export function SiteHeader({ items }: SiteHeaderProps) {
           })}
         </nav>
 
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          className="min-h-11 min-w-11 lg:hidden"
-          aria-expanded={open}
-          aria-controls={panelId}
-          onClick={() => setOpen((value) => !value)}
-        >
-          {open ? "Close menu" : "Menu"}
-        </Button>
+        <div className="flex items-center gap-2">
+          {account ? (
+            <Link
+              href={account.href}
+              className={cn(
+                buttonVariants({ size: "lg" }),
+                "hidden min-h-11 px-4 lg:inline-flex",
+              )}
+              aria-current={pathname.startsWith("/account") ? "page" : undefined}
+              data-testid="account-button"
+            >
+              <span className="flex flex-col items-start leading-tight">
+                <span>Account</span>
+                <span className="text-[0.7rem] font-normal opacity-90">
+                  {account.detail ?? account.label}
+                </span>
+              </span>
+            </Link>
+          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className="min-h-11 min-w-11 lg:hidden"
+            aria-expanded={open}
+            aria-controls={panelId}
+            onClick={() => setOpen((value) => !value)}
+          >
+            {open ? "Close menu" : "Menu"}
+          </Button>
+        </div>
       </div>
 
       <div
@@ -113,6 +141,21 @@ export function SiteHeader({ items }: SiteHeaderProps) {
                 </li>
               );
             })}
+            {account ? (
+              <li>
+                <Link
+                  href={account.href}
+                  className={cn(
+                    buttonVariants({ size: "lg" }),
+                    "mt-2 flex min-h-11 w-full justify-start px-3",
+                  )}
+                  data-testid="account-button-mobile"
+                  onClick={() => setOpen(false)}
+                >
+                  Account · {account.detail ?? account.label}
+                </Link>
+              </li>
+            ) : null}
           </ul>
         </nav>
       </div>

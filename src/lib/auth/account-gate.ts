@@ -2,7 +2,7 @@ import { resolveAppMode, type EnvMap } from "@/lib/env/app-mode";
 import { legacyProductRedirect } from "@/lib/legacy-product-redirects";
 
 /**
- * Unauthenticated visitors may use `/`, `/demo/**`, `/join`, and `/auth/**`
+ * Unauthenticated visitors may use `/`, `/demo/**`, `/about`, `/join`, and `/auth/**`
  * (V2-21). Everything else is an account-gated product or legacy think-tank
  * surface. API routes handle their own auth and are not redirected here.
  */
@@ -36,6 +36,9 @@ export function isPublicUnauthenticatedPath(pathname: string): boolean {
     return true;
   }
   if (pathname === "/auth" || pathname.startsWith("/auth/")) {
+    return true;
+  }
+  if (pathname === "/about" || pathname.startsWith("/about/")) {
     return true;
   }
   return false;
