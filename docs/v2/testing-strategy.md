@@ -59,45 +59,46 @@ Keep a compatibility test only while a redirect/adapter is intentionally support
 - service admin vs organization authority matrix;
 - report-integrity closure retained.
 
-### Phase 2 — open community and Commons
+### Phase 2 — landing, enrollment, authenticated shell
 
-- enrollment, assent version, duplicate/rate/abuse cases;
-- deterministic organization assignment, explanation, correction, history;
+- unauthenticated visitor limited to `/`, `/demo`, auth pages;
+- landing a11y, keyboard, Commonhall wordmark;
+- gated enrollment: assent, password, duplicate/rate/honeypot/kill-switch;
+- explained synthetic-org assignment, history, correction event;
+- no elevated capability from community membership;
+- public-demo mode still cannot construct a database or create accounts.
+
+### Phase 3 — Commons and member posts
+
 - formal/informal ordering and disclaimer;
-- qualification/safety independence, conflict/recusal, appeal;
-- no elevated capability from community membership.
+- member can create a post; organization-scoped persistence;
+- qualification/safety independence, conflict/recusal, no self-review;
+- synthetic catalog hideable via `COMMONHALL_SYNTHETIC_SEED=off`;
+- no elevated capability from posting.
 
-### Phase 3 — Public Agenda and Pol.is
+### Phase 4 — Agenda, fixture consultation, member positions
 
 - topic tabs and history;
-- outcome/retention state transitions;
-- consent before any `pol.is` request, exact origin/CSP, unavailable state;
-- aggregate-only import, immutable publication, exact-count suppression;
-- closed aggregate insights for accepted, disputed, inconclusive;
-- aggregate geometry has no interactive person point.
+- no `pol.is` network request; unavailable/fixture states;
+- in-house agree/disagree/pass on synthetic statements;
+- aggregate-only publication, exact-count suppression;
+- only community-accepted topics enter the Chamber queue.
 
-### Phase 4 — Chamber and Council public process
+### Phase 5 — Chamber, Council, Records
 
 - schedules, rosters, attendance, conflicts, complete roll calls;
 - verdict/recommendation versioning and reason rules;
 - Public Agenda residency and Council transfer;
-- public observer a11y and mobile layout.
+- community member cannot self-appoint or vote a seat they do not hold;
+- member a11y and mobile layout for tables/timelines.
 
-### Phase 5 — organizations and elevated portal
+### Phase 6 — legacy retirement and delivery
 
-- appointment dual control/no self-grant;
-- configuration floor and version capture;
-- tenant-admin isolation and public organization page;
-- membership transfer and primary-organization voting rules;
-- public-projection-only cross-organization links.
-
-### Phase 6 — migration and launch
-
-- old route redirects and no broken public links;
-- no legacy language in active UI/API/schema contracts;
-- seeded end-to-end demo and an authorized live-enrollment smoke test;
+- old think-tank routes gone or hard-redirected;
+- active tests match Commonhall architecture;
 - backup/restore/reset by organization;
-- full browser/accessibility/security matrix and performance budgets.
+- `docs/v2/final_overview.md` lists vendor/legal holds;
+- full browser/accessibility/security matrix.
 
 ## CI policy
 

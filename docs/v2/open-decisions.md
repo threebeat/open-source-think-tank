@@ -24,6 +24,9 @@ Do not silently settle these in application code. A decision needs an owner, dat
 | V2-18 | Production email, database host, analytics/metrics vendors | No new vendor without register/security/privacy decision | Production deployment |
 | V2-19 | Existing alpha-account migration | Require new assent/assignment; do not auto-convert | Open enrollment rollout |
 | V2-20 | Representation claims and geographic scope | Describe participants, never claim population mandate | Public impact language |
+| V2-21 | Unauthenticated product-surface policy | Pre-alpha: `/`, `/demo`, and auth pages only; product routes require an account. Does not settle production public-observer law | Production public Agenda/Chamber/Council without login |
+| V2-22 | Enrollment verification channel | Pre-alpha: local identifier + password; no outbound email (V2-18). Email verification deferred | Password recovery by email; production identity proof |
+| V2-23 | Bot / abuse vendor | Pre-alpha: in-process rate limit, honeypot, minimum fill time, duplicate identifier. No third-party bot SDK | Scale-out / distributed abuse |
 
 ## Phase 1 fail-closed postures (not settlements)
 
@@ -47,6 +50,24 @@ Phase 1 records these engineering postures. They do **not** close the decisions 
 | V2-18 | No new production vendors. |
 | V2-19 | Alpha accounts are not auto-converted to organization community members. |
 | V2-20 | Public copy does not claim population mandate or production readiness. |
+
+## Council pre-alpha directions (Phases 2–6, 2026-08-14)
+
+Authorized for the pre-alpha Commonhall build. **Not** counsel-cleared or production settlements.
+
+| ID | Pre-alpha direction |
+| --- | --- |
+| V2-01 | UI wordmark may be “Commonhall”; legal-adjacent copy keeps “v2” / working-name status. |
+| V2-02 | Enrollment copy: organization community membership, not nonprofit/statutory membership. |
+| V2-04 | New members are assigned to the synthetic primary organization with a visible explanation and a correction/appeal event. Not a production matching algorithm. |
+| V2-07–V2-10 | Synthetic fixture numbers only; labeled synthetic; ignored as production defaults. |
+| V2-11–V2-13 | Hosted Pol.is remains impossible to enable. Fixture + in-house agree/disagree/pass only. |
+| V2-18 | No email, analytics, or identity vendor. Password enrollment is local. |
+| V2-19 | Do not auto-convert historical invite-only alpha accounts. New enrollment required. |
+| V2-21 | Account-gated product routes; demo is the unauthenticated process tour. |
+| V2-22 | Identifier + password; email verification out of scope. |
+| V2-23 | In-house bot heuristics only. |
+| Synthetic seed | `COMMONHALL_SYNTHETIC_SEED` defaults on in gated pre-alpha; off hides synthetic catalog from member UI. Operator reset remains the pre-alpha → alpha wipe. |
 
 ## Decision record template
 
