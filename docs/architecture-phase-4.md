@@ -1,9 +1,9 @@
 # Architecture — Phase 4 (computational democracy)
 
-**Status:** Work Package **4.4** active (moderation + aggregate report ingestion). Phase 4.1–**4.3** owner-approved complete (PR #17 / #18 / #19). Builds on [architecture-phase-3.md](./architecture-phase-3.md) and Phase 2 dual-mode isolation.  
+**Status:** Work Package **4.5A** active (Phase 4.4 integrity remediation). Phase 4.1–**4.3** owner-approved complete (PR #17 / #18 / #19). Phase **4.4** engineering merged (PR #20) but **not owner-accepted** until 4.5A closes P0/P1 integrity defects. Builds on [architecture-phase-3.md](./architecture-phase-3.md) and Phase 2 dual-mode isolation.  
 **Related:** [phase-4-plan.md](./phase-4-plan.md), [public-input-provider-assessment.md](./public-input-provider-assessment.md), [ADR 0010](./decisions/0010-computational-democracy-pipeline.md), [ADR 0011](./decisions/0011-idea-commons-formal-pipeline-separation.md), [ADR 0012](./decisions/0012-public-input-provider-boundary.md), [ADR 0013](./decisions/0013-canonical-formal-topic-page.md), [ADR 0014](./decisions/0014-institutional-conversation-lifecycle.md), [ADR 0015](./decisions/0015-progressive-evidence-disclosure.md), [ADR 0016](./decisions/0016-provider-embed-activation-exact-origin.md), [ADR 0017](./decisions/0017-local-versus-remote-reset-semantics.md), [ADR 0018](./decisions/0018-aggregate-only-canonical-import-format.md), [ADR 0019](./decisions/0019-immutable-report-versioning-and-publication.md), [ADR 0020](./decisions/0020-public-input-moderation-versus-provider-moderation.md), [ADR 0021](./decisions/0021-complementary-small-cell-suppression.md)
 
-This document describes the Phase 4 product/architecture contract. **Public Input remains fail-closed for live Pol.is.** Package 4.4 adds aggregate-only report ingest, immutable report versioning/publication, institutional vs provider moderation records, and complementary small-cell suppression. **Aggregate ingest is not live activation** — every gate in `LIVE_PUBLIC_INPUT_ACTIVATION_GATES` remains `unresolved`.
+This document describes the Phase 4 product/architecture contract. **Public Input remains fail-closed for live Pol.is.** Package 4.4 added aggregate-only report ingest, immutable report versioning/publication, institutional vs provider moderation records, and complementary small-cell suppression. Package **4.5A** hardens that contract: exact integer group counts, finding eligibility only while `under_review`, current-consultation report selection, title-in-hash, serialized imports, honest moderation disclosure omission, and unavailable vs not-found. **Aggregate ingest is not live activation** — every gate in `LIVE_PUBLIC_INPUT_ACTIVATION_GATES` remains `unresolved`. **4.5B+ public IA rebuild must not merge until 4.5A exits.**
 
 ---
 
@@ -203,11 +203,16 @@ Allowlisted public report DTO ──► /formal-topics/[slug]/consultation/repor
 
 Rules:
 
-1. Only aggregate-only canonical imports ([ADR 0018](./decisions/0018-aggregate-only-canonical-import-format.md)).
-2. Report rows are immutable after create; corrections = new import version ([ADR 0019](./decisions/0019-immutable-report-versioning-and-publication.md)).
+1. Only aggregate-only canonical imports ([ADR 0018](./decisions/0018-aggregate-only-canonical-import-format.md)) — schema `@1.1` requires exact integer `participantCount` per group; partition consistency; no float-share inference.
+2. Report **content** rows are immutable after create; finding `publication_status` and group `published_*` may change **only** while the parent report is `under_review` (DB triggers + service concurrency version). Corrections after publication = new import version ([ADR 0019](./decisions/0019-immutable-report-versioning-and-publication.md)).
 3. Import never auto-publishes; publication records actor role, timestamp, method/import versions, conflicts.
-4. Public route exposes published allowlisted fields only — never `providerConversationRef`, import storage paths, raw export blobs, or staff-only moderation notes.
-5. Self-dealing provenance must remain auditable (who imported vs who published).
+4. Public topic projection selects the latest published report for the topic’s **current** consultation only — not an arbitrary `is_latest_published` row across historical conversations.
+5. Public route exposes published allowlisted fields only — never `providerConversationRef`, import storage paths, raw export blobs, or staff-only moderation notes. Operational read failures use the established unavailable state; drafts/unpublished remain generic not-found.
+6. `publicTitle` is taken only from the hashed canonical payload (outer API title ignored).
+7. Imports serialize per conversation (`FOR UPDATE`); identical payloads replay idempotently under that lock.
+8. Public `moderationDisclosure` is omitted unless the import carried a non-empty aggregate summary — never invent “Reviewed 0”.
+9. Self-dealing provenance must remain auditable (who imported vs who published).
+10. Complementary suppression uses exact counts ([ADR 0021](./decisions/0021-complementary-small-cell-suppression.md)); production threshold still OQ27 / OQ35.
 
 ### Report / moderation capabilities
 

@@ -65,7 +65,7 @@ Default decision: **deny**.
 | `consultations.manage_provider_mapping` | active | administrator | — | Attach/rotate/remove opaque provider refs; operational kinds `none`/`fixture` only (4.3) |
 | `consultations.set_availability` | active | administrator | — | Set provider availability independently of institutional workflow (4.3) |
 | `consultations.reports.import` | active (4.4) | administrator | — | Validate + store aggregate-only canonical import → immutable report version; gated only; not live Pol.is; not raw-export ingest |
-| `consultations.reports.review` | active (4.4) | administrator | — | Review / reject imported report versions with substantive reason; does not auto-publish |
+| `consultations.reports.review` | active (4.4 / 4.5A) | administrator | — | Review / reject imported report versions with substantive reason; finding eligibility only while `under_review` + concurrency version; does not auto-publish |
 | `consultations.reports.publish` | active (4.4) | administrator | — | Publish or supersede allowlisted public report projection; never leaks `providerConversationRef` |
 | `consultations.moderation.record` | active (4.4) | moderator or administrator | — | Append institutional Public Input moderation / finding-eligibility actions with required reason; does **not** grant agenda promotion, metric edits, or live provider admin API |
 
@@ -77,7 +77,7 @@ Phase 4.1–4.4 do **not** authorize live Pol.is. Pre-deliberation product rules
 - Moderators, administrators, board members, and ordinary participants **cannot** assign agenda priority, privately promote proposals, directly promote pre-deliberation topics, alter consultation metrics, or receive elevated badges/ranking advantages on ordinary Idea Commons contributions.
 - Formal Topic Pipeline entry is criteria-based and auditable — never a preference shortcut.
 - Phase **4.3** adds gated administrator capabilities `consultations.create`, `consultations.transition`, `consultations.manage_provider_mapping`, and `consultations.set_availability` for the institutional lifecycle (`none`/`fixture` only). These are **not** live-provider install authorization.
-- Phase **4.4** adds `consultations.reports.import`, `consultations.reports.review`, `consultations.reports.publish`, and `consultations.moderation.record` for aggregate ingest and moderation engineering. These are **not** live-provider install authorization and do **not** authorize raw provider-export retention as first-class ingest.
+- Phase **4.4** adds `consultations.reports.import`, `consultations.reports.review`, `consultations.reports.publish`, and `consultations.moderation.record` for aggregate ingest and moderation engineering. Phase **4.5A** tightens review so finding publication eligibility cannot change after the parent report leaves `under_review`. These are **not** live-provider install authorization and do **not** authorize raw provider-export retention as first-class ingest.
 - Independent axes (lifecycle, availability, provider moderation, finding eligibility, import validation, report publication, evidence quality, agenda qualification) must not be collapsed by capability grants.
 - Live consultation provider activation remains blocked until the activation checklist, permitted-services register addendum, vendor/privacy gates, and owner `ENABLE LIVE POLIS…` authorization clear.
 - Canonical topic sections (including public report) are public navigation states, not new institutional capabilities beyond the gated caps above.
