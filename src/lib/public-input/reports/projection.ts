@@ -95,7 +95,7 @@ export function toPublicReportDto(input: {
     (g) => g.publishedStatus === "omitted",
   );
 
-  return {
+  const dto: PublicReportDto = {
     synthetic: report.synthetic,
     topicId: report.topicId,
     reportVersion: report.version,
@@ -116,20 +116,26 @@ export function toPublicReportDto(input: {
       "Complementary small-cell suppression applied at publication. Suppressed shares are not zeros and cannot be reconstructed by subtraction. Production threshold remains subject to privacy review (OQ27/OQ35).",
     suppressedCells,
     groupsOmitted,
-    moderationDisclosure:
-      reportImport.moderationReviewedCount > 0 ||
-      reportImport.moderationPolicyVersion != null
-        ? {
-            reviewedCount: reportImport.moderationReviewedCount,
-            acceptedCount: reportImport.moderationAcceptedCount,
-            rejectedCount: reportImport.moderationRejectedCount,
-            policyVersion: reportImport.moderationPolicyVersion,
-          }
-        : undefined,
     providerNotice:
       "Aggregate-only Public Input report. Not connected to a live Pol.is conversation. Pol.is / Public Input organizes preference and is not evidence, truth, representativeness, or an institutional decision.",
     isSuperseded: false,
   };
+
+  // Omit the key entirely when the import carried no aggregate moderation
+  // summary — never emit `moderationDisclosure: undefined` / "Reviewed 0".
+  if (
+    reportImport.moderationReviewedCount > 0 ||
+    reportImport.moderationPolicyVersion != null
+  ) {
+    dto.moderationDisclosure = {
+      reviewedCount: reportImport.moderationReviewedCount,
+      acceptedCount: reportImport.moderationAcceptedCount,
+      rejectedCount: reportImport.moderationRejectedCount,
+      policyVersion: reportImport.moderationPolicyVersion,
+    };
+  }
+
+  return dto;
 }
 
 /**
