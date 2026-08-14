@@ -92,6 +92,13 @@ export default async function AccountPage() {
           </p>
         </div>
         <div className="rounded-md border border-border p-4">
+          <p className="text-sm text-muted-foreground">Account lifecycle</p>
+          <p className="font-medium">{session.lifecycleState}</p>
+          {session.synthetic ? (
+            <p className="text-sm text-muted-foreground">Synthetic pre-alpha row</p>
+          ) : null}
+        </div>
+        <div className="rounded-md border border-border p-4">
           <p className="text-sm text-muted-foreground">Local organization</p>
           <p className="font-medium">
             {organization?.displayName ?? "Not assigned"}
