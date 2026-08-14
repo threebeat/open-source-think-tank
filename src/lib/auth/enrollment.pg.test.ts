@@ -11,7 +11,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import * as schema from "@/db/schema";
 import { seedSyntheticFoundation } from "@/db/seeds/synthetic";
-import { enrollOpenAccount, ENROLLMENT_MIN_FILL_MS } from "@/lib/auth/enrollment";
+import { enrollOpenAccount } from "@/lib/auth/enrollment";
+import { ENROLLMENT_MIN_FILL_MS } from "@/lib/auth/community-standards";
 import { resetRateLimits } from "@/lib/auth/rate-limit";
 
 const ADMIN_URL =

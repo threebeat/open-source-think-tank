@@ -35,3 +35,6 @@ export const PRE_ALPHA_ASSIGNMENT_EXPLANATION = [
   "This is not a production matching algorithm and does not use ideology, consultation responses, or hidden behavioral profiles.",
   "You may request a correction or appeal of this assignment from your Account → Membership page. Transfer to another organization is not available in this phase.",
 ].join(" ");
+
+/** Minimum time the enrollment form must be open before submit (V2-23). */
+export const ENROLLMENT_MIN_FILL_MS = 1_500;

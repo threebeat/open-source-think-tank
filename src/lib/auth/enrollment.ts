@@ -15,6 +15,7 @@ import type { AdapterResult } from "@/lib/adapters/types";
 import {
   COMMUNITY_STANDARDS_DOCUMENT_ID,
   COMMUNITY_STANDARDS_NOTICE_ID,
+  ENROLLMENT_MIN_FILL_MS,
   PRE_ALPHA_ASSIGNMENT_EXPLANATION,
   PRE_ALPHA_ASSIGNMENT_REASON,
   PRE_ALPHA_ASSIGNMENT_RULE_VERSION,
@@ -40,7 +41,6 @@ import {
 
 const ENROLL_RATE_LIMIT = process.env.AUTH_E2E_CAPTURE === "1" ? 64 : 5;
 const ENROLL_RATE_WINDOW_MS = 15 * 60 * 1000;
-export const ENROLLMENT_MIN_FILL_MS = 1_500;
 
 export type EnrollInput = {
   identifier: string;

@@ -10,8 +10,8 @@ import {
 } from "@/db/schema";
 import { seedSyntheticFoundation } from "@/db/seeds/synthetic";
 import { SYNTHETIC_ORG_ALPHA_ID } from "@/db/seeds/v2-organizations";
-import { enrollOpenAccount, ENROLLMENT_MIN_FILL_MS } from "@/lib/auth/enrollment";
-import { PRE_ALPHA_ASSIGNMENT_REASON } from "@/lib/auth/community-standards";
+import { enrollOpenAccount } from "@/lib/auth/enrollment";
+import { ENROLLMENT_MIN_FILL_MS, PRE_ALPHA_ASSIGNMENT_REASON } from "@/lib/auth/community-standards";
 import { AuthService } from "@/lib/auth/auth-service";
 import { resetRateLimits } from "@/lib/auth/rate-limit";
 import { authorize } from "@/lib/authz/authorize";

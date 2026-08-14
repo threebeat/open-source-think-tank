@@ -5,10 +5,14 @@ import { usePathname } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { primaryNav } from "@/lib/navigation";
+import type { NavItem } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
-export function SiteHeader() {
+type SiteHeaderProps = {
+  items: NavItem[];
+};
+
+export function SiteHeader({ items }: SiteHeaderProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -34,14 +38,14 @@ export function SiteHeader() {
           className="min-h-11 min-w-11 rounded-md px-2 py-2 text-sm font-semibold tracking-tight text-foreground transition-colors hover:bg-muted active:bg-muted/80"
           onClick={() => setOpen(false)}
         >
-          Open-Source Think Tank
+          Commonhall
           <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
-            Demonstration
+            Pre-alpha
           </span>
         </Link>
 
         <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
-          {primaryNav.map((item) => {
+          {items.map((item) => {
             const active =
               item.href === "/"
                 ? pathname === "/"
@@ -85,7 +89,7 @@ export function SiteHeader() {
       >
         <nav aria-label="Primary mobile" className="mx-auto max-w-6xl py-3">
           <ul className="flex flex-col gap-1">
-            {primaryNav.map((item) => {
+            {items.map((item) => {
               const active =
                 item.href === "/"
                   ? pathname === "/"

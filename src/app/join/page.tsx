@@ -1,20 +1,21 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { CreateAccountForm } from "@/components/auth/CreateAccountForm";
 import { JoinWalkthrough } from "@/components/join/JoinWalkthrough";
 import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { PageHeader } from "@/components/PageHeader";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { MainContainer } from "@/components/layout/MainContainer";
 import { resolveAppMode } from "@/lib/env/app-mode";
+import { isOpenEnrollmentEnabled } from "@/lib/v2/flags";
 
 export const metadata: Metadata = {
-  title: "How Joining Works",
+  title: "Create an account",
   description:
-    "Invite-only enrollment in the gated foundation, or a nonfunctional public explanation of how joining works.",
+    "Gated Commonhall enrollment with a local identifier and password, or a public explanation that accounts are not created here.",
 };
 
-/** Mode-branched page: must not bake public-demo HTML into gated deploys. */
 export const dynamic = "force-dynamic";
 
 export default async function JoinPage() {
@@ -28,33 +29,46 @@ export default async function JoinPage() {
       redirect("/account/onboarding");
     }
 
+    if (!isOpenEnrollmentEnabled()) {
+      return (
+        <MainContainer className="space-y-8">
+          <Breadcrumbs items={[{ href: "/", label: "Home" }, { label: "Join" }]} />
+          <PageHeader
+            eyebrow="Enrollment paused"
+            title="Open enrollment is off"
+            description="The COMMONHALL_V2_OPEN_ENROLLMENT kill switch is off. Staff bootstrap invitations still work."
+          />
+          <p className="text-sm">
+            Have an invite?{" "}
+            <a className="underline" href="/auth/accept">
+              Accept invitation
+            </a>
+          </p>
+        </MainContainer>
+      );
+    }
+
     return (
       <MainContainer className="space-y-8">
-        <Breadcrumbs
-          items={[{ href: "/", label: "Home" }, { label: "Join" }]}
-        />
+        <Breadcrumbs items={[{ href: "/", label: "Home" }, { label: "Create account" }]} />
         <PageHeader
-          eyebrow="Invite-only foundation"
-          title="Join with an invitation"
-          description="Public self-registration is disabled. Enrollment begins only with a valid invitation link. This creates an account holder / community participant path — not a statutory membership claim."
+          eyebrow="Gated pre-alpha"
+          title="Create an account"
+          description="Use an email-shaped identifier stored locally and a password. No message is sent. You will be assigned to the synthetic primary organization with an explanation."
         />
-        <DisclosureNotice title="Recruitment disabled" tone="caution">
-          There is no open recruitment call to action. If you were not invited,
-          you cannot begin enrollment.
+        <DisclosureNotice title="Not statutory membership" tone="caution">
+          Creating an account grants organization community membership in a
+          synthetic hall. It does not grant Chamber, Council, moderator, or
+          organization-admin authority, and it is not nonprofit or statutory
+          membership.
         </DisclosureNotice>
-        <p className="text-sm">
-          Have an invite?{" "}
+        <CreateAccountForm />
+        <p className="text-sm text-muted-foreground">
+          Staff bootstrap still uses{" "}
           <a className="underline" href="/auth/accept">
             Accept invitation
           </a>
-          {" · "}
-          <a className="underline" href="/auth/sign-in">
-            Sign in
-          </a>
-        </p>
-        <p className="text-sm text-muted-foreground">
-          Expired or revoked invitations cannot be used. Do not put secrets in
-          URLs beyond the single-use invite token delivered to you.
+          .
         </p>
       </MainContainer>
     );
@@ -63,19 +77,17 @@ export default async function JoinPage() {
   return (
     <MainContainer className="space-y-8">
       <Breadcrumbs
-        items={[{ href: "/", label: "Home" }, { label: "How Joining Works" }]}
+        items={[{ href: "/", label: "Home" }, { label: "How joining works" }]}
       />
       <PageHeader
-        eyebrow="Demonstration only"
-        title="How Joining Works"
-        description="A single-user synthetic walkthrough of the intended eligibility, assurance, conduct, and privacy steps. You are exploring fixed demonstration records—not creating an account or seeing other live visitors."
+        eyebrow="Public demonstration"
+        title="How joining works"
+        description="This public-demo deployment cannot create accounts or open a database. The gated service uses a local identifier and password — still with no outbound email."
       />
-      <DisclosureNotice title="Not accepting members" tone="caution">
-        This demonstration does not create an account, issue an invitation, or
-        collect personal information. In the gated alpha, administrators issue
-        single-use invitation links; enrollment is invite-only. Example people
-        and actions in this walkthrough are fixed fixtures, not other current
-        visitors. Placeholder conduct and privacy text is not legally reviewed.
+      <DisclosureNotice title="Accounts require the gated service" tone="caution">
+        Public-demo mode never constructs an auth or database client. You are
+        exploring a synthetic walkthrough, not creating an account or seeing
+        other live visitors.
       </DisclosureNotice>
       <JoinWalkthrough />
     </MainContainer>
