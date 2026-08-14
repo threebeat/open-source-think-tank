@@ -56,6 +56,27 @@ test.describe("auth isolation in public-demo", () => {
       { data: { disclosureChoice: "none" } },
     );
     expect(disclosurePatch.status()).toBe(404);
+
+    const enroll = await page.request.post("/api/auth/enroll", {
+      data: {
+        identifier: "public@ostt.synth.test",
+        password: "a-sufficiently-long-pass",
+        communityStandardsAssent: true,
+        formOpenedAt: Date.now() - 2000,
+      },
+    });
+    expect(enroll.status()).toBe(404);
+    expect(JSON.stringify(await enroll.json()).toLowerCase()).not.toMatch(
+      /password_hash|scrypt/,
+    );
+
+    const passwordSignIn = await page.request.post("/api/auth/password-sign-in", {
+      data: {
+        identifier: "public@ostt.synth.test",
+        password: "a-sufficiently-long-pass",
+      },
+    });
+    expect(passwordSignIn.status()).toBe(404);
   });
 
   test("workspace topic and submission pages are not found in public-demo", async ({

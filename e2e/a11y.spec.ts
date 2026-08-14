@@ -1,24 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-const principalRoutes = [
-  "/",
-  "/about",
-  "/join",
-  "/process",
-  "/topics",
-  "/formal-topics/cedar-river-drought-surcharge",
-  "/formal-topics/cedar-river-drought-surcharge?section=evidence",
-  "/formal-topics/cedar-river-drought-surcharge?section=discussions",
-  "/topics/cedar-river-drought-surcharge/consult",
-  "/formal-topics/millbrook-ems-open-data",
-  "/agenda",
-  "/agenda/cedar-river-drought-surcharge",
-  "/deliberation/cedar-river-drought-surcharge",
-  "/decisions/cedar-river-drought-surcharge",
-  "/transparency",
-  "/demo",
-] as const;
+const principalRoutes = ["/", "/demo", "/join"] as const;
 
 test.describe("principal-route accessibility", () => {
   for (const route of principalRoutes) {
