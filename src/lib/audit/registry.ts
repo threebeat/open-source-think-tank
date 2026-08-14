@@ -91,6 +91,13 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
     "auth.challenge_email_failed",
     "Challenge email failed",
   ),
+  "auth.enrolled": def("auth.enrolled", "Open enrollment completed", {
+    requireActorAccount: true,
+  }),
+  "auth.password_sign_in_rejected": def(
+    "auth.password_sign_in_rejected",
+    "Password sign-in rejected",
+  ),
   "auth.test_synthetic_marker": def(
     "auth.test_synthetic_marker",
     "Test-only synthetic marker",

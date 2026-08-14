@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createTestDatabase } from "@/db/pglite";
@@ -105,7 +105,12 @@ describe("invite-only onboarding (2.8)", () => {
     const [doc] = await db
       .select()
       .from(documentVersions)
-      .where(eq(documentVersions.state, "published"));
+      .where(
+        and(
+          eq(documentVersions.state, "published"),
+          eq(documentVersions.kind, "privacy_notice"),
+        ),
+      );
     expect(doc).toBeTruthy();
     const { assentRecords } = await import("@/db/schema");
     await db.insert(assentRecords).values({
@@ -159,7 +164,12 @@ describe("invite-only onboarding (2.8)", () => {
     const [doc] = await db
       .select()
       .from(documentVersions)
-      .where(eq(documentVersions.state, "published"));
+      .where(
+        and(
+          eq(documentVersions.state, "published"),
+          eq(documentVersions.kind, "privacy_notice"),
+        ),
+      );
     const { assentRecords } = await import("@/db/schema");
     const existingAssent = await db
       .select()
@@ -220,7 +230,12 @@ describe("invite-only onboarding (2.8)", () => {
     const [doc] = await db
       .select()
       .from(documentVersions)
-      .where(eq(documentVersions.state, "published"));
+      .where(
+        and(
+          eq(documentVersions.state, "published"),
+          eq(documentVersions.kind, "privacy_notice"),
+        ),
+      );
     const { assentRecords } = await import("@/db/schema");
     await db.insert(assentRecords).values({
       id: newEntityId("assent"),
@@ -281,7 +296,12 @@ describe("invite-only onboarding (2.8)", () => {
     const [doc] = await db
       .select()
       .from(documentVersions)
-      .where(eq(documentVersions.state, "published"));
+      .where(
+        and(
+          eq(documentVersions.state, "published"),
+          eq(documentVersions.kind, "privacy_notice"),
+        ),
+      );
     const { assentRecords } = await import("@/db/schema");
     await db.insert(assentRecords).values({
       id: newEntityId("assent"),
@@ -371,7 +391,12 @@ describe("invite-only onboarding (2.8)", () => {
     const [doc] = await db
       .select()
       .from(documentVersions)
-      .where(eq(documentVersions.state, "published"));
+      .where(
+        and(
+          eq(documentVersions.state, "published"),
+          eq(documentVersions.kind, "privacy_notice"),
+        ),
+      );
     const { assentRecords } = await import("@/db/schema");
     await db.insert(assentRecords).values({
       id: newEntityId("assent"),

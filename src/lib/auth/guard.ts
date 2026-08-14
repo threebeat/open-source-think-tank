@@ -47,6 +47,18 @@ export async function requireGatedSession(): Promise<GuardFailure> {
   };
 }
 
+export async function requireMemberSession(): Promise<AuthSession> {
+  const { redirect } = await import("next/navigation");
+  if (resolveAppMode() !== "gated") {
+    redirect("/");
+  }
+  const gated = await requireGatedSession();
+  if (!gated.ok) {
+    redirect("/auth/sign-in");
+  }
+  return gated.session;
+}
+
 /** @deprecated Prefer requireCapability from @/lib/authz/server */
 export async function requireActiveCapability(
   capability: Extract<

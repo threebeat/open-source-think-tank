@@ -28,6 +28,13 @@ import {
   verificationCases,
 } from "../schema";
 import type { FoundationDb } from "../types";
+import {
+  COMMUNITY_STANDARDS_BODY,
+  COMMUNITY_STANDARDS_DOCUMENT_ID,
+  COMMUNITY_STANDARDS_NOTICE_ID,
+  COMMUNITY_STANDARDS_TITLE,
+  COMMUNITY_STANDARDS_VERSION_LABEL,
+} from "@/lib/auth/community-standards";
 import { appendAuthAudit } from "@/lib/auth/audit-log";
 import {
   L3_KINDS,
@@ -275,6 +282,38 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
       updatedAt: publishedAt,
     })
     .where(eq(documentVersions.id, "doc-ostt-synth-privacy-v1"));
+
+  const standardsHash = createHash("sha256")
+    .update(COMMUNITY_STANDARDS_BODY)
+    .digest("hex");
+  await db.insert(documentVersions).values({
+    id: COMMUNITY_STANDARDS_DOCUMENT_ID,
+    kind: "conduct",
+    versionLabel: COMMUNITY_STANDARDS_VERSION_LABEL,
+    contentHash: standardsHash,
+    title: COMMUNITY_STANDARDS_TITLE,
+    body: COMMUNITY_STANDARDS_BODY,
+    state: "draft",
+    requiredNotices: [COMMUNITY_STANDARDS_NOTICE_ID],
+  });
+  await db
+    .update(documentVersions)
+    .set({
+      state: "counsel_reviewed",
+      counselReviewedAt: reviewedAt,
+      counselReviewedByAccountId: "account-ostt-synth-ben",
+      updatedAt: reviewedAt,
+    })
+    .where(eq(documentVersions.id, COMMUNITY_STANDARDS_DOCUMENT_ID));
+  await db
+    .update(documentVersions)
+    .set({
+      state: "published",
+      publishedAt,
+      publishedByAccountId: "account-ostt-synth-ben",
+      updatedAt: publishedAt,
+    })
+    .where(eq(documentVersions.id, COMMUNITY_STANDARDS_DOCUMENT_ID));
 
   await db.insert(assentRecords).values({
     id: "assent-ostt-synth-ada-privacy-v1",
