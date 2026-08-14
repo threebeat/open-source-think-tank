@@ -32,8 +32,9 @@
     "test:pg:reports": "OSTT_REQUIRE_POSTGRES=1 vitest run src/lib/public-input/reports/report-integrity.pg.test.ts",
     "test:pg:organizations": "OSTT_REQUIRE_POSTGRES=1 vitest run src/lib/organizations/isolation.pg.test.ts",
     "test:pg:enrollment": "OSTT_REQUIRE_POSTGRES=1 vitest run src/lib/auth/enrollment.pg.test.ts",
-      "test:pg:commons": "OSTT_REQUIRE_POSTGRES=1 vitest run src/lib/commons/isolation.pg.test.ts",
-      "test:pg:agenda": "OSTT_REQUIRE_POSTGRES=1 vitest run src/lib/agenda/isolation.pg.test.ts",
+    "test:pg:commons": "OSTT_REQUIRE_POSTGRES=1 vitest run src/lib/commons/isolation.pg.test.ts",
+    "test:pg:agenda": "OSTT_REQUIRE_POSTGRES=1 vitest run src/lib/agenda/isolation.pg.test.ts",
+    "test:pg:chamber": "OSTT_REQUIRE_POSTGRES=1 vitest run src/lib/bodies/isolation.pg.test.ts",
       "phase3:acceptance": "tsx scripts/phase-3-acceptance-journey.ts"
   },
   "dependencies": {

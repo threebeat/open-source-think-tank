@@ -113,6 +113,19 @@ Phase 4 records these engineering postures for the gated pre-alpha Public Agenda
 | Synthetic seed | `COMMONHALL_SYNTHETIC_SEED=off` omits synthetic Public Agenda catalog rows from member list/detail DTOs. |
 | Chamber | `queue_for_chamber` remains kernel-only from `community_accepted`. Phase 4 does not build Chamber UI. |
 
+## Phase 5 fail-closed postures (not settlements)
+
+Phase 5 records these engineering postures for the gated pre-alpha Chamber and Council. They do **not** close V2-09/10.
+
+| ID | Phase 5 posture |
+| --- | --- |
+| V2-09 | No production Chamber size, quorum, or appointment policy. Seeded roster and sessions are labeled synthetic. `COMMONHALL_V2_CHAMBER_LIVE` still cannot enable a production live Chamber. |
+| V2-10 | No production Council cadence or quorum. Synthetic fixture playback may run appointed clerk/member kernel transitions on synthetic records only. |
+| V2-08 | `retention_deadline_at` remains nullable; expiration worker stays disabled. Council-declined topics remain until a later captured retention. |
+| V2-11–V2-13 | `isHostedPolisEnabled()` remains false. Chamber/Council UI never loads `https://pol.is/embed.js`. |
+| Synthetic seed | `COMMONHALL_SYNTHETIC_SEED=off` omits synthetic Chamber/Council/Records catalog rows from member list/detail DTOs. |
+| Appointments | Seeded Chamber/Council seats are new `organization_appointments` rows, not copies of legacy `deliberation_council`. Dual-control / no self-grant remains. `trustedSystem` is seed/playback only. |
+
 ## Decision record template
 
 ```md

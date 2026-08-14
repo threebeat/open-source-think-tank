@@ -93,8 +93,13 @@ describe("governance transition engine", () => {
     expect(PUBLIC_AGENDA_STATES).toContain("consultation_inconclusive");
     expect(PUBLIC_AGENDA_STATES).not.toContain("informal_draft");
     expect(PUBLIC_AGENDA_STATES).not.toContain("formal_review_pending");
-    expect(isPublicAgendaState("qualified_consultation")).toBe(true);
-    expect(isPublicAgendaState("informal_draft")).toBe(false);
+    expect(PUBLIC_AGENDA_STATES).toContain("chamber_queued");
+    expect(PUBLIC_AGENDA_STATES).toContain("chamber_accepted");
+    expect(PUBLIC_AGENDA_STATES).toContain("council_declined");
+    expect(PUBLIC_AGENDA_STATES).not.toContain("council_scheduled");
+    expect(PUBLIC_AGENDA_STATES).not.toContain("recommendations_published");
+    expect(isPublicAgendaState("chamber_accepted")).toBe(true);
+    expect(isPublicAgendaState("council_scheduled")).toBe(false);
   });
 
   it("denies missing reason, criteria, metrics, verdict, and wrong actor", () => {
@@ -126,6 +131,43 @@ describe("governance transition engine", () => {
         actor: "chamber",
       }).ok,
     ).toBe(false);
+    expect(
+      evaluateTransition({
+        from: "chamber_accepted",
+        action: "decline_council_intake",
+        actor: "council",
+      }).ok,
+    ).toBe(false);
+    expect(
+      evaluateTransition({
+        from: "chamber_accepted",
+        action: "decline_council_intake",
+        actor: "council",
+        reason: "synthetic-override-reason",
+      }).ok,
+    ).toBe(true);
+    expect(
+      evaluateTransition({
+        from: "chamber_disputed",
+        action: "accept_disputed_to_council_agenda",
+        actor: "council",
+      }).ok,
+    ).toBe(false);
+    expect(
+      evaluateTransition({
+        from: "chamber_disputed",
+        action: "accept_disputed_to_council_agenda",
+        actor: "council",
+        reason: "synthetic-override-reason",
+      }).ok,
+    ).toBe(true);
+    expect(
+      evaluateTransition({
+        from: "chamber_accepted",
+        action: "accept_to_council_agenda",
+        actor: "council",
+      }).ok,
+    ).toBe(true);
     expect(
       evaluateTransition({
         from: "formal_review_pending",

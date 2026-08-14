@@ -7,6 +7,7 @@ import {
   isElevatedPortalEnabled,
   isHostedPolisEnabled,
   isOpenEnrollmentEnabled,
+  isSyntheticBodyPlaybackAllowed,
   isSyntheticSeedEnabled,
   isV2KernelEnabled,
   readV2Flags,
@@ -117,6 +118,17 @@ describe("v2 feature flags", () => {
     expect(flags.chamberLive).toBe(false);
     expect(flags.councilLive).toBe(false);
     expect(flags.elevatedPortal).toBe(false);
+  });
+
+  it("allows synthetic body playback only when the gated kernel is on", () => {
+    process.env.APP_MODE = "gated";
+    delete process.env.COMMONHALL_V2_KERNEL;
+    expect(isSyntheticBodyPlaybackAllowed()).toBe(true);
+    process.env.COMMONHALL_V2_KERNEL = "off";
+    expect(isSyntheticBodyPlaybackAllowed()).toBe(false);
+    process.env.COMMONHALL_V2_KERNEL = "on";
+    process.env.APP_MODE = "public-demo";
+    expect(isSyntheticBodyPlaybackAllowed()).toBe(false);
   });
 
   it("refuses organization mutation clients in public-demo and when killed", () => {

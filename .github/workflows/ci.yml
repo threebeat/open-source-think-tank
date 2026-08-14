@@ -158,6 +158,12 @@ jobs:
           OSTT_REQUIRE_POSTGRES: "1"
           OSTT_PG_ADMIN_URL: postgres://ostt:ostt@127.0.0.1:54329/postgres
           OSTT_PG_AGENDA_TEST_URL: postgres://ostt:ostt@127.0.0.1:54329/ostt_agenda_isolation
+      - name: Chamber/Council isolation proof
+        run: npm run test:pg:chamber
+        env:
+          OSTT_REQUIRE_POSTGRES: "1"
+          OSTT_PG_ADMIN_URL: postgres://ostt:ostt@127.0.0.1:54329/postgres
+          OSTT_PG_CHAMBER_TEST_URL: postgres://ostt:ostt@127.0.0.1:54329/ostt_chamber_isolation
       - name: Alpha reset smoke
         run: npm run alpha:reset:smoke
       - name: Existing operational acceptance journey
