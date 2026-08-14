@@ -180,6 +180,93 @@
   }
 }
 
+@keyframes demo-stage-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes demo-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 oklch(0.38 0.1 255 / 28%);
+  }
+  50% {
+    box-shadow: 0 0 0 10px oklch(0.38 0.1 255 / 0%);
+  }
+}
+
+@keyframes demo-progress-sheen {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 100% 50%;
+  }
+}
+
+.demo-stage-enter {
+  animation: demo-stage-enter 280ms var(--motion-ease) both;
+}
+
+.demo-stage-frame {
+  background:
+    radial-gradient(1200px 280px at 10% -10%, oklch(0.72 0.08 255 / 18%), transparent),
+    radial-gradient(900px 240px at 100% 0%, oklch(0.86 0.08 70 / 16%), transparent),
+    var(--surface);
+}
+
+.demo-stage-chip {
+  transition: transform 180ms var(--motion-ease);
+}
+
+.demo-stage-chip:hover {
+  transform: translateY(-1px);
+}
+
+.demo-progress {
+  height: 0.4rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: oklch(0.9 0.02 250);
+}
+
+.demo-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    oklch(0.38 0.1 255),
+    oklch(0.55 0.12 250),
+    oklch(0.72 0.1 80)
+  );
+  background-size: 200% 100%;
+  animation: demo-progress-sheen 2.4s linear infinite;
+  transition: width 280ms var(--motion-ease);
+}
+
+.demo-pulse {
+  animation: demo-pulse 1.8s var(--motion-ease) infinite;
+}
+
+.demo-tally-bar {
+  height: 0.55rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: oklch(0.92 0.015 250);
+}
+
+.demo-tally-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: oklch(0.38 0.1 255);
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

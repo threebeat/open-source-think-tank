@@ -17,12 +17,14 @@ type StatementPositionFormProps = {
   slug: string;
   statements: AgendaStatementDto[];
   canRecord: boolean;
+  persist?: boolean;
 };
 
 export function StatementPositionForm({
   slug,
   statements,
   canRecord,
+  persist = true,
 }: StatementPositionFormProps) {
   const router = useRouter();
   const formId = useId();
@@ -38,6 +40,11 @@ export function StatementPositionForm({
   async function record(statementPublicId: string, position: MemberStatementPosition) {
     setPendingId(statementPublicId);
     setError(null);
+    if (!persist) {
+      setLocal((current) => ({ ...current, [statementPublicId]: position }));
+      setPendingId(null);
+      return;
+    }
     try {
       const response = await fetch("/api/agenda/positions", {
         method: "POST",
