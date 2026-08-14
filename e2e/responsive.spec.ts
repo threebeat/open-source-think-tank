@@ -23,7 +23,7 @@ test.describe("responsive smoke", () => {
       await expect(page.getByRole("button", { name: "Next" })).toBeVisible();
       await page.getByRole("button", { name: "Next" }).click();
       await expect(
-        page.getByRole("heading", { name: "2. Qualification" }),
+        page.getByRole("heading", { name: "2. Public Agenda" }),
       ).toBeVisible();
     });
   }

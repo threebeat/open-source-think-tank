@@ -10,7 +10,7 @@ test.describe("phase-1 manual QA automation", () => {
     await expect(next).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(
-      page.getByRole("heading", { name: "2. Qualification" }),
+      page.getByRole("heading", { name: "2. Public Agenda" }),
     ).toBeFocused();
   });
 

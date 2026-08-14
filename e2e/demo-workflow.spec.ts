@@ -18,7 +18,7 @@ test.describe("legacy demo workflow redirect", () => {
       page.getByRole("heading", { name: "Tour Commonhall" }),
     ).toBeVisible();
     await expect(
-      page.getByText(/Hosted Pol\.is remains unavailable/i).first(),
+      page.getByText(/Hosted Pol\.is is unavailable/i).first(),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Workflow practice" }),
