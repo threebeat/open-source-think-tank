@@ -1,166 +1,78 @@
-# Open-Source Think Tank
+# Commonhall v2
 
-Browser-based demonstration of a proposed open-source think tank, plus a **separately deployable gated foundation** for an invite-only alpha test. The default **public-demo** mode uses **synthetic data only**. This repository does not accept public self-registration, donations, identity documents, or legally binding agreements as a public product. It does not claim that an organization is incorporated, tax-exempt, or legally reviewed.
+Commonhall is a proposed open-source computational-democracy platform: a digital town hall that connects open community discussion, structured consultation, public Chamber deliberation, organization Council decisions, and auditable recommendations.
 
-Source vision: [`docs/open-source-think-tank-mvp-plan.md`](docs/open-source-think-tank-mvp-plan.md)  
-Build contract: [`docs/product-charter.md`](docs/product-charter.md)  
-Phase 1 handoff: [`docs/phase-1-handoff.md`](docs/phase-1-handoff.md)  
-Phase 2 foundation: [`docs/phase-2-plan.md`](docs/phase-2-plan.md) · [`docs/phase-2-handoff.md`](docs/phase-2-handoff.md)  
-Phase 3 plan (operational invite-only alpha; packages 3.1–3.12): [`docs/phase-3-plan.md`](docs/phase-3-plan.md) · [`docs/phase-3-handoff.md`](docs/phase-3-handoff.md) — **owner-accepted**  
-Phase 4 plan (computational democracy + Public Input): [`docs/phase-4-plan.md`](docs/phase-4-plan.md) · [`docs/architecture-phase-4.md`](docs/architecture-phase-4.md)  
-Alpha reset: [`docs/alpha-reset-runbook.md`](docs/alpha-reset-runbook.md) · [`docs/alpha-reset-classification.md`](docs/alpha-reset-classification.md)
+**v2 is a working implementation name.** It is not a claim of trademark clearance, incorporation, tax status, legal review, representative sampling, or production readiness.
 
-## Requirements
+## Current repository state
 
-### Public-demo (default)
+The application still implements the earlier Open-Source Think Tank Phase 1–4 model. This branch resets the product contract, agent guidance, governance test contract, and CI/PR process; it deliberately does not pretend the v2 application already exists.
 
-- Node.js 22 (see `.nvmrc`)
-- npm 10+
-- Git
+The migration preserves useful foundations: Next.js/TypeScript, PostgreSQL/Drizzle, Auth.js, evidence/revisions, privacy/audit, reset operations, server capabilities, synthetic public demo isolation, and aggregate-only Public Input reporting. It replaces invite-only, single-institution, and old council/route assumptions through six reviewed implementation phases.
 
-No environment variables, API keys, or third-party accounts are required for public-demo.
+## Read first
 
-### Gated foundation (invite-only alpha engineering)
+1. [Active product charter](docs/product-charter.md)
+2. [Documentation map](docs/README.md)
+3. [Machine-readable governance state contract](docs/v2/governance-state-machine.json)
+4. [Architecture](docs/v2/architecture.md)
+5. [Six-phase implementation plan](docs/v2/implementation-plan.md)
+6. [Cursor cloud-agent prompt](docs/v2/cursor-cloud-agent-prompt.md)
 
-- Same Node/npm/Git requirements
-- Local PostgreSQL 16 via Docker Compose (`npm run db:up`) when exercising gated paths
-- `APP_MODE=gated` and documented secrets only in gated environments — see [`docs/secrets-and-operations.md`](docs/secrets-and-operations.md)
-- Managed PostgreSQL host and production email vendors remain **blocked** pending register addenda
-- Phase 3 operational topic/evidence workflow is implemented on the gated foundation; see [`docs/phase-3-plan.md`](docs/phase-3-plan.md) and [`docs/phase-3-handoff.md`](docs/phase-3-handoff.md). Phase 3 and 4.1–**4.3** are owner-accepted; Phase **4.4** is aggregate report ingest + moderation engineering (**still no live Pol.is**).
+Historical Phase 1–4 documents remain migration evidence, not active product authority. See [ADR 0022](docs/decisions/0022-commonhall-v2-reset.md).
 
-## Setup
+## Product model
+
+- **Commons:** formal categories first; then a visible unreviewed-content disclaimer and informal discussion/proposals.
+- **Public Agenda:** qualified topics begin in consultation and remain public through accepted/disputed/inconclusive retention and Chamber activity.
+- **Chamber:** organization-appointed members deliberate publicly and publish an accepted or disputed verdict with a complete roll call.
+- **Council Agenda:** an organization Council accepts/declines Chamber topics under explicit reason rules, deliberates publicly, and publishes recommendations.
+- **Records:** topic history, rule versions, qualification traces, consultation insights, schedules, rosters, votes, abstentions, recusals, rationales, and lineage.
+- **Membership:** open regular community enrollment first; organization-approved elevated appointments later. Service roles never imply organization authority.
+- **Organizations:** independent configuration within service-wide ethics, privacy, accessibility, due-process, transparency, and isolation floors.
+
+Preference, cross-group agreement, evidence quality, community outcome, Chamber verdict, and Council recommendation remain separate signals.
+
+## Pol.is boundary
+
+The provided hosted Pol.is embed is a candidate integration for qualified-topic consultation. Commonhall will load it only behind explicit activation, exact-origin/CSP controls, organization feature flags, and resolved privacy/vendor/retention gates.
+
+Public output is aggregate insight only. No raw votes, individual response histories, XIDs, provider mappings, or person-level map points may appear in Commonhall public data. Post-close insights are published for accepted, disputed, and inconclusive consultations. A successor topic always receives a new topic and provider entity.
+
+## Six implementation phases
+
+1. Organization-scoped foundation and institutional state kernel
+2. Open community membership, profiles, moderation, and two-part Commons
+3. Public Agenda, canonical topic pages, and guarded Pol.is integration
+4. Chamber, Council Agenda, recommendations, and public transparency
+5. Organization administration, elevated membership, and multi-organization readiness
+6. Migration, new demo, legacy retirement, and launch evidence
+
+Each phase uses a dedicated subagent, branch, draft PR, test evidence, and human approval before the next begins.
+
+## Development baseline
+
+The current application requires Node.js 22 and npm 10+. Until phase implementation updates the scripts:
 
 ```bash
-npm install
-npm run dev
+npm ci
+npm run lint
+npm run typecheck
+npm test
+APP_MODE=public-demo npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
-
-### Phone on the same network (local only)
+Run the v2 governance contract without installing dependencies:
 
 ```bash
-npm run dev -- --hostname 0.0.0.0
+node --test tests/contracts/v2-governance-contract.test.mjs
 ```
 
-Then open `http://<your-lan-ip>:3000` from a phone browser. Keep the machine firewall limited to your LAN; do not expose the development server to the public internet. If the phone cannot connect, confirm both devices are on the same Wi‑Fi/VLAN and that Windows Firewall allows Node on private networks only.
+PostgreSQL and gated E2E commands remain documented in the historical operational references and CI workflow. Use disposable databases only.
 
-Production-style check:
+## GitHub workflow
 
-```bash
-npm run build
-npm run start
-```
+Agents branch from current `main` as `v2/phase-<n>-<scope>`, open a draft PR to `main`, and wait for `CI / required`. CI stays read-only; the cloud-agent GitHub identity creates the branch/PR. Never push directly to `main`, force-push shared history, or begin the next phase without human approval.
 
-Serve that build behind ordinary HTTPS in deployment so phone browsers can open a shared link without an app-store install.
+See [CI and PR workflow](docs/v2/ci-pr-workflow.md) and [.github/pull_request_template.md](.github/pull_request_template.md).
 
-## Scripts
-
-| Script | Purpose |
-| --- | --- |
-| `npm run dev` | Start the local development server |
-| `npm run build` | Production build |
-| `npm run start` | Serve the production build |
-| `npm run lint` | ESLint |
-| `npm run typecheck` | TypeScript (`tsc --noEmit`) |
-| `npm test` | Unit tests (Vitest) |
-| `npm run test:e2e` | Production build, then Playwright + axe e2e (self-contained; does not reuse a stale server) |
-| `npm run capture:screenshots` | Write presentation-backup PNGs (requires `npm run start` already listening) |
-| `npm run db:up` | Start local Postgres (Docker) on port 54329 — not a managed-host approval |
-| `npm run db:migrate` | Apply Drizzle migrations to `DATABASE_URL` (requires `APP_MODE=gated`) |
-| `npm run db:generate` | Generate SQL migrations from `src/db/schema.ts` |
-| `npm run operator:bootstrap` | First-administrator ceremony (gated; env secrets only) |
-| `npm run operator:reset-alpha` | Alpha wipe dry-run/execute (gated; see [docs/alpha-reset-runbook.md](docs/alpha-reset-runbook.md)) |
-| `npm run alpha:reset:smoke` | Disposable `ostt_alpha_reset` drill — wipe + bootstrap recovery without synthetic reseed |
-| `npm run test:pg:invites` | Mandatory PostgreSQL invitation-concurrency proof (`ostt_invite_concurrency`) |
-| `npm run test:pg:alpha-reset` | PostgreSQL alpha-reset concurrency / lock proofs |
-| `npm run phase3:acceptance` | Connected Phase 3 acceptance journey on disposable Postgres |
-| `npm run security:check` | Headers, secret patterns, vendor/isolation guards, npm audit |
-| `npm run backup:smoke` | Ephemeral backup/restore shape check |
-
-## Routes
-
-| Path | Purpose |
-| --- | --- |
-| `/` | Home — primary task: follow an idea from community discussion to collective action |
-| `/idea-commons` | Informal Idea Commons (not Formal Topic Pipeline) |
-| `/idea-commons/[id]` | Informal discussion / proposal lineage |
-| `/formal-topics` | Gate-passed Formal Topic Pipeline + three trajectories |
-| `/formal-topics/[slug]` | Canonical Formal Topic — Overview / Evidence / Discussions (`?section=`) |
-| `/about` | Project framing (mission, commitments, limitations, contact placeholder) |
-| `/process` | Institutional stage map |
-| `/join` | Nonfunctional join / assent preview |
-| `/topics` | Redirect → `/formal-topics` |
-| `/topics/[slug]` | Redirect → `/formal-topics/[slug]` |
-| `/topics/[slug]/consult` | Simulated Public Input participation/stage (preserved) |
-| `/agenda` | Agenda list by human-review state |
-| `/agenda/[slug]` | Independent qualification signals + human review |
-| `/deliberation/[slug]` | Public deliberation observer |
-| `/decisions/[slug]` | Policy Council recommendation record |
-| `/actions/[slug]` | Synthetic member action opportunities |
-| `/transparency` | Audit feed, lineage, methods, openness classes |
-| `/demo` | Primary guided journey |
-| `/demo/workflow` | Secondary workflow / snapshot tools |
-
-Cedar River (`cedar-river-drought-surcharge`) remains the complete advancing trajectory; sibling fixtures cover merge/split and deferred paths.
-
-## Architecture (Phase 1)
-
-- Next.js App Router, TypeScript, Tailwind CSS, shadcn/ui
-- Static fixtures and client-side demo state only ([`docs/decisions/0001-static-demonstration-first.md`](docs/decisions/0001-static-demonstration-first.md))
-- Domain types and catalog validation under `src/domain`
-- Feature UI under `src/features` and `src/components`
-- Future services go behind adapters in `src/lib/adapters`
-- Consultation practice votes: `sessionStorage` key `ostt-consult-votes:{topicId}`
-- Guided demo step / notes: `ostt-demo-step`, `ostt-demo-presenter-notes`; stage pages use `?demoStep=`
-
-## Synthetic-data notice
-
-All people, organizations, evidence, votes, consultation results, conflicts, and decisions are fictional. The UI must never present consensus as proof, evidence quality as popularity, or participating users as a representative sample of the United States.
-
-## Guided demo script (computational-democracy journey)
-
-1. Open `/demo` and state the primary task: follow an idea from community discussion to collective action.
-2. Walk Idea Commons → proposal → scoping/formal gate → Public Input → practice votes → aggregate report → agenda qualification → deliberation → recommendation → member actions → audit/lineage.
-3. Show three trajectories on `/formal-topics`: advances, merge/split, deferred.
-4. Emphasize that Pol.is is not live; aggregates only; no preference-based promotion by elevated roles.
-5. Pause at the legal, technical, and board audience stops. Snapshot explorer is secondary only.
-6. **Reset** restores the local demo step, notes toggle, and Cedar practice votes.
-
-Direct product URLs still work without presentation mode.
-
-## Documentation map
-
-| Doc | Contents |
-| --- | --- |
-| [`docs/product-charter.md`](docs/product-charter.md) | Mission and Phase 1 scope |
-| [`docs/open-source-think-tank-mvp-plan.md`](docs/open-source-think-tank-mvp-plan.md) | Work packages and definition of done |
-| [`docs/open-questions.md`](docs/open-questions.md) | Unresolved institutional questions |
-| [`docs/legal-questions.md`](docs/legal-questions.md) | Questions for counsel |
-| [`docs/data-map.md`](docs/data-map.md) | Future collection categories |
-| [`docs/threat-model.md`](docs/threat-model.md) | Abuse and privacy threats |
-| [`docs/phase-1-handoff.md`](docs/phase-1-handoff.md) | Completed work and Phase 2 sequence |
-| [`docs/phase-1-manual-qa.md`](docs/phase-1-manual-qa.md) | Required Phase 1 QA results |
-| [`docs/phase-2-plan.md`](docs/phase-2-plan.md) | Phase 2 invite-only foundation work packages |
-| [`docs/phase-2-handoff.md`](docs/phase-2-handoff.md) | Phase 2 foundation evidence and alpha-test posture |
-| [`docs/architecture-phase-2.md`](docs/architecture-phase-2.md) | Phase 2 environments, adapters, data-flow |
-| [`docs/phase-3-plan.md`](docs/phase-3-plan.md) | Phase 3 operational alpha work packages |
-| [`docs/phase-3-handoff.md`](docs/phase-3-handoff.md) | Phase 3 evidence handoff (owner-accepted) |
-| [`docs/phase-4-plan.md`](docs/phase-4-plan.md) | Phase 4 packages (4.4 active: moderation + aggregate ingest) |
-| [`docs/architecture-phase-4.md`](docs/architecture-phase-4.md) | Phase 4 routes, lifecycle, report ingest, moderation axes, embed fail-closed shell |
-| [`docs/public-input-provider-assessment.md`](docs/public-input-provider-assessment.md) | Pol.is capability/vendor assessment (not live-install auth; 4.4 ingest ≠ live) |
-| [`docs/alpha-reset-runbook.md`](docs/alpha-reset-runbook.md) | Operator alpha wipe CLI runbook |
-| [`docs/alpha-reset-classification.md`](docs/alpha-reset-classification.md) | Table-by-table reset/retain/regenerate manifest |
-| [`docs/architecture-phase-3.md`](docs/architecture-phase-3.md) | Phase 3 services, tables, projections |
-| [`docs/decisions/0008-phase-3-operational-alpha-contract.md`](docs/decisions/0008-phase-3-operational-alpha-contract.md) | Phase 3 operational alpha ADR |
-| [`docs/capability-matrix.md`](docs/capability-matrix.md) | Server-enforced capabilities |
-| [`docs/secrets-and-operations.md`](docs/secrets-and-operations.md) | Secrets, backup, vendor ops checklist |
-| [`docs/presentation-backup/`](docs/presentation-backup/) | Static screenshot backup |
-
-## Status
-
-- **Phase 1** demonstration MVP is complete (tag `phase-1-demonstration`). Public-demo mode remains synthetic and separately deployable.
-- **Phase 2** invite-only foundation packages 2.1–2.12 are in place (tag `phase-2-foundation`; see [`docs/phase-2-handoff.md`](docs/phase-2-handoff.md)). Gated auth, roles, assent, verification, audit, and isolation are the baseline for alpha engineering.
-- **Phase 3** packages **3.1–3.12** are implemented and **owner-accepted**.
-- **Phase 4.1–4.3** are **owner-approved and complete** (PR #17 / PR #18 / PR #19). **Phase 4.4** (moderation + aggregate-only report ingestion) is the active package — **not** live Pol.is authorization. **Live Pol.is remains fail-closed**.
-- Public recruitment, live Pol.is, payments, analytics, AI APIs, managed production PostgreSQL, and unsettled legal formation claims remain out of scope until their gates clear. Alpha-test data must stay fully resettable via the operator CLI (local wipe never claims remote provider deletion).

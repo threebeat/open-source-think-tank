@@ -1,6 +1,5 @@
-# Phase 2 readiness CI — lint, typecheck, unit, build, security, public E2E, gated E2E.
-# Gated E2E requires Docker (available on GitHub-hosted runners).
-# Secrets in this file are synthetic E2E fixtures only — never production credentials.
+# Commonhall v2 migration CI. Runtime commands intentionally preserve the
+# existing application baseline until the corresponding v2 phase replaces them.
 name: CI
 
 on:
@@ -20,9 +19,64 @@ env:
   FORCE_COLOR: "1"
 
 jobs:
+  classify:
+    name: Classify change scope
+    runs-on: ubuntu-latest
+    outputs:
+      runtime: ${{ steps.scope.outputs.runtime }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: scope
+        name: Detect runtime-impacting paths
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            base_sha="$PR_BASE_SHA"
+          elif [[ "$EVENT_NAME" == "push" && -n "$PUSH_BEFORE_SHA" && ! "$PUSH_BEFORE_SHA" =~ ^0+$ ]]; then
+            base_sha="$PUSH_BEFORE_SHA"
+          else
+            echo "runtime=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git diff --name-only "$base_sha" "$GITHUB_SHA" > changed-paths.txt
+          runtime=false
+          while IFS= read -r path; do
+            case "$path" in
+              README.md|AGENTS.md|CLAUDE.md|docs/*|.github/pull_request_template.md)
+                ;;
+              *)
+                runtime=true
+                break
+                ;;
+            esac
+          done < changed-paths.txt
+
+          echo "runtime=$runtime" >> "$GITHUB_OUTPUT"
+
+  contract:
+    name: Governance and documentation contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: node --test tests/contracts/v2-governance-contract.test.mjs
+
   unit:
     name: Lint, typecheck, unit, security, build
     runs-on: ubuntu-latest
+    needs: classify
+    if: needs.classify.outputs.runtime == 'true'
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -41,10 +95,55 @@ jobs:
         env:
           APP_MODE: public-demo
 
+  postgres:
+    name: PostgreSQL integrity and concurrency
+    runs-on: ubuntu-latest
+    needs: [classify, unit]
+    if: needs.classify.outputs.runtime == 'true'
+    timeout-minutes: 45
+    env:
+      APP_MODE: gated
+      DATABASE_URL: postgres://ostt:ostt@127.0.0.1:54329/ostt_dev
+      AUTH_SECRET: ostt-synth-auth-secret-e2e-not-production
+      AUTH_URL: http://127.0.0.1:3000
+      CI: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Start disposable Postgres
+        run: npm run db:up
+      - name: PostgreSQL invitation concurrency proof
+        run: npm run test:pg:invites
+        env:
+          OSTT_REQUIRE_POSTGRES: "1"
+          OSTT_PG_ADMIN_URL: postgres://ostt:ostt@127.0.0.1:54329/postgres
+          OSTT_PG_INVITE_TEST_URL: postgres://ostt:ostt@127.0.0.1:54329/ostt_invite_concurrency
+      - name: PostgreSQL alpha-reset concurrency proof
+        run: npm run test:pg:alpha-reset
+        env:
+          OSTT_REQUIRE_POSTGRES: "1"
+          OSTT_PG_ADMIN_URL: postgres://ostt:ostt@127.0.0.1:54329/postgres
+          OSTT_PG_RESET_TEST_URL: postgres://ostt:ostt@127.0.0.1:54329/ostt_alpha_reset_concurrency
+      - name: Public Input report integrity proof (when available)
+        run: npm run test:pg:reports --if-present
+        env:
+          OSTT_REQUIRE_POSTGRES: "1"
+          OSTT_PG_ADMIN_URL: postgres://ostt:ostt@127.0.0.1:54329/postgres
+          OSTT_PG_REPORT_TEST_URL: postgres://ostt:ostt@127.0.0.1:54329/ostt_report_integrity
+      - name: Alpha reset smoke
+        run: npm run alpha:reset:smoke
+      - name: Existing operational acceptance journey
+        run: npm run phase3:acceptance
+
   e2e-public:
     name: Public Playwright E2E
     runs-on: ubuntu-latest
-    needs: unit
+    needs: [classify, unit]
+    if: needs.classify.outputs.runtime == 'true'
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -59,7 +158,7 @@ jobs:
         run: npm run build
         env:
           APP_MODE: public-demo
-      - name: Run public E2E
+      - name: Run public E2E and accessibility coverage
         run: npx playwright test
         env:
           CI: true
@@ -75,13 +174,13 @@ jobs:
           if-no-files-found: ignore
 
   e2e-gated:
-    name: Gated Playwright E2E (Docker Postgres)
+    name: Gated Playwright E2E
     runs-on: ubuntu-latest
-    needs: unit
+    needs: [classify, unit]
+    if: needs.classify.outputs.runtime == 'true'
     timeout-minutes: 60
     env:
       APP_MODE: gated
-      # Synthetic local/CI fixture only — not a production secret.
       DATABASE_URL: postgres://ostt:ostt@127.0.0.1:54329/ostt_dev
       AUTH_SECRET: ostt-synth-auth-secret-e2e-not-production
       AUTH_URL: http://127.0.0.1:3000
@@ -96,29 +195,12 @@ jobs:
       - run: npm ci
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
-      - name: Start Postgres and wait for health
+      - name: Start Postgres and prepare synthetic foundation
         run: npm run db:up
-      - name: PostgreSQL invitation concurrency proof
-        run: npm run test:pg:invites
-        env:
-          OSTT_REQUIRE_POSTGRES: "1"
-          OSTT_PG_ADMIN_URL: postgres://ostt:ostt@127.0.0.1:54329/postgres
-          OSTT_PG_INVITE_TEST_URL: postgres://ostt:ostt@127.0.0.1:54329/ostt_invite_concurrency
-      - name: PostgreSQL alpha-reset concurrency proof
-        run: npm run test:pg:alpha-reset
-        env:
-          OSTT_REQUIRE_POSTGRES: "1"
-          OSTT_PG_ADMIN_URL: postgres://ostt:ostt@127.0.0.1:54329/postgres
-          OSTT_PG_RESET_TEST_URL: postgres://ostt:ostt@127.0.0.1:54329/ostt_alpha_reset_concurrency
-      - name: Alpha reset smoke (disposable ostt_alpha_reset only)
-        run: npm run alpha:reset:smoke
-      - name: Phase 3 acceptance journey (disposable ostt_phase3_acceptance)
-        run: npm run phase3:acceptance
-      - name: Migrate and seed synthetic foundation
-        run: node scripts/gated-e2e-prepare.mjs
+      - run: node scripts/gated-e2e-prepare.mjs
       - name: Production build (gated)
         run: npm run build
-      - name: Run gated E2E (account/staff axe included)
+      - name: Run gated E2E and accessibility coverage
         run: npx playwright test -c playwright.gated.config.ts
       - name: Upload gated Playwright artifacts on failure
         if: failure()
@@ -129,3 +211,37 @@ jobs:
             playwright-report/
             test-results/
           if-no-files-found: ignore
+
+  required:
+    name: required
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [classify, contract, unit, postgres, e2e-public, e2e-gated]
+    steps:
+      - name: Require the appropriate matrix
+        shell: bash
+        env:
+          RUNTIME: ${{ needs.classify.outputs.runtime }}
+          CLASSIFY_RESULT: ${{ needs.classify.result }}
+          CONTRACT_RESULT: ${{ needs.contract.result }}
+          UNIT_RESULT: ${{ needs.unit.result }}
+          POSTGRES_RESULT: ${{ needs.postgres.result }}
+          PUBLIC_RESULT: ${{ needs.e2e-public.result }}
+          GATED_RESULT: ${{ needs.e2e-gated.result }}
+        run: |
+          set -euo pipefail
+          [[ "$CLASSIFY_RESULT" == "success" ]]
+          [[ "$CONTRACT_RESULT" == "success" ]]
+
+          if [[ "$RUNTIME" == "true" ]]; then
+            [[ "$UNIT_RESULT" == "success" ]]
+            [[ "$POSTGRES_RESULT" == "success" ]]
+            [[ "$PUBLIC_RESULT" == "success" ]]
+            [[ "$GATED_RESULT" == "success" ]]
+          else
+            [[ "$UNIT_RESULT" == "skipped" ]]
+            [[ "$POSTGRES_RESULT" == "skipped" ]]
+            [[ "$PUBLIC_RESULT" == "skipped" ]]
+            [[ "$GATED_RESULT" == "skipped" ]]
+          fi
+
