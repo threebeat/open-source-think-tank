@@ -148,6 +148,13 @@
       "when": 1786443000000,
       "tag": "0020_public_input_reports",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1786530000000,
+      "tag": "0021_public_input_report_integrity",
+      "breakpoints": true
     }
   ]
 }

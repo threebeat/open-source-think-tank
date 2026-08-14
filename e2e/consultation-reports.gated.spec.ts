@@ -6,13 +6,13 @@ import {
   signInWithCapturedEmail,
 } from "./gated-helpers";
 
-const CANONICAL_SCHEMA = "public-input-aggregate-import@1";
+const CANONICAL_SCHEMA = "public-input-aggregate-import@1.1";
 
 function aggregatePayload(title: string) {
   return {
     schemaVersion: CANONICAL_SCHEMA,
     sourceKind: "manual_aggregate",
-    methodVersion: "public-input-aggregate@4.4.0-e2e",
+    methodVersion: "public-input-aggregate@4.5.0-e2e",
     publicTitle: title,
     participationCount: 240,
     commentCount: 40,
@@ -20,9 +20,9 @@ function aggregatePayload(title: string) {
     participationSufficiency: "Illustrative alpha coverage only.",
     representationLimitations: "Self-selected; not representative.",
     opinionGroups: [
-      { label: "Group A", share: 0.62 },
-      { label: "Group B", share: 0.35 },
-      { label: "Group C", share: 0.03 },
+      { label: "Group A", participantCount: 149 },
+      { label: "Group B", participantCount: 87 },
+      { label: "Group C", participantCount: 4 },
     ],
     crossGroupAgreement: ["Publish criteria before any surcharge applies."],
     meaningfulDisagreement: ["Graduated surcharge versus flat fee."],

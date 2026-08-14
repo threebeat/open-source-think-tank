@@ -6,14 +6,14 @@ import {
   SMALL_CELL_POLICY_VERSION,
 } from "@/lib/public-input/reports/suppression";
 
-describe("complementary small-cell suppression", () => {
+describe("complementary small-cell suppression (exact participantCount)", () => {
   it("reports genuine zeros as 0, never suppressed and never a suppression victim", () => {
     const { groups } = applyComplementarySmallCellSuppression(
       [
-        { label: "A", share: 0.5 },
-        { label: "B", share: 0.47 },
-        { label: "C", share: 0.03 },
-        { label: "Zero", share: 0 },
+        { label: "A", participantCount: 50 },
+        { label: "B", participantCount: 47 },
+        { label: "C", participantCount: 3 },
+        { label: "Zero", participantCount: 0 },
       ],
       100,
     );
@@ -24,10 +24,10 @@ describe("complementary small-cell suppression", () => {
   it("suppresses an additional cell when exactly one would be reconstructible", () => {
     const { groups, suppressedCells } = applyComplementarySmallCellSuppression(
       [
-        { label: "A", share: 0.5 },
-        { label: "B", share: 0.47 },
-        { label: "C", share: 0.03 },
-        { label: "Zero", share: 0 },
+        { label: "A", participantCount: 50 },
+        { label: "B", participantCount: 47 },
+        { label: "C", participantCount: 3 },
+        { label: "Zero", participantCount: 0 },
       ],
       100,
     );
@@ -42,9 +42,9 @@ describe("complementary small-cell suppression", () => {
   it("never suppresses shares to 0 — suppressed share is always null", () => {
     const { groups } = applyComplementarySmallCellSuppression(
       [
-        { label: "A", share: 0.6 },
-        { label: "B", share: 0.396 },
-        { label: "C", share: 0.004 },
+        { label: "A", participantCount: 600 },
+        { label: "B", participantCount: 396 },
+        { label: "C", participantCount: 4 },
       ],
       1000,
     );
@@ -59,41 +59,31 @@ describe("complementary small-cell suppression", () => {
   it("does not add extra suppression when zero or two-plus cells are already suppressed", () => {
     const noneSuppressed = applyComplementarySmallCellSuppression(
       [
-        { label: "A", share: 0.5 },
-        { label: "B", share: 0.5 },
+        { label: "A", participantCount: 500 },
+        { label: "B", participantCount: 500 },
       ],
       1000,
     );
     expect(noneSuppressed.suppressedCells).toBe(0);
 
-    const twoSuppressed = applyComplementarySmallCellSuppression(
-      [
-        { label: "A", share: 0.98 },
-        { label: "B", share: 0.012 },
-        { label: "C", share: 0.008 },
-      ],
-      1000,
-    );
-    // B (12) and C (8) both < 20-ish? use explicit threshold below.
     const result = applyComplementarySmallCellSuppression(
       [
-        { label: "A", share: 0.98 },
-        { label: "B", share: 0.012 },
-        { label: "C", share: 0.008 },
+        { label: "A", participantCount: 980 },
+        { label: "B", participantCount: 12 },
+        { label: "C", participantCount: 8 },
       ],
       1000,
       { threshold: 15 },
     );
     expect(result.suppressedCells).toBe(2);
-    void twoSuppressed;
   });
 
   it("blocks a subtraction/reconstruction attack across versions of the same shape", () => {
     const result = applyComplementarySmallCellSuppression(
       [
-        { label: "A", share: 0.6 },
-        { label: "B", share: 0.396 },
-        { label: "C", share: 0.004 },
+        { label: "A", participantCount: 600 },
+        { label: "B", participantCount: 396 },
+        { label: "C", participantCount: 4 },
       ],
       1000,
     );
@@ -110,8 +100,8 @@ describe("complementary small-cell suppression", () => {
   it("omits all groups when participation is below the reporting floor", () => {
     const result = applyComplementarySmallCellSuppression(
       [
-        { label: "A", share: 0.6 },
-        { label: "B", share: 0.4 },
+        { label: "A", participantCount: 2 },
+        { label: "B", participantCount: 1 },
       ],
       3,
       { threshold: 5 },
@@ -124,8 +114,8 @@ describe("complementary small-cell suppression", () => {
   it("uses an independent minParticipationForGroups when provided", () => {
     const result = applyComplementarySmallCellSuppression(
       [
-        { label: "A", share: 0.6 },
-        { label: "B", share: 0.4 },
+        { label: "A", participantCount: 5 },
+        { label: "B", participantCount: 3 },
       ],
       8,
       { threshold: 5, minParticipationForGroups: 10 },
@@ -136,14 +126,14 @@ describe("complementary small-cell suppression", () => {
   it("is stable / deterministic for tie-broken complementary victim selection by label", () => {
     const result = applyComplementarySmallCellSuppression(
       [
-        { label: "Zeta", share: 0.2 },
-        { label: "Alpha", share: 0.2 },
-        { label: "Middle", share: 0.6 - 2 * 0.2 + 0.004 }, // filler
-        { label: "Tiny", share: 0.004 },
+        { label: "Zeta", participantCount: 200 },
+        { label: "Alpha", participantCount: 200 },
+        { label: "Middle", participantCount: 596 },
+        { label: "Tiny", participantCount: 4 },
       ],
       1000,
     );
-    // Tiny (implied 4) is suppressed alone; Alpha and Zeta tie at 0.2 share —
+    // Tiny (4) is suppressed alone; Alpha and Zeta tie at 200 —
     // "Alpha" must win the tie deterministically (ascending label order).
     const suppressedLabels = result.groups
       .filter((g) => g.status === "suppressed")
@@ -156,8 +146,8 @@ describe("complementary small-cell suppression", () => {
 
   it("never mutates the input array", () => {
     const input = [
-      { label: "A", share: 0.5 },
-      { label: "B", share: 0.5 },
+      { label: "A", participantCount: 500 },
+      { label: "B", participantCount: 500 },
     ];
     const frozen = Object.freeze([...input]);
     expect(() =>
@@ -165,8 +155,36 @@ describe("complementary small-cell suppression", () => {
     ).not.toThrow();
   });
 
-  it("exposes the provisional demo threshold and policy version constants", () => {
+  it("uses exact participantCount — never rounds a fractional share across the threshold", () => {
+    // Under the old Math.round(share×N) bug, an implied 4.6 would round to 5
+    // and escape suppression. Exact count 4 must suppress (and take a
+    // complementary victim so the cell is not reconstructible).
+    const below = applyComplementarySmallCellSuppression(
+      [
+        { label: "A", participantCount: 996 },
+        { label: "B", participantCount: 4 },
+      ],
+      1000,
+    );
+    expect(below.groups.find((g) => g.label === "B")?.status).toBe(
+      "suppressed",
+    );
+    expect(below.suppressedCells).toBe(2);
+
+    // Exact count at the threshold stays reported (no round-down either).
+    const atThreshold = applyComplementarySmallCellSuppression(
+      [
+        { label: "A", participantCount: 995 },
+        { label: "B", participantCount: 5 },
+      ],
+      1000,
+    );
+    expect(atThreshold.suppressedCells).toBe(0);
+    expect(atThreshold.groups.every((g) => g.status === "reported")).toBe(true);
+  });
+
+  it("exposes the provisional demo threshold and exact-count policy version", () => {
     expect(PROVISIONAL_DEMO_SMALL_CELL_THRESHOLD).toBe(5);
-    expect(SMALL_CELL_POLICY_VERSION).toBe("4.4.1-complementary");
+    expect(SMALL_CELL_POLICY_VERSION).toBe("4.5.1-exact-count-complementary");
   });
 });

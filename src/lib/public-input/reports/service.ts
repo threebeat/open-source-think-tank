@@ -27,6 +27,7 @@ import {
   insertReportGroups,
   insertReportImport,
   listReportsForConversation,
+  lockConversationRowForImport,
   publishReportWorkflow,
   supersedeReport,
   updateReportGroupPublication,
@@ -73,7 +74,11 @@ function isSubstantiveReason(reason: string | undefined): boolean {
 export type ImportAggregateReportInput = {
   actorAccountId: string;
   conversationId: string;
-  publicTitle: string;
+  /**
+   * @deprecated Ignored — publicTitle comes only from the validated canonical
+   * payload so the hash covers every immutable public field (4.5A).
+   */
+  publicTitle?: string;
   /** Unknown/untrusted payload — validated against the canonical schema before anything is persisted. */
   payload: unknown;
 };
@@ -106,15 +111,8 @@ export async function importAggregateReport(
     };
   }
 
-  const publicTitle =
-    input.publicTitle.trim() || validated.value.publicTitle.trim();
-  if (!publicTitle) {
-    return {
-      ok: false,
-      error: "publicTitle is required",
-      code: "IMPORT_PUBLIC_TITLE_REQUIRED",
-    };
-  }
+  // Title is taken exclusively from the hashed canonical payload (4.5A).
+  const publicTitle = validated.value.publicTitle.trim();
 
   try {
     return await db.transaction(async (tx) => {
@@ -127,6 +125,13 @@ export async function importAggregateReport(
       if (!decision.ok) {
         throw Object.assign(new Error(decision.code), { decision });
       }
+
+      const locked = await lockConversationRowForImport(
+        tx,
+        input.conversationId,
+      );
+      if (!locked.ok) throw new Error(locked.code);
+      if (!locked.value) throw new Error("CONSULTATION_NOT_FOUND");
 
       const conversation = await getConversationById(tx, input.conversationId);
       if (!conversation.ok) {
@@ -205,6 +210,7 @@ export async function importAggregateReport(
       }
 
       const payload: CanonicalAggregateImport = validated.value;
+      const disclosure = payload.aggregateModerationDisclosure ?? null;
 
       const insertedImport = await insertReportImport(tx, {
         conversationId: input.conversationId,
@@ -220,6 +226,10 @@ export async function importAggregateReport(
         voteCount: payload.voteCount,
         participationSufficiency: payload.participationSufficiency,
         representationLimitations: payload.representationLimitations,
+        moderationReviewedCount: disclosure?.reviewedCount ?? 0,
+        moderationAcceptedCount: disclosure?.acceptedCount ?? 0,
+        moderationRejectedCount: disclosure?.rejectedCount ?? 0,
+        moderationPolicyVersion: disclosure?.policyVersion ?? null,
         synthetic: decision.principal.synthetic,
       });
       if (!insertedImport.ok) {
@@ -241,10 +251,11 @@ export async function importAggregateReport(
 
       const groupsInserted = await insertReportGroups(tx, {
         reportId: insertedReport.value.id,
+        participationCount: payload.participationCount,
         synthetic: decision.principal.synthetic,
         groups: payload.opinionGroups.map((group, index) => ({
           label: group.label,
-          share: group.share,
+          participantCount: group.participantCount,
           displayOrder: index,
         })),
       });
@@ -495,7 +506,10 @@ export async function publishReport(
         (a, b) => a.displayOrder - b.displayOrder,
       );
       const suppression = applyComplementarySmallCellSuppression(
-        orderedGroups.map((g) => ({ label: g.label, share: g.rawShare })),
+        orderedGroups.map((g) => ({
+          label: g.label,
+          participantCount: g.participantCount,
+        })),
         reportImport.value.participationCount,
         {
           threshold: input.smallCellThreshold,

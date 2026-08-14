@@ -153,16 +153,19 @@ export type DecideFindingPublicationInput = {
   reportId: string;
   findingId: string;
   action: PublicInputReportModerationActionKind;
+  /** Required optimistic concurrency token for the parent report row. */
+  expectedConcurrencyVersion: number;
   publicRationale?: string;
   privateNote?: string;
 };
 
 /**
- * Institutional finding-eligibility decision (ADR 0020). Append-only —
+ * Institutional finding-eligibility decision (ADR 0020 / 4.5A). Append-only —
  * inserts a moderation-action row and updates the finding's
- * `publicationStatus` in the same transaction. Moderators do not hold this
- * capability; only `consultations.reports.review` (administrator) may
- * decide finding publication.
+ * `publicationStatus` in the same transaction. Allowed **only** while the
+ * parent report is `under_review` (published content is immutable — ADR 0019).
+ * Moderators do not hold this capability; only `consultations.reports.review`
+ * (administrator) may decide finding publication.
  */
 export async function decideFindingPublication(
   db: GatedDb,
@@ -197,6 +200,14 @@ export async function decideFindingPublication(
       const report = await getReportById(tx, input.reportId);
       if (!report.ok) throw new Error(report.code);
       if (!report.value) throw new Error("PUBLIC_INPUT_REPORT_NOT_FOUND");
+      if (report.value.workflowState !== "under_review") {
+        throw new Error("PUBLIC_INPUT_REPORT_NOT_UNDER_REVIEW");
+      }
+      if (
+        report.value.concurrencyVersion !== input.expectedConcurrencyVersion
+      ) {
+        throw new Error("PUBLIC_INPUT_REPORT_STATE_CONFLICT");
+      }
 
       const finding = await getFindingById(tx, input.findingId);
       if (!finding.ok) throw new Error(finding.code);
@@ -225,11 +236,13 @@ export async function decideFindingPublication(
 
       const updatedFinding = await updateFindingPublicationStatus(tx, {
         findingId: input.findingId,
+        reportId: input.reportId,
+        expectedConcurrencyVersion: input.expectedConcurrencyVersion,
         nextPublicationStatus,
       });
       if (!updatedFinding.ok) throw new Error(updatedFinding.code);
       if (!updatedFinding.value) {
-        throw new Error("PUBLIC_INPUT_FINDING_NOT_FOUND");
+        throw new Error("PUBLIC_INPUT_REPORT_STATE_CONFLICT");
       }
 
       const auditAction =
@@ -324,6 +337,15 @@ function mapServiceError(
     PUBLIC_INPUT_FINDING_NOT_FOUND: {
       error: "Public Input report finding not found",
       code: "PUBLIC_INPUT_FINDING_NOT_FOUND",
+    },
+    PUBLIC_INPUT_REPORT_NOT_UNDER_REVIEW: {
+      error:
+        "Finding publication decisions are only allowed while the report is under_review",
+      code: "PUBLIC_INPUT_REPORT_NOT_UNDER_REVIEW",
+    },
+    PUBLIC_INPUT_REPORT_STATE_CONFLICT: {
+      error: "Report changed; reload and retry",
+      code: "PUBLIC_INPUT_REPORT_STATE_CONFLICT",
     },
   };
   if (KNOWN[message]) {

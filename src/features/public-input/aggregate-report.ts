@@ -79,7 +79,7 @@ export const PUBLIC_INPUT_CELL_POLICY = {
     "meaningfulDisagreement (statement text aggregates)",
   ],
   suppressible: [
-    "opinionGroups[].share when implied cell size is positive and below threshold",
+    "opinionGroups[].share when exact participantCount is positive and below threshold",
     "opinionGroups[].share complementary victim when exactly one cell would otherwise be reconstructible",
   ],
   neverPublic: [...PUBLIC_INPUT_FORBIDDEN_PUBLIC_KEYS],

@@ -14,6 +14,7 @@ import { getReportFindingsByReportId } from "@/lib/public-input/reports/reposito
 import {
   beginReview,
   getPublishedReportForTopic,
+  getStaffReportDetail,
   importAggregateReport,
   publishReport,
   validateReport,
@@ -27,7 +28,7 @@ const ADMIN = "account-ostt-synth-staff-admin";
 const MODERATOR = "account-ostt-synth-staff-moderator";
 const PARTICIPANT = "account-ostt-synth-ada";
 
-describe("Public Input moderation service (4.4)", () => {
+describe("Public Input moderation service (4.5A)", () => {
   let client: Awaited<ReturnType<typeof createTestDatabase>>["client"];
   let db: Awaited<ReturnType<typeof createTestDatabase>>["db"];
   let previousMode: string | undefined;
@@ -124,12 +125,40 @@ describe("Public Input moderation service (4.4)", () => {
       representationLimitations:
         "Self-selected online sample; not demographically representative.",
       opinionGroups: [
-        { label: "Group A", share: 0.6 },
-        { label: "Group B", share: 0.4 },
+        { label: "Group A", participantCount: 60 },
+        { label: "Group B", participantCount: 40 },
       ],
       crossGroupAgreement: ["Most participants agreed on statement one."],
       meaningfulDisagreement: ["Participants disagreed on statement two."],
     };
+  }
+
+  async function importThroughUnderReview(conversationId: string) {
+    const imported = await importAggregateReport(db, {
+      actorAccountId: ADMIN,
+      conversationId,
+      payload: fixturePayload(),
+    });
+    expect(imported.ok).toBe(true);
+    if (!imported.ok) throw new Error("import failed");
+
+    const validated = await validateReport(db, {
+      actorAccountId: ADMIN,
+      reportId: imported.value.reportId,
+      expectedConcurrencyVersion: 1,
+    });
+    expect(validated.ok).toBe(true);
+    if (!validated.ok) throw new Error("validate failed");
+
+    const reviewed = await beginReview(db, {
+      actorAccountId: ADMIN,
+      reportId: imported.value.reportId,
+      expectedConcurrencyVersion: validated.value.concurrencyVersion,
+    });
+    expect(reviewed.ok).toBe(true);
+    if (!reviewed.ok) throw new Error("review failed");
+
+    return { imported, reviewed };
   }
 
   it("records provider-side moderation for moderators and administrators, but denies participants", async () => {
@@ -145,9 +174,6 @@ describe("Public Input moderation service (4.4)", () => {
     });
     expect(deniedForParticipant.ok).toBe(false);
     if (!deniedForParticipant.ok) {
-      // Deny-by-default fires whether the block is role-based
-      // (AUTHZ_DENIED) or lifecycle-based (AUTHZ_ACTIVE_REQUIRED) — either
-      // way, a participant must never record provider moderation.
       expect(["AUTHZ_DENIED", "AUTHZ_ACTIVE_REQUIRED"]).toContain(
         deniedForParticipant.code,
       );
@@ -177,7 +203,6 @@ describe("Public Input moderation service (4.4)", () => {
     });
     expect(byAdmin.ok).toBe(true);
     if (!byAdmin.ok) return;
-    // Upsert on (conversationId, opaqueStatementRef): same record, updated status.
     expect(byAdmin.value.id).toBe(byModerator.value.id);
     expect(byAdmin.value.status).toBe("accepted");
 
@@ -192,7 +217,6 @@ describe("Public Input moderation service (4.4)", () => {
       )
       .orderBy(auditEvents.createdAt);
     expect(audit).toBeTruthy();
-    // The opaque ref and raw statement text must never be audited.
     expect(JSON.stringify(audit)).not.toContain("opaque-fingerprint-001");
   });
 
@@ -211,22 +235,14 @@ describe("Public Input moderation service (4.4)", () => {
     expect(recorded.ok).toBe(true);
     if (!recorded.ok) return;
     expect(recorded.value.status).toBe("rejected");
-    // No column exists for statement text; the record shape itself proves it.
     expect(Object.keys(recorded.value)).not.toContain("statementText");
   });
 
-  it("requires consultations.reports.review to decide finding publication and denies moderators", async () => {
+  it("requires under_review + expectedConcurrencyVersion to decide finding publication and denies moderators", async () => {
     const topicId = await freshTopicId();
     const conversationId = await freshVotingClosedConversationId(topicId);
-
-    const imported = await importAggregateReport(db, {
-      actorAccountId: ADMIN,
-      conversationId,
-      publicTitle: "Community input on billing changes",
-      payload: fixturePayload(),
-    });
-    expect(imported.ok).toBe(true);
-    if (!imported.ok) return;
+    const { imported, reviewed } =
+      await importThroughUnderReview(conversationId);
 
     const findings = await getReportFindingsByReportId(
       db,
@@ -245,6 +261,7 @@ describe("Public Input moderation service (4.4)", () => {
       reportId: imported.value.reportId,
       findingId: disagreementFinding.id,
       action: "withhold",
+      expectedConcurrencyVersion: reviewed.value.concurrencyVersion,
       publicRationale:
         "Statement duplicates another finding already reported.",
     });
@@ -258,6 +275,7 @@ describe("Public Input moderation service (4.4)", () => {
       reportId: imported.value.reportId,
       findingId: disagreementFinding.id,
       action: "withhold",
+      expectedConcurrencyVersion: reviewed.value.concurrencyVersion,
       publicRationale: "no",
     });
     expect(missingRationale.ok).toBe(false);
@@ -272,6 +290,7 @@ describe("Public Input moderation service (4.4)", () => {
       reportId: imported.value.reportId,
       findingId: disagreementFinding.id,
       action: "withhold",
+      expectedConcurrencyVersion: reviewed.value.concurrencyVersion,
       publicRationale:
         "Statement duplicates another finding already reported.",
       privateNote: "Internal note only.",
@@ -279,6 +298,16 @@ describe("Public Input moderation service (4.4)", () => {
     expect(withheld.ok).toBe(true);
     if (!withheld.ok) return;
     expect(withheld.value.publicationStatus).toBe("withheld");
+
+    const staffAfterWithhold = await getStaffReportDetail(db, {
+      actorAccountId: ADMIN,
+      reportId: imported.value.reportId,
+    });
+    expect(staffAfterWithhold.ok).toBe(true);
+    if (!staffAfterWithhold.ok || !staffAfterWithhold.value) return;
+    expect(staffAfterWithhold.value.concurrencyVersion).toBe(
+      reviewed.value.concurrencyVersion + 1,
+    );
 
     const [auditRow] = await db
       .select()
@@ -297,24 +326,65 @@ describe("Public Input moderation service (4.4)", () => {
       reportId: imported.value.reportId,
       findingId: disagreementFinding.id,
       action: "include",
+      expectedConcurrencyVersion: staffAfterWithhold.value.concurrencyVersion,
     });
     expect(reincluded.ok).toBe(true);
     if (!reincluded.ok) return;
     expect(reincluded.value.publicationStatus).toBe("included");
   });
 
+  it("denies finding publication decisions after the report is published", async () => {
+    const topicId = await freshTopicId();
+    const conversationId = await freshVotingClosedConversationId(topicId);
+    const { imported, reviewed } =
+      await importThroughUnderReview(conversationId);
+
+    await transitionConversation(db, {
+      actorAccountId: ADMIN,
+      conversationId,
+      action: "close",
+      expectedWorkflowState: "voting_closed",
+      expectedVersion: 5,
+      reason: "Voting window elapsed; closing consultation for reporting.",
+    });
+
+    const published = await publishReport(db, {
+      actorAccountId: ADMIN,
+      reportId: imported.value.reportId,
+      expectedConcurrencyVersion: reviewed.value.concurrencyVersion,
+    });
+    expect(published.ok).toBe(true);
+    if (!published.ok) return;
+
+    const findings = await getReportFindingsByReportId(
+      db,
+      imported.value.reportId,
+    );
+    expect(findings.ok).toBe(true);
+    if (!findings.ok) return;
+    const finding = findings.value[0];
+    expect(finding).toBeTruthy();
+    if (!finding) return;
+
+    const denied = await decideFindingPublication(db, {
+      actorAccountId: ADMIN,
+      reportId: imported.value.reportId,
+      findingId: finding.id,
+      action: "withhold",
+      expectedConcurrencyVersion: published.value.concurrencyVersion,
+      publicRationale: "Attempted post-publish mutation must fail closed.",
+    });
+    expect(denied.ok).toBe(false);
+    if (!denied.ok) {
+      expect(denied.code).toBe("PUBLIC_INPUT_REPORT_NOT_UNDER_REVIEW");
+    }
+  });
+
   it("excludes withheld findings from the published public projection", async () => {
     const topicId = await freshTopicId();
     const conversationId = await freshVotingClosedConversationId(topicId);
-
-    const imported = await importAggregateReport(db, {
-      actorAccountId: ADMIN,
-      conversationId,
-      publicTitle: "Community input on billing changes",
-      payload: fixturePayload(),
-    });
-    expect(imported.ok).toBe(true);
-    if (!imported.ok) return;
+    const { imported, reviewed } =
+      await importThroughUnderReview(conversationId);
 
     const findings = await getReportFindingsByReportId(
       db,
@@ -333,25 +403,17 @@ describe("Public Input moderation service (4.4)", () => {
       reportId: imported.value.reportId,
       findingId: agreementFinding.id,
       action: "withhold",
+      expectedConcurrencyVersion: reviewed.value.concurrencyVersion,
       publicRationale: "Statement text failed institutional review.",
     });
     expect(withheld.ok).toBe(true);
 
-    const validated = await validateReport(db, {
+    const staffAfter = await getStaffReportDetail(db, {
       actorAccountId: ADMIN,
       reportId: imported.value.reportId,
-      expectedConcurrencyVersion: 1,
     });
-    expect(validated.ok).toBe(true);
-    if (!validated.ok) return;
-
-    const reviewed = await beginReview(db, {
-      actorAccountId: ADMIN,
-      reportId: imported.value.reportId,
-      expectedConcurrencyVersion: validated.value.concurrencyVersion,
-    });
-    expect(reviewed.ok).toBe(true);
-    if (!reviewed.ok) return;
+    expect(staffAfter.ok).toBe(true);
+    if (!staffAfter.ok || !staffAfter.value) return;
 
     await transitionConversation(db, {
       actorAccountId: ADMIN,
@@ -365,7 +427,7 @@ describe("Public Input moderation service (4.4)", () => {
     const published = await publishReport(db, {
       actorAccountId: ADMIN,
       reportId: imported.value.reportId,
-      expectedConcurrencyVersion: reviewed.value.concurrencyVersion,
+      expectedConcurrencyVersion: staffAfter.value.concurrencyVersion,
     });
     expect(published.ok).toBe(true);
     if (!published.ok) return;

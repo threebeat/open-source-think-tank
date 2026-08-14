@@ -90,6 +90,7 @@ export type ReportGroupRecord = {
   reportId: string;
   label: string;
   displayOrder: number;
+  participantCount: number;
   rawShare: number;
   publishedStatus: PublicInputReportGroupCellStatus;
   publishedShare: number | null;
@@ -176,6 +177,7 @@ function mapGroup(
     reportId: row.reportId,
     label: row.label,
     displayOrder: row.displayOrder,
+    participantCount: row.participantCount,
     rawShare: row.rawShare,
     publishedStatus: row.publishedStatus,
     publishedShare: row.publishedShare,
@@ -251,6 +253,10 @@ export async function insertReportImport(
     voteCount: number;
     participationSufficiency: string;
     representationLimitations: string;
+    moderationReviewedCount: number;
+    moderationAcceptedCount: number;
+    moderationRejectedCount: number;
+    moderationPolicyVersion: string | null;
     synthetic: boolean;
   },
 ): Promise<AdapterResult<ReportImportRecord>> {
@@ -275,10 +281,10 @@ export async function insertReportImport(
       voteCount: input.voteCount,
       participationSufficiency: input.participationSufficiency,
       representationLimitations: input.representationLimitations,
-      moderationReviewedCount: 0,
-      moderationAcceptedCount: 0,
-      moderationRejectedCount: 0,
-      moderationPolicyVersion: null,
+      moderationReviewedCount: input.moderationReviewedCount,
+      moderationAcceptedCount: input.moderationAcceptedCount,
+      moderationRejectedCount: input.moderationRejectedCount,
+      moderationPolicyVersion: input.moderationPolicyVersion,
       synthetic: input.synthetic,
     })
     .returning();
@@ -358,8 +364,13 @@ export async function insertReportGroups(
   db: GatedDb,
   input: {
     reportId: string;
+    participationCount: number;
     synthetic: boolean;
-    groups: { label: string; share: number; displayOrder: number }[];
+    groups: {
+      label: string;
+      participantCount: number;
+      displayOrder: number;
+    }[];
   },
 ): Promise<AdapterResult<ReportGroupRecord[]>> {
   const denied = requireGatedPersistence();
@@ -371,16 +382,23 @@ export async function insertReportGroups(
   const rows = await db
     .insert(publicInputReportGroups)
     .values(
-      input.groups.map((group) => ({
-        id: newEntityId("pinrgrp"),
-        reportId: input.reportId,
-        label: group.label,
-        displayOrder: group.displayOrder,
-        rawShare: group.share,
-        publishedStatus: "reported" as const,
-        publishedShare: group.share,
-        synthetic: input.synthetic,
-      })),
+      input.groups.map((group) => {
+        const rawShare =
+          input.participationCount > 0
+            ? group.participantCount / input.participationCount
+            : 0;
+        return {
+          id: newEntityId("pinrgrp"),
+          reportId: input.reportId,
+          label: group.label,
+          displayOrder: group.displayOrder,
+          participantCount: group.participantCount,
+          rawShare,
+          publishedStatus: "reported" as const,
+          publishedShare: rawShare,
+          synthetic: input.synthetic,
+        };
+      }),
     )
     .returning();
 
@@ -437,23 +455,29 @@ export async function getReportByImportId(
   return { ok: true, value: row ? mapReport(row) : null };
 }
 
+/**
+ * Public topic projection must resolve through the topic's **current**
+ * consultation only (4.5A). Historical conversations may each retain a
+ * latest-published flag, but only the current designation is eligible for
+ * the live topic route. Historical reports belong in Records later.
+ */
 export async function getLatestPublishedReportForTopic(
   db: GatedDb,
   topicId: string,
 ): Promise<AdapterResult<ReportRecord | null>> {
   const denied = requireGatedPersistence();
   if (denied) return denied;
-  const [row] = await db
-    .select()
-    .from(publicInputReports)
-    .where(
-      and(
-        eq(publicInputReports.topicId, topicId),
-        eq(publicInputReports.isLatestPublished, true),
-      ),
-    )
-    .limit(1);
-  return { ok: true, value: row ? mapReport(row) : null };
+
+  const { getCurrentConversationByTopicId } = await import(
+    "@/lib/public-input/lifecycle/repository"
+  );
+  const current = await getCurrentConversationByTopicId(db, topicId);
+  if (!current.ok) return current;
+  if (!current.value) {
+    return { ok: true, value: null };
+  }
+
+  return getLatestPublishedReportForConversation(db, current.value.id);
 }
 
 export async function getReportById(
@@ -732,11 +756,40 @@ export async function updateFindingPublicationStatus(
   db: GatedDb,
   input: {
     findingId: string;
+    reportId: string;
+    expectedConcurrencyVersion: number;
     nextPublicationStatus: PublicInputFindingPublicationStatus;
   },
 ): Promise<AdapterResult<ReportFindingRecord | null>> {
   const denied = requireGatedPersistence();
   if (denied) return denied;
+
+  // Lock the parent report row: must be under_review and match concurrency.
+  const [locked] = await db
+    .update(publicInputReports)
+    .set({
+      concurrencyVersion: input.expectedConcurrencyVersion + 1,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(publicInputReports.id, input.reportId),
+        eq(publicInputReports.workflowState, "under_review"),
+        eq(
+          publicInputReports.concurrencyVersion,
+          input.expectedConcurrencyVersion,
+        ),
+      ),
+    )
+    .returning({ id: publicInputReports.id });
+
+  if (!locked) {
+    return {
+      ok: false,
+      error: "Report changed or is not under_review; reload and retry",
+      code: "PUBLIC_INPUT_REPORT_STATE_CONFLICT",
+    };
+  }
 
   const [row] = await db
     .update(publicInputReportFindings)
@@ -744,10 +797,37 @@ export async function updateFindingPublicationStatus(
       publicationStatus: input.nextPublicationStatus,
       updatedAt: new Date(),
     })
-    .where(eq(publicInputReportFindings.id, input.findingId))
+    .where(
+      and(
+        eq(publicInputReportFindings.id, input.findingId),
+        eq(publicInputReportFindings.reportId, input.reportId),
+      ),
+    )
     .returning();
 
   return { ok: true, value: row ? mapFinding(row) : null };
+}
+
+/**
+ * Serialize imports for a conversation (SELECT FOR UPDATE on the conversation
+ * row). Call inside a transaction before hash/idempotency checks and inserts.
+ */
+export async function lockConversationRowForImport(
+  db: GatedDb,
+  conversationId: string,
+): Promise<AdapterResult<{ id: string } | null>> {
+  const denied = requireGatedPersistence();
+  if (denied) return denied;
+
+  const { publicInputConversations } = await import("@/db/schema");
+  const [row] = await db
+    .select({ id: publicInputConversations.id })
+    .from(publicInputConversations)
+    .where(eq(publicInputConversations.id, conversationId))
+    .for("update")
+    .limit(1);
+
+  return { ok: true, value: row ?? null };
 }
 
 export async function listModerationActionsForReport(

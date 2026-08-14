@@ -51,7 +51,7 @@ describe("consultation reports API", () => {
       ok: true,
       body: {
         publicTitle: "Title",
-        payload: { schemaVersion: "public-input-aggregate-import@1" },
+        payload: { schemaVersion: "public-input-aggregate-import@1.1" },
       },
     });
   });

@@ -24,7 +24,7 @@ function sampleReport(): PublicReportDto {
     representationLimitations: "Not representative.",
     methodVersion: "public-input-aggregate@4.4.0",
     importTimestamp: "2026-08-13T11:00:00.000Z",
-    smallCellSuppressionPolicyVersion: "4.4.1-complementary",
+    smallCellSuppressionPolicyVersion: "4.5.1-exact-count-complementary",
     smallCellSuppressionNotice: "Complementary suppression applied.",
     suppressedCells: 1,
     groupsOmitted: false,

@@ -11,7 +11,7 @@ function basePayload(): Record<string, unknown> {
   return {
     schemaVersion: CANONICAL_IMPORT_SCHEMA_VERSION,
     sourceKind: "fixture",
-    methodVersion: "public-input-aggregate@4.4.0-test",
+    methodVersion: "public-input-aggregate@4.5.0-test",
     publicTitle: "Drought surcharge aggregate report",
     participationCount: 1240,
     commentCount: 86,
@@ -19,8 +19,8 @@ function basePayload(): Record<string, unknown> {
     participationSufficiency: "Meets the illustrative coverage floor.",
     representationLimitations: "Not a representative sample.",
     opinionGroups: [
-      { label: "Group A", share: 0.6 },
-      { label: "Group B", share: 0.4 },
+      { label: "Group A", participantCount: 744 },
+      { label: "Group B", participantCount: 496 },
     ],
     crossGroupAgreement: ["Publish thresholds before any surcharge applies."],
     meaningfulDisagreement: ["Graduated surcharge versus flat fee."],
@@ -31,6 +31,12 @@ describe("canonical aggregate import schema", () => {
   it("accepts a well-formed fixture/manual_aggregate payload", () => {
     const result = validateCanonicalAggregateImport(basePayload());
     expect(result.ok).toBe(true);
+  });
+
+  it("exposes schema version 1.1", () => {
+    expect(CANONICAL_IMPORT_SCHEMA_VERSION).toBe(
+      "public-input-aggregate-import@1.1",
+    );
   });
 
   it.each(["fixture", "manual_aggregate"])(
@@ -66,6 +72,20 @@ describe("canonical aggregate import schema", () => {
     }
   });
 
+  it("rejects legacy share-based opinion groups", () => {
+    const result = validateCanonicalAggregateImport({
+      ...basePayload(),
+      opinionGroups: [
+        { label: "Group A", share: 0.6 },
+        { label: "Group B", share: 0.4 },
+      ],
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.code).toBe("IMPORT_PAYLOAD_SCHEMA_INVALID");
+    }
+  });
+
   it.each([
     "providerParticipantId",
     "accountId",
@@ -93,7 +113,7 @@ describe("canonical aggregate import schema", () => {
     const payload = basePayload();
     (payload.opinionGroups as unknown[]).push({
       label: "Group C",
-      share: 0.1,
+      participantCount: 10,
       xid: "smuggled",
     });
     const result = validateCanonicalAggregateImport(payload);
@@ -116,15 +136,39 @@ describe("canonical aggregate import schema", () => {
     }
   });
 
-  it("rejects shares outside [0, 1]", () => {
+  it("rejects partition sum that does not equal participationCount", () => {
     const result = validateCanonicalAggregateImport({
       ...basePayload(),
-      opinionGroups: [{ label: "Group A", share: 1.5 }],
+      participationCount: 100,
+      opinionGroups: [
+        { label: "Group A", participantCount: 60 },
+        { label: "Group B", participantCount: 30 },
+      ],
     });
     expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.code).toBe("IMPORT_PAYLOAD_PARTITION_INVALID");
+      expect(result.issues.join(";")).toMatch(/must equal participationCount/);
+    }
   });
 
-  it("rejects negative or non-integer counts", () => {
+  it("rejects duplicate normalized opinion-group labels", () => {
+    const result = validateCanonicalAggregateImport({
+      ...basePayload(),
+      participationCount: 100,
+      opinionGroups: [
+        { label: "Group A", participantCount: 60 },
+        { label: "  group a ", participantCount: 40 },
+      ],
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.code).toBe("IMPORT_PAYLOAD_PARTITION_INVALID");
+      expect(result.issues.join(";")).toMatch(/duplicate normalized label/i);
+    }
+  });
+
+  it("rejects negative or non-integer participantCount / totals", () => {
     expect(
       validateCanonicalAggregateImport({
         ...basePayload(),
@@ -135,6 +179,12 @@ describe("canonical aggregate import schema", () => {
       validateCanonicalAggregateImport({
         ...basePayload(),
         participationCount: 1.5,
+      }).ok,
+    ).toBe(false);
+    expect(
+      validateCanonicalAggregateImport({
+        ...basePayload(),
+        opinionGroups: [{ label: "Group A", participantCount: 1.5 }],
       }).ok,
     ).toBe(false);
   });
@@ -165,10 +215,11 @@ describe("canonical aggregate import schema", () => {
   it(`rejects more than ${MAX_OPINION_GROUPS} opinion groups`, () => {
     const tooMany = Array.from({ length: MAX_OPINION_GROUPS + 1 }, (_, i) => ({
       label: `Group ${i}`,
-      share: 1 / (MAX_OPINION_GROUPS + 1),
+      participantCount: 1,
     }));
     const result = validateCanonicalAggregateImport({
       ...basePayload(),
+      participationCount: MAX_OPINION_GROUPS + 1,
       opinionGroups: tooMany,
     });
     expect(result.ok).toBe(false);
@@ -189,7 +240,7 @@ describe("canonical aggregate import schema", () => {
   it("rejects an unsupported schemaVersion", () => {
     const result = validateCanonicalAggregateImport({
       ...basePayload(),
-      schemaVersion: "public-input-aggregate-import@999",
+      schemaVersion: "public-input-aggregate-import@1",
     });
     expect(result.ok).toBe(false);
   });
@@ -206,6 +257,29 @@ describe("canonical aggregate import schema", () => {
       crossGroupAgreement: ["x".repeat(501)],
     });
     expect(result.ok).toBe(false);
+  });
+
+  it("accepts optional aggregateModerationDisclosure and rejects inconsistent counts", () => {
+    const ok = validateCanonicalAggregateImport({
+      ...basePayload(),
+      aggregateModerationDisclosure: {
+        reviewedCount: 10,
+        acceptedCount: 7,
+        rejectedCount: 3,
+        policyVersion: "mod-policy@1",
+      },
+    });
+    expect(ok.ok).toBe(true);
+
+    const bad = validateCanonicalAggregateImport({
+      ...basePayload(),
+      aggregateModerationDisclosure: {
+        reviewedCount: 2,
+        acceptedCount: 2,
+        rejectedCount: 1,
+      },
+    });
+    expect(bad.ok).toBe(false);
   });
 
   it("accepts an optional generatedAt / providerExportVersionLabel and rejects malformed generatedAt", () => {
