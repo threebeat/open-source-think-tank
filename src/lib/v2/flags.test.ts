@@ -7,6 +7,7 @@ import {
   isElevatedPortalEnabled,
   isHostedPolisEnabled,
   isOpenEnrollmentEnabled,
+  isSyntheticSeedEnabled,
   isV2KernelEnabled,
   readV2Flags,
 } from "@/lib/v2/flags";
@@ -15,6 +16,7 @@ const FLAG_KEYS = [
   "APP_MODE",
   "COMMONHALL_V2_KERNEL",
   "COMMONHALL_V2_OPEN_ENROLLMENT",
+  "COMMONHALL_SYNTHETIC_SEED",
   "COMMONHALL_V2_HOSTED_POLIS",
   "COMMONHALL_V2_CHAMBER_LIVE",
   "COMMONHALL_V2_COUNCIL_LIVE",
@@ -77,6 +79,25 @@ describe("v2 feature flags", () => {
     process.env.COMMONHALL_V2_OPEN_ENROLLMENT = "on";
     process.env.APP_MODE = "public-demo";
     expect(isOpenEnrollmentEnabled()).toBe(false);
+  });
+
+  it("enables the synthetic seed catalog in gated unless explicitly off", () => {
+    process.env.APP_MODE = "gated";
+    delete process.env.COMMONHALL_SYNTHETIC_SEED;
+    expect(isSyntheticSeedEnabled()).toBe(true);
+
+    process.env.COMMONHALL_SYNTHETIC_SEED = "on";
+    expect(isSyntheticSeedEnabled()).toBe(true);
+
+    process.env.COMMONHALL_SYNTHETIC_SEED = "off";
+    expect(isSyntheticSeedEnabled()).toBe(false);
+
+    process.env.COMMONHALL_SYNTHETIC_SEED = "on";
+    process.env.APP_MODE = "public-demo";
+    expect(isSyntheticSeedEnabled()).toBe(false);
+
+    const flags = readV2Flags();
+    expect(flags.syntheticSeed).toBe(false);
   });
 
   it("fails closed for hosted Pol.is, Chamber, Council, and portal", () => {

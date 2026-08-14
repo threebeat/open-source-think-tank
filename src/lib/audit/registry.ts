@@ -1516,6 +1516,40 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
     { requireActorAccount: true, requireReason: true },
   ),
 
+  "commons.discussion.created": def(
+    "commons.discussion.created",
+    "Commons discussion created",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          organizationPublicId: z.string(),
+          category: z.string(),
+          discussionPublicId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+      publicProject: (p) =>
+        `A Commons ${String(p.category ?? "discussion")} was posted.`,
+    },
+  ),
+
+  "commons.formal_review.submitted": def(
+    "commons.formal_review.submitted",
+    "Commons proposal submitted for formal review",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          organizationPublicId: z.string(),
+          discussionPublicId: z.string(),
+          governanceAction: z.literal("submit_for_formal_review"),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+      publicProject: () =>
+        "A proposal was submitted for formal review.",
+    },
+  ),
+
   // Phase 3.12 operator alpha reset (CLI-only; no public projector)
   "alpha.reset_executed": def(
     "alpha.reset_executed",

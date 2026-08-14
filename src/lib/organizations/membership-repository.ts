@@ -85,6 +85,40 @@ export async function listMembershipEventsForAccount(
   return rows;
 }
 
+export async function getPrimaryCommunityMembership(
+  db: FoundationDb,
+  accountId: string,
+): Promise<{
+  organizationId: string;
+  status: OrganizationMembershipStatus;
+  isPrimary: boolean;
+} | null> {
+  const rows = await listMembershipsForAccount(db, accountId);
+  const eligible = rows.filter(
+    (row) => row.status === "assigned" || row.status === "active",
+  );
+  return (
+    eligible.find((row) => row.isPrimary) ??
+    eligible[0] ??
+    null
+  );
+}
+
+export function hasCommunityMembershipInOrganization(
+  memberships: Array<{
+    organizationId: string;
+    status: OrganizationMembershipStatus | string;
+  }>,
+  organizationId: string,
+): boolean {
+  const id = requireOrganizationId(organizationId);
+  return memberships.some(
+    (row) =>
+      row.organizationId === id &&
+      (row.status === "assigned" || row.status === "active"),
+  );
+}
+
 export async function getMembership(
   db: FoundationDb,
   organizationId: string,

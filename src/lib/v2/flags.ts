@@ -42,6 +42,18 @@ export function isOpenEnrollmentEnabled(env: EnvMap = process.env): boolean {
   return envFlag(env, "COMMONHALL_V2_OPEN_ENROLLMENT") !== "off";
 }
 
+/**
+ * Synthetic Commons/Agenda catalog (Phase 3). Default on in gated pre-alpha;
+ * always off in public-demo. When off, member list DTOs omit synthetic=true rows.
+ * Does not delete rows; operator reset remains the pre-alpha wipe.
+ */
+export function isSyntheticSeedEnabled(env: EnvMap = process.env): boolean {
+  if (resolveAppMode(env) !== "gated") {
+    return false;
+  }
+  return envFlag(env, "COMMONHALL_SYNTHETIC_SEED") !== "off";
+}
+
 /** Live Chamber product is Phase 4; appointments may persist. */
 export function isChamberLiveEnabled(env: EnvMap = process.env): boolean {
   void env;
@@ -63,6 +75,7 @@ export function isElevatedPortalEnabled(env: EnvMap = process.env): boolean {
 export type V2Flags = {
   kernel: boolean;
   openEnrollment: boolean;
+  syntheticSeed: boolean;
   hostedPolis: boolean;
   chamberLive: boolean;
   councilLive: boolean;
@@ -73,6 +86,7 @@ export function readV2Flags(env: EnvMap = process.env): V2Flags {
   return {
     kernel: isV2KernelEnabled(env),
     openEnrollment: isOpenEnrollmentEnabled(env),
+    syntheticSeed: isSyntheticSeedEnabled(env),
     hostedPolis: isHostedPolisEnabled(env),
     chamberLive: isChamberLiveEnabled(env),
     councilLive: isCouncilLiveEnabled(env),
