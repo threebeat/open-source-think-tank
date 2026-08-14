@@ -179,8 +179,8 @@ describe("GatedPublicTopicView", () => {
       within(container).queryByText("Supporting memo"),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /Back to topics/i }),
-    ).toBeInTheDocument();
+      screen.getByRole("link", { name: /Back to Agenda/i }),
+    ).toHaveAttribute("href", "/agenda");
   });
 
   it("keeps comparison available without nesting source links in the compare list", () => {

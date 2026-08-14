@@ -370,10 +370,10 @@ export function GatedPublicTopicView({
 
       <p>
         <Link
-          href="/formal-topics"
+          href="/agenda"
           className="inline-flex min-h-11 items-center text-sm text-primary underline underline-offset-2"
         >
-          Back to topics
+          Back to Agenda
         </Link>
       </p>
     </div>
