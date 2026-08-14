@@ -170,6 +170,18 @@ export const IMMUTABLE_DELETE_TRIGGERS: readonly {
     table: "public_input_report_moderation_actions",
     trigger: "public_input_report_moderation_actions_immutable",
   },
+  {
+    table: "public_input_reports",
+    trigger: "public_input_reports_root_guard",
+  },
+  {
+    table: "public_input_report_findings",
+    trigger: "public_input_report_findings_guard",
+  },
+  {
+    table: "public_input_report_groups",
+    trigger: "public_input_report_groups_guard",
+  },
 ] as const;
 
 /** Coarse count families for audit metadata (no PII / no row ids). */

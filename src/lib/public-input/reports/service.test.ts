@@ -1,8 +1,12 @@
-import { and, eq } from "drizzle-orm";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { and, eq, sql } from "drizzle-orm";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { createTestDatabase } from "@/db/pglite";
-import { auditEvents, publicInputConversations } from "@/db/schema";
+import {
+  auditEvents,
+  publicInputConversations,
+  publicInputReports,
+} from "@/db/schema";
 import { seedSyntheticFoundation } from "@/db/seeds/synthetic";
 import { createTopic } from "@/lib/topics/authoring";
 import {
@@ -18,6 +22,11 @@ import {
   assertNoProtectedReportFieldLeak,
   toPublicReportDto,
 } from "@/lib/public-input/reports/projection";
+import {
+  PROVISIONAL_DEMO_SMALL_CELL_THRESHOLD,
+  SMALL_CELL_ALGORITHM_VERSION,
+  SMALL_CELL_POLICY_VERSION,
+} from "@/lib/public-input/reports/suppression";
 import {
   beginReview,
   getPublishedReportForTopic,
@@ -85,6 +94,10 @@ describe("Public Input aggregate report service (4.5A)", () => {
     else process.env.APP_MODE = previousMode;
     if (previousDbUrl === undefined) delete process.env.DATABASE_URL;
     else process.env.DATABASE_URL = previousDbUrl;
+  });
+
+  afterEach(() => {
+    delete process.env.OSTT_ALLOW_NON_SYNTHETIC_REPORT_PUBLISH;
   });
 
   async function freshTopicId(): Promise<string> {
@@ -819,5 +832,213 @@ describe("Public Input aggregate report service (4.5A)", () => {
         conversationId: "should-never-appear",
       } as unknown as object),
     ).toThrow(/PUBLIC_INPUT_REPORT_DTO_LEAK/);
+  });
+
+  it("derives dataProvenance/synthetic from sourceKind (never the actor's synthetic flag) and stores the publish-time suppression snapshot", async () => {
+    const topicId = await freshTopicId();
+    const conversationId = await freshVotingClosedConversationId(topicId);
+
+    const imported = await importAggregateReport(db, {
+      actorAccountId: ADMIN,
+      conversationId,
+      payload: fixturePayload(),
+    });
+    expect(imported.ok).toBe(true);
+    if (!imported.ok) return;
+
+    const staffBeforePublish = await getStaffReportDetail(db, {
+      actorAccountId: ADMIN,
+      reportId: imported.value.reportId,
+    });
+    expect(staffBeforePublish.ok).toBe(true);
+    if (!staffBeforePublish.ok || !staffBeforePublish.value) return;
+    expect(staffBeforePublish.value.dataProvenance).toBe("synthetic_fixture");
+    expect(staffBeforePublish.value.synthetic).toBe(true);
+    expect(staffBeforePublish.value.import.dataProvenance).toBe(
+      "synthetic_fixture",
+    );
+    expect(staffBeforePublish.value.requiresReimport).toBe(false);
+    // Never set from suppression snapshot until publish.
+    expect(staffBeforePublish.value.smallCellPolicyVersion).toBeNull();
+    expect(staffBeforePublish.value.smallCellThreshold).toBeNull();
+
+    const { published } = await importValidateReviewPublish({
+      conversationId,
+      closeVersion: 5,
+      payload: fixturePayload({ publicTitle: "Suppression snapshot report" }),
+    });
+
+    const staffAfterPublish = await getStaffReportDetail(db, {
+      actorAccountId: ADMIN,
+      reportId: published.value.id,
+    });
+    expect(staffAfterPublish.ok).toBe(true);
+    if (!staffAfterPublish.ok || !staffAfterPublish.value) return;
+    expect(staffAfterPublish.value.smallCellPolicyVersion).toBe(
+      SMALL_CELL_POLICY_VERSION,
+    );
+    expect(staffAfterPublish.value.smallCellAlgorithmVersion).toBe(
+      SMALL_CELL_ALGORITHM_VERSION,
+    );
+    expect(staffAfterPublish.value.smallCellThreshold).toBe(
+      PROVISIONAL_DEMO_SMALL_CELL_THRESHOLD,
+    );
+    expect(staffAfterPublish.value.smallCellMinParticipation).toBe(
+      PROVISIONAL_DEMO_SMALL_CELL_THRESHOLD,
+    );
+
+    const publicDto = await getPublishedReportForTopic(db, topicId);
+    expect(publicDto.ok).toBe(true);
+    if (!publicDto.ok || !publicDto.value) return;
+    expect(publicDto.value.synthetic).toBe(true);
+    expect(publicDto.value.smallCellThreshold).toBe(
+      PROVISIONAL_DEMO_SMALL_CELL_THRESHOLD,
+    );
+    expect(publicDto.value.smallCellMinParticipation).toBe(
+      PROVISIONAL_DEMO_SMALL_CELL_THRESHOLD,
+    );
+    expect(publicDto.value.smallCellSuppressionPolicyVersion).toBe(
+      SMALL_CELL_POLICY_VERSION,
+    );
+  });
+
+  it("blocks publishing a manual_aggregate report without operator opt-in, and allows it once OSTT_ALLOW_NON_SYNTHETIC_REPORT_PUBLISH=1", async () => {
+    const topicId = await freshTopicId();
+    const conversationId = await freshVotingClosedConversationId(topicId);
+
+    const imported = await importAggregateReport(db, {
+      actorAccountId: ADMIN,
+      conversationId,
+      payload: fixturePayload({ sourceKind: "manual_aggregate" }),
+    });
+    expect(imported.ok).toBe(true);
+    if (!imported.ok) return;
+
+    const staff = await getStaffReportDetail(db, {
+      actorAccountId: ADMIN,
+      reportId: imported.value.reportId,
+    });
+    expect(staff.ok).toBe(true);
+    if (!staff.ok || !staff.value) return;
+    expect(staff.value.dataProvenance).toBe("manual_aggregate");
+    expect(staff.value.synthetic).toBe(false);
+    expect(staff.value.import.dataProvenance).toBe("manual_aggregate");
+
+    const validated = await validateReport(db, {
+      actorAccountId: ADMIN,
+      reportId: imported.value.reportId,
+      expectedConcurrencyVersion: 1,
+    });
+    expect(validated.ok).toBe(true);
+    if (!validated.ok) return;
+
+    const reviewed = await beginReview(db, {
+      actorAccountId: ADMIN,
+      reportId: imported.value.reportId,
+      expectedConcurrencyVersion: validated.value.concurrencyVersion,
+    });
+    expect(reviewed.ok).toBe(true);
+    if (!reviewed.ok) return;
+    await closeConversation(conversationId, 5);
+
+    const blockedPublish = await publishReport(db, {
+      actorAccountId: ADMIN,
+      reportId: imported.value.reportId,
+      expectedConcurrencyVersion: reviewed.value.concurrencyVersion,
+    });
+    expect(blockedPublish.ok).toBe(false);
+    if (!blockedPublish.ok) {
+      expect(blockedPublish.code).toBe(
+        "PUBLIC_INPUT_REPORT_PRODUCTION_PRIVACY_UNAPPROVED",
+      );
+    }
+
+    // Same fail-closed gate also covers a custom suppression override.
+    const blockedOverride = await publishReport(db, {
+      actorAccountId: ADMIN,
+      reportId: imported.value.reportId,
+      expectedConcurrencyVersion: reviewed.value.concurrencyVersion,
+      smallCellThreshold: 3,
+      minParticipationForGroups: 3,
+    });
+    expect(blockedOverride.ok).toBe(false);
+    if (!blockedOverride.ok) {
+      expect(blockedOverride.code).toBe(
+        "PUBLIC_INPUT_REPORT_PRODUCTION_PRIVACY_UNAPPROVED",
+      );
+    }
+
+    process.env.OSTT_ALLOW_NON_SYNTHETIC_REPORT_PUBLISH = "1";
+    const allowedPublish = await publishReport(db, {
+      actorAccountId: ADMIN,
+      reportId: imported.value.reportId,
+      expectedConcurrencyVersion: reviewed.value.concurrencyVersion,
+    });
+    expect(allowedPublish.ok).toBe(true);
+    if (!allowedPublish.ok) return;
+    expect(allowedPublish.value.workflowState).toBe("published");
+
+    const publicDto = await getPublishedReportForTopic(db, topicId);
+    expect(publicDto.ok).toBe(true);
+    if (!publicDto.ok || !publicDto.value) return;
+    expect(publicDto.value.synthetic).toBe(false);
+  });
+
+  it("refuses to publish a report flagged requiresReimport, even with operator opt-in", async () => {
+    const topicId = await freshTopicId();
+    const conversationId = await freshVotingClosedConversationId(topicId);
+    const { imported, reviewed } = await (async () => {
+      const importedReport = await importAggregateReport(db, {
+        actorAccountId: ADMIN,
+        conversationId,
+        payload: fixturePayload(),
+      });
+      expect(importedReport.ok).toBe(true);
+      if (!importedReport.ok) throw new Error("import failed");
+
+      const validated = await validateReport(db, {
+        actorAccountId: ADMIN,
+        reportId: importedReport.value.reportId,
+        expectedConcurrencyVersion: 1,
+      });
+      expect(validated.ok).toBe(true);
+      if (!validated.ok) throw new Error("validate failed");
+
+      const reviewedReport = await beginReview(db, {
+        actorAccountId: ADMIN,
+        reportId: importedReport.value.reportId,
+        expectedConcurrencyVersion: validated.value.concurrencyVersion,
+      });
+      expect(reviewedReport.ok).toBe(true);
+      if (!reviewedReport.ok) throw new Error("review failed");
+      return { imported: importedReport, reviewed: reviewedReport };
+    })();
+    await closeConversation(conversationId, 5);
+
+    // Mirrors the migration 0022 legacy backfill: this column is immutable
+    // at the application layer (root_guard trigger), so this test bypasses
+    // it the same way the migration itself does, only to simulate a
+    // pre-existing legacy-estimated report.
+    await db.execute(
+      sql`ALTER TABLE public_input_reports DISABLE TRIGGER public_input_reports_root_guard`,
+    );
+    await db
+      .update(publicInputReports)
+      .set({ requiresReimport: true })
+      .where(eq(publicInputReports.id, imported.value.reportId));
+    await db.execute(
+      sql`ALTER TABLE public_input_reports ENABLE TRIGGER public_input_reports_root_guard`,
+    );
+
+    process.env.OSTT_ALLOW_NON_SYNTHETIC_REPORT_PUBLISH = "1";
+    const blockedPublish = await publishReport(db, {
+      actorAccountId: ADMIN,
+      reportId: imported.value.reportId,
+      expectedConcurrencyVersion: reviewed.value.concurrencyVersion,
+    });
+    expect(blockedPublish.ok).toBe(false);
+    if (!blockedPublish.ok) {
+      expect(blockedPublish.code).toBe("PUBLIC_INPUT_REPORT_REQUIRES_REIMPORT");
+    }
   });
 });
