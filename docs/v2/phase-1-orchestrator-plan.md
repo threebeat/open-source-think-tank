@@ -335,3 +335,7 @@ Stop and report to the orchestrator (do not silently invent) if:
 - Unexpected overlap beyond PR #22.
 - Existing security/privacy tests can only pass by weakening them.
 - Next.js 16 APIs in `node_modules/next/dist/docs/` forbid the chosen UI pattern.
+
+## Orchestrator review notes
+
+After the Phase 1 subagent returned, the orchestrator required `trustedSystem: true` for `system_from_published_rule`. Platform administrators and unauthenticated callers cannot impersonate the published-rule engine. HTTP handlers must never set this flag.
