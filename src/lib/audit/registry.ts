@@ -1378,7 +1378,33 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
           moderationActionId: z.string(),
           capability: z.literal("consultations.reports.review"),
           previousPublicationStatus: z.enum(["included", "withheld", "superseded"]),
-          nextPublicationStatus: z.enum(["withheld", "superseded"]),
+          nextPublicationStatus: z.literal("withheld"),
+          hasPublicRationale: z.literal(true),
+          hasPrivateNote: z.boolean(),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  // Mirrors finding_withheld's payload shape with nextPublicationStatus
+  // pinned to "superseded" (4.5A.1) — a newer finding replaced this one,
+  // which is distinct from "failed institutional review" (finding_withheld).
+  "consultations.reports.finding_superseded": def(
+    "consultations.reports.finding_superseded",
+    "Public Input report finding superseded in public projection",
+    {
+      requireActorAccount: true,
+      requireReason: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          reportId: z.string(),
+          findingId: z.string(),
+          moderationActionId: z.string(),
+          capability: z.literal("consultations.reports.review"),
+          previousPublicationStatus: z.enum(["included", "withheld", "superseded"]),
+          nextPublicationStatus: z.literal("superseded"),
           hasPublicRationale: z.literal(true),
           hasPrivateNote: z.boolean(),
           actorAccountId: z.string(),

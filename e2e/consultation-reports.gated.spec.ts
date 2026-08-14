@@ -11,7 +11,7 @@ const CANONICAL_SCHEMA = "public-input-aggregate-import@1.1";
 function aggregatePayload(title: string) {
   return {
     schemaVersion: CANONICAL_SCHEMA,
-    sourceKind: "manual_aggregate",
+    sourceKind: "fixture",
     methodVersion: "public-input-aggregate@4.5.0-e2e",
     publicTitle: title,
     participationCount: 240,
