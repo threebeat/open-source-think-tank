@@ -17,6 +17,12 @@ test.describe("gated open enrollment", () => {
     await page.getByRole("button", { name: /create account/i }).click();
     await expect(page).toHaveURL(/\/account/, { timeout: 30_000 });
     await expect(page.getByText(/Synthetic Alpha Hall/i).first()).toBeVisible();
+    await expect(page.getByTestId("account-button")).toBeVisible();
+    await expect(page.getByText(/Community member/i).first()).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Your posts and discussions" }),
+    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Account history" })).toBeVisible();
     await expect(
       page.getByText(/not nonprofit or statutory membership/i).first(),
     ).toBeVisible();
@@ -27,6 +33,11 @@ test.describe("gated open enrollment", () => {
 
     await page.goto("/account/history");
     await expect(page.getByText(/assignment/i).first()).toBeVisible();
+
+    await expect(page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Commons" })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Agenda" })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Chamber" })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Council" })).toBeVisible();
 
     await page.goto("/commons");
     await expect(page.getByRole("heading", { name: "Commons", exact: true })).toBeVisible();

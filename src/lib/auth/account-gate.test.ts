@@ -8,13 +8,14 @@ import {
 } from "@/lib/auth/account-gate";
 
 describe("account gate (V2-21)", () => {
-  it("allows only landing, demo, join, and auth without a session", () => {
+  it("allows landing, demo, about, join, and auth without a session", () => {
     expect(isPublicUnauthenticatedPath("/")).toBe(true);
     expect(isPublicUnauthenticatedPath("/demo")).toBe(true);
     expect(isPublicUnauthenticatedPath("/demo/workflow")).toBe(true);
     expect(isPublicUnauthenticatedPath("/join")).toBe(true);
     expect(isPublicUnauthenticatedPath("/auth/sign-in")).toBe(true);
     expect(isPublicUnauthenticatedPath("/auth/accept")).toBe(true);
+    expect(isPublicUnauthenticatedPath("/about")).toBe(true);
     expect(isPublicUnauthenticatedPath("/commons")).toBe(false);
     expect(isPublicUnauthenticatedPath("/account")).toBe(false);
     expect(isPublicUnauthenticatedPath("/idea-commons")).toBe(false);
@@ -41,6 +42,7 @@ describe("account gate (V2-21)", () => {
       }),
     ).toBe("/auth/sign-in");
     expect(unauthenticatedProductRedirect("/demo", { APP_MODE: "gated" })).toBeNull();
+    expect(unauthenticatedProductRedirect("/about", { APP_MODE: "gated" })).toBeNull();
     expect(unauthenticatedProductRedirect("/auth/accept", { APP_MODE: "gated" })).toBeNull();
   });
 
@@ -60,7 +62,7 @@ describe("account gate (V2-21)", () => {
     expect(authenticatedLegacyRedirect("/decisions/x")).toBe("/council/topics/x");
     expect(authenticatedLegacyRedirect("/transparency")).toBe("/records");
     expect(authenticatedLegacyRedirect("/actions/x")).toBe("/records/topics/x");
-    expect(authenticatedLegacyRedirect("/about")).toBe("/");
+    expect(authenticatedLegacyRedirect("/about")).toBeNull();
     expect(authenticatedLegacyRedirect("/process")).toBe("/demo");
     expect(authenticatedLegacyRedirect("/demo/workflow")).toBe("/demo");
     expect(authenticatedLegacyRedirect("/topics")).toBe("/agenda");
