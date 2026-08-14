@@ -68,6 +68,14 @@ export default function Home() {
         gate-passed topics.
       </DisclosureNotice>
 
+      <DisclosureNotice title="Commonhall v2 is not operational yet" tone="caution">
+        The Commonhall v2 organization kernel is under construction. Open
+        enrollment, the organization Chamber, the organization Council, and hosted
+        Pol.is are not operational. Community membership is still invite-only and
+        is not nonprofit or statutory membership. This demonstration remains a
+        synthetic historical think-tank journey.
+      </DisclosureNotice>
+
       <section className="space-y-4">
         <h2 className="font-heading text-2xl text-foreground">
           The democratic journey

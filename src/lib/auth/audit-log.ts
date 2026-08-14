@@ -37,6 +37,19 @@ export type AuthAuditInput = {
   synthetic: boolean;
   /** Optional explicit timestamp; assigned before hashing when omitted. */
   at?: Date;
+  /**
+   * Optional query columns — never added to computeContinuityDigest.
+   * Organization public id belongs in privatePayload.
+   */
+  organizationId?: string | null;
+  actorPrincipalKind?:
+    | "service_operator"
+    | "organization_officer"
+    | "community_member"
+    | "system"
+    | null;
+  capability?: string | null;
+  projectionClass?: "public" | "protected" | null;
 };
 
 const LEDGER_HEAD_ID = "default";
@@ -141,6 +154,10 @@ export async function appendAuthAudit(db: AuthAuditDb, input: AuthAuditInput) {
         continuityPrevHash,
         continuityHash,
         synthetic: input.synthetic,
+        organizationId: input.organizationId ?? undefined,
+        actorPrincipalKind: input.actorPrincipalKind ?? undefined,
+        capability: input.capability ?? undefined,
+        projectionClass: input.projectionClass ?? undefined,
       });
 
       await tx

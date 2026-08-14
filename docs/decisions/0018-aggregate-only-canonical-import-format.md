@@ -19,9 +19,9 @@ Phase 4.3 landed the institutional conversation lifecycle without report ingest.
 7. Capability: `consultations.reports.import` (administrator). Public-demo never performs ingest; synthetic reports remain fixture-backed.
 8. This ADR does **not** authorize live Pol.is, provider credentials, network clients, iframe UI, or counsel clearance.
 
-### Amendment — Phase 4.5A (2026-08-14)
+### Amendment — Phase 4.5A.1 (2026-08-14)
 
-Schema version **`public-input-aggregate-import@1.1`** replaces float-share group sizing with exact `participantCount`. Outer request `publicTitle` is ignored. Optional `aggregateModerationDisclosure` may be included in the hashed payload; when absent, public DTOs omit moderation disclosure entirely.
+Database boundary: report-root transition matrix; child INSERT only while `imported`; DELETE forbidden outside alpha reset; parent `FOR UPDATE` during child authorization. Immutable `data_provenance` derived from `sourceKind` (actor synthetic stays audit-only). Legacy FLOOR estimates marked `legacy_estimated` + `requires_reimport` — never projected as exact.
 
 ## Consequences
 

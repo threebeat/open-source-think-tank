@@ -298,6 +298,11 @@ describe("authorization capability matrix", () => {
           "institutional.vote",
           "institutional.council_deliberation",
           "institutional.council_policy",
+          "organization.membership.read",
+          "organization.appointment.grant",
+          "organization.appointment.revoke",
+          "organization.config.publish",
+          "organization.governance.transition",
         ],
       },
       {

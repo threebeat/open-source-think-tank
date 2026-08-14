@@ -1,7 +1,6 @@
 import type { PublicInputPublicDto } from "@/features/public-input/aggregate-report";
 import { PUBLIC_INPUT_CELL_POLICY } from "@/features/public-input/aggregate-report";
 import type { PublicReportDto } from "@/lib/public-input/reports/projection";
-import { PROVISIONAL_DEMO_SMALL_CELL_THRESHOLD } from "@/lib/public-input/reports/suppression";
 
 /**
  * Map a gated published `PublicReportDto` into the shared panel DTO without
@@ -38,12 +37,9 @@ export function mapPublicReportDtoToPanelDto(
     representationLimitations: report.representationLimitations,
     methodVersion: report.methodVersion,
     importTimestamp: report.importTimestamp,
-    // Gated production threshold is not claimed here — provisional demo value
-    // is shown only as a non-authoritative label when synthetic; otherwise the
-    // policy version string carries the institutional policy identity.
-    smallCellSuppressionThreshold: report.synthetic
-      ? PROVISIONAL_DEMO_SMALL_CELL_THRESHOLD
-      : PROVISIONAL_DEMO_SMALL_CELL_THRESHOLD,
+    // Publish-time snapshot from the stored report row — never a runtime
+    // constant, so this always reflects what was actually applied (4.5A.1).
+    smallCellSuppressionThreshold: report.smallCellThreshold,
     smallCellSuppressionNotice: report.smallCellSuppressionNotice,
     suppressedCells: report.suppressedCells,
     groupsOmitted: report.groupsOmitted,

@@ -4,7 +4,6 @@ import type {
   ReportImportRecord,
   ReportRecord,
 } from "@/lib/public-input/reports/repository";
-import { SMALL_CELL_POLICY_VERSION } from "@/lib/public-input/reports/suppression";
 
 export type PublicOpinionGroupCell =
   | { label: string; status: "reported"; share: number }
@@ -44,6 +43,9 @@ export type PublicReportDto = {
   importTimestamp: string;
   smallCellSuppressionPolicyVersion: string;
   smallCellSuppressionNotice: string;
+  /** Allowlisted numeric suppression parameters actually used at publish time (4.5A.1). */
+  smallCellThreshold: number;
+  smallCellMinParticipation: number;
   suppressedCells: number;
   groupsOmitted: boolean;
   /** Omitted when the immutable import carried no aggregate moderation summary. */
@@ -85,6 +87,23 @@ export function toPublicReportDto(input: {
     return null;
   }
 
+  // Fail closed rather than project stale/incomplete rows (4.5A.1): a
+  // report flagged for reimport must never reach a live public projection,
+  // and a "published" row missing its suppression-provenance snapshot
+  // indicates a data integrity problem the DB CHECK should have prevented —
+  // refuse to guess at defaults here.
+  if (report.requiresReimport) {
+    return null;
+  }
+  if (
+    report.smallCellPolicyVersion == null ||
+    report.smallCellAlgorithmVersion == null ||
+    report.smallCellThreshold == null ||
+    report.smallCellMinParticipation == null
+  ) {
+    return null;
+  }
+
   const orderedGroups = [...groups].sort(
     (a, b) => a.displayOrder - b.displayOrder,
   );
@@ -96,7 +115,9 @@ export function toPublicReportDto(input: {
   );
 
   const dto: PublicReportDto = {
-    synthetic: report.synthetic,
+    // Data-derived mirror of content provenance — never the importing/
+    // publishing actor's own synthetic flag (4.5A.1).
+    synthetic: report.dataProvenance === "synthetic_fixture",
     topicId: report.topicId,
     reportVersion: report.version,
     publicTitle: report.publicTitle,
@@ -111,9 +132,14 @@ export function toPublicReportDto(input: {
     representationLimitations: reportImport.representationLimitations,
     methodVersion: reportImport.methodVersion,
     importTimestamp: (reportImport.generatedAt ?? reportImport.importedAt).toISOString(),
-    smallCellSuppressionPolicyVersion: SMALL_CELL_POLICY_VERSION,
+    // Stored publish-time snapshot — never the current runtime constant, so
+    // a policy/algorithm change can never silently rewrite what an already
+    // published report claims to have done (4.5A.1).
+    smallCellSuppressionPolicyVersion: report.smallCellPolicyVersion,
     smallCellSuppressionNotice:
       "Complementary small-cell suppression applied at publication. Suppressed shares are not zeros and cannot be reconstructed by subtraction. Production threshold remains subject to privacy review (OQ27/OQ35).",
+    smallCellThreshold: report.smallCellThreshold,
+    smallCellMinParticipation: report.smallCellMinParticipation,
     suppressedCells,
     groupsOmitted,
     providerNotice:
@@ -157,6 +183,12 @@ export type StaffReportDetailDto = {
   publisherAccountId: string | null;
   importerAccountId: string | null;
   supersededByReportId: string | null;
+  dataProvenance: ReportRecord["dataProvenance"];
+  requiresReimport: boolean;
+  smallCellPolicyVersion: string | null;
+  smallCellAlgorithmVersion: string | null;
+  smallCellThreshold: number | null;
+  smallCellMinParticipation: number | null;
   synthetic: boolean;
   createdAt: string;
   updatedAt: string;
@@ -179,6 +211,7 @@ export type StaffReportDetailDto = {
     moderationAcceptedCount: number;
     moderationRejectedCount: number;
     moderationPolicyVersion: string | null;
+    dataProvenance: ReportImportRecord["dataProvenance"];
     synthetic: boolean;
   };
   groups: {
@@ -189,6 +222,8 @@ export type StaffReportDetailDto = {
     rawShare: number;
     publishedStatus: ReportGroupRecord["publishedStatus"];
     publishedShare: number | null;
+    countProvenance: ReportGroupRecord["countProvenance"];
+    dataProvenance: ReportGroupRecord["dataProvenance"];
     synthetic: boolean;
   }[];
   findings: {
@@ -197,6 +232,7 @@ export type StaffReportDetailDto = {
     statementText: string;
     publicationStatus: ReportFindingRecord["publicationStatus"];
     displayOrder: number;
+    dataProvenance: ReportFindingRecord["dataProvenance"];
     synthetic: boolean;
   }[];
 };
@@ -222,6 +258,12 @@ export function toStaffReportDetailDto(input: {
     publisherAccountId: report.publisherAccountId,
     importerAccountId: report.importerAccountId,
     supersededByReportId: report.supersededByReportId,
+    dataProvenance: report.dataProvenance,
+    requiresReimport: report.requiresReimport,
+    smallCellPolicyVersion: report.smallCellPolicyVersion,
+    smallCellAlgorithmVersion: report.smallCellAlgorithmVersion,
+    smallCellThreshold: report.smallCellThreshold,
+    smallCellMinParticipation: report.smallCellMinParticipation,
     synthetic: report.synthetic,
     createdAt: report.createdAt.toISOString(),
     updatedAt: report.updatedAt.toISOString(),
@@ -246,6 +288,7 @@ export function toStaffReportDetailDto(input: {
       moderationAcceptedCount: reportImport.moderationAcceptedCount,
       moderationRejectedCount: reportImport.moderationRejectedCount,
       moderationPolicyVersion: reportImport.moderationPolicyVersion,
+      dataProvenance: reportImport.dataProvenance,
       synthetic: reportImport.synthetic,
     },
     groups: [...groups]
@@ -258,6 +301,8 @@ export function toStaffReportDetailDto(input: {
         participantCount: g.participantCount,
         publishedStatus: g.publishedStatus,
         publishedShare: g.publishedShare,
+        countProvenance: g.countProvenance,
+        dataProvenance: g.dataProvenance,
         synthetic: g.synthetic,
       })),
     findings: [...findings]
@@ -268,6 +313,7 @@ export function toStaffReportDetailDto(input: {
         statementText: f.statementText,
         publicationStatus: f.publicationStatus,
         displayOrder: f.displayOrder,
+        dataProvenance: f.dataProvenance,
         synthetic: f.synthetic,
       })),
   };

@@ -226,6 +226,7 @@ describe("Phase 4.4 Public Input report/moderation capability contracts", () => 
       "consultations.moderation.provider_recorded",
       "consultations.reports.finding_withheld",
       "consultations.reports.finding_included",
+      "consultations.reports.finding_superseded",
     ]) {
       expect(isRegisteredAuditAction(action)).toBe(true);
     }

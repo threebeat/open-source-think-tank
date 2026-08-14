@@ -262,6 +262,12 @@ async function deleteResetTables(db: FoundationDb): Promise<void> {
       `UPDATE ${quoteIdent("public_input_reports")} SET superseded_by_report_id = NULL`,
     ),
   );
+  // Break self-FK before deleting topic_governance_records (v2 predecessor chain).
+  await db.execute(
+    sql.raw(
+      `UPDATE ${quoteIdent("topic_governance_records")} SET predecessor_record_id = NULL`,
+    ),
+  );
 
   for (const table of DELETE_ORDER) {
     await db.execute(sql.raw(`DELETE FROM ${quoteIdent(table)}`));

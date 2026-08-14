@@ -134,6 +134,12 @@ jobs:
           OSTT_REQUIRE_POSTGRES: "1"
           OSTT_PG_ADMIN_URL: postgres://ostt:ostt@127.0.0.1:54329/postgres
           OSTT_PG_REPORT_TEST_URL: postgres://ostt:ostt@127.0.0.1:54329/ostt_report_integrity
+      - name: Organization isolation proof
+        run: npm run test:pg:organizations
+        env:
+          OSTT_REQUIRE_POSTGRES: "1"
+          OSTT_PG_ADMIN_URL: postgres://ostt:ostt@127.0.0.1:54329/postgres
+          OSTT_PG_ORG_TEST_URL: postgres://ostt:ostt@127.0.0.1:54329/ostt_org_isolation
       - name: Alpha reset smoke
         run: npm run alpha:reset:smoke
       - name: Existing operational acceptance journey

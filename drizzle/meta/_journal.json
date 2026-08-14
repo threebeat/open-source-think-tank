@@ -155,6 +155,20 @@
       "when": 1786530000000,
       "tag": "0021_public_input_report_integrity",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1786540000000,
+      "tag": "0022_public_input_report_integrity_closure",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1786550000000,
+      "tag": "0023_organization_kernel",
+      "breakpoints": true
     }
   ]
 }

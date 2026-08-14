@@ -1378,7 +1378,33 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
           moderationActionId: z.string(),
           capability: z.literal("consultations.reports.review"),
           previousPublicationStatus: z.enum(["included", "withheld", "superseded"]),
-          nextPublicationStatus: z.enum(["withheld", "superseded"]),
+          nextPublicationStatus: z.literal("withheld"),
+          hasPublicRationale: z.literal(true),
+          hasPrivateNote: z.boolean(),
+          actorAccountId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+  // Mirrors finding_withheld's payload shape with nextPublicationStatus
+  // pinned to "superseded" (4.5A.1) — a newer finding replaced this one,
+  // which is distinct from "failed institutional review" (finding_withheld).
+  "consultations.reports.finding_superseded": def(
+    "consultations.reports.finding_superseded",
+    "Public Input report finding superseded in public projection",
+    {
+      requireActorAccount: true,
+      requireReason: true,
+      payloadSchema: z
+        .object({
+          conversationId: z.string(),
+          topicId: z.string(),
+          reportId: z.string(),
+          findingId: z.string(),
+          moderationActionId: z.string(),
+          capability: z.literal("consultations.reports.review"),
+          previousPublicationStatus: z.enum(["included", "withheld", "superseded"]),
+          nextPublicationStatus: z.literal("superseded"),
           hasPublicRationale: z.literal(true),
           hasPrivateNote: z.boolean(),
           actorAccountId: z.string(),
@@ -1405,6 +1431,75 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
           actorAccountId: z.string(),
         })
         .strict() as z.ZodType<Record<string, unknown>>,
+    },
+  ),
+
+  "organization.config.published": def(
+    "organization.config.published",
+    "Organization configuration version published",
+    {
+      requireActorAccount: true,
+      requireReason: true,
+      payloadSchema: z
+        .object({
+          organizationPublicId: z.string(),
+          configVersionId: z.string(),
+          version: z.number().int().positive(),
+          capability: z.literal("organization.config.publish"),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+      publicProject: () =>
+        "An organization published a configuration version.",
+    },
+  ),
+  "organization.appointment.granted": def(
+    "organization.appointment.granted",
+    "Organization appointment granted",
+    {
+      requireActorAccount: true,
+      requireReason: true,
+      payloadSchema: z
+        .object({
+          organizationPublicId: z.string(),
+          appointmentKind: z.string(),
+          capability: z.literal("organization.appointment.grant"),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+      publicProject: (p) =>
+        `An organization appointment (${String(p.appointmentKind ?? "appointment")}) was granted.`,
+    },
+  ),
+  "organization.appointment.revoked": def(
+    "organization.appointment.revoked",
+    "Organization appointment revoked",
+    {
+      requireActorAccount: true,
+      requireReason: true,
+      payloadSchema: z
+        .object({
+          organizationPublicId: z.string(),
+          capability: z.literal("organization.appointment.revoke"),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+      publicProject: () => "An organization appointment was revoked.",
+    },
+  ),
+  "organization.governance.transitioned": def(
+    "organization.governance.transitioned",
+    "Topic governance record transitioned",
+    {
+      requireReason: true,
+      payloadSchema: z
+        .object({
+          organizationPublicId: z.string(),
+          fromState: z.string(),
+          toState: z.string(),
+          governanceAction: z.string(),
+          capability: z.literal("organization.governance.transition"),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+      publicProject: (p) =>
+        `A topic moved from ${String(p.fromState ?? "state")} to ${String(p.toState ?? "state")}.`,
     },
   ),
 

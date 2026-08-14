@@ -46,6 +46,11 @@ const ACTIVE_ONLY = new Set<Capability>([
   "consultations.reports.review",
   "consultations.reports.publish",
   "consultations.moderation.record",
+  "organization.membership.read",
+  "organization.appointment.grant",
+  "organization.appointment.revoke",
+  "organization.config.publish",
+  "organization.governance.transition",
 ]);
 
 function hasPlatform(
@@ -281,6 +286,15 @@ export function authorize(
         return deny(capability);
       }
       return { ok: true, principal };
+
+    case "organization.membership.read":
+    case "organization.appointment.grant":
+    case "organization.appointment.revoke":
+    case "organization.config.publish":
+    case "organization.governance.transition":
+      // Organization capabilities are never granted from platform roles,
+      // including administrator, or from legacy council seats.
+      return deny(capability);
 
     default: {
       const _exhaustive: never = capability;

@@ -38,6 +38,20 @@ export const councilRoleEnum = pgEnum("council_role", [
   "policy_council",
 ]);
 
+/** v2 actor principal kinds — service operators never inherit organization authority. */
+export const actorPrincipalKindEnum = pgEnum("actor_principal_kind", [
+  "service_operator",
+  "organization_officer",
+  "community_member",
+  "system",
+]);
+
+/** Queryable audit projection class — not part of the continuity digest. */
+export const auditProjectionClassEnum = pgEnum("audit_projection_class", [
+  "public",
+  "protected",
+]);
+
 export const invitationStatusEnum = pgEnum("invitation_status", [
   "pending",
   "accepted",
@@ -639,6 +653,14 @@ export const auditEvents = pgTable(
     continuityPrevHash: text("continuity_prev_hash"),
     continuityHash: text("continuity_hash"),
     synthetic: boolean("synthetic").notNull().default(true),
+    /**
+     * Optional organization scope for queryability. Not hashed into
+     * computeContinuityDigest — org public id belongs in privatePayload.
+     */
+    organizationId: text("organization_id"),
+    actorPrincipalKind: actorPrincipalKindEnum("actor_principal_kind"),
+    capability: text("capability"),
+    projectionClass: auditProjectionClassEnum("projection_class"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -647,6 +669,7 @@ export const auditEvents = pgTable(
     index("audit_events_at_idx").on(table.at),
     index("audit_events_action_idx").on(table.action),
     index("audit_events_actor_idx").on(table.actorAccountId),
+    index("audit_events_organization_idx").on(table.organizationId),
   ],
 );
 
@@ -1771,6 +1794,28 @@ export const publicInputReportModerationActionEnum = pgEnum(
 );
 
 /**
+ * Content data provenance (4.5A.1). Distinct from `accounts.synthetic` /
+ * `auditEvents.synthetic` (actor provenance) — this is a data-derived mirror
+ * describing the *content* row's origin. `synthetic_fixture` mirrors to
+ * `synthetic = true` on the owning row; `manual_aggregate` never does, even
+ * when the importing actor happens to be a synthetic seed account.
+ */
+export const publicInputReportDataProvenanceEnum = pgEnum(
+  "public_input_report_data_provenance",
+  ["synthetic_fixture", "manual_aggregate"],
+);
+
+/**
+ * Per-group count provenance (4.5A.1). `legacy_estimated` marks pre-@1.1
+ * FLOOR-derived backfill counts that are not exact and force
+ * `public_input_reports.requiresReimport` on the owning report.
+ */
+export const publicInputReportCountProvenanceEnum = pgEnum(
+  "public_input_report_count_provenance",
+  ["exact", "legacy_estimated"],
+);
+
+/**
  * Documentation-only axis distinction (no dedicated DB column needs this
  * union): `provider_side_record` rows live in
  * `public_input_provider_moderation_records` (observational provenance);
@@ -1824,6 +1869,10 @@ export const publicInputReportImports = pgTable(
       .notNull()
       .default(0),
     moderationPolicyVersion: text("moderation_policy_version"),
+    /** Derived from `sourceKind` at import time (4.5A.1) — never independently overridable. */
+    dataProvenance: publicInputReportDataProvenanceEnum(
+      "data_provenance",
+    ).notNull(),
     synthetic: boolean("synthetic").notNull().default(false),
   },
   (table) => [
@@ -1916,6 +1965,22 @@ export const publicInputReports = pgTable(
     ),
     supersededByReportId: text("superseded_by_report_id"),
     isLatestPublished: boolean("is_latest_published").notNull().default(false),
+    /** Derived from the owning import's `dataProvenance` at create time (4.5A.1). Immutable. */
+    dataProvenance: publicInputReportDataProvenanceEnum(
+      "data_provenance",
+    ).notNull(),
+    /**
+     * Set true by migration 0022 for reports whose group counts are
+     * `legacy_estimated` or whose import predates schema `@1.1`. A report
+     * with `requiresReimport = true` may never publish (CHECK below);
+     * correcting it requires a brand-new import version (ADR 0019).
+     */
+    requiresReimport: boolean("requires_reimport").notNull().default(false),
+    /** Suppression-policy snapshot — written only on the under_review -> published transition. */
+    smallCellPolicyVersion: text("small_cell_policy_version"),
+    smallCellAlgorithmVersion: text("small_cell_algorithm_version"),
+    smallCellThreshold: integer("small_cell_threshold"),
+    smallCellMinParticipation: integer("small_cell_min_participation"),
     synthetic: boolean("synthetic").notNull().default(false),
     ...timestamps,
   },
@@ -1960,6 +2025,22 @@ export const publicInputReports = pgTable(
       "public_input_reports_published_requires_metadata",
       sql`(${table.workflowState} <> 'published') OR (${table.publishedAt} IS NOT NULL AND ${table.publisherAccountId} IS NOT NULL)`,
     ),
+    check(
+      "public_input_reports_small_cell_threshold_positive",
+      sql`${table.smallCellThreshold} IS NULL OR ${table.smallCellThreshold} > 0`,
+    ),
+    check(
+      "public_input_reports_small_cell_min_participation_positive",
+      sql`${table.smallCellMinParticipation} IS NULL OR ${table.smallCellMinParticipation} > 0`,
+    ),
+    check(
+      "public_input_reports_published_suppression_complete",
+      sql`(${table.workflowState} <> 'published' AND ${table.workflowState} <> 'superseded') OR (${table.smallCellPolicyVersion} IS NOT NULL AND ${table.smallCellAlgorithmVersion} IS NOT NULL AND ${table.smallCellThreshold} IS NOT NULL AND ${table.smallCellMinParticipation} IS NOT NULL)`,
+    ),
+    check(
+      "public_input_reports_no_publish_when_reimport_required",
+      sql`(NOT ${table.requiresReimport}) OR (${table.workflowState} <> 'published' AND ${table.workflowState} <> 'superseded')`,
+    ),
   ],
 );
 
@@ -1986,6 +2067,14 @@ export const publicInputReportGroups = pgTable(
       .notNull()
       .default("reported"),
     publishedShare: real("published_share"),
+    /** `exact` for every group inserted since schema `@1.1`; `legacy_estimated` for pre-4.5A FLOOR backfills (4.5A.1). */
+    countProvenance: publicInputReportCountProvenanceEnum(
+      "count_provenance",
+    ).notNull(),
+    /** Derived from the owning report's `dataProvenance` at create time (4.5A.1). Immutable. */
+    dataProvenance: publicInputReportDataProvenanceEnum(
+      "data_provenance",
+    ).notNull(),
     synthetic: boolean("synthetic").notNull().default(false),
   },
   (table) => [
@@ -2040,6 +2129,10 @@ export const publicInputReportFindings = pgTable(
       .notNull()
       .default("included"),
     displayOrder: integer("display_order").notNull().default(0),
+    /** Derived from the owning report's `dataProvenance` at create time (4.5A.1). Immutable. */
+    dataProvenance: publicInputReportDataProvenanceEnum(
+      "data_provenance",
+    ).notNull(),
     synthetic: boolean("synthetic").notNull().default(false),
     ...timestamps,
   },
@@ -2165,6 +2258,472 @@ export const publicInputProviderModerationRecords = pgTable(
   ],
 );
 
+/** v2 organization service status — no production-active value in Phase 1. */
+export const organizationServiceStatusEnum = pgEnum(
+  "organization_service_status",
+  ["proposed", "seeded_synthetic", "disabled"],
+);
+
+export const organizationConfigStatusEnum = pgEnum(
+  "organization_config_status",
+  ["draft", "published", "superseded"],
+);
+
+export const organizationMembershipStatusEnum = pgEnum(
+  "organization_membership_status",
+  ["assigned", "active", "suspended", "closed", "appeal_pending"],
+);
+
+export const organizationMembershipEventKindEnum = pgEnum(
+  "organization_membership_event_kind",
+  [
+    "assignment",
+    "activation",
+    "transfer",
+    "suspension",
+    "closure",
+    "correction",
+    "appeal_opened",
+    "appeal_resolved",
+  ],
+);
+
+export const organizationAppointmentKindEnum = pgEnum(
+  "organization_appointment_kind",
+  [
+    "chamber_member",
+    "chamber_clerk",
+    "council_member",
+    "council_clerk",
+    "moderator",
+    "organization_admin",
+  ],
+);
+
+export const appointmentConflictKindEnum = pgEnum("appointment_conflict_kind", [
+  "conflict",
+  "recusal",
+]);
+
+export const topicGovernanceStateEnum = pgEnum("topic_governance_state", [
+  "informal_draft",
+  "formal_review_pending",
+  "qualified_consultation",
+  "community_accepted",
+  "community_disputed",
+  "consultation_inconclusive",
+  "chamber_queued",
+  "chamber_deliberating",
+  "chamber_accepted",
+  "chamber_disputed",
+  "council_scheduled",
+  "council_deliberating",
+  "recommendations_published",
+  "council_declined",
+  "honorably_disqualified",
+  "dishonorably_disqualified",
+]);
+
+export const topicGovernanceActionEnum = pgEnum("topic_governance_action", [
+  "submit_for_formal_review",
+  "return_for_revision",
+  "qualify",
+  "remove_for_serious_breach",
+  "close_as_accepted",
+  "close_as_disputed",
+  "close_as_inconclusive",
+  "queue_for_chamber",
+  "start_chamber_deliberation",
+  "record_chamber_acceptance",
+  "record_chamber_dispute",
+  "accept_to_council_agenda",
+  "decline_council_intake",
+  "accept_disputed_to_council_agenda",
+  "decline_disputed_council_intake",
+  "start_council_deliberation",
+  "publish_recommendations",
+  "expire_disputed",
+  "expire_inconclusive",
+  "expire_council_declined",
+  "disqualify_for_serious_breach",
+  "disqualify_chamber_topic_for_serious_breach",
+  "disqualify_deliberating_topic_for_serious_breach",
+]);
+
+export const organizations = pgTable(
+  "organizations",
+  {
+    id: text("id").primaryKey(),
+    publicId: text("public_id").notNull(),
+    slug: text("slug").notNull(),
+    displayName: text("display_name").notNull(),
+    serviceStatus: organizationServiceStatusEnum("service_status").notNull(),
+    synthetic: boolean("synthetic").notNull().default(true),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("organizations_public_id_unique").on(table.publicId),
+    uniqueIndex("organizations_slug_unique").on(table.slug),
+    check(
+      "organizations_slug_nonblank",
+      sql`char_length(btrim(${table.slug})) > 0`,
+    ),
+    check(
+      "organizations_display_name_nonblank",
+      sql`char_length(btrim(${table.displayName})) > 0`,
+    ),
+    check(
+      "organizations_public_id_nonblank",
+      sql`char_length(btrim(${table.publicId})) > 0`,
+    ),
+  ],
+);
+
+export const organizationServiceAreas = pgTable(
+  "organization_service_areas",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "restrict" }),
+    regionCode: text("region_code").notNull(),
+    synthetic: boolean("synthetic").notNull().default(true),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("organization_service_areas_org_region_uidx").on(
+      table.organizationId,
+      table.regionCode,
+    ),
+    check(
+      "organization_service_areas_region_nonblank",
+      sql`char_length(btrim(${table.regionCode})) > 0`,
+    ),
+    check(
+      "organization_service_areas_region_coarse",
+      sql`${table.regionCode} ~ '^[A-Z]{2}(-[A-Z0-9]{1,3})?$'`,
+    ),
+  ],
+);
+
+export const organizationConfigVersions = pgTable(
+  "organization_config_versions",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "restrict" }),
+    version: integer("version").notNull(),
+    constitutionalFloorVersion: text("constitutional_floor_version").notNull(),
+    config: jsonb("config").$type<Record<string, unknown>>().notNull(),
+    status: organizationConfigStatusEnum("status").notNull(),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    publishedByAccountId: text("published_by_account_id").references(
+      () => accounts.id,
+      { onDelete: "restrict" },
+    ),
+    synthetic: boolean("synthetic").notNull().default(true),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("organization_config_versions_org_version_uidx").on(
+      table.organizationId,
+      table.version,
+    ),
+    uniqueIndex("organization_config_versions_org_id_key").on(
+      table.organizationId,
+      table.id,
+    ),
+    check(
+      "organization_config_versions_version_positive",
+      sql`${table.version} > 0`,
+    ),
+    check(
+      "organization_config_versions_floor_nonblank",
+      sql`char_length(btrim(${table.constitutionalFloorVersion})) > 0`,
+    ),
+    check(
+      "organization_config_hosted_polis_disabled",
+      sql`(${table.config}->>'hostedPolisEnabled') IS DISTINCT FROM 'true'`,
+    ),
+    check(
+      "organization_config_published_metadata",
+      sql`(${table.status} <> 'published') OR (${table.publishedAt} IS NOT NULL AND ${table.publishedByAccountId} IS NOT NULL)`,
+    ),
+  ],
+);
+
+export const organizationMemberships = pgTable(
+  "organization_memberships",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "restrict" }),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    status: organizationMembershipStatusEnum("status").notNull(),
+    isPrimary: boolean("is_primary").notNull().default(false),
+    assignedAt: timestamp("assigned_at", { withTimezone: true }).notNull(),
+    synthetic: boolean("synthetic").notNull().default(true),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("organization_memberships_org_id_key").on(
+      table.organizationId,
+      table.id,
+    ),
+    uniqueIndex("organization_memberships_active_account_uidx")
+      .on(table.organizationId, table.accountId)
+      .where(sql`${table.status} <> 'closed'`),
+    uniqueIndex("organization_memberships_one_primary_uidx")
+      .on(table.accountId)
+      .where(
+        sql`${table.isPrimary} AND ${table.status} IN ('assigned', 'active')`,
+      ),
+  ],
+);
+
+export const organizationMembershipEvents = pgTable(
+  "organization_membership_events",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id").notNull(),
+    membershipId: text("membership_id").notNull(),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    eventKind: organizationMembershipEventKindEnum("event_kind").notNull(),
+    actorPrincipalKind: actorPrincipalKindEnum("actor_principal_kind").notNull(),
+    actorAccountId: text("actor_account_id").references(() => accounts.id, {
+      onDelete: "restrict",
+    }),
+    reason: text("reason"),
+    ruleVersion: text("rule_version").notNull(),
+    at: timestamp("at", { withTimezone: true }).notNull(),
+    synthetic: boolean("synthetic").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("organization_membership_events_membership_idx").on(
+      table.organizationId,
+      table.membershipId,
+      table.at,
+    ),
+    foreignKey({
+      name: "organization_membership_events_org_membership_fk",
+      columns: [table.organizationId, table.membershipId],
+      foreignColumns: [
+        organizationMemberships.organizationId,
+        organizationMemberships.id,
+      ],
+    }).onDelete("restrict"),
+    check(
+      "organization_membership_events_rule_nonblank",
+      sql`char_length(btrim(${table.ruleVersion})) > 0`,
+    ),
+  ],
+);
+
+export const organizationAppointments = pgTable(
+  "organization_appointments",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "restrict" }),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    appointmentKind: organizationAppointmentKindEnum(
+      "appointment_kind",
+    ).notNull(),
+    termStartsAt: timestamp("term_starts_at", { withTimezone: true }).notNull(),
+    termEndsAt: timestamp("term_ends_at", { withTimezone: true }),
+    issuedByAccountId: text("issued_by_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    issuedByPrincipalKind: actorPrincipalKindEnum(
+      "issued_by_principal_kind",
+    ).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    revocationReason: text("revocation_reason"),
+    synthetic: boolean("synthetic").notNull().default(true),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("organization_appointments_org_id_key").on(
+      table.organizationId,
+      table.id,
+    ),
+    uniqueIndex("organization_appointments_active_kind_uidx")
+      .on(table.organizationId, table.accountId, table.appointmentKind)
+      .where(sql`${table.revokedAt} IS NULL`),
+    check(
+      "organization_appointments_no_self_grant",
+      sql`${table.issuedByAccountId} <> ${table.accountId}`,
+    ),
+    check(
+      "organization_appointments_term_order",
+      sql`${table.termEndsAt} IS NULL OR ${table.termEndsAt} > ${table.termStartsAt}`,
+    ),
+  ],
+);
+
+export const topicGovernanceRecords = pgTable(
+  "topic_governance_records",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "restrict" }),
+    publicId: text("public_id").notNull(),
+    state: topicGovernanceStateEnum("state").notNull(),
+    configVersionId: text("config_version_id").notNull(),
+    authorAccountId: text("author_account_id").references(() => accounts.id, {
+      onDelete: "restrict",
+    }),
+    retentionDeadlineAt: timestamp("retention_deadline_at", {
+      withTimezone: true,
+    }),
+    legacyTopicId: text("legacy_topic_id").references(() => topics.id, {
+      onDelete: "restrict",
+    }),
+    predecessorRecordId: text("predecessor_record_id"),
+    synthetic: boolean("synthetic").notNull().default(true),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("topic_governance_records_org_id_key").on(
+      table.organizationId,
+      table.id,
+    ),
+    uniqueIndex("topic_governance_records_org_public_id_uidx").on(
+      table.organizationId,
+      table.publicId,
+    ),
+    foreignKey({
+      name: "topic_governance_records_org_config_fk",
+      columns: [table.organizationId, table.configVersionId],
+      foreignColumns: [
+        organizationConfigVersions.organizationId,
+        organizationConfigVersions.id,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "topic_governance_records_predecessor_fk",
+      columns: [table.organizationId, table.predecessorRecordId],
+      foreignColumns: [table.organizationId, table.id],
+    }).onDelete("restrict"),
+    check(
+      "topic_governance_records_public_id_nonblank",
+      sql`char_length(btrim(${table.publicId})) > 0`,
+    ),
+  ],
+);
+
+export const topicGovernanceEvents = pgTable(
+  "topic_governance_events",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id").notNull(),
+    recordId: text("record_id").notNull(),
+    fromState: topicGovernanceStateEnum("from_state").notNull(),
+    toState: topicGovernanceStateEnum("to_state").notNull(),
+    action: topicGovernanceActionEnum("action").notNull(),
+    actorPrincipalKind: actorPrincipalKindEnum("actor_principal_kind").notNull(),
+    actorAccountId: text("actor_account_id").references(() => accounts.id, {
+      onDelete: "restrict",
+    }),
+    reason: text("reason"),
+    criteriaTrace: jsonb("criteria_trace").$type<Record<string, unknown>>(),
+    metricsSnapshot: jsonb("metrics_snapshot").$type<Record<string, unknown>>(),
+    configVersionId: text("config_version_id").notNull(),
+    ruleVersion: text("rule_version").notNull(),
+    at: timestamp("at", { withTimezone: true }).notNull(),
+    synthetic: boolean("synthetic").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("topic_governance_events_record_idx").on(
+      table.organizationId,
+      table.recordId,
+      table.at,
+    ),
+    foreignKey({
+      name: "topic_governance_events_org_record_fk",
+      columns: [table.organizationId, table.recordId],
+      foreignColumns: [
+        topicGovernanceRecords.organizationId,
+        topicGovernanceRecords.id,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "topic_governance_events_org_config_fk",
+      columns: [table.organizationId, table.configVersionId],
+      foreignColumns: [
+        organizationConfigVersions.organizationId,
+        organizationConfigVersions.id,
+      ],
+    }).onDelete("restrict"),
+    check(
+      "topic_governance_events_rule_nonblank",
+      sql`char_length(btrim(${table.ruleVersion})) > 0`,
+    ),
+  ],
+);
+
+export const appointmentConflictsAndRecusals = pgTable(
+  "appointment_conflicts_and_recusals",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id").notNull(),
+    appointmentId: text("appointment_id").notNull(),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    kind: appointmentConflictKindEnum("kind").notNull(),
+    topicGovernanceRecordId: text("topic_governance_record_id"),
+    reason: text("reason").notNull(),
+    at: timestamp("at", { withTimezone: true }).notNull(),
+    synthetic: boolean("synthetic").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("appointment_conflicts_appointment_idx").on(
+      table.organizationId,
+      table.appointmentId,
+    ),
+    foreignKey({
+      name: "appointment_conflicts_org_appointment_fk",
+      columns: [table.organizationId, table.appointmentId],
+      foreignColumns: [
+        organizationAppointments.organizationId,
+        organizationAppointments.id,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "appointment_conflicts_org_topic_fk",
+      columns: [table.organizationId, table.topicGovernanceRecordId],
+      foreignColumns: [
+        topicGovernanceRecords.organizationId,
+        topicGovernanceRecords.id,
+      ],
+    }).onDelete("restrict"),
+    check(
+      "appointment_conflicts_reason_nonblank",
+      sql`char_length(btrim(${table.reason})) > 0`,
+    ),
+  ],
+);
+
 export const foundationTables = {
   persons,
   accounts,
@@ -2209,4 +2768,13 @@ export const foundationTables = {
   publicInputReportFindings,
   publicInputReportModerationActions,
   publicInputProviderModerationRecords,
+  organizations,
+  organizationServiceAreas,
+  organizationConfigVersions,
+  organizationMemberships,
+  organizationMembershipEvents,
+  organizationAppointments,
+  topicGovernanceRecords,
+  topicGovernanceEvents,
+  appointmentConflictsAndRecusals,
 };

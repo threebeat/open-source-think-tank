@@ -1,7 +1,7 @@
-# Alpha reset table classification (Phase 3 closure + Phase 4.3–4.4 Public Input)
+# Alpha reset table classification (Phase 3 closure + Phase 4.3–4.4 Public Input + v2 organization kernel)
 
 **Status:** Operator procedure for gated invite-only alpha. Not a public-demo feature. Not production retention counsel.  
-**Manifest version:** `4.4.1` — Phase **4.4** adds six report/moderation tables classified **reset** below; `RESET_MANIFEST_VERSION` in `alpha-reset-manifest.ts` and `docs/alpha-reset-classification.md` are kept in sync.
+**Manifest version:** `v2.1.0` — Commonhall v2 Phase 1 adds nine organization/governance tables classified **reset** below; `RESET_MANIFEST_VERSION` in `alpha-reset-manifest.ts` and this document stay in sync.
 
 **Scope:** Every `pgTable` in `src/db/schema.ts` must be classified as exactly one of:
 
@@ -35,7 +35,7 @@ Machine-readable mirror: `src/lib/operator/alpha-reset-manifest.ts`.
 
 ---
 
-## Classification (43 tables)
+## Classification (52 tables)
 
 | Table | Class | Rationale |
 | --- | --- | --- |
@@ -82,6 +82,15 @@ Machine-readable mirror: `src/lib/operator/alpha-reset-manifest.ts`.
 | `public_input_report_findings` | reset | Agreement/disagreement finding rows (Phase 4.4). Local wipe only. |
 | `public_input_report_moderation_actions` | reset | Institutional Public Input moderation / finding-eligibility actions (Phase 4.4; append-only in normal ops). Local wipe only. |
 | `public_input_provider_moderation_records` | reset | Provider-side moderation observational records (Phase 4.4). Local wipe only — never implies remote provider deletion. |
+| `appointment_conflicts_and_recusals` | reset | v2 appointment conflict/recusal rows (Phase 1 kernel). Synthetic/alpha only. |
+| `topic_governance_events` | reset | Append-only v2 governance transitions (immutable in normal ops). Local wipe only. |
+| `topic_governance_records` | reset | Composed v2 topic governance records. Local wipe only. |
+| `organization_appointments` | reset | Organization Chamber/Council/moderator/admin appointments. Not a conversion of `council_appointments`. |
+| `organization_membership_events` | reset | Append-only membership history (immutable in normal ops). |
+| `organization_memberships` | reset | Organization community membership skeleton (not granted as product enrollment in Phase 1). |
+| `organization_config_versions` | reset | Versioned organization configuration (synthetic). |
+| `organization_service_areas` | reset | Coarse region codes only. |
+| `organizations` | reset | Organization tenants. |
 
 **Deferred:** none.
 

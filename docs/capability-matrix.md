@@ -68,6 +68,18 @@ Default decision: **deny**.
 | `consultations.reports.review` | active (4.4 / 4.5A) | administrator | — | Review / reject imported report versions with substantive reason; finding eligibility only while `under_review` + concurrency version; does not auto-publish |
 | `consultations.reports.publish` | active (4.4) | administrator | — | Publish or supersede allowlisted public report projection; never leaks `providerConversationRef` |
 | `consultations.moderation.record` | active (4.4) | moderator or administrator | — | Append institutional Public Input moderation / finding-eligibility actions with required reason; does **not** grant agenda promotion, metric edits, or live provider admin API |
+| `organization.membership.read` | active | **organization_admin appointment in that organization** | — | **Not** implied by platform `administrator`. `authorizeOrganization` only. |
+| `organization.appointment.grant` | active | organization_admin in that organization | — | Actor ≠ subject; CHECK + service. Platform admin denied. Live Chamber/Council still disabled. |
+| `organization.appointment.revoke` | active | organization_admin in that organization | — | Organization-scoped; no self-hidden override. |
+| `organization.config.publish` | active | organization_admin in that organization | — | Constitutional floor required; `hostedPolisEnabled: true` rejected; numeric production keys rejected unless synthetic. |
+| `organization.governance.transition` | active | matching org appointment for the JSON actor (moderator / clerks / members) | — | **Not** implied by `roles.grant_council` or `deliberation_council`. Kernel writes require `COMMONHALL_V2_KERNEL` on + gated. Live Chamber/Council actions remain disabled. |
+
+### Commonhall v2 Phase 1 authority notes
+
+- Platform `administrator` and community `participant` **do not** receive organization capabilities.
+- Legacy `council_appointments` (`deliberation_council` / `policy_council`) remain legacy seats. They do not create `organization_appointments` and do not satisfy `organization.governance.transition`.
+- Community membership is not granted in Phase 1; `/join` stays invite-only.
+- Live Chamber, live Council, open enrollment, elevated portal, and hosted Pol.is stay disabled.
 
 ### Phase 4.1–4.4 authority notes (public-demo / pre-deliberation / consultation ops)
 
