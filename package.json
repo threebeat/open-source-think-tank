@@ -30,6 +30,7 @@
     "test:pg:invites": "OSTT_REQUIRE_POSTGRES=1 vitest run src/lib/invites/issue.pg.test.ts",
     "test:pg:alpha-reset": "OSTT_REQUIRE_POSTGRES=1 vitest run src/lib/operator/alpha-reset.pg.test.ts",
     "test:pg:reports": "OSTT_REQUIRE_POSTGRES=1 vitest run src/lib/public-input/reports/report-integrity.pg.test.ts",
+    "test:pg:organizations": "OSTT_REQUIRE_POSTGRES=1 vitest run src/lib/organizations/isolation.pg.test.ts",
     "phase3:acceptance": "tsx scripts/phase-3-acceptance-journey.ts"
   },
   "dependencies": {
