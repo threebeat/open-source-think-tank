@@ -1,0 +1,194 @@
+{
+  "schemaVersion": "commonhall-governance@2.0.0",
+  "workingName": "Commonhall v2",
+  "status": "proposed",
+  "principles": [
+    "open-community-membership-first",
+    "viewpoint-neutral-procedural-moderation",
+    "preference-is-not-evidence",
+    "algorithms-explain-humans-decide",
+    "organization-authority-is-scoped",
+    "raw-consultation-data-is-protected",
+    "public-institutional-actions-are-auditable"
+  ],
+  "realms": [
+    "commons_informal",
+    "moderation_queue",
+    "public_agenda",
+    "chamber",
+    "council_agenda",
+    "records",
+    "protected_audit"
+  ],
+  "states": [
+    {
+      "id": "informal_draft",
+      "realm": "commons_informal",
+      "public": true,
+      "publicAgenda": false,
+      "consultationReportVisible": false,
+      "description": "Unqualified discussion or proposal under the unmoderated-content disclaimer."
+    },
+    {
+      "id": "formal_review_pending",
+      "realm": "moderation_queue",
+      "public": false,
+      "publicAgenda": false,
+      "consultationReportVisible": false,
+      "description": "Submitted for a viewpoint-neutral criteria and safety review."
+    },
+    {
+      "id": "qualified_consultation",
+      "realm": "public_agenda",
+      "public": true,
+      "publicAgenda": true,
+      "consultationReportVisible": false,
+      "description": "Qualified topic in consultation with one current provider conversation."
+    },
+    {
+      "id": "community_accepted",
+      "realm": "public_agenda",
+      "public": true,
+      "publicAgenda": true,
+      "consultationReportVisible": true,
+      "description": "Consultation crossed the organization's published acceptance rule."
+    },
+    {
+      "id": "community_disputed",
+      "realm": "public_agenda",
+      "public": true,
+      "publicAgenda": true,
+      "consultationReportVisible": true,
+      "description": "Consultation crossed the organization's published dispute rule."
+    },
+    {
+      "id": "consultation_inconclusive",
+      "realm": "public_agenda",
+      "public": true,
+      "publicAgenda": true,
+      "consultationReportVisible": true,
+      "description": "Consultation closed without the published participation or decision threshold."
+    },
+    {
+      "id": "chamber_queued",
+      "realm": "chamber",
+      "public": true,
+      "publicAgenda": true,
+      "consultationReportVisible": true,
+      "description": "Community-accepted topic waiting on the public Chamber schedule."
+    },
+    {
+      "id": "chamber_deliberating",
+      "realm": "chamber",
+      "public": true,
+      "publicAgenda": true,
+      "consultationReportVisible": true,
+      "description": "Appointed organization members deliberate in public and record votes, abstentions, recusals, evidence requests, and amendments."
+    },
+    {
+      "id": "chamber_accepted",
+      "realm": "chamber",
+      "public": true,
+      "publicAgenda": true,
+      "consultationReportVisible": true,
+      "description": "The Chamber issued an accepted verdict with a versioned rationale."
+    },
+    {
+      "id": "chamber_disputed",
+      "realm": "chamber",
+      "public": true,
+      "publicAgenda": true,
+      "consultationReportVisible": true,
+      "description": "The Chamber issued a disputed verdict with a versioned rationale."
+    },
+    {
+      "id": "council_scheduled",
+      "realm": "council_agenda",
+      "public": true,
+      "publicAgenda": false,
+      "consultationReportVisible": true,
+      "description": "The organization Council accepted the topic onto its published agenda."
+    },
+    {
+      "id": "council_deliberating",
+      "realm": "council_agenda",
+      "public": true,
+      "publicAgenda": false,
+      "consultationReportVisible": true,
+      "description": "The Council deliberates in public and records the full roll call."
+    },
+    {
+      "id": "recommendations_published",
+      "realm": "records",
+      "public": true,
+      "publicAgenda": false,
+      "consultationReportVisible": true,
+      "terminal": true,
+      "description": "Versioned recommendations and any community action opportunities are published."
+    },
+    {
+      "id": "council_declined",
+      "realm": "public_agenda",
+      "public": true,
+      "publicAgenda": true,
+      "consultationReportVisible": true,
+      "description": "The Council declined intake; the topic remains visible until its published retention deadline."
+    },
+    {
+      "id": "honorably_disqualified",
+      "realm": "commons_informal",
+      "public": true,
+      "publicAgenda": false,
+      "consultationReportVisible": true,
+      "terminal": true,
+      "deadTopic": true,
+      "newConsultationRequiredForSuccessor": true,
+      "description": "Qualification expired for insufficient engagement, time, or remediable quality; the record appears under Disqualified Topics."
+    },
+    {
+      "id": "dishonorably_disqualified",
+      "realm": "protected_audit",
+      "public": false,
+      "publicAgenda": false,
+      "consultationReportVisible": false,
+      "terminal": true,
+      "deadTopic": true,
+      "newConsultationRequiredForSuccessor": true,
+      "description": "A serious ethics or service-rule breach removed the content from public resurfacing while retaining a protected, appealable audit record."
+    }
+  ],
+  "transitions": [
+    { "action": "submit_for_formal_review", "from": "informal_draft", "to": "formal_review_pending", "actor": "community_member" },
+    { "action": "return_for_revision", "from": "formal_review_pending", "to": "informal_draft", "actor": "moderator", "reasonRequired": true },
+    { "action": "qualify", "from": "formal_review_pending", "to": "qualified_consultation", "actor": "moderator", "criteriaTraceRequired": true },
+    { "action": "remove_for_serious_breach", "from": "formal_review_pending", "to": "dishonorably_disqualified", "actor": "moderator", "reasonRequired": true, "appealable": true },
+    { "action": "close_as_accepted", "from": "qualified_consultation", "to": "community_accepted", "actor": "system_from_published_rule", "metricsSnapshotRequired": true },
+    { "action": "close_as_disputed", "from": "qualified_consultation", "to": "community_disputed", "actor": "system_from_published_rule", "metricsSnapshotRequired": true },
+    { "action": "close_as_inconclusive", "from": "qualified_consultation", "to": "consultation_inconclusive", "actor": "system_from_published_rule", "metricsSnapshotRequired": true },
+    { "action": "queue_for_chamber", "from": "community_accepted", "to": "chamber_queued", "actor": "system_from_published_rule" },
+    { "action": "start_chamber_deliberation", "from": "chamber_queued", "to": "chamber_deliberating", "actor": "chamber_clerk" },
+    { "action": "record_chamber_acceptance", "from": "chamber_deliberating", "to": "chamber_accepted", "actor": "chamber", "verdictRequired": true },
+    { "action": "record_chamber_dispute", "from": "chamber_deliberating", "to": "chamber_disputed", "actor": "chamber", "verdictRequired": true },
+    { "action": "accept_to_council_agenda", "from": "chamber_accepted", "to": "council_scheduled", "actor": "council", "mayReferenceVerdictReason": true },
+    { "action": "decline_council_intake", "from": "chamber_accepted", "to": "council_declined", "actor": "council", "reasonRequired": true },
+    { "action": "accept_disputed_to_council_agenda", "from": "chamber_disputed", "to": "council_scheduled", "actor": "council", "reasonRequired": true },
+    { "action": "decline_disputed_council_intake", "from": "chamber_disputed", "to": "council_declined", "actor": "council", "mayReferenceVerdictReason": true },
+    { "action": "start_council_deliberation", "from": "council_scheduled", "to": "council_deliberating", "actor": "council_clerk" },
+    { "action": "publish_recommendations", "from": "council_deliberating", "to": "recommendations_published", "actor": "council", "verdictRequired": true },
+    { "action": "expire_disputed", "from": "community_disputed", "to": "honorably_disqualified", "actor": "system_from_published_rule", "reasonRequired": true },
+    { "action": "expire_inconclusive", "from": "consultation_inconclusive", "to": "honorably_disqualified", "actor": "system_from_published_rule", "reasonRequired": true },
+    { "action": "expire_council_declined", "from": "council_declined", "to": "honorably_disqualified", "actor": "system_from_published_rule", "reasonRequired": true },
+    { "action": "disqualify_for_serious_breach", "from": "qualified_consultation", "to": "dishonorably_disqualified", "actor": "moderator", "reasonRequired": true, "appealable": true },
+    { "action": "disqualify_chamber_topic_for_serious_breach", "from": "chamber_queued", "to": "dishonorably_disqualified", "actor": "moderator", "reasonRequired": true, "appealable": true },
+    { "action": "disqualify_deliberating_topic_for_serious_breach", "from": "chamber_deliberating", "to": "dishonorably_disqualified", "actor": "moderator", "reasonRequired": true, "appealable": true }
+  ],
+  "publicRollCall": {
+    "bodies": ["chamber", "council"],
+    "allowedMemberPositions": ["yes", "no", "abstain", "recused", "absent"],
+    "requiredFields": ["memberPublicId", "position", "recordedAt", "body", "topicId", "verdictVersion"]
+  },
+  "topicPageTabs": ["overview", "evidence", "discussion", "history"],
+  "rawConsultationDataPublic": false,
+  "individualConsultationRecordsPublic": false,
+  "consultationMapPolicy": "post-close aggregate geometry only; no person-level points, hover identity, xid, raw votes, or small cells"
+}
