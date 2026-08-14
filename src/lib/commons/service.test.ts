@@ -98,9 +98,9 @@ describe("commons service", () => {
     return { accountId, principal };
   }
 
-  it("requires organizationId and does not list all tenants", () => {
+  it("requires organizationId and does not list all tenants", async () => {
     expect(() => requireOrganizationId("")).toThrow(/ORGANIZATION_ID_REQUIRED/);
-    expect(() => listDiscussionsForOrganization(db, "")).toThrow(
+    await expect(listDiscussionsForOrganization(db, "")).rejects.toThrow(
       /ORGANIZATION_ID_REQUIRED/,
     );
   });
