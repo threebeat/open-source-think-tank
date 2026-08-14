@@ -75,6 +75,13 @@ export const CAPABILITIES = [
   "consultations.reports.review",
   "consultations.reports.publish",
   "consultations.moderation.record",
+  // Commonhall v2 Phase 1 — organization capabilities. Never granted from
+  // platform administrator or community participant; use authorizeOrganization.
+  "organization.membership.read",
+  "organization.appointment.grant",
+  "organization.appointment.revoke",
+  "organization.config.publish",
+  "organization.governance.transition",
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
@@ -104,6 +111,29 @@ export type AuthzPrincipal = {
   synthetic: boolean;
   platformRoles: PlatformRole[];
   councilRoles: CouncilRole[];
+  /** Organization community memberships — never inferred from platform roles. */
+  organizationMemberships?: Array<{
+    organizationId: string;
+    status:
+      | "assigned"
+      | "active"
+      | "suspended"
+      | "closed"
+      | "appeal_pending";
+    isPrimary: boolean;
+  }>;
+  /** Time-bounded organization appointments — never inferred from councilRoles. */
+  organizationAppointments?: Array<{
+    organizationId: string;
+    kind:
+      | "chamber_member"
+      | "chamber_clerk"
+      | "council_member"
+      | "council_clerk"
+      | "moderator"
+      | "organization_admin";
+    appointmentId: string;
+  }>;
 };
 
 export type AuthzDecision =

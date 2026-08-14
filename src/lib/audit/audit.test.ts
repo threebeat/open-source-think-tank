@@ -160,6 +160,10 @@ describe("audit ledger (2.9)", () => {
         continuityHash: "abc",
         synthetic: true,
         createdAt: new Date(),
+        organizationId: null,
+        actorPrincipalKind: null,
+        capability: null,
+        projectionClass: null,
       },
       { prevHash: null, hash: "abc" },
     );

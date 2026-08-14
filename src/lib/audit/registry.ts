@@ -1434,6 +1434,75 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
     },
   ),
 
+  "organization.config.published": def(
+    "organization.config.published",
+    "Organization configuration version published",
+    {
+      requireActorAccount: true,
+      requireReason: true,
+      payloadSchema: z
+        .object({
+          organizationPublicId: z.string(),
+          configVersionId: z.string(),
+          version: z.number().int().positive(),
+          capability: z.literal("organization.config.publish"),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+      publicProject: () =>
+        "An organization published a configuration version.",
+    },
+  ),
+  "organization.appointment.granted": def(
+    "organization.appointment.granted",
+    "Organization appointment granted",
+    {
+      requireActorAccount: true,
+      requireReason: true,
+      payloadSchema: z
+        .object({
+          organizationPublicId: z.string(),
+          appointmentKind: z.string(),
+          capability: z.literal("organization.appointment.grant"),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+      publicProject: (p) =>
+        `An organization appointment (${String(p.appointmentKind ?? "appointment")}) was granted.`,
+    },
+  ),
+  "organization.appointment.revoked": def(
+    "organization.appointment.revoked",
+    "Organization appointment revoked",
+    {
+      requireActorAccount: true,
+      requireReason: true,
+      payloadSchema: z
+        .object({
+          organizationPublicId: z.string(),
+          capability: z.literal("organization.appointment.revoke"),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+      publicProject: () => "An organization appointment was revoked.",
+    },
+  ),
+  "organization.governance.transitioned": def(
+    "organization.governance.transitioned",
+    "Topic governance record transitioned",
+    {
+      requireReason: true,
+      payloadSchema: z
+        .object({
+          organizationPublicId: z.string(),
+          fromState: z.string(),
+          toState: z.string(),
+          governanceAction: z.string(),
+          capability: z.literal("organization.governance.transition"),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+      publicProject: (p) =>
+        `A topic moved from ${String(p.fromState ?? "state")} to ${String(p.toState ?? "state")}.`,
+    },
+  ),
+
   // Phase 3.12 operator alpha reset (CLI-only; no public projector)
   "alpha.reset_executed": def(
     "alpha.reset_executed",
