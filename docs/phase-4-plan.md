@@ -1,12 +1,12 @@
 # Phase 4 plan — Computational democracy journey & Public Input
 
-**Status:** Active. Phase 4.1–**4.3** are **owner-approved and complete**. Phase **4.4** engineering merged (PR #20) but is **not accepted as complete** after the 2026-08-14 owner review — P0/P1 integrity defects require remediation. Active package: **4.5A** (Phase 4.4 integrity remediation). Public architecture rebuild (**4.5B+**) must not merge until 4.5A passes the verification ladder.  
-**Baseline:** `origin/main` at `86dcfd10157869ba9443adee885332df7cc608a8` (PR #20 Phase 4.4 merged). Phase 4.3 comparison base: `9aba076e09b60ea95e2c69d42380494a1c4398ac`.  
+**Status:** Active. Phase 4.1–**4.3** owner-approved complete. Phase **4.4** engineering merged (PR #20). Phase **4.5A** merged (PR #21) with conditional acceptance — active package: **4.5A.1** integrity closure before **4.5B** public architecture.  
+**Baseline:** `origin/main` at `09010cef2199c2c68962f37ec221b4334dfc8779` (PR #21 Phase 4.5A merged).  
 **Related:** [architecture-phase-4.md](./architecture-phase-4.md), [public-input-provider-assessment.md](./public-input-provider-assessment.md), [0010](./decisions/0010-computational-democracy-pipeline.md), [0011](./decisions/0011-idea-commons-formal-pipeline-separation.md), [0012](./decisions/0012-public-input-provider-boundary.md), [0013](./decisions/0013-canonical-formal-topic-page.md), [0014](./decisions/0014-institutional-conversation-lifecycle.md), [0015](./decisions/0015-progressive-evidence-disclosure.md), [0016](./decisions/0016-provider-embed-activation-exact-origin.md), [0017](./decisions/0017-local-versus-remote-reset-semantics.md), [0018](./decisions/0018-aggregate-only-canonical-import-format.md), [0019](./decisions/0019-immutable-report-versioning-and-publication.md), [0020](./decisions/0020-public-input-moderation-versus-provider-moderation.md), [0021](./decisions/0021-complementary-small-cell-suppression.md), [phase-3-handoff.md](./phase-3-handoff.md), [product-charter.md](./product-charter.md)
 
 This plan is a **product/engineering contract**. It is **not** legal clearance, counsel disposition, Pol.is vendor approval, production-launch approval, or authorization to enable a live consultation provider.
 
-**Live Pol.is remains FAIL-CLOSED.** Packages **4.4** and **4.5A** authorize **aggregate import + moderation engineering / integrity remediation only**. They are **not** live activation, raw-export retention authorization, counsel clearance, or the five-area public IA rebuild.
+**Live Pol.is remains FAIL-CLOSED.** Packages **4.4**, **4.5A**, and **4.5A.1** authorize **aggregate import + moderation / integrity engineering only**. They are **not** live activation, raw-export retention authorization, counsel clearance, or the five-area public IA rebuild.
 
 ---
 
@@ -74,14 +74,18 @@ Phase 4 retains these deliverables from the prior MVP plan:
 | **4.1** | Institutional contract and synthetic end-to-end demo | **Complete / owner-approved** (PR #17). |
 | **4.2** | Public Input provider assessment, adapter boundary, canonical topic IA | **Complete / owner-approved** (PR #18). |
 | **4.3** | Gated conversation lifecycle, embed activation readiness, progressive evidence disclosure | **Complete / owner-approved** (PR #19). |
-| **4.4** | Moderation and aggregate report ingestion | Engineering merged (PR #20); **not owner-accepted** pending 4.5A integrity remediation |
-| **4.5A** | Phase 4.4 integrity remediation | Fix published-finding immutability, current-consultation report selection, exact-count suppression, title hashing, import concurrency, moderation disclosure, unavailable vs not-found — **exit gate before 4.5B** |
-| **4.5B+** | Public IA + qualification + council cycle + demo rebuild | Five-area public architecture (Commons / Public Agenda / Council Agenda / Records / About), qualification traces, council cycle, seven-minute demo — **blocked until 4.5A green** |
-| **4.6** | Discussion, deliberation, and policy drafting | Bridge Formal Pipeline stages with operational gated workspace surfaces |
-| **4.7** | Member action opportunities | Post-decision civic action surfaces with sponsorship/conflict/expiry rules |
-| **4.8** | Hardening and handoff | Security/privacy/a11y hardening; Phase 4 handoff |
+| **4.4** | Moderation and aggregate report ingestion | Engineering merged (PR #20) |
+| **4.5A** | Phase 4.4 integrity remediation | Merged (PR #21); **conditionally accepted** — DB-boundary gaps closed in **4.5A.1** |
+| **4.5A.1** | Integrity closure | Report-root + child INSERT/UPDATE/DELETE guards; suppression provenance; data vs actor provenance; legacy count invalidation; PG concurrency tests; audit/HTTP semantics — **exit gate before 4.5B** |
+| **4.5B** | Architecture contract | Canonical lifecycle, universal frameworks, public-placement rules, ADRs, route shells, redirects — **blocked until 4.5A.1 green** |
+| **4.5C** | Commons and editors | Six Commons sections + shared editors |
+| **4.5D** | Qualification and approaches | Topic/approach completeness, signals, hard gates |
+| **4.5E** | Public Agenda and topic pages | Consultation-only list; header + Overview; History |
+| **4.5F** | Council Agenda | Candidates vs official; cycles; dispositions |
+| **4.5G** | Demo and consolidation | 420s demo; Home; Records; About; redirects |
+| **4.5H** | Verification | Full ladder |
 
-Stop after each package for human approval. Do **not** begin **4.5B** (public architecture) until **4.5A** passes verification and owner review. Completing 4.4 / 4.5A aggregate ingest engineering is **not** authorization for a live embed.
+Stop after each package for human approval when requested. Do **not** begin **4.5B** until **4.5A.1** passes verification. Aggregate ingest engineering is **not** authorization for a live embed.
 
 ---
 
@@ -350,9 +354,44 @@ There is no environment variable, database row, or admin toggle that can flip th
 | --- | --- |
 | Baseline main | `86dcfd10157869ba9443adee885332df7cc608a8` (PR #20) |
 | Branch | `phase-4/4.5a-report-integrity-remediation` |
+| PR #21 | Merged to `main` at `09010cef2199c2c68962f37ec221b4334dfc8779` |
+| Owner disposition | **Conditional acceptance** (2026-08-14) — service-level fixes accepted; DB-boundary / provenance / concurrency-test gaps → **4.5A.1** |
 | Schema | Canonical import `public-input-aggregate-import@1.1` |
 | Migration | `drizzle/0021_public_input_report_integrity.sql` |
 | Suppression policy | `4.5.1-exact-count-complementary` |
+
+## 11g. Package 4.5A.1 — Integrity closure
+
+**Owner decision:** Conditionally accept 4.5A; close remaining database, privacy-policy provenance, data-vs-actor provenance, concurrency-test, audit, and HTTP findings before 4.5B.
+
+### Acceptance criteria
+
+1. **Report-root immutability:** BEFORE UPDATE/DELETE trigger with explicit workflow transition matrix; immutable columns (title, topic, conversation, import, version, data provenance, etc.) cannot change.
+2. **Child INSERT/UPDATE/DELETE guards:** Groups/findings insert only while parent is `imported`; content immutable; publication fields only while `under_review`; DELETE forbidden outside alpha reset; parent row locked `FOR UPDATE` during authorization.
+3. **Legacy counts:** 0021 FLOOR backfills marked `legacy_estimated`; affected reports `requires_reimport` and rejected from public projection; new imports require `@1.1` exact counts.
+4. **Suppression provenance:** Publish stores policy version, algorithm version, threshold, and min-participation on the report; public DTO projects stored values; non-synthetic publish fail-closed until `OSTT_ALLOW_NON_SYNTHETIC_REPORT_PUBLISH=1` (production privacy still OQ27/OQ35/OQ36).
+5. **Data vs actor provenance:** Immutable `data_provenance` derived from import `sourceKind`; actor `synthetic` remains audit-only.
+6. **PostgreSQL concurrency tests:** Separate connections for identical imports, different imports, concurrent publishers, finding-vs-publish race, and direct SQL immutability (`npm run test:pg:reports`).
+7. **Audit/HTTP:** `supersede_finding` → `consultations.reports.finding_superseded`; `PUBLIC_INPUT_REPORT_NOT_UNDER_REVIEW` → HTTP 409.
+8. **Docs:** This section + ADR amendments; architecture/threat model updated.
+9. Migration `drizzle/0022_public_input_report_integrity_closure.sql`; alpha-reset disables new guards during wipe.
+10. Verification ladder green for the remediation surface.
+
+### Exit gate
+
+| Gate | Rule |
+| --- | --- |
+| Merge | 4.5A.1 PR green with PG concurrency proofs |
+| Stop | **Do not start 4.5B** until owner approval after 4.5A.1 |
+| Live Pol.is | Still fail-closed |
+
+### 4.5A.1 engineering record
+
+| Item | Record |
+| --- | --- |
+| Baseline main | `09010cef2199c2c68962f37ec221b4334dfc8779` (PR #21) |
+| Branch | `cursor/4.5a1-report-integrity-closure-60e1` |
+| Migration | `drizzle/0022_public_input_report_integrity_closure.sql` |
 
 ## 12. Stop conditions
 
@@ -370,4 +409,4 @@ Stop if any of the following would be required to “finish” a package:
 - Collapsing independent axes (lifecycle, availability, provider moderation, finding eligibility, import validation, report publication, evidence quality, agenda qualification)
 - Auto-publishing imports or silently overwriting immutable report versions
 
-After **4.5A** PR is green: **stop for owner review**. Do not begin **4.5B** public architecture work or enable a live embed without explicit owner approval and required vendor/privacy decisions.
+After **4.5A.1** PR is green: **stop for owner review** before **4.5B** unless the owner has already authorized the full 4.5 sequence. Do not enable a live embed without explicit owner approval and required vendor/privacy decisions.
