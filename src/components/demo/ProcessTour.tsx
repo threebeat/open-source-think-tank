@@ -10,7 +10,7 @@ const STEPS = [
   {
     id: "commons",
     title: "Commons",
-    body: "Members discuss in two parts. Formal categories appear first (moderator and Council communications, qualified topics and approaches, community actions). Informal conversations follow an unreviewed-content disclaimer. Posting opens in a later Commonhall phase.",
+    body: "Members discuss in two parts. Formal categories appear first (moderator and Council communications, qualified topics and approaches, community actions). Informal conversations follow an unreviewed-content disclaimer. Signed-in members can create informal posts and submit proposals for formal review. Community enrollment never grants moderator, Chamber, Council, or organization-admin authority.",
   },
   {
     id: "qualification",
@@ -25,12 +25,12 @@ const STEPS = [
   {
     id: "chamber",
     title: "Chamber",
-    body: "Community-accepted topics can enter an appointed Chamber. Every seat records yes, no, abstain, recused, or absent. Chamber seats are explicit, time-bounded appointments — community enrollment never grants one.",
+    body: "Community-accepted topics can enter an appointed Chamber. This pre-alpha shows a synthetic Chamber roster, schedule, and roll call so members can observe the path. Every seat records yes, no, abstain, recused, or absent. Chamber seats are explicit, time-bounded appointments — community enrollment never grants one. Live production appointments are not enabled.",
   },
   {
     id: "council",
     title: "Council",
-    body: "The organization Council takes Chamber outcomes under published intake reasons. Acceptance, decline, and recommendations are separate from community preference. Live Council product opens in a later phase.",
+    body: "The organization Council takes Chamber outcomes under published intake reasons. Acceptance, decline, and recommendations are separate from community preference. This pre-alpha shows synthetic Council intake and fixture playback. Live production Council appointments are not enabled. Hosted Pol.is remains unavailable. Community membership is not statutory membership.",
   },
   {
     id: "records",

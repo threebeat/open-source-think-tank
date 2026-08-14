@@ -40,29 +40,58 @@ export function isPublicUnauthenticatedPath(pathname: string): boolean {
   return false;
 }
 
-const LEGACY_TO_MEMBER: Array<{ prefix: string; dest: string }> = [
-  { prefix: "/idea-commons", dest: "/commons" },
-  { prefix: "/formal-topics", dest: "/commons" },
-  { prefix: "/deliberation", dest: "/chamber" },
-  { prefix: "/decisions", dest: "/council" },
-  { prefix: "/transparency", dest: "/records" },
-  { prefix: "/actions", dest: "/records" },
-  { prefix: "/process", dest: "/demo" },
-  { prefix: "/about", dest: "/" },
-];
+function firstPathSegment(pathname: string, prefix: string): string | null {
+  if (pathname === prefix) {
+    return null;
+  }
+  if (!pathname.startsWith(`${prefix}/`)) {
+    return null;
+  }
+  const segment = pathname.slice(prefix.length + 1).split("/").find(Boolean);
+  return segment ?? null;
+}
 
+/**
+ * Authenticated think-tank URLs map onto Commonhall member halls.
+ * Unauthenticated traffic is redirected by `unauthenticatedProductRedirect`
+ * before these destinations apply. `/demo/workflow` is also listed so the
+ * public demo path can thin-redirect after the proxy allows `/demo/**`.
+ */
 export function authenticatedLegacyRedirect(pathname: string): string | null {
-  if (pathname === "/topics") {
-    return "/agenda";
+  if (pathname === "/demo/workflow" || pathname.startsWith("/demo/workflow/")) {
+    return "/demo";
   }
-  if (pathname.startsWith("/topics/")) {
-    const rest = pathname.slice("/topics/".length);
-    return rest ? `/agenda/topics/${rest}` : "/agenda";
+  if (pathname === "/topics" || pathname.startsWith("/topics/")) {
+    const slug = firstPathSegment(pathname, "/topics");
+    return slug ? `/agenda/topics/${slug}` : "/agenda";
   }
-  for (const rule of LEGACY_TO_MEMBER) {
-    if (pathname === rule.prefix || pathname.startsWith(`${rule.prefix}/`)) {
-      return rule.dest;
-    }
+  if (pathname === "/idea-commons" || pathname.startsWith("/idea-commons/")) {
+    return "/commons";
+  }
+  if (pathname === "/formal-topics" || pathname.startsWith("/formal-topics/")) {
+    const slug = firstPathSegment(pathname, "/formal-topics");
+    return slug ? `/agenda/topics/${slug}` : "/agenda";
+  }
+  if (pathname === "/deliberation" || pathname.startsWith("/deliberation/")) {
+    const slug = firstPathSegment(pathname, "/deliberation");
+    return slug ? `/chamber/topics/${slug}` : "/chamber";
+  }
+  if (pathname === "/decisions" || pathname.startsWith("/decisions/")) {
+    const slug = firstPathSegment(pathname, "/decisions");
+    return slug ? `/council/topics/${slug}` : "/council";
+  }
+  if (pathname === "/transparency" || pathname.startsWith("/transparency/")) {
+    return "/records";
+  }
+  if (pathname === "/actions" || pathname.startsWith("/actions/")) {
+    const slug = firstPathSegment(pathname, "/actions");
+    return slug ? `/records/topics/${slug}` : "/records";
+  }
+  if (pathname === "/process" || pathname.startsWith("/process/")) {
+    return "/demo";
+  }
+  if (pathname === "/about" || pathname.startsWith("/about/")) {
+    return "/";
   }
   return null;
 }

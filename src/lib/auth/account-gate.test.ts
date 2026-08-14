@@ -46,13 +46,28 @@ describe("account gate (V2-21)", () => {
 
   it("maps authenticated legacy think-tank URLs onto member halls", () => {
     expect(authenticatedLegacyRedirect("/idea-commons")).toBe("/commons");
-    expect(authenticatedLegacyRedirect("/formal-topics/cedar")).toBe("/commons");
-    expect(authenticatedLegacyRedirect("/deliberation/x")).toBe("/chamber");
-    expect(authenticatedLegacyRedirect("/decisions/x")).toBe("/council");
+    expect(authenticatedLegacyRedirect("/idea-commons/thread-1")).toBe("/commons");
+    expect(authenticatedLegacyRedirect("/formal-topics")).toBe("/agenda");
+    expect(authenticatedLegacyRedirect("/formal-topics/cedar")).toBe(
+      "/agenda/topics/cedar",
+    );
+    expect(
+      authenticatedLegacyRedirect("/formal-topics/cedar/consultation/report"),
+    ).toBe("/agenda/topics/cedar");
+    expect(authenticatedLegacyRedirect("/deliberation/x")).toBe(
+      "/chamber/topics/x",
+    );
+    expect(authenticatedLegacyRedirect("/decisions/x")).toBe("/council/topics/x");
     expect(authenticatedLegacyRedirect("/transparency")).toBe("/records");
+    expect(authenticatedLegacyRedirect("/actions/x")).toBe("/records/topics/x");
     expect(authenticatedLegacyRedirect("/about")).toBe("/");
+    expect(authenticatedLegacyRedirect("/process")).toBe("/demo");
+    expect(authenticatedLegacyRedirect("/demo/workflow")).toBe("/demo");
     expect(authenticatedLegacyRedirect("/topics")).toBe("/agenda");
     expect(authenticatedLegacyRedirect("/topics/ostt-synth-transit")).toBe(
+      "/agenda/topics/ostt-synth-transit",
+    );
+    expect(authenticatedLegacyRedirect("/topics/ostt-synth-transit/consult")).toBe(
       "/agenda/topics/ostt-synth-transit",
     );
     expect(authenticatedLegacyRedirect("/commons")).toBeNull();

@@ -97,41 +97,32 @@ describe("review and publish API public-demo isolation", () => {
 });
 
 describe("public topics page import isolation (source)", () => {
-  it("keeps gated DB modules behind dynamic import on canonical formal-topic routes", async () => {
+  it("keeps legacy think-tank routes as redirect-only handlers", async () => {
     const { readFileSync } = await import("node:fs");
     const { join } = await import("node:path");
-    const legacyList = readFileSync(
-      join(process.cwd(), "src/app/topics/page.tsx"),
-      "utf8",
-    );
-    const legacyDetail = readFileSync(
-      join(process.cwd(), "src/app/topics/[slug]/page.tsx"),
-      "utf8",
-    );
-    const list = readFileSync(
-      join(process.cwd(), "src/app/formal-topics/page.tsx"),
-      "utf8",
-    );
-    const detail = readFileSync(
-      join(process.cwd(), "src/app/formal-topics/[slug]/page.tsx"),
-      "utf8",
-    );
-    for (const source of [legacyList, legacyDetail, list, detail]) {
+    const files = [
+      "src/app/topics/page.tsx",
+      "src/app/topics/[slug]/page.tsx",
+      "src/app/formal-topics/page.tsx",
+      "src/app/formal-topics/[slug]/page.tsx",
+      "src/app/formal-topics/[slug]/consultation/page.tsx",
+      "src/app/formal-topics/[slug]/consultation/report/page.tsx",
+      "src/app/idea-commons/page.tsx",
+      "src/app/deliberation/[slug]/page.tsx",
+      "src/app/decisions/[slug]/page.tsx",
+      "src/app/process/page.tsx",
+      "src/app/demo/workflow/page.tsx",
+    ];
+    for (const relative of files) {
+      const source = readFileSync(join(process.cwd(), relative), "utf8");
       expect(source).not.toMatch(
         /import\s+.*from\s+["']@\/lib\/topics\/gated-public-read["']/,
       );
       expect(source).not.toMatch(
         /import\s+.*from\s+["']@\/lib\/auth\/runtime["']/,
       );
+      expect(source).toMatch(/permanentRedirect\(/);
     }
-    expect(legacyList).toMatch(/redirect\(\s*["']\/formal-topics["']\s*\)/);
-    expect(legacyDetail).toMatch(/redirect\(/);
-    expect(list).toMatch(
-      /import\(\s*["']@\/app\/topics\/gated-published-topics["']\s*\)/,
-    );
-    expect(detail).toMatch(
-      /import\(\s*["']@\/features\/formal-topics\/load-gated-canonical-topic["']\s*\)/,
-    );
   });
 });
 
