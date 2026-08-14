@@ -61,7 +61,7 @@ test.describe("guided demonstration", () => {
       page.getByRole("heading", { name: "You have walked the hall" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Create an account" }),
+      page.getByRole("main").getByRole("link", { name: "Create an account" }),
     ).toBeVisible();
 
     const html = await page.content();
