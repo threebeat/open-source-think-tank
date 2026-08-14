@@ -29,7 +29,7 @@ export function proxy(request: NextRequest) {
     if (dest) {
       const url = request.nextUrl.clone();
       url.pathname = dest;
-      url.search = dest === "/auth/sign-in" ? "" : url.search;
+      url.search = "";
       const redirected = NextResponse.redirect(url);
       applySecurityHeaders(redirected.headers);
       return redirected;

@@ -99,10 +99,10 @@ test.describe("auth isolation in public-demo", () => {
   test("public join preview still cannot enroll", async ({ page }) => {
     await page.goto("/join");
     await expect(
-      page.getByText(/does not create an account, issue an invitation/i),
+      page.getByRole("heading", { name: "How joining works" }),
     ).toBeVisible();
     await expect(
-      page.getByText(/fixed fixtures, not other current visitors/i),
+      page.getByText(/cannot create accounts or open a database/i),
     ).toBeVisible();
     await page.getByRole("button", { name: /Stronger verification/i }).click();
     await expect(

@@ -13,7 +13,7 @@ test.describe("home smoke", () => {
       ),
     ).toBeVisible();
     await expect(page.getByRole("heading", { name: "Commonhall" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Tour the demo" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Tour the demo" }).first()).toBeVisible();
     await expect(
       page.getByRole("link", { name: "Create an account" }).first(),
     ).toBeVisible();

@@ -21,6 +21,6 @@ test.describe("phase-1 manual QA automation", () => {
     await page.setViewportSize({ width: 390, height: 720 });
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "Commonhall" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Tour the demo" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Tour the demo" }).first()).toBeVisible();
   });
 });
