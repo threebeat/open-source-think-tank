@@ -67,6 +67,7 @@ Keep a compatibility test only while a redirect/adapter is intentionally support
 - explained synthetic-org assignment, history, correction event;
 - no elevated capability from community membership;
 - public-demo mode still cannot construct a database or create accounts.
+- existing `formal-topics` / `agenda` / `deliberation` public e2e assert the account-gate redirect (not the retired think-tank pages); workspace and report-integrity proofs stay.
 
 ### Phase 3 — Commons and member posts
 

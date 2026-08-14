@@ -51,6 +51,8 @@ Phase 1 records these engineering postures. They do **not** close the decisions 
 | V2-19 | Alpha accounts are not auto-converted to organization community members. |
 | V2-20 | Public copy does not claim population mandate or production readiness. |
 
+Phase 1 recorded invite-only enrollment. Phase 2 supersedes that **gated pre-alpha** posture without closing V2-02/V2-21–V2-23. See the Phase 2 table below.
+
 ## Council pre-alpha directions (Phases 2–6, 2026-08-14)
 
 Authorized for the pre-alpha Commonhall build. **Not** counsel-cleared or production settlements.
@@ -68,6 +70,23 @@ Authorized for the pre-alpha Commonhall build. **Not** counsel-cleared or produc
 | V2-22 | Identifier + password; email verification out of scope. |
 | V2-23 | In-house bot heuristics only. |
 | Synthetic seed | `COMMONHALL_SYNTHETIC_SEED` defaults on in gated pre-alpha; off hides synthetic catalog from member UI. Operator reset remains the pre-alpha → alpha wipe. |
+
+## Phase 2 fail-closed postures (not settlements)
+
+Phase 2 records these engineering postures for the gated pre-alpha. They do **not** close V2-21–V2-23 or related legal/vendor decisions.
+
+| ID | Phase 2 posture |
+| --- | --- |
+| V2-01 | UI wordmark is “Commonhall”; legal-adjacent copy keeps working-name / v2 status. |
+| V2-02 | Enrollment copy states organization community membership, not nonprofit or statutory membership. |
+| V2-04 | New gated members are assigned to `org_ostt_synth_alpha_internal` with a visible explanation and an append-only assignment event. Not a production matching algorithm. |
+| V2-18 | No email, analytics, or identity vendor. The identifier is an email-shaped string stored locally. |
+| V2-19 | Historical invite-only alpha accounts are not auto-converted. |
+| V2-21 | Unauthenticated visitors may use `/`, `/demo/**`, `/join`, and `/auth/**` only. Product and legacy think-tank URLs redirect to `/auth/sign-in` (gated) or `/` (public-demo). |
+| V2-22 | Identifier + password; no outbound email; email verification out of scope. |
+| V2-23 | In-process rate limit, honeypot, 1500ms minimum fill, duplicate-identifier rejection. Kill switch `COMMONHALL_V2_OPEN_ENROLLMENT` (default on in gated; always off in public-demo). |
+| Hosted Pol.is | Remains impossible to enable. |
+| Elevated portal | `/org/**` does not grant organization-admin capability; community membership is redirected away. |
 
 ## Decision record template
 

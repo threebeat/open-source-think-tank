@@ -194,7 +194,12 @@ Authenticated member routes (account required; URL is never authorization):
 /member/proposals
 ```
 
-Old think-tank paths (`/idea-commons`, `/formal-topics`, `/deliberation`, `/decisions`, `/process`, `/topics`, `/about`, `/transparency`) redirect: unauthenticated → `/` or `/demo`; authenticated → the matching Commonhall route. Remove duplicates in Phase 6.
+Unauthenticated product, account, and legacy think-tank paths redirect (V2-21 pre-alpha, not production public-observer law):
+
+- public-demo → `/`
+- gated → `/auth/sign-in`
+
+Authenticated legacy paths map onto member placeholders or the demo: `/idea-commons` and `/formal-topics` → `/commons`; `/deliberation` → `/chamber`; `/decisions` → `/council`; `/transparency` and `/actions` → `/records`; `/topics` → `/agenda`; `/process` → `/demo`; `/about` → `/`. Remove remaining duplicates in Phase 6.
 
 Elevated organization portal (Phase 5 seed / later expansion):
 
