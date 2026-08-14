@@ -49,6 +49,18 @@ export async function listAppointmentsForOrganization(
     .where(eq(organizationAppointments.organizationId, id));
 }
 
+export async function listActiveAppointmentsForOrganization(
+  db: FoundationDb,
+  organizationId: string,
+  kinds: readonly OrganizationAppointmentKind[],
+  at: Date = new Date(),
+): Promise<AppointmentRow[]> {
+  const rows = await listAppointmentsForOrganization(db, organizationId);
+  return rows.filter(
+    (row) => kinds.includes(row.appointmentKind) && isActiveAt(row, at),
+  );
+}
+
 export async function listActiveAppointmentsForAccount(
   db: FoundationDb,
   accountId: string,

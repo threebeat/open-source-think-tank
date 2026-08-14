@@ -133,6 +133,33 @@ export async function getGovernanceRecordBySlugOrPublicId(
   return row ? mapRecord(row) : null;
 }
 
+export async function listGovernanceRecordsByStates(
+  db: FoundationDb,
+  organizationId: string,
+  states: readonly TopicGovernanceState[],
+  options: { includeSynthetic: boolean } = { includeSynthetic: true },
+): Promise<GovernanceRecordRow[]> {
+  const id = requireOrganizationId(organizationId);
+  if (states.length === 0) {
+    return [];
+  }
+  const conditions = [
+    eq(topicGovernanceRecords.organizationId, id),
+    inArray(topicGovernanceRecords.state, [...states]),
+    isNotNull(topicGovernanceRecords.slug),
+    isNotNull(topicGovernanceRecords.title),
+  ];
+  if (!options.includeSynthetic) {
+    conditions.push(eq(topicGovernanceRecords.synthetic, false));
+  }
+  const rows = await db
+    .select()
+    .from(topicGovernanceRecords)
+    .where(and(...conditions))
+    .orderBy(asc(topicGovernanceRecords.title));
+  return rows.map(mapRecord);
+}
+
 export async function listPublicAgendaRecords(
   db: FoundationDb,
   organizationId: string,

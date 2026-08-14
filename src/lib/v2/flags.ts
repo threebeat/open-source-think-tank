@@ -54,16 +54,32 @@ export function isSyntheticSeedEnabled(env: EnvMap = process.env): boolean {
   return envFlag(env, "COMMONHALL_SYNTHETIC_SEED") !== "off";
 }
 
-/** Live Chamber product is Phase 5; appointments may persist. */
+/**
+ * Production live Chamber remains disabled (V2-09). Env cannot enable it.
+ * Synthetic fixture playback uses a separate kernel gate on synthetic records.
+ */
 export function isChamberLiveEnabled(env: EnvMap = process.env): boolean {
   void env;
   return false;
 }
 
-/** Live organization Council product is Phase 5. */
+/**
+ * Production live Council remains disabled (V2-10). Env cannot enable it.
+ * Synthetic fixture playback uses a separate kernel gate on synthetic records.
+ */
 export function isCouncilLiveEnabled(env: EnvMap = process.env): boolean {
   void env;
   return false;
+}
+
+/**
+ * Phase 5: appointed clerks/members may run Chamber/Council kernel transitions
+ * only on labeled synthetic records in gated mode. Not a production policy.
+ */
+export function isSyntheticBodyPlaybackAllowed(
+  env: EnvMap = process.env,
+): boolean {
+  return isV2KernelEnabled(env);
 }
 
 /** Elevated organization portal is Phase 5. */

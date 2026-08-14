@@ -24,6 +24,7 @@ import {
   assertOrganizationMutationAllowed,
   isChamberLiveEnabled,
   isCouncilLiveEnabled,
+  isSyntheticBodyPlaybackAllowed,
 } from "@/lib/v2/flags";
 
 const CHAMBER_LIVE_ACTIONS = new Set<TopicGovernanceAction>([
@@ -189,21 +190,6 @@ export async function transitionGovernanceRecord(
   assertOrganizationMutationAllowed();
   const organizationId = requireOrganizationId(input.organizationId);
 
-  if (CHAMBER_LIVE_ACTIONS.has(input.action) && !isChamberLiveEnabled()) {
-    return {
-      ok: false,
-      code: "V2_CHAMBER_LIVE_DISABLED",
-      error: "Live Chamber transitions are disabled (V2-09)",
-    };
-  }
-  if (COUNCIL_LIVE_ACTIONS.has(input.action) && !isCouncilLiveEnabled()) {
-    return {
-      ok: false,
-      code: "V2_COUNCIL_LIVE_DISABLED",
-      error: "Live Council transitions are disabled (V2-10)",
-    };
-  }
-
   if (input.actor === "system_from_published_rule") {
     if (input.trustedSystem !== true) {
       return {
@@ -261,6 +247,37 @@ export async function transitionGovernanceRecord(
       ok: false,
       code: "GOVERNANCE_RECORD_NOT_FOUND",
       error: "Governance record not found in this organization",
+    };
+  }
+
+  if (
+    CHAMBER_LIVE_ACTIONS.has(input.action) &&
+    !isChamberLiveEnabled() &&
+    !(
+      input.synthetic &&
+      record.synthetic &&
+      isSyntheticBodyPlaybackAllowed()
+    )
+  ) {
+    return {
+      ok: false,
+      code: "V2_CHAMBER_LIVE_DISABLED",
+      error: "Live Chamber transitions are disabled (V2-09)",
+    };
+  }
+  if (
+    COUNCIL_LIVE_ACTIONS.has(input.action) &&
+    !isCouncilLiveEnabled() &&
+    !(
+      input.synthetic &&
+      record.synthetic &&
+      isSyntheticBodyPlaybackAllowed()
+    )
+  ) {
+    return {
+      ok: false,
+      code: "V2_COUNCIL_LIVE_DISABLED",
+      error: "Live Council transitions are disabled (V2-10)",
     };
   }
 

@@ -1568,6 +1568,34 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
     },
   ),
 
+  "chamber.verdict.published": def(
+    "chamber.verdict.published",
+    "Chamber verdict published with a complete roll call",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          organizationPublicId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+      publicProject: () => "A Chamber verdict was published.",
+    },
+  ),
+
+  "council.recommendations.published": def(
+    "council.recommendations.published",
+    "Council recommendations published with a complete roll call",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          organizationPublicId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+      publicProject: () => "Council recommendations were published.",
+    },
+  ),
+
   // Phase 3.12 operator alpha reset (CLI-only; no public projector)
   "alpha.reset_executed": def(
     "alpha.reset_executed",
