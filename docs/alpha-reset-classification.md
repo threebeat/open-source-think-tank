@@ -1,7 +1,7 @@
 # Alpha reset table classification (Phase 3 closure + Phase 4.3–4.4 Public Input + v2 organization kernel)
 
 **Status:** Operator procedure for gated pre-alpha. Not a public-demo feature. Not production retention counsel.  
-**Manifest version:** `v2.4.0` — Commonhall v2 Phase 4 adds `member_statement_positions` classified **reset** below; `RESET_MANIFEST_VERSION` in `alpha-reset-manifest.ts` and this document stay in sync.
+**Manifest version:** `v2.5.0` — Commonhall v2 Phase 5 adds Chamber/Council session, roll-call, and verdict/recommendation tables classified **reset** below; `RESET_MANIFEST_VERSION` in `alpha-reset-manifest.ts` and this document stay in sync.
 
 **Scope:** Every `pgTable` in `src/db/schema.ts` must be classified as exactly one of:
 
@@ -35,7 +35,7 @@ Machine-readable mirror: `src/lib/operator/alpha-reset-manifest.ts`.
 
 ---
 
-## Classification (56 tables)
+## Classification (62 tables)
 
 | Table | Class | Rationale |
 | --- | --- | --- |
@@ -95,6 +95,12 @@ Machine-readable mirror: `src/lib/operator/alpha-reset-manifest.ts`.
 | `commons_discussion_revisions` | reset | Append-only Commons revision snapshots (immutable in normal ops). Local wipe only. |
 | `commons_discussions` | reset | Organization-scoped Commons discussions/proposals (Phase 3). Synthetic catalog and member posts. |
 | `member_statement_positions` | reset | In-house member agree/disagree/pass rows on synthetic consultation statements (Phase 4). Not Pol.is; no XID. Local wipe only. |
+| `chamber_sessions` | reset | Organization-scoped Chamber sessions (Phase 5). Synthetic fixtures only (V2-09). Local wipe only. |
+| `chamber_verdict_versions` | reset | Versioned Chamber verdicts with roster snapshots (Phase 5). Local wipe only. |
+| `chamber_roll_calls` | reset | Explicit yes\|no\|abstain\|recused\|absent Chamber positions (Phase 5). Local wipe only. |
+| `council_sessions` | reset | Organization-scoped Council sessions (Phase 5). Synthetic fixtures only (V2-10). Local wipe only. |
+| `council_recommendation_versions` | reset | Versioned Council recommendations with roster snapshots (Phase 5). Local wipe only. |
+| `council_roll_calls` | reset | Explicit yes\|no\|abstain\|recused\|absent Council positions (Phase 5). Local wipe only. |
 
 **Deferred:** none.
 

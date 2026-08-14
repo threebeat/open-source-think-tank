@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
  * Mirror of docs/alpha-reset-classification.md — keep in sync.
  */
 
-export const RESET_MANIFEST_VERSION = "v2.4.0";
+export const RESET_MANIFEST_VERSION = "v2.5.0";
 
 /** Fixed transaction-scoped advisory-lock key for concurrent alpha resets. */
 export const ALPHA_RESET_ADVISORY_LOCK_KEY = 3_120_845_120_012;
@@ -29,7 +29,7 @@ export type AlphaResetTableEntry = {
 
 /**
  * Every pgTable in schema.ts — exactly one class each.
- * Count must remain 56 until schema grows (assertManifestComplete).
+ * Count must remain 62 until schema grows (assertManifestComplete).
  */
 export const ALPHA_RESET_TABLES: readonly AlphaResetTableEntry[] = [
   { table: "persons", class: "reset" },
@@ -99,10 +99,22 @@ export const ALPHA_RESET_TABLES: readonly AlphaResetTableEntry[] = [
   { table: "commons_discussions", class: "reset" },
   // Commonhall v2 Phase 4 — in-house member positions (not Pol.is).
   { table: "member_statement_positions", class: "reset" },
+  { table: "chamber_roll_calls", class: "reset" },
+  { table: "council_roll_calls", class: "reset" },
+  { table: "chamber_verdict_versions", class: "reset" },
+  { table: "council_recommendation_versions", class: "reset" },
+  { table: "chamber_sessions", class: "reset" },
+  { table: "council_sessions", class: "reset" },
 ] as const;
 
 /** Children-first delete order for class=reset tables only (explicit list). */
 export const DELETE_ORDER: readonly string[] = [
+  "chamber_roll_calls",
+  "council_roll_calls",
+  "chamber_verdict_versions",
+  "council_recommendation_versions",
+  "chamber_sessions",
+  "council_sessions",
   "member_statement_positions",
   "commons_discussion_revisions",
   "commons_discussions",
@@ -332,6 +344,17 @@ export const COUNT_FAMILIES: readonly {
   {
     family: "agenda",
     tables: ["member_statement_positions"],
+  },
+  {
+    family: "chamber_council",
+    tables: [
+      "chamber_roll_calls",
+      "council_roll_calls",
+      "chamber_verdict_versions",
+      "council_recommendation_versions",
+      "chamber_sessions",
+      "council_sessions",
+    ],
   },
 ] as const;
 
