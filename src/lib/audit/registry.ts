@@ -1510,6 +1510,12 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
     },
   ),
 
+  "organization.membership.correction_requested": def(
+    "organization.membership.correction_requested",
+    "Membership assignment correction requested",
+    { requireActorAccount: true, requireReason: true },
+  ),
+
   // Phase 3.12 operator alpha reset (CLI-only; no public projector)
   "alpha.reset_executed": def(
     "alpha.reset_executed",
