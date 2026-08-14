@@ -1,6 +1,6 @@
 import { permanentRedirect } from "next/navigation";
 
-import { authenticatedLegacyRedirect } from "@/lib/auth/account-gate";
+import { legacyProductRedirect } from "@/lib/legacy-product-redirects";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -8,6 +8,6 @@ type Props = { params: Promise<{ id: string }> };
 export default async function IdeaCommonsThreadRedirect({ params }: Props) {
   const { id } = await params;
   permanentRedirect(
-    authenticatedLegacyRedirect(`/idea-commons/${id}`) ?? "/commons",
+    legacyProductRedirect(`/idea-commons/${id}`) ?? "/commons",
   );
 }

@@ -1,6 +1,6 @@
 import { permanentRedirect } from "next/navigation";
 
-import { authenticatedLegacyRedirect } from "@/lib/auth/account-gate";
+import { legacyProductRedirect } from "@/lib/legacy-product-redirects";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -8,6 +8,6 @@ type Props = { params: Promise<{ slug: string }> };
 export default async function LegacyConsultRedirect({ params }: Props) {
   const { slug } = await params;
   permanentRedirect(
-    authenticatedLegacyRedirect(`/topics/${slug}/consult`) ?? "/agenda",
+    legacyProductRedirect(`/topics/${slug}/consult`) ?? "/agenda",
   );
 }

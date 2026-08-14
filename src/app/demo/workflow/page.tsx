@@ -1,8 +1,8 @@
 import { permanentRedirect } from "next/navigation";
 
-import { authenticatedLegacyRedirect } from "@/lib/auth/account-gate";
+import { legacyProductRedirect } from "@/lib/legacy-product-redirects";
 
 /** Legacy workflow practice → Commonhall process tour. */
 export default function DemoWorkflowRedirect() {
-  permanentRedirect(authenticatedLegacyRedirect("/demo/workflow") ?? "/demo");
+  permanentRedirect(legacyProductRedirect("/demo/workflow") ?? "/demo");
 }

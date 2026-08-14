@@ -1,8 +1,8 @@
 import { permanentRedirect } from "next/navigation";
 
-import { authenticatedLegacyRedirect } from "@/lib/auth/account-gate";
+import { legacyProductRedirect } from "@/lib/legacy-product-redirects";
 
 /** Legacy about page → Commonhall landing. */
 export default function AboutRedirect() {
-  permanentRedirect(authenticatedLegacyRedirect("/about") ?? "/");
+  permanentRedirect(legacyProductRedirect("/about") ?? "/");
 }

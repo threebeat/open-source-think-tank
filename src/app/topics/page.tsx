@@ -1,8 +1,8 @@
 import { permanentRedirect } from "next/navigation";
 
-import { authenticatedLegacyRedirect } from "@/lib/auth/account-gate";
+import { legacyProductRedirect } from "@/lib/legacy-product-redirects";
 
 /** Legacy Topics list → Public Agenda. Workspace authoring stays under /workspace/topics. */
 export default function TopicsRedirect() {
-  permanentRedirect(authenticatedLegacyRedirect("/topics") ?? "/agenda");
+  permanentRedirect(legacyProductRedirect("/topics") ?? "/agenda");
 }

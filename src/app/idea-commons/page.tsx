@@ -1,8 +1,8 @@
 import { permanentRedirect } from "next/navigation";
 
-import { authenticatedLegacyRedirect } from "@/lib/auth/account-gate";
+import { legacyProductRedirect } from "@/lib/legacy-product-redirects";
 
 /** Legacy Idea Commons list → Commons. */
 export default function IdeaCommonsRedirect() {
-  permanentRedirect(authenticatedLegacyRedirect("/idea-commons") ?? "/commons");
+  permanentRedirect(legacyProductRedirect("/idea-commons") ?? "/commons");
 }

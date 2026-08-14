@@ -1,8 +1,8 @@
 import { permanentRedirect } from "next/navigation";
 
-import { authenticatedLegacyRedirect } from "@/lib/auth/account-gate";
+import { legacyProductRedirect } from "@/lib/legacy-product-redirects";
 
 /** Legacy Public Record / transparency → Records. */
 export default function TransparencyRedirect() {
-  permanentRedirect(authenticatedLegacyRedirect("/transparency") ?? "/records");
+  permanentRedirect(legacyProductRedirect("/transparency") ?? "/records");
 }
