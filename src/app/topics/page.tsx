@@ -1,9 +1,8 @@
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 
-/**
- * Legacy Topics list entry → canonical Formal Topics list.
- * Workspace authoring remains under /workspace/topics.
- */
-export default function TopicsPage() {
-  redirect("/formal-topics");
+import { legacyProductRedirect } from "@/lib/legacy-product-redirects";
+
+/** Legacy Topics list → Public Agenda. Workspace authoring stays under /workspace/topics. */
+export default function TopicsRedirect() {
+  permanentRedirect(legacyProductRedirect("/topics") ?? "/agenda");
 }

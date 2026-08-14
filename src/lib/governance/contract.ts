@@ -79,6 +79,7 @@ export type GovernanceContract = {
     public: boolean;
     publicAgenda: boolean;
     consultationReportVisible: boolean;
+    description?: string;
     terminal?: boolean;
     deadTopic?: boolean;
     newConsultationRequiredForSuccessor?: boolean;
@@ -96,6 +97,65 @@ export const TERMINAL_STATES: ReadonlySet<TopicGovernanceState> = new Set(
     .filter((state) => state.terminal)
     .map((state) => state.id),
 );
+
+export const PUBLIC_AGENDA_STATES: readonly TopicGovernanceState[] =
+  GOVERNANCE_CONTRACT.states
+    .filter((state) => state.publicAgenda)
+    .map((state) => state.id);
+
+export const CHAMBER_STATES: readonly TopicGovernanceState[] = [
+  "chamber_queued",
+  "chamber_deliberating",
+  "chamber_accepted",
+  "chamber_disputed",
+];
+
+export const COUNCIL_AGENDA_STATES: readonly TopicGovernanceState[] = [
+  "council_scheduled",
+  "council_deliberating",
+];
+
+export const RECORDS_STATES: readonly TopicGovernanceState[] = [
+  "recommendations_published",
+];
+
+export const ROLL_CALL_POSITIONS = [
+  "yes",
+  "no",
+  "abstain",
+  "recused",
+  "absent",
+] as const;
+
+export type RollCallPosition = (typeof ROLL_CALL_POSITIONS)[number];
+
+export function isRollCallPosition(value: string): value is RollCallPosition {
+  return (ROLL_CALL_POSITIONS as readonly string[]).includes(value);
+}
+
+export function isPublicAgendaState(
+  value: string,
+): value is TopicGovernanceState {
+  return PUBLIC_AGENDA_STATES.includes(value as TopicGovernanceState);
+}
+
+export function isChamberState(value: string): value is TopicGovernanceState {
+  return (CHAMBER_STATES as readonly string[]).includes(value);
+}
+
+export function isCouncilAgendaState(
+  value: string,
+): value is TopicGovernanceState {
+  return (COUNCIL_AGENDA_STATES as readonly string[]).includes(value);
+}
+
+export function isRecordsState(value: string): value is TopicGovernanceState {
+  return (RECORDS_STATES as readonly string[]).includes(value);
+}
+
+export function governanceStateMeta(state: TopicGovernanceState) {
+  return GOVERNANCE_CONTRACT.states.find((row) => row.id === state) ?? null;
+}
 
 export function isGovernanceState(
   value: string,

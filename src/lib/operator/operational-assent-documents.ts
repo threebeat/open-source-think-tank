@@ -5,6 +5,13 @@ import { eq } from "drizzle-orm";
 import { documentVersions } from "@/db/schema";
 import type { FoundationDb } from "@/db/types";
 import type { DrizzleTx } from "@/db/transaction-context";
+import {
+  COMMUNITY_STANDARDS_BODY,
+  COMMUNITY_STANDARDS_DOCUMENT_ID,
+  COMMUNITY_STANDARDS_NOTICE_ID,
+  COMMUNITY_STANDARDS_TITLE,
+  COMMUNITY_STANDARDS_VERSION_LABEL,
+} from "@/lib/auth/community-standards";
 
 /**
  * Deterministic, non-participant operational assent document catalog.
@@ -16,7 +23,7 @@ import type { DrizzleTx } from "@/db/transaction-context";
 
 export type OperationalAssentDocumentDef = {
   id: string;
-  kind: "privacy_notice";
+  kind: "privacy_notice" | "conduct";
   versionLabel: string;
   title: string;
   body: string;
@@ -40,6 +47,14 @@ export const OPERATIONAL_ASSENT_DOCUMENTS: readonly OperationalAssentDocumentDef
         "participant assent records and presentations remain wipeable alpha data.",
       ].join(" "),
       requiredNotices: ["provisional-alpha-notice"],
+    },
+    {
+      id: COMMUNITY_STANDARDS_DOCUMENT_ID,
+      kind: "conduct",
+      versionLabel: COMMUNITY_STANDARDS_VERSION_LABEL,
+      title: COMMUNITY_STANDARDS_TITLE,
+      body: COMMUNITY_STANDARDS_BODY,
+      requiredNotices: [COMMUNITY_STANDARDS_NOTICE_ID],
     },
   ] as const;
 

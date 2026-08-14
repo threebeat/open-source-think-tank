@@ -8,7 +8,9 @@ describe("PrototypeBanner", () => {
     render(<PrototypeBanner />);
 
     expect(
-      screen.getByText("Demonstration — synthetic data only."),
+      screen.getByText(
+        "Pre-alpha Commonhall — synthetic data only. Not a government or nonprofit membership.",
+      ),
     ).toBeInTheDocument();
   });
 });

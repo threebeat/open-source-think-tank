@@ -156,20 +156,20 @@ export function ConsultationSurface({
 
       <p className="flex flex-wrap gap-4 text-sm">
         <Link
-          href={`/formal-topics/${topicSlug}`}
+          href={`/agenda/topics/${topicSlug}`}
           className="text-primary underline underline-offset-2"
         >
           Back to topic overview
         </Link>
         <Link
-          href={`/formal-topics/${topicSlug}/consultation/report`}
+          href={`/agenda/topics/${topicSlug}`}
           className="text-primary underline underline-offset-2"
           data-testid="consultation-report-link"
         >
           Published aggregate report
         </Link>
         <Link
-          href={`/formal-topics/${topicSlug}?section=discussions`}
+          href={`/agenda/topics/${topicSlug}?tab=discussion`}
           className="text-primary underline underline-offset-2"
         >
           Discussions &amp; proposals

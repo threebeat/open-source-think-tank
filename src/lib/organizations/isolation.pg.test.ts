@@ -17,6 +17,7 @@ import {
   SYNTHETIC_ORG_BETA_ID,
 } from "@/db/seeds/v2-organizations";
 import { newEntityId } from "@/lib/auth/tokens";
+import { ROLLBACK_CHAIN_THROUGH_0023 } from "@/lib/db/migration-rollback-sql";
 import { listMembershipsForOrganization } from "@/lib/organizations/membership-repository";
 
 const ADMIN_URL =
@@ -79,39 +80,6 @@ async function postgresReachable(): Promise<boolean> {
   }
 }
 
-const ROLLBACK_0023 = `
-DROP TRIGGER IF EXISTS topic_governance_events_immutable ON topic_governance_events;
-DROP TRIGGER IF EXISTS organization_membership_events_immutable ON organization_membership_events;
-DROP TRIGGER IF EXISTS ostt_membership_event_parent_match ON organization_membership_events;
-DROP TRIGGER IF EXISTS ostt_appointment_conflict_parent_match ON appointment_conflicts_and_recusals;
-DROP TRIGGER IF EXISTS ostt_governance_event_parent_match ON topic_governance_events;
-DROP FUNCTION IF EXISTS ostt_membership_event_parent_match();
-DROP FUNCTION IF EXISTS ostt_appointment_conflict_parent_match();
-DROP FUNCTION IF EXISTS ostt_governance_event_parent_match();
-ALTER TABLE audit_events DROP COLUMN IF EXISTS projection_class;
-ALTER TABLE audit_events DROP COLUMN IF EXISTS capability;
-ALTER TABLE audit_events DROP COLUMN IF EXISTS actor_principal_kind;
-ALTER TABLE audit_events DROP COLUMN IF EXISTS organization_id;
-DROP TABLE IF EXISTS appointment_conflicts_and_recusals;
-DROP TABLE IF EXISTS topic_governance_events;
-DROP TABLE IF EXISTS topic_governance_records;
-DROP TABLE IF EXISTS organization_appointments;
-DROP TABLE IF EXISTS organization_membership_events;
-DROP TABLE IF EXISTS organization_memberships;
-DROP TABLE IF EXISTS organization_config_versions;
-DROP TABLE IF EXISTS organization_service_areas;
-DROP TABLE IF EXISTS organizations;
-DROP TYPE IF EXISTS topic_governance_action;
-DROP TYPE IF EXISTS topic_governance_state;
-DROP TYPE IF EXISTS audit_projection_class;
-DROP TYPE IF EXISTS actor_principal_kind;
-DROP TYPE IF EXISTS appointment_conflict_kind;
-DROP TYPE IF EXISTS organization_appointment_kind;
-DROP TYPE IF EXISTS organization_membership_event_kind;
-DROP TYPE IF EXISTS organization_membership_status;
-DROP TYPE IF EXISTS organization_config_status;
-DROP TYPE IF EXISTS organization_service_status;
-`;
 
 const reachable = await postgresReachable();
 if (REQUIRE_PG && !reachable) {
@@ -193,7 +161,7 @@ describe.skipIf(!reachable)("organization isolation (Postgres)", () => {
         SELECT to_regclass('public.organizations') AS rel
       `;
       expect(before[0]?.rel).toBe("organizations");
-      await rollbackClient.unsafe(ROLLBACK_0023);
+      await rollbackClient.unsafe(ROLLBACK_CHAIN_THROUGH_0023);
       const after = await rollbackClient`
         SELECT to_regclass('public.organizations') AS rel
       `;

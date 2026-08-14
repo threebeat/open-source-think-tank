@@ -217,28 +217,10 @@ test.describe("moderation and disclosure (gated)", () => {
     });
 
     await page.context().clearCookies();
-    const response = await page.goto(
-      `/formal-topics/${CEDAR_TOPIC_SLUG}?section=evidence`,
-    );
-    expect(response?.ok()).toBeTruthy();
-    await expect(
-      page.getByRole("heading", { name: /Claims and evidence/i }),
-    ).toBeVisible({ timeout: 30_000 });
-
-    const withheld = page.locator(
-      "section[aria-labelledby='withheld-moderation-heading']",
-    );
-    await expect(
-      withheld.getByRole("heading", {
-        name: /Withheld from this publication/i,
-      }),
-    ).toBeVisible();
-    await expect(withheld.getByText(holdRationale)).toBeVisible();
-    await expect(
-      withheld.getByText(/Evidence temporarily withheld/i),
-    ).toBeVisible();
-
-    // Held evidence body/title must not leak; private notes never public.
+    await page.goto(`/formal-topics/${CEDAR_TOPIC_SLUG}?section=evidence`);
+    await expect(page).toHaveURL(/\/auth\/sign-in/);
+    // Held evidence body/title and private notes must not leak on the
+    // unauthenticated surface (V2-21 gates the legacy public topic page).
     await expect(
       page.getByText("ostt-synth Billing operations memo", { exact: false }),
     ).toHaveCount(0);

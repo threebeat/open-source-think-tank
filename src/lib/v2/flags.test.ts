@@ -7,6 +7,8 @@ import {
   isElevatedPortalEnabled,
   isHostedPolisEnabled,
   isOpenEnrollmentEnabled,
+  isSyntheticBodyPlaybackAllowed,
+  isSyntheticSeedEnabled,
   isV2KernelEnabled,
   readV2Flags,
 } from "@/lib/v2/flags";
@@ -15,6 +17,7 @@ const FLAG_KEYS = [
   "APP_MODE",
   "COMMONHALL_V2_KERNEL",
   "COMMONHALL_V2_OPEN_ENROLLMENT",
+  "COMMONHALL_SYNTHETIC_SEED",
   "COMMONHALL_V2_HOSTED_POLIS",
   "COMMONHALL_V2_CHAMBER_LIVE",
   "COMMONHALL_V2_COUNCIL_LIVE",
@@ -63,26 +66,69 @@ describe("v2 feature flags", () => {
     expect(isV2KernelEnabled()).toBe(false);
   });
 
-  it("fails closed for enrollment, hosted Pol.is, Chamber, Council, and portal", () => {
+  it("enables open enrollment in gated unless the kill switch is off", () => {
     process.env.APP_MODE = "gated";
+    delete process.env.COMMONHALL_V2_OPEN_ENROLLMENT;
+    expect(isOpenEnrollmentEnabled()).toBe(true);
+
     process.env.COMMONHALL_V2_OPEN_ENROLLMENT = "on";
+    expect(isOpenEnrollmentEnabled()).toBe(true);
+
+    process.env.COMMONHALL_V2_OPEN_ENROLLMENT = "off";
+    expect(isOpenEnrollmentEnabled()).toBe(false);
+
+    process.env.COMMONHALL_V2_OPEN_ENROLLMENT = "on";
+    process.env.APP_MODE = "public-demo";
+    expect(isOpenEnrollmentEnabled()).toBe(false);
+  });
+
+  it("enables the synthetic seed catalog in gated unless explicitly off", () => {
+    process.env.APP_MODE = "gated";
+    delete process.env.COMMONHALL_SYNTHETIC_SEED;
+    expect(isSyntheticSeedEnabled()).toBe(true);
+
+    process.env.COMMONHALL_SYNTHETIC_SEED = "on";
+    expect(isSyntheticSeedEnabled()).toBe(true);
+
+    process.env.COMMONHALL_SYNTHETIC_SEED = "off";
+    expect(isSyntheticSeedEnabled()).toBe(false);
+
+    process.env.COMMONHALL_SYNTHETIC_SEED = "on";
+    process.env.APP_MODE = "public-demo";
+    expect(isSyntheticSeedEnabled()).toBe(false);
+
+    const flags = readV2Flags();
+    expect(flags.syntheticSeed).toBe(false);
+  });
+
+  it("fails closed for hosted Pol.is, Chamber, Council, and portal", () => {
+    process.env.APP_MODE = "gated";
     process.env.COMMONHALL_V2_HOSTED_POLIS = "on";
     process.env.COMMONHALL_V2_CHAMBER_LIVE = "on";
     process.env.COMMONHALL_V2_COUNCIL_LIVE = "on";
     process.env.COMMONHALL_V2_ELEVATED_PORTAL = "on";
 
-    expect(isOpenEnrollmentEnabled()).toBe(false);
     expect(isHostedPolisEnabled()).toBe(false);
     expect(isChamberLiveEnabled()).toBe(false);
     expect(isCouncilLiveEnabled()).toBe(false);
     expect(isElevatedPortalEnabled()).toBe(false);
 
     const flags = readV2Flags();
-    expect(flags.openEnrollment).toBe(false);
     expect(flags.hostedPolis).toBe(false);
     expect(flags.chamberLive).toBe(false);
     expect(flags.councilLive).toBe(false);
     expect(flags.elevatedPortal).toBe(false);
+  });
+
+  it("allows synthetic body playback only when the gated kernel is on", () => {
+    process.env.APP_MODE = "gated";
+    delete process.env.COMMONHALL_V2_KERNEL;
+    expect(isSyntheticBodyPlaybackAllowed()).toBe(true);
+    process.env.COMMONHALL_V2_KERNEL = "off";
+    expect(isSyntheticBodyPlaybackAllowed()).toBe(false);
+    process.env.COMMONHALL_V2_KERNEL = "on";
+    process.env.APP_MODE = "public-demo";
+    expect(isSyntheticBodyPlaybackAllowed()).toBe(false);
   });
 
   it("refuses organization mutation clients in public-demo and when killed", () => {

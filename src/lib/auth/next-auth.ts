@@ -45,6 +45,33 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         };
       },
     }),
+    Credentials({
+      id: "password",
+      name: "Password",
+      credentials: {
+        identifier: { label: "Identifier", type: "text" },
+        password: { label: "Password", type: "password" },
+      },
+      authorize: async (credentials) => {
+        const identifier = credentials?.identifier;
+        const password = credentials?.password;
+        if (typeof identifier !== "string" || typeof password !== "string") {
+          return null;
+        }
+        const service = getAuthService();
+        const session = await service.signInWithPassword(identifier, password);
+        if (!session.ok) {
+          return null;
+        }
+        return {
+          id: session.value.accountId,
+          sessionId: session.value.sessionId,
+          lifecycleState: session.value.lifecycleState,
+          synthetic: session.value.synthetic,
+          sessionToken: session.value.rawSessionToken,
+        };
+      },
+    }),
   ],
   callbacks: {
     async jwt({ token, user }) {

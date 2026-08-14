@@ -24,6 +24,9 @@ Do not silently settle these in application code. A decision needs an owner, dat
 | V2-18 | Production email, database host, analytics/metrics vendors | No new vendor without register/security/privacy decision | Production deployment |
 | V2-19 | Existing alpha-account migration | Require new assent/assignment; do not auto-convert | Open enrollment rollout |
 | V2-20 | Representation claims and geographic scope | Describe participants, never claim population mandate | Public impact language |
+| V2-21 | Unauthenticated product-surface policy | Pre-alpha: `/`, `/demo`, and auth pages only; product routes require an account. Does not settle production public-observer law | Production public Agenda/Chamber/Council without login |
+| V2-22 | Enrollment verification channel | Pre-alpha: local identifier + password; no outbound email (V2-18). Email verification deferred | Password recovery by email; production identity proof |
+| V2-23 | Bot / abuse vendor | Pre-alpha: in-process rate limit, honeypot, minimum fill time, duplicate identifier. No third-party bot SDK | Scale-out / distributed abuse |
 
 ## Phase 1 fail-closed postures (not settlements)
 
@@ -47,6 +50,98 @@ Phase 1 records these engineering postures. They do **not** close the decisions 
 | V2-18 | No new production vendors. |
 | V2-19 | Alpha accounts are not auto-converted to organization community members. |
 | V2-20 | Public copy does not claim population mandate or production readiness. |
+
+Phase 1 recorded invite-only enrollment. Phase 2 supersedes that **gated pre-alpha** posture without closing V2-02/V2-21–V2-23. See the Phase 2 table below.
+
+## Council pre-alpha directions (Phases 2–6, 2026-08-14)
+
+Authorized for the pre-alpha Commonhall build. **Not** counsel-cleared or production settlements.
+
+| ID | Pre-alpha direction |
+| --- | --- |
+| V2-01 | UI wordmark may be “Commonhall”; legal-adjacent copy keeps “v2” / working-name status. |
+| V2-02 | Enrollment copy: organization community membership, not nonprofit/statutory membership. |
+| V2-04 | New members are assigned to the synthetic primary organization with a visible explanation and a correction/appeal event. Not a production matching algorithm. |
+| V2-07–V2-10 | Synthetic fixture numbers only; labeled synthetic; ignored as production defaults. |
+| V2-11–V2-13 | Hosted Pol.is remains impossible to enable. Fixture + in-house agree/disagree/pass only. |
+| V2-18 | No email, analytics, or identity vendor. Password enrollment is local. |
+| V2-19 | Do not auto-convert historical invite-only alpha accounts. New enrollment required. |
+| V2-21 | Account-gated product routes; demo is the unauthenticated process tour. |
+| V2-22 | Identifier + password; email verification out of scope. |
+| V2-23 | In-house bot heuristics only. |
+| Synthetic seed | `COMMONHALL_SYNTHETIC_SEED` defaults on in gated pre-alpha; off hides synthetic catalog from member UI. Operator reset remains the pre-alpha → alpha wipe. |
+
+## Phase 2 fail-closed postures (not settlements)
+
+Phase 2 records these engineering postures for the gated pre-alpha. They do **not** close V2-21–V2-23 or related legal/vendor decisions.
+
+| ID | Phase 2 posture |
+| --- | --- |
+| V2-01 | UI wordmark is “Commonhall”; legal-adjacent copy keeps working-name / v2 status. |
+| V2-02 | Enrollment copy states organization community membership, not nonprofit or statutory membership. |
+| V2-04 | New gated members are assigned to `org_ostt_synth_alpha_internal` with a visible explanation and an append-only assignment event. Not a production matching algorithm. |
+| V2-18 | No email, analytics, or identity vendor. The identifier is an email-shaped string stored locally. |
+| V2-19 | Historical invite-only alpha accounts are not auto-converted. |
+| V2-21 | Unauthenticated visitors may use `/`, `/demo/**`, `/join`, and `/auth/**` only. Product and legacy think-tank URLs redirect to `/auth/sign-in` (gated) or `/` (public-demo). |
+| V2-22 | Identifier + password; no outbound email; email verification out of scope. |
+| V2-23 | In-process rate limit, honeypot, 1500ms minimum fill, duplicate-identifier rejection. Kill switch `COMMONHALL_V2_OPEN_ENROLLMENT` (default on in gated; always off in public-demo). |
+| Hosted Pol.is | Remains impossible to enable. |
+| Elevated portal | `/org/**` does not grant organization-admin capability; community membership is redirected away. |
+
+## Phase 3 fail-closed postures (not settlements)
+
+Phase 3 records these engineering postures for the gated pre-alpha Commons. They do **not** close V2-06, V2-21–V2-23, or related legal/vendor decisions.
+
+| ID | Phase 3 posture |
+| --- | --- |
+| V2-06 | Members may submit topic/approach proposals via kernel `submit_for_formal_review` only. Qualification remains a separate moderator record. Authors cannot qualify their own proposal. |
+| V2-21 | `/commons` and `/commons/discussions/[id]` remain account-gated. Unauthenticated visitors still redirect. |
+| V2-23 | Commons posting uses the in-process `commons_post` mutation limiter. No bot vendor. |
+| Synthetic seed | `COMMONHALL_SYNTHETIC_SEED` defaults on in gated; `off` omits `synthetic=true` catalog rows from member list DTOs. Member-created posts are not catalog rows. |
+| Formal flag | Members cannot set `formal=true` or post in formal categories. Formal is a projection of category rules. |
+| Hosted Pol.is / Agenda / Chamber | Remain out of this phase. |
+
+## Phase 4 fail-closed postures (not settlements)
+
+Phase 4 records these engineering postures for the gated pre-alpha Public Agenda. They do **not** close V2-07 or V2-11–13.
+
+| ID | Phase 4 posture |
+| --- | --- |
+| V2-07 | Fixture close playback uses labeled synthetic metrics snapshots only. Non-synthetic config still cannot set `consultationThresholds`. There is no live outcome calculator. |
+| V2-11–V2-13 | `isHostedPolisEnabled()` remains false. Agenda UI never loads `https://pol.is/embed.js`. CSP omits pol.is. In-house agree/disagree/pass writes only to `member_statement_positions`. |
+| V2-14 | No live reporting-floor product. Member positions are not published as people lists, XIDs, or raw votes. |
+| Synthetic seed | `COMMONHALL_SYNTHETIC_SEED=off` omits synthetic Public Agenda catalog rows from member list/detail DTOs. |
+| Chamber | `queue_for_chamber` remains kernel-only from `community_accepted`. Phase 4 does not build Chamber UI. |
+
+## Phase 5 fail-closed postures (not settlements)
+
+Phase 5 records these engineering postures for the gated pre-alpha Chamber and Council. They do **not** close V2-09/10.
+
+| ID | Phase 5 posture |
+| --- | --- |
+| V2-09 | No production Chamber size, quorum, or appointment policy. Seeded roster and sessions are labeled synthetic. `COMMONHALL_V2_CHAMBER_LIVE` still cannot enable a production live Chamber. |
+| V2-10 | No production Council cadence or quorum. Synthetic fixture playback may run appointed clerk/member kernel transitions on synthetic records only. |
+| V2-08 | `retention_deadline_at` remains nullable; expiration worker stays disabled. Council-declined topics remain until a later captured retention. |
+| V2-11–V2-13 | `isHostedPolisEnabled()` remains false. Chamber/Council UI never loads `https://pol.is/embed.js`. |
+| Synthetic seed | `COMMONHALL_SYNTHETIC_SEED=off` omits synthetic Chamber/Council/Records catalog rows from member list/detail DTOs. |
+| Appointments | Seeded Chamber/Council seats are new `organization_appointments` rows, not copies of legacy `deliberation_council`. Dual-control / no self-grant remains. `trustedSystem` is seed/playback only. |
+
+## Phase 6 fail-closed postures (not settlements)
+
+Phase 6 records these engineering postures for Commonhall pre-alpha delivery. They do **not** close V2-01–V2-23.
+
+| ID | Phase 6 posture |
+| --- | --- |
+| V2-01 | Working name Commonhall v2; UI wordmark may say Commonhall. |
+| V2-02 | Enrollment and tour copy: organization community membership, not nonprofit/statutory membership. |
+| V2-11–V2-13 | `isHostedPolisEnabled()` remains false. No `pol.is/embed.js` load. Local reset never claims remote deletion. |
+| V2-18 | No email, analytics, or identity vendor. |
+| V2-19 | Historical invite-only alpha accounts are not auto-converted. |
+| V2-21 | Unauthenticated visitors: `/`, `/demo/**`, `/join`, `/auth/**` only. Leftover think-tank URLs redirect. |
+| V2-22 | Identifier + password; no outbound email. |
+| V2-23 | In-process rate limit, honeypot, minimum fill, duplicate identifier. |
+| Synthetic seed | `COMMONHALL_SYNTHETIC_SEED` defaults on in gated; `off` hides synthetic catalog DTOs. Operator reset is the pre-alpha → alpha wipe. |
+| Leftover IA | Think-tank pages are redirect-only. Workspace/staff stay out of member nav. |
 
 ## Decision record template
 

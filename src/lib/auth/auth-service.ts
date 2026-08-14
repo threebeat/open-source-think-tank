@@ -2,6 +2,7 @@ import { and, desc, eq, gt, isNull, lte } from "drizzle-orm";
 
 import {
   accounts,
+  accountCredentials,
   authChallenges,
   authSessions,
   invitations,
@@ -648,6 +649,131 @@ export class AuthService {
     });
 
     return { ok: true, value: true };
+  }
+
+  /**
+   * Create an auth_sessions row for an already-authenticated account.
+   * Used after challenge completion and after password verification.
+   */
+  async establishSession(accountId: string): Promise<AdapterResult<EstablishedSession>> {
+    const now = this.now();
+    const rawSessionToken = generateOpaqueToken();
+    const sessionId = newEntityId("session");
+
+    try {
+      const established = await this.db.transaction(async (tx) => {
+        const [account] = await tx
+          .select()
+          .from(accounts)
+          .where(eq(accounts.id, accountId))
+          .limit(1);
+        if (!account || !isSessionLifecycleAllowed(account.lifecycleState)) {
+          throw new Error("AUTH_ACCOUNT_DISABLED");
+        }
+
+        await tx.insert(authSessions).values({
+          id: sessionId,
+          accountId: account.id,
+          sessionTokenHash: hashToken(rawSessionToken),
+          expiresAt: new Date(now.getTime() + SESSION_TTL_MS),
+        });
+
+        await appendAuthAudit(tx, {
+          actorRole: "account_holder",
+          actorAccountId: account.id,
+          action: "auth.session_established",
+          subjectType: "account",
+          subjectId: account.id,
+          summary: "Session established via password or enrollment.",
+          privatePayload: {
+            purpose: "password",
+            lifecycleState: account.lifecycleState,
+            sessionId,
+          },
+          forbidSecrets: [rawSessionToken],
+          synthetic: account.synthetic,
+        });
+
+        return {
+          accountId: account.id,
+          lifecycleState: account.lifecycleState,
+          synthetic: account.synthetic,
+          sessionId,
+          rawSessionToken,
+        } satisfies EstablishedSession;
+      });
+
+      return { ok: true, value: established };
+    } catch (error) {
+      if (error instanceof Error && error.message === "AUTH_ACCOUNT_DISABLED") {
+        return {
+          ok: false,
+          error: "This account cannot establish a session.",
+          code: "AUTH_ACCOUNT_DISABLED",
+        };
+      }
+      throw error;
+    }
+  }
+
+  async signInWithPassword(
+    identifierRaw: string,
+    password: string,
+  ): Promise<AdapterResult<EstablishedSession>> {
+    const { verifyPassword } = await import("@/lib/auth/passwords");
+
+    const contactChannel = normalizeContact(identifierRaw);
+    const limited = rateLimitOrThrow("password-sign-in", contactChannel);
+    if (limited) {
+      return limited;
+    }
+
+    const [account] = await this.db
+      .select()
+      .from(accounts)
+      .where(eq(accounts.contactChannel, contactChannel))
+      .limit(1);
+
+    const [credential] = account
+      ? await this.db
+          .select({
+            passwordHash: accountCredentials.passwordHash,
+          })
+          .from(accountCredentials)
+          .where(eq(accountCredentials.accountId, account.id))
+          .limit(1)
+      : [];
+
+    const dummyHash =
+      "scrypt_n32768$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    const ok = await verifyPassword(
+      password,
+      credential?.passwordHash ?? dummyHash,
+    );
+
+    if (
+      !account ||
+      !credential ||
+      !ok ||
+      !isSessionLifecycleAllowed(account.lifecycleState)
+    ) {
+      await appendAuthAudit(this.db, {
+        actorRole: "anonymous",
+        action: "auth.password_sign_in_rejected",
+        subjectType: "contact_channel",
+        subjectId: hashToken(contactChannel).slice(0, 16),
+        summary: "Password sign-in rejected (existence not disclosed).",
+        forbidSecrets: [password],
+        synthetic: true,
+      });
+      return {
+        ok: false,
+        error: "Identifier or password is incorrect.",
+        code: "AUTH_PASSWORD_INVALID",
+      };
+    }
+
+    return this.establishSession(account.id);
   }
 
   private async syntheticForAccount(

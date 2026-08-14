@@ -17,6 +17,8 @@ Read in this order:
 
 Architecture decision: [`decisions/0022-commonhall-v2-reset.md`](./decisions/0022-commonhall-v2-reset.md).
 
+Council delivery overview (does not replace the charter): [`v2/final_overview.md`](./v2/final_overview.md).
+
 ## Current operational references to preserve during migration
 
 These documents remain operationally relevant until a v2 replacement is accepted: `threat-model.md`, `incident-response.md`, `secrets-and-operations.md`, `data-map.md`, `alpha-reset-runbook.md`, `alpha-reset-classification.md`, `capability-matrix.md`, and `public-input-provider-assessment.md`.

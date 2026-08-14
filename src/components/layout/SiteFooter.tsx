@@ -5,25 +5,25 @@ export function SiteFooter() {
     <footer className="mt-auto border-t border-border bg-surface-muted">
       <div className="page-x mx-auto flex max-w-6xl flex-col gap-4 py-8 text-sm leading-6 text-muted-foreground safe-bottom">
         <p>
-          Demonstration of a proposed project. Synthetic data only. Not a claim
-          that an organization is incorporated, tax-exempt, legally reviewed, or
-          accepting members.
+          Commonhall v2 is a working name for a proposed computational-democracy
+          digital town hall. This pre-alpha uses synthetic data. Community
+          membership here is not nonprofit membership, statutory membership, or
+          government standing.
         </p>
         <p>
-          Build contract:{" "}
-          <Link href="/about" className="text-primary underline-offset-4 hover:underline">
-            About
+          <Link href="/demo" className="text-primary underline-offset-4 hover:underline">
+            Tour the demo
+          </Link>
+          {" · "}
+          <Link href="/join" className="text-primary underline-offset-4 hover:underline">
+            Create an account
           </Link>
           {" · "}
           <Link
-            href="/transparency"
+            href="/auth/sign-in"
             className="text-primary underline-offset-4 hover:underline"
           >
-            The Public Record
-          </Link>
-          {" · "}
-          <Link href="/demo" className="text-primary underline-offset-4 hover:underline">
-            Guided demo
+            Sign in
           </Link>
         </p>
       </div>

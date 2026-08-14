@@ -116,11 +116,11 @@ test.describe("consultation aggregate reports (gated 4.4)", () => {
     };
     expect(imported.reportVersion).toBe(1);
 
-    // Draft/import must not be public yet — topic also unpublished → 404.
-    const draftPublic = await page.request.get(
-      `/formal-topics/${slug}/consultation/report`,
-    );
-    expect(draftPublic.status()).toBe(404);
+    // Draft/import must not be served on the legacy public URL (V2-21).
+    await page.goto(`/formal-topics/${slug}/consultation/report`);
+    await expect(page).toHaveURL(new RegExp(`/agenda/topics/${slug}`));
+    await expect(page.getByTestId("public-input-report-panel")).toHaveCount(0);
+    await expect(page.getByText("E2E aggregate report")).toHaveCount(0);
 
     await page.goto(`/workspace/topics/${slug}/consultation-reports`);
     await expect(
@@ -158,25 +158,18 @@ test.describe("consultation aggregate reports (gated 4.4)", () => {
     );
     expect(published.ok(), await published.text()).toBeTruthy();
 
-    // Publish topic so public formal-topics route can resolve.
+    // Publish still runs through workspace APIs. Unauthenticated visitors
+    // no longer receive the legacy public report page (V2-21).
     const readiness = await page.request.post(
       `/api/workspace/topics/${topic.id}/publish`,
       { data: { expectedPublicationStatus: "unpublished" } },
     );
-    // Topic may not be publish-ready without claims/evidence — that's fine.
-    // Public report loader requires published topic projection.
-    if (readiness.ok()) {
-      await page.context().clearCookies();
-      const publicReport = await page.goto(
-        `/formal-topics/${slug}/consultation/report`,
-      );
-      expect(publicReport?.status()).toBe(200);
-      await expect(page.getByTestId("public-input-report-panel")).toBeVisible();
-      await expect(
-        page.getByTestId("opinion-group-suppressed").first(),
-      ).toBeVisible();
-      await expect(page.locator("iframe")).toHaveCount(0);
-    }
+    void readiness;
+    await page.context().clearCookies();
+    await page.goto(`/formal-topics/${slug}/consultation/report`);
+    await expect(page).toHaveURL(/\/auth\/sign-in/);
+    await expect(page.getByTestId("public-input-report-panel")).toHaveCount(0);
+    await expect(page.locator("iframe")).toHaveCount(0);
 
     const results = await new AxeBuilder({ page }).analyze();
     const seriousOrWorse = results.violations.filter((violation) =>

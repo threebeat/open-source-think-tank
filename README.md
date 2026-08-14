@@ -6,9 +6,9 @@ Commonhall is a proposed open-source computational-democracy platform: a digital
 
 ## Current repository state
 
-The application still implements the earlier Open-Source Think Tank Phase 1–4 model. This branch resets the product contract, agent guidance, governance test contract, and CI/PR process; it deliberately does not pretend the v2 application already exists.
+Phases 1–6 of the Commonhall v2 pre-alpha are implemented pending human review. The public product is Commonhall: landing and demo for visitors; account-gated Commons, Agenda, Chamber, Council, and Records for members. Leftover think-tank routes are thin redirects. Hosted Pol.is, email, analytics, and identity vendors remain disabled. This is not production-ready.
 
-The migration preserves useful foundations: Next.js/TypeScript, PostgreSQL/Drizzle, Auth.js, evidence/revisions, privacy/audit, reset operations, server capabilities, synthetic public demo isolation, and aggregate-only Public Input reporting. It replaces invite-only, single-institution, and old council/route assumptions through six reviewed implementation phases.
+The migration preserved useful foundations: Next.js/TypeScript, PostgreSQL/Drizzle, Auth.js, evidence/revisions, privacy/audit, reset operations, server capabilities, synthetic public-demo isolation, and aggregate-only Public Input reporting. It replaced invite-only, single-institution, and old council/route assumptions through six reviewed implementation phases. See [docs/v2/final_overview.md](docs/v2/final_overview.md).
 
 ## Read first
 

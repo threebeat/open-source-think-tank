@@ -154,6 +154,7 @@ test("canonical v2 documents and stable charter path exist", async () => {
     "docs/v2/open-decisions.md",
     "docs/v2/implementation-plan.md",
     "docs/v2/cursor-cloud-agent-prompt.md",
+    "docs/v2/final_overview.md",
     "docs/decisions/0022-commonhall-v2-reset.md",
   ];
 
@@ -163,6 +164,10 @@ test("canonical v2 documents and stable charter path exist", async () => {
   }
 
   assert.match(contents[0], /active charter/i);
+  assert.match(
+    contents[required.indexOf("docs/v2/final_overview.md")],
+    /not production-ready/i,
+  );
   assert.match(contents.at(-1), /supersedes phase 1–4 product scope/i);
 });
 
