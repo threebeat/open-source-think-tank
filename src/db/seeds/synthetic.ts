@@ -41,6 +41,7 @@ import {
   seedApprovedAssertions,
 } from "@/lib/verification/seed-assurance";
 import { seedV2Organizations } from "@/db/seeds/v2-organizations";
+import { seedV2Commons } from "@/db/seeds/v2-commons";
 
 const CLOSED_TEST_CONVERSATION_SEEDS = [
   "alpha",
@@ -727,6 +728,7 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
   ]);
 
   await seedV2Organizations(db);
+  await seedV2Commons(db);
 
   await appendAuthAudit(db, {
     actorRole: "ostt-synth-seeder",
