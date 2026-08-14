@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 import { auth } from "@/lib/auth/next-auth";
 import type { AuthSession } from "@/lib/adapters/auth";
 import { resolveAppMode } from "@/lib/env/app-mode";
@@ -48,15 +50,14 @@ export async function requireGatedSession(): Promise<GuardFailure> {
 }
 
 export async function requireMemberSession(): Promise<AuthSession> {
-  const { redirect } = await import("next/navigation");
   if (resolveAppMode() !== "gated") {
     redirect("/");
   }
   const gated = await requireGatedSession();
-  if (!gated.ok) {
-    redirect("/auth/sign-in");
+  if (gated.ok) {
+    return gated.session;
   }
-  return gated.session;
+  redirect("/auth/sign-in");
 }
 
 /** @deprecated Prefer requireCapability from @/lib/authz/server */

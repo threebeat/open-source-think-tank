@@ -1,7 +1,4 @@
 import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
-import { promisify } from "node:util";
-
-const scryptAsync = promisify(scrypt);
 
 /** scrypt N=32768, r=8, p=1, keylen=32 — stored scheme name. */
 export const PASSWORD_SCHEME = "scrypt_n32768" as const;
@@ -66,18 +63,35 @@ function decodePart(value: string): Buffer {
   return Buffer.from(value, "base64url");
 }
 
+function scryptAsync(
+  password: string,
+  salt: Buffer,
+  keylen: number,
+): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    scrypt(
+      password,
+      salt,
+      keylen,
+      { N: SCRYPT_N, r: SCRYPT_R, p: SCRYPT_P, maxmem: SCRYPT_MAXMEM },
+      (error, derivedKey) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve(derivedKey);
+      },
+    );
+  });
+}
+
 /**
  * Hash a password with scrypt. The returned string is stored in
  * account_credentials.password_hash. Never log or put in URLs.
  */
 export async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(SALT_LEN);
-  const derived = (await scryptAsync(password, salt, KEY_LEN, {
-    N: SCRYPT_N,
-    r: SCRYPT_R,
-    p: SCRYPT_P,
-    maxmem: SCRYPT_MAXMEM,
-  })) as Buffer;
+  const derived = await scryptAsync(password, salt, KEY_LEN);
   return `${PASSWORD_SCHEME}$${encodePart(salt)}$${encodePart(derived)}`;
 }
 
@@ -99,12 +113,7 @@ export async function verifyPassword(
     await hashPassword(password);
     return false;
   }
-  const derived = (await scryptAsync(password, salt, KEY_LEN, {
-    N: SCRYPT_N,
-    r: SCRYPT_R,
-    p: SCRYPT_P,
-    maxmem: SCRYPT_MAXMEM,
-  })) as Buffer;
+  const derived = await scryptAsync(password, salt, KEY_LEN);
   if (derived.length !== expected.length) {
     return false;
   }
