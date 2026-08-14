@@ -161,3 +161,5 @@ This pre-alpha is:
 - **not** a claim that “Commonhall” is a cleared trademark.
 
 Phases 2–6 are implemented pending human review. Do not merge to production activation without Council sign-off.
+
+Synthetic public-demo screenshots (no participant data): [screenshots/](./screenshots/).
