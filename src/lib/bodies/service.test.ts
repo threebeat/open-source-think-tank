@@ -386,6 +386,14 @@ describe("chamber and council services", () => {
   });
 
   it("does not import playback from body HTTP handlers", () => {
+    const httpHelper = readFileSync(
+      path.join(process.cwd(), "src/lib/bodies/http.ts"),
+      "utf8",
+    );
+    expect(httpHelper).toMatch(/Members cannot invoke the system actor/);
+    expect(httpHelper).toMatch(/GOVERNANCE_SYSTEM_ACTOR_UNTRUSTED/);
+    expect(httpHelper).not.toMatch(/from "@\/lib\/bodies\/playback"/);
+
     for (const relative of [
       "src/app/api/chamber/verdict/route.ts",
       "src/app/api/council/intake/route.ts",
@@ -393,8 +401,9 @@ describe("chamber and council services", () => {
       "src/app/api/bodies/deliberation/route.ts",
     ]) {
       const source = readFileSync(path.join(process.cwd(), relative), "utf8");
-      expect(source).not.toMatch(/from "@\/lib\/bodies\/playback"|trustedSystem:\s*true/);
-      expect(source).toMatch(/Members cannot invoke the system actor/);
+      expect(source).not.toMatch(/from "@\/lib\/bodies\/playback"/);
+      expect(source).not.toMatch(/trustedSystem:\s*true/);
+      expect(source).toMatch(/rejectTrustedSystem/);
     }
   });
 
