@@ -1,32 +1,29 @@
 /**
- * Complementary small-cell suppression (ADR 0021).
+ * Complementary small-cell suppression (ADR 0021 + Phase 4.5A exact-count fix).
  *
- * Shared by the synthetic fixture path (src/features/public-input/aggregate-report.ts)
- * and the gated publish-time projection (src/lib/public-input/reports/projection.ts) —
- * one algorithm, two callers, so demo and gated reports can never silently drift apart.
+ * Shared by the synthetic fixture path and gated publish-time projection —
+ * one algorithm, two callers.
  *
  * Rules:
- *   1. Suppress any cell whose implied participant count is in (0, threshold).
- *      A genuine zero share stays reported as `0` (never coerced, never suppressed).
- *   2. If suppression leaves exactly one suppressed cell among a closed set of
- *      shares, an observer can reconstruct it via `total − sum(reported)`.
- *      Block that by suppressing one additional cell: the smallest positive
- *      reported share, tie-broken by ascending label for determinism.
+ *   1. Suppress any cell whose exact `participantCount` is in (0, threshold).
+ *      A genuine zero count stays reported as share `0` (never coerced, never
+ *      suppressed). Counts are integers — never inferred via Math.round(share×N).
+ *   2. If suppression leaves exactly one suppressed cell among a closed set,
+ *      suppress one additional positive cell (smallest count, then label).
  *   3. If `participationCount` is below `minParticipationForGroups`, omit all
- *      group shares outright (the whole partition is too small to protect
- *      any single cell without materially distorting the shape).
- *   4. Suppressed cells are always `{ status: "suppressed", share: null }` —
- *      never `0`, never silently dropped without a status.
+ *      group shares.
+ *   4. Suppressed cells are always `{ status: "suppressed", share: null }`.
  */
 
-export const SMALL_CELL_POLICY_VERSION = "4.4.1-complementary";
+export const SMALL_CELL_POLICY_VERSION = "4.5.1-exact-count-complementary";
 
 /** Synthetic public-demo provisional value only — NOT a production privacy decision (OQ27, OQ35). */
 export const PROVISIONAL_DEMO_SMALL_CELL_THRESHOLD = 5;
 
 export type SuppressibleGroupInput = {
   label: string;
-  share: number;
+  /** Exact aggregate participant count for this group (integer). */
+  participantCount: number;
 };
 
 export type SuppressedGroupCell =
@@ -34,30 +31,27 @@ export type SuppressedGroupCell =
   | { label: string; status: "suppressed"; share: null };
 
 export type ComplementarySuppressionOptions = {
-  /** Implied-cell-size threshold below which a positive cell is suppressed. */
   threshold?: number;
-  /**
-   * Below this participation count, all group shares are omitted rather than
-   * suppressed piecemeal. Defaults to `threshold` when not given.
-   */
   minParticipationForGroups?: number;
 };
 
 export type ComplementarySuppressionResult = {
   groups: SuppressedGroupCell[];
   suppressedCells: number;
-  /** True when the whole partition was omitted for insufficient participation. */
   groupsOmitted: boolean;
   policyVersion: string;
 };
 
-function impliedCellSize(share: number, participationCount: number): number {
-  return Math.round(share * participationCount);
+function displayShare(participantCount: number, participationCount: number): number {
+  if (participationCount <= 0) {
+    return 0;
+  }
+  return participantCount / participationCount;
 }
 
 /**
- * Apply complementary small-cell suppression to a set of opinion-group
- * shares. Never mutates the input array.
+ * Apply complementary small-cell suppression using exact participant counts.
+ * Never mutates the input array.
  */
 export function applyComplementarySmallCellSuppression(
   groups: readonly SuppressibleGroupInput[],
@@ -79,22 +73,19 @@ export function applyComplementarySmallCellSuppression(
 
   const suppressedIndexes = new Set<number>();
   groups.forEach((group, index) => {
-    const implied = impliedCellSize(group.share, participationCount);
-    if (implied > 0 && implied < threshold) {
+    const count = group.participantCount;
+    if (count > 0 && count < threshold) {
       suppressedIndexes.add(index);
     }
   });
 
-  // Complementary rule: exactly one suppressed cell is reconstructible from
-  // the total and the remaining reported shares — suppress one more.
   if (suppressedIndexes.size === 1) {
     let candidateIndex: number | null = null;
     groups.forEach((group, index) => {
       if (suppressedIndexes.has(index)) {
         return;
       }
-      if (!(group.share > 0)) {
-        // Genuine zeros are never chosen as the complementary victim.
+      if (!(group.participantCount > 0)) {
         return;
       }
       if (candidateIndex === null) {
@@ -103,8 +94,9 @@ export function applyComplementarySmallCellSuppression(
       }
       const candidate = groups[candidateIndex]!;
       if (
-        group.share < candidate.share ||
-        (group.share === candidate.share && group.label < candidate.label)
+        group.participantCount < candidate.participantCount ||
+        (group.participantCount === candidate.participantCount &&
+          group.label < candidate.label)
       ) {
         candidateIndex = index;
       }
@@ -118,7 +110,11 @@ export function applyComplementarySmallCellSuppression(
     if (suppressedIndexes.has(index)) {
       return { label: group.label, status: "suppressed", share: null };
     }
-    return { label: group.label, status: "reported", share: group.share };
+    return {
+      label: group.label,
+      status: "reported",
+      share: displayShare(group.participantCount, participationCount),
+    };
   });
 
   return {

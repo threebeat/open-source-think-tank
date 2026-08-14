@@ -53,6 +53,19 @@ export async function POST(request: Request, context: RouteContext) {
     );
   }
 
+  const expectedConcurrencyVersion = Number(
+    gatedBody.body.expectedConcurrencyVersion,
+  );
+  if (!Number.isInteger(expectedConcurrencyVersion)) {
+    return NextResponse.json(
+      {
+        error: "expectedConcurrencyVersion is required",
+        code: "PUBLIC_INPUT_REPORT_INPUT_INVALID",
+      },
+      { status: 400, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
   const { getGatedDb } = await import("@/lib/auth/runtime");
   const { decideFindingPublication } = await import(
     "@/lib/public-input/moderation/service"
@@ -62,6 +75,7 @@ export async function POST(request: Request, context: RouteContext) {
     reportId,
     findingId,
     action: action as "include" | "withhold" | "supersede_finding",
+    expectedConcurrencyVersion,
     publicRationale:
       typeof gatedBody.body.publicRationale === "string"
         ? gatedBody.body.publicRationale

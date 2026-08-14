@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createTestDatabase } from "@/db/pglite";
-import { auditEvents } from "@/db/schema";
+import { auditEvents, publicInputConversations } from "@/db/schema";
 import { seedSyntheticFoundation } from "@/db/seeds/synthetic";
 import { createTopic } from "@/lib/topics/authoring";
 import {
@@ -26,15 +26,14 @@ import {
   publishReport,
   rejectReport,
   validateReport,
-  type ImportAggregateReportInput,
 } from "@/lib/public-input/reports/service";
 
 const ADMIN = "account-ostt-synth-staff-admin";
 const MODERATOR = "account-ostt-synth-staff-moderator";
 
 function fixturePayload(
-  overrides: Partial<ImportAggregateReportInput["payload"] & object> = {},
-) {
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
   return {
     schemaVersion: CANONICAL_IMPORT_SCHEMA_VERSION,
     sourceKind: "fixture" as const,
@@ -49,9 +48,9 @@ function fixturePayload(
     representationLimitations:
       "Self-selected online sample; not demographically representative.",
     opinionGroups: [
-      { label: "Group A", share: 0.5 },
-      { label: "Group B", share: 0.48 },
-      { label: "Group C", share: 0.02 },
+      { label: "Group A", participantCount: 50 },
+      { label: "Group B", participantCount: 48 },
+      { label: "Group C", participantCount: 2 },
     ],
     crossGroupAgreement: ["Most participants agreed on statement one."],
     meaningfulDisagreement: ["Participants disagreed on statement two."],
@@ -59,7 +58,7 @@ function fixturePayload(
   };
 }
 
-describe("Public Input aggregate report service (4.4)", () => {
+describe("Public Input aggregate report service (4.5A)", () => {
   let client: Awaited<ReturnType<typeof createTestDatabase>>["client"];
   let db: Awaited<ReturnType<typeof createTestDatabase>>["db"];
   let previousMode: string | undefined;
@@ -121,13 +120,14 @@ describe("Public Input aggregate report service (4.4)", () => {
 
     let version = created.value.version;
     let state = created.value.workflowState;
-    const steps: Array<{ action: "mark_ready" | "open" | "close_commenting" | "close_voting" }> =
-      [
-        { action: "mark_ready" },
-        { action: "open" },
-        { action: "close_commenting" },
-        { action: "close_voting" },
-      ];
+    const steps: Array<{
+      action: "mark_ready" | "open" | "close_commenting" | "close_voting";
+    }> = [
+      { action: "mark_ready" },
+      { action: "open" },
+      { action: "close_commenting" },
+      { action: "close_voting" },
+    ];
     for (const step of steps) {
       const result = await transitionConversation(db, {
         actorAccountId: ADMIN,
@@ -160,6 +160,49 @@ describe("Public Input aggregate report service (4.4)", () => {
     expect(result.ok).toBe(true);
   }
 
+  async function importValidateReviewPublish(input: {
+    conversationId: string;
+    payload?: Record<string, unknown>;
+    closeVersion?: number;
+  }) {
+    const imported = await importAggregateReport(db, {
+      actorAccountId: ADMIN,
+      conversationId: input.conversationId,
+      payload: input.payload ?? fixturePayload(),
+    });
+    expect(imported.ok).toBe(true);
+    if (!imported.ok) throw new Error("import failed");
+
+    const validated = await validateReport(db, {
+      actorAccountId: ADMIN,
+      reportId: imported.value.reportId,
+      expectedConcurrencyVersion: 1,
+    });
+    expect(validated.ok).toBe(true);
+    if (!validated.ok) throw new Error("validate failed");
+
+    const reviewed = await beginReview(db, {
+      actorAccountId: ADMIN,
+      reportId: imported.value.reportId,
+      expectedConcurrencyVersion: validated.value.concurrencyVersion,
+    });
+    expect(reviewed.ok).toBe(true);
+    if (!reviewed.ok) throw new Error("review failed");
+
+    if (input.closeVersion != null) {
+      await closeConversation(input.conversationId, input.closeVersion);
+    }
+
+    const published = await publishReport(db, {
+      actorAccountId: ADMIN,
+      reportId: imported.value.reportId,
+      expectedConcurrencyVersion: reviewed.value.concurrencyVersion,
+    });
+    expect(published.ok).toBe(true);
+    if (!published.ok) throw new Error("publish failed");
+    return { imported, published };
+  }
+
   it("imports an aggregate report only when the conversation is voting_closed or closed, and denies moderators", async () => {
     const topicId = await freshTopicId();
     const conversationId = await freshVotingClosedConversationId(topicId);
@@ -178,13 +221,24 @@ describe("Public Input aggregate report service (4.4)", () => {
     const imported = await importAggregateReport(db, {
       actorAccountId: ADMIN,
       conversationId,
-      publicTitle: "Community input on billing changes",
+      publicTitle: "Ignored outer title",
       payload: fixturePayload(),
     });
     expect(imported.ok).toBe(true);
     if (!imported.ok) return;
     expect(imported.value.reportVersion).toBe(1);
     expect(imported.value.isIdempotentReplay).toBe(false);
+
+    const staff = await getStaffReportDetail(db, {
+      actorAccountId: ADMIN,
+      reportId: imported.value.reportId,
+    });
+    expect(staff.ok).toBe(true);
+    if (!staff.ok || !staff.value) return;
+    expect(staff.value.publicTitle).toBe("Community input on billing changes");
+    expect(staff.value.groups.every((g) => typeof g.participantCount === "number")).toBe(
+      true,
+    );
 
     const [audit] = await db
       .select()
@@ -197,6 +251,53 @@ describe("Public Input aggregate report service (4.4)", () => {
       );
     expect(audit).toBeTruthy();
     expect(JSON.stringify(audit)).not.toContain("providerConversationRef");
+  });
+
+  it("takes publicTitle only from the payload — outer title is ignored for hash and storage", async () => {
+    const topicId = await freshTopicId();
+    const conversationId = await freshVotingClosedConversationId(topicId);
+    const payload = fixturePayload({
+      publicTitle: "Payload canonical title",
+    });
+
+    const first = await importAggregateReport(db, {
+      actorAccountId: ADMIN,
+      conversationId,
+      publicTitle: "Outer title A",
+      payload,
+    });
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+
+    const replayDifferentOuter = await importAggregateReport(db, {
+      actorAccountId: ADMIN,
+      conversationId,
+      publicTitle: "Outer title B — must not affect idempotency",
+      payload,
+    });
+    expect(replayDifferentOuter.ok).toBe(true);
+    if (!replayDifferentOuter.ok) return;
+    expect(replayDifferentOuter.value.isIdempotentReplay).toBe(true);
+    expect(replayDifferentOuter.value.importId).toBe(first.value.importId);
+
+    const differentPayloadTitle = await importAggregateReport(db, {
+      actorAccountId: ADMIN,
+      conversationId,
+      publicTitle: "Outer title C",
+      payload: fixturePayload({ publicTitle: "Different payload title" }),
+    });
+    expect(differentPayloadTitle.ok).toBe(true);
+    if (!differentPayloadTitle.ok) return;
+    expect(differentPayloadTitle.value.isIdempotentReplay).toBe(false);
+    expect(differentPayloadTitle.value.reportVersion).toBe(2);
+
+    const staff = await getStaffReportDetail(db, {
+      actorAccountId: ADMIN,
+      reportId: first.value.reportId,
+    });
+    expect(staff.ok).toBe(true);
+    if (!staff.ok || !staff.value) return;
+    expect(staff.value.publicTitle).toBe("Payload canonical title");
   });
 
   it("rejects import while the conversation is still draft", async () => {
@@ -213,7 +314,6 @@ describe("Public Input aggregate report service (4.4)", () => {
     const imported = await importAggregateReport(db, {
       actorAccountId: ADMIN,
       conversationId: created.value.id,
-      publicTitle: "Should not import",
       payload: fixturePayload(),
     });
     expect(imported.ok).toBe(false);
@@ -229,7 +329,6 @@ describe("Public Input aggregate report service (4.4)", () => {
     const withForbiddenKey = await importAggregateReport(db, {
       actorAccountId: ADMIN,
       conversationId,
-      publicTitle: "Should not import",
       payload: { ...fixturePayload(), xid: "provider-xid-123" },
     });
     expect(withForbiddenKey.ok).toBe(false);
@@ -240,14 +339,27 @@ describe("Public Input aggregate report service (4.4)", () => {
     const withLiveProviderSource = await importAggregateReport(db, {
       actorAccountId: ADMIN,
       conversationId,
-      publicTitle: "Should not import",
       payload: { ...fixturePayload(), sourceKind: "polis_hosted" },
     });
     expect(withLiveProviderSource.ok).toBe(false);
     if (!withLiveProviderSource.ok) {
-      expect(withLiveProviderSource.code).toBe(
-        "IMPORT_PAYLOAD_SCHEMA_INVALID",
-      );
+      expect(withLiveProviderSource.code).toBe("IMPORT_PAYLOAD_SCHEMA_INVALID");
+    }
+
+    const badPartition = await importAggregateReport(db, {
+      actorAccountId: ADMIN,
+      conversationId,
+      payload: fixturePayload({
+        participationCount: 100,
+        opinionGroups: [
+          { label: "Group A", participantCount: 60 },
+          { label: "Group B", participantCount: 30 },
+        ],
+      }),
+    });
+    expect(badPartition.ok).toBe(false);
+    if (!badPartition.ok) {
+      expect(badPartition.code).toBe("IMPORT_PAYLOAD_PARTITION_INVALID");
     }
   });
 
@@ -259,7 +371,6 @@ describe("Public Input aggregate report service (4.4)", () => {
     const first = await importAggregateReport(db, {
       actorAccountId: ADMIN,
       conversationId,
-      publicTitle: "Community input on billing changes",
       payload,
     });
     expect(first.ok).toBe(true);
@@ -269,7 +380,6 @@ describe("Public Input aggregate report service (4.4)", () => {
     const second = await importAggregateReport(db, {
       actorAccountId: ADMIN,
       conversationId,
-      publicTitle: "Community input on billing changes",
       payload,
     });
     expect(second.ok).toBe(true);
@@ -280,14 +390,13 @@ describe("Public Input aggregate report service (4.4)", () => {
     expect(second.value.reportVersion).toBe(first.value.reportVersion);
   });
 
-  it("walks a report through validate -> review -> publish, applies complementary suppression, and denies moderator publish", async () => {
+  it("walks a report through validate -> review -> publish, applies exact-count complementary suppression, and denies moderator publish", async () => {
     const topicId = await freshTopicId();
     const conversationId = await freshVotingClosedConversationId(topicId);
 
     const imported = await importAggregateReport(db, {
       actorAccountId: ADMIN,
       conversationId,
-      publicTitle: "Community input on billing changes",
       payload: fixturePayload(),
     });
     expect(imported.ok).toBe(true);
@@ -311,7 +420,6 @@ describe("Public Input aggregate report service (4.4)", () => {
     if (!reviewed.ok) return;
     expect(reviewed.value.workflowState).toBe("under_review");
 
-    // Publish must fail while the conversation itself is not yet closed.
     const publishTooEarly = await publishReport(db, {
       actorAccountId: ADMIN,
       reportId: imported.value.reportId,
@@ -345,14 +453,13 @@ describe("Public Input aggregate report service (4.4)", () => {
     expect(published.value.isLatestPublished).toBe(true);
     expect(published.value.publishedAt).toBeTruthy();
 
-    // Group C (share 0.02 -> implied 2 participants, below threshold 5) is
-    // suppressed; the complementary rule then suppresses one more (Group B,
-    // the smallest remaining positive share) so a single suppressed cell
-    // can't be reconstructed from the total.
+    // Group C (exact count 2 < threshold 5) is suppressed; complementary rule
+    // then suppresses Group B (smallest remaining positive count).
     const groups = await getReportGroupsByReportId(db, imported.value.reportId);
     expect(groups.ok).toBe(true);
     if (!groups.ok) return;
     const byLabel = new Map(groups.value.map((g) => [g.label, g]));
+    expect(byLabel.get("Group C")?.participantCount).toBe(2);
     expect(byLabel.get("Group C")?.publishedStatus).toBe("suppressed");
     expect(byLabel.get("Group C")?.publishedShare).toBeNull();
     expect(byLabel.get("Group B")?.publishedStatus).toBe("suppressed");
@@ -364,9 +471,12 @@ describe("Public Input aggregate report service (4.4)", () => {
     expect(publicDto.ok).toBe(true);
     if (!publicDto.ok || !publicDto.value) return;
     expect(publicDto.value.synthetic).toBe(true);
-    expect(typeof publicDto.value.synthetic).toBe("boolean");
     expect(publicDto.value.suppressedCells).toBe(2);
     expect(publicDto.value.groupsOmitted).toBe(false);
+    expect(publicDto.value.moderationDisclosure).toBeUndefined();
+    expect(publicDto.value.smallCellSuppressionPolicyVersion).toBe(
+      "4.5.1-exact-count-complementary",
+    );
     expect(
       publicDto.value.opinionGroups.find((g) => g.label === "Group C"),
     ).toEqual({ label: "Group C", status: "suppressed", share: null });
@@ -385,6 +495,52 @@ describe("Public Input aggregate report service (4.4)", () => {
     expect(
       staffDetail.value.groups.find((g) => g.label === "Group C")?.rawShare,
     ).toBe(0.02);
+    expect(
+      staffDetail.value.groups.find((g) => g.label === "Group C")
+        ?.participantCount,
+    ).toBe(2);
+  });
+
+  it("omits moderationDisclosure on the public DTO when reviewedCount is 0 and policyVersion is null", async () => {
+    const topicId = await freshTopicId();
+    const conversationId = await freshVotingClosedConversationId(topicId);
+    await importValidateReviewPublish({
+      conversationId,
+      closeVersion: 5,
+      payload: fixturePayload({
+        aggregateModerationDisclosure: undefined,
+      }),
+    });
+    const publicDto = await getPublishedReportForTopic(db, topicId);
+    expect(publicDto.ok).toBe(true);
+    if (!publicDto.ok || !publicDto.value) return;
+    expect(publicDto.value).not.toHaveProperty("moderationDisclosure");
+  });
+
+  it("includes moderationDisclosure when the import carries a non-empty aggregate summary", async () => {
+    const topicId = await freshTopicId();
+    const conversationId = await freshVotingClosedConversationId(topicId);
+    await importValidateReviewPublish({
+      conversationId,
+      closeVersion: 5,
+      payload: fixturePayload({
+        aggregateModerationDisclosure: {
+          reviewedCount: 12,
+          acceptedCount: 10,
+          rejectedCount: 2,
+          policyVersion: "mod-policy@1",
+        },
+      }),
+    });
+    const publicDto = await getPublishedReportForTopic(db, topicId);
+    expect(publicDto.ok).toBe(true);
+    if (!publicDto.ok || !publicDto.value) return;
+    expect(publicDto.value.moderationDisclosure).toEqual({
+      reviewedCount: 12,
+      acceptedCount: 10,
+      rejectedCount: 2,
+      policyVersion: "mod-policy@1",
+    });
   });
 
   it("omits all group shares outright when participation is below the reporting floor", async () => {
@@ -394,8 +550,14 @@ describe("Public Input aggregate report service (4.4)", () => {
     const imported = await importAggregateReport(db, {
       actorAccountId: ADMIN,
       conversationId,
-      publicTitle: "Small consultation",
-      payload: fixturePayload({ participationCount: 3, voteCount: 12 }),
+      payload: fixturePayload({
+        participationCount: 3,
+        voteCount: 12,
+        opinionGroups: [
+          { label: "Group A", participantCount: 2 },
+          { label: "Group B", participantCount: 1 },
+        ],
+      }),
     });
     expect(imported.ok).toBe(true);
     if (!imported.ok) return;
@@ -433,64 +595,57 @@ describe("Public Input aggregate report service (4.4)", () => {
     const topicId = await freshTopicId();
     const conversationId = await freshVotingClosedConversationId(topicId);
 
-    async function importValidateReviewPublish(label: string) {
-      const imported = await importAggregateReport(db, {
-        actorAccountId: ADMIN,
-        conversationId,
-        publicTitle: label,
-        payload: fixturePayload({
-          opinionGroups: [
-            { label: "Group A", share: 0.6 },
-            { label: "Group B", share: 0.4 },
-          ],
-          crossGroupAgreement: [`${label} agreement`],
-        }),
-      });
-      expect(imported.ok).toBe(true);
-      if (!imported.ok) throw new Error("import failed");
+    const firstImported = await importAggregateReport(db, {
+      actorAccountId: ADMIN,
+      conversationId,
+      payload: fixturePayload({
+        publicTitle: "Report v1",
+        opinionGroups: [
+          { label: "Group A", participantCount: 60 },
+          { label: "Group B", participantCount: 40 },
+        ],
+        crossGroupAgreement: ["Report v1 agreement"],
+      }),
+    });
+    expect(firstImported.ok).toBe(true);
+    if (!firstImported.ok) return;
 
-      const validated = await validateReport(db, {
-        actorAccountId: ADMIN,
-        reportId: imported.value.reportId,
-        expectedConcurrencyVersion: 1,
-      });
-      expect(validated.ok).toBe(true);
-      if (!validated.ok) throw new Error("validate failed");
+    const firstValidated = await validateReport(db, {
+      actorAccountId: ADMIN,
+      reportId: firstImported.value.reportId,
+      expectedConcurrencyVersion: 1,
+    });
+    expect(firstValidated.ok).toBe(true);
+    if (!firstValidated.ok) return;
 
-      const reviewed = await beginReview(db, {
-        actorAccountId: ADMIN,
-        reportId: imported.value.reportId,
-        expectedConcurrencyVersion: validated.value.concurrencyVersion,
-      });
-      expect(reviewed.ok).toBe(true);
-      if (!reviewed.ok) throw new Error("review failed");
+    const firstReviewed = await beginReview(db, {
+      actorAccountId: ADMIN,
+      reportId: firstImported.value.reportId,
+      expectedConcurrencyVersion: firstValidated.value.concurrencyVersion,
+    });
+    expect(firstReviewed.ok).toBe(true);
+    if (!firstReviewed.ok) return;
 
-      return { imported, reviewed };
-    }
-
-    const first = await importValidateReviewPublish("Report v1");
     await closeConversation(conversationId, 5);
 
     const publishedFirst = await publishReport(db, {
       actorAccountId: ADMIN,
-      reportId: first.imported.value.reportId,
-      expectedConcurrencyVersion: first.reviewed.value.concurrencyVersion,
+      reportId: firstImported.value.reportId,
+      expectedConcurrencyVersion: firstReviewed.value.concurrencyVersion,
     });
     expect(publishedFirst.ok).toBe(true);
     if (!publishedFirst.ok) return;
     expect(publishedFirst.value.version).toBe(1);
     expect(publishedFirst.value.isLatestPublished).toBe(true);
 
-    // Second import/validate/review re-runs against the same (closed)
-    // conversation to produce version 2.
     const secondImported = await importAggregateReport(db, {
       actorAccountId: ADMIN,
       conversationId,
-      publicTitle: "Report v2",
       payload: fixturePayload({
+        publicTitle: "Report v2",
         opinionGroups: [
-          { label: "Group A", share: 0.55 },
-          { label: "Group B", share: 0.45 },
+          { label: "Group A", participantCount: 55 },
+          { label: "Group B", participantCount: 45 },
         ],
         crossGroupAgreement: ["Report v2 agreement"],
       }),
@@ -527,7 +682,7 @@ describe("Public Input aggregate report service (4.4)", () => {
 
     const staffFirstAfter = await getStaffReportDetail(db, {
       actorAccountId: ADMIN,
-      reportId: first.imported.value.reportId,
+      reportId: firstImported.value.reportId,
     });
     expect(staffFirstAfter.ok).toBe(true);
     if (!staffFirstAfter.ok || !staffFirstAfter.value) return;
@@ -544,6 +699,44 @@ describe("Public Input aggregate report service (4.4)", () => {
     expect(publicDto.value.publicTitle).toBe("Report v2");
   });
 
+  it("picks the published report from the current consultation when a topic has historical ones", async () => {
+    const topicId = await freshTopicId();
+    const historicalConversationId =
+      await freshVotingClosedConversationId(topicId);
+    const historical = await importValidateReviewPublish({
+      conversationId: historicalConversationId,
+      closeVersion: 5,
+      payload: fixturePayload({ publicTitle: "Historical consultation report" }),
+    });
+
+    // Demote the first conversation so a second `current` row can be created
+    // (operator designation change; not a normal account capability).
+    await db
+      .update(publicInputConversations)
+      .set({ designation: "historical" })
+      .where(eq(publicInputConversations.id, historicalConversationId));
+
+    const currentConversationId =
+      await freshVotingClosedConversationId(topicId);
+    const current = await importValidateReviewPublish({
+      conversationId: currentConversationId,
+      closeVersion: 5,
+      payload: fixturePayload({ publicTitle: "Current consultation report" }),
+    });
+
+    const publicDto = await getPublishedReportForTopic(db, topicId);
+    expect(publicDto.ok).toBe(true);
+    if (!publicDto.ok || !publicDto.value) return;
+    expect(publicDto.value.publicTitle).toBe("Current consultation report");
+    expect(publicDto.value.publicTitle).not.toBe(
+      "Historical consultation report",
+    );
+
+    // Sanity: both reports remain published on their own conversations.
+    expect(historical.published.value.isLatestPublished).toBe(true);
+    expect(current.published.value.isLatestPublished).toBe(true);
+  });
+
   it("rejects a report with a substantive reason and refuses a blank/short reason", async () => {
     const topicId = await freshTopicId();
     const conversationId = await freshVotingClosedConversationId(topicId);
@@ -551,8 +744,7 @@ describe("Public Input aggregate report service (4.4)", () => {
     const imported = await importAggregateReport(db, {
       actorAccountId: ADMIN,
       conversationId,
-      publicTitle: "To be rejected",
-      payload: fixturePayload(),
+      payload: fixturePayload({ publicTitle: "To be rejected" }),
     });
     expect(imported.ok).toBe(true);
     if (!imported.ok) return;
@@ -568,7 +760,6 @@ describe("Public Input aggregate report service (4.4)", () => {
       expect(shortReason.code).toBe("PUBLIC_INPUT_REPORT_REASON_REQUIRED");
     }
 
-    // rejectReport only accepts `validated` / `under_review` reports.
     const validated = await validateReport(db, {
       actorAccountId: ADMIN,
       reportId: imported.value.reportId,
@@ -600,41 +791,16 @@ describe("Public Input aggregate report service (4.4)", () => {
   it("never leaks protected fields through the public projection even when constructed directly", async () => {
     const topicId = await freshTopicId();
     const conversationId = await freshVotingClosedConversationId(topicId);
-    const imported = await importAggregateReport(db, {
-      actorAccountId: ADMIN,
+    const { published } = await importValidateReviewPublish({
       conversationId,
-      publicTitle: "Leak check",
-      payload: fixturePayload(),
+      closeVersion: 5,
     });
-    expect(imported.ok).toBe(true);
-    if (!imported.ok) return;
-    await validateReport(db, {
-      actorAccountId: ADMIN,
-      reportId: imported.value.reportId,
-      expectedConcurrencyVersion: 1,
-    });
-    const reviewed = await beginReview(db, {
-      actorAccountId: ADMIN,
-      reportId: imported.value.reportId,
-      expectedConcurrencyVersion: 2,
-    });
-    expect(reviewed.ok).toBe(true);
-    if (!reviewed.ok) return;
-    await closeConversation(conversationId, 5);
-    const published = await publishReport(db, {
-      actorAccountId: ADMIN,
-      reportId: imported.value.reportId,
-      expectedConcurrencyVersion: reviewed.value.concurrencyVersion,
-    });
-    expect(published.ok).toBe(true);
-    if (!published.ok) return;
 
-    const [reportImport, groups, findings] = await Promise.all([
+    const [reportImport, groups] = await Promise.all([
       getReportImportById(db, published.value.importId),
       getReportGroupsByReportId(db, published.value.id),
-      getReportImportById(db, published.value.importId),
     ]);
-    expect(reportImport.ok && groups.ok && findings.ok).toBe(true);
+    expect(reportImport.ok && groups.ok).toBe(true);
     if (!reportImport.ok || !groups.ok || !reportImport.value) return;
 
     const dto = toPublicReportDto({
@@ -647,7 +813,6 @@ describe("Public Input aggregate report service (4.4)", () => {
     if (!dto) return;
     expect(() => assertNoProtectedReportFieldLeak(dto)).not.toThrow();
 
-    // Defense-in-depth: prove the assertion actually fires on a real leak.
     expect(() =>
       assertNoProtectedReportFieldLeak({
         ...dto,

@@ -147,9 +147,14 @@ Controls below are **implemented** through 2.11 unless noted as still blocked.
 | Cookie/device-linkage (hosted provider) (4.2–4.4 blocker) | Documented in assessment; no live cookies from our app to provider in 4.4 |
 | Local reset misreported as remote wipe (4.3/4.4) | Local alpha reset deletes institutional + report/moderation rows only; never claim remote provider deletion (OQ29 / ADR 0017) |
 | Malicious/malformed provider exports / schema drift (4.4) | Aggregate-only canonical descriptor; recursive forbidden-key reject; raw exports not accepted ingest format (ADR 0018) |
-| Small-cell / differencing / reconstruction attacks (4.2/4.4) | Per-cell + **complementary** suppression (ADR 0021); production threshold still OQ27 + owner approval OQ35 |
+| Small-cell / differencing / reconstruction attacks (4.2/4.4/4.5A) | Per-cell + **complementary** suppression (ADR 0021); **exact integer counts** (never `Math.round(share×N)`); production threshold still OQ27 + owner approval OQ35; exact-count rule confirmation OQ36 |
 | Cross-version differencing of published reports (4.4) | Each public history projection re-applies complementary suppression; no “diff to recover” path |
-| Self-dealing provenance / silent overwrite (4.4) | Immutable report versions; import ≠ publish; audit actor/role/timestamp/method versions; no in-place metric edits |
+| Self-dealing provenance / silent overwrite (4.4/4.5A) | Immutable report versions; finding eligibility only while `under_review` + concurrency version + DB triggers; import ≠ publish; audit actor/role/timestamp/method versions; no in-place metric edits after publish |
+| Published finding mutated in place (4.5A) | Service + DB reject post-publication `publication_status` changes; corrections require new import version |
+| Nondeterministic topic report selection (4.5A) | Topic public projection resolves **current** consultation first; historical `is_latest_published` rows are ineligible for the live route |
+| Title / hash drift (4.5A) | Persist and hash only validated payload `publicTitle`; ignore outer API title |
+| Misleading empty moderation disclosure (4.5A) | Omit `moderationDisclosure` unless import carried aggregate summary — never “Reviewed 0” |
+| Operational outage disguised as not-found (4.5A) | Report route maps `unavailable` → PublicReadUnavailable; reserves 404 for absent/unpublished |
 | Provider moderation mistaken for institutional endorsement (4.4) | Separate `provider_moderation_records` vs `report_moderation_actions` axes (ADR 0020) |
 | Collapsing independent governance axes (4.4) | Lifecycle, availability, provider moderation, finding eligibility, import validation, publication, evidence quality, agenda qualification stay separate |
 | Moderator misuse / preference promotion (4.1–4.4) | Authority rules + informal/formal distinctions; lifecycle/report ops are not agenda promotion; moderators cannot edit consultation metrics |

@@ -53,7 +53,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
 /**
  * POST — import an aggregate-only canonical bundle.
- * Body: `{ publicTitle?: string, payload: unknown }`.
+ * Body: `{ payload: unknown }` (publicTitle must live inside the hashed payload).
  * Never logs the request body or rejected field values.
  */
 export async function POST(request: Request, context: RouteContext) {
@@ -97,11 +97,6 @@ export async function POST(request: Request, context: RouteContext) {
     );
   }
 
-  const publicTitle =
-    typeof gatedBody.body.publicTitle === "string"
-      ? gatedBody.body.publicTitle
-      : "";
-
   const { getGatedDb } = await import("@/lib/auth/runtime");
   const { importAggregateReport } = await import(
     "@/lib/public-input/reports/service"
@@ -109,7 +104,6 @@ export async function POST(request: Request, context: RouteContext) {
   const result = await importAggregateReport(getGatedDb(), {
     actorAccountId: gated.session.accountId,
     conversationId: id,
-    publicTitle,
     payload,
   });
 

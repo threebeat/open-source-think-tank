@@ -122,7 +122,7 @@ export type PublicInputAggregateReport = {
   participationCount: number;
   commentTotal: number;
   voteTotal: number;
-  opinionGroups: { label: string; share: number }[];
+  opinionGroups: { label: string; participantCount: number }[];
   crossGroupAgreement: string[];
   meaningfulDisagreement: string[];
   participationSufficiency: string;
@@ -622,11 +622,12 @@ export const publicInputAggregateReports: PublicInputAggregateReport[] = [
     commentTotal: 86,
     voteTotal: 18420,
     opinionGroups: [
-      { label: "Group A", share: 0.34 },
-      { label: "Group B", share: 0.37 },
-      { label: "Group C", share: 0.287 },
-      // Implied cell ≈ 4 at participationCount 1240 — below provisional threshold 5.
-      { label: "Group D", share: 0.003 },
+      // Exact counts must sum to participationCount (1240). Group D (4) is
+      // below provisional threshold 5 and triggers complementary suppression.
+      { label: "Group A", participantCount: 421 },
+      { label: "Group B", participantCount: 459 },
+      { label: "Group C", participantCount: 356 },
+      { label: "Group D", participantCount: 4 },
     ],
     crossGroupAgreement: [
       "Publish shortage-stage thresholds before any surcharge applies.",

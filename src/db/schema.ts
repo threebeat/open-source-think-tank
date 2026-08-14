@@ -1964,12 +1964,12 @@ export const publicInputReports = pgTable(
 );
 
 /**
- * Opinion-group rows for a report version. `rawShare` is the staff-only value
- * from the import; `publishedShare` is the value shown in the public
- * projection after complementary small-cell suppression is applied at
- * publish time (src/lib/public-input/reports/suppression.ts) — `null`
- * whenever `publishedStatus` is not `reported`. Suppressed values are never
- * coerced to `0`.
+ * Opinion-group rows for a report version. `participantCount` is the exact
+ * integer aggregate count from the canonical import (4.5A). `rawShare` is the
+ * derived display ratio `participantCount / participationCount` retained for
+ * staff review. `publishedShare` is set at publish after complementary
+ * small-cell suppression — `null` whenever `publishedStatus` is not
+ * `reported`. Suppressed values are never coerced to `0`.
  */
 export const publicInputReportGroups = pgTable(
   "public_input_report_groups",
@@ -1980,6 +1980,7 @@ export const publicInputReportGroups = pgTable(
       .references(() => publicInputReports.id, { onDelete: "restrict" }),
     label: text("label").notNull(),
     displayOrder: integer("display_order").notNull().default(0),
+    participantCount: integer("participant_count").notNull(),
     rawShare: real("raw_share").notNull(),
     publishedStatus: publicInputReportGroupCellStatusEnum("published_status")
       .notNull()
@@ -2000,6 +2001,10 @@ export const publicInputReportGroups = pgTable(
     check(
       "public_input_report_groups_label_nonblank",
       sql`char_length(btrim(${table.label})) > 0`,
+    ),
+    check(
+      "public_input_report_groups_participant_count_nonnegative",
+      sql`${table.participantCount} >= 0`,
     ),
     check(
       "public_input_report_groups_raw_share_bounds",

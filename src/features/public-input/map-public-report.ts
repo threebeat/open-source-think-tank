@@ -12,7 +12,7 @@ export function mapPublicReportDtoToPanelDto(
   report: PublicReportDto,
   topicSlug: string,
 ): PublicInputPublicDto {
-  return {
+  const dto: PublicInputPublicDto = {
     synthetic: report.synthetic,
     topicSlug,
     participationCount: report.participationCount,
@@ -57,7 +57,10 @@ export function mapPublicReportDtoToPanelDto(
     reportVersion: report.reportVersion,
     publicTitle: report.publicTitle,
     publishedAt: report.publishedAt,
-    moderationDisclosure: report.moderationDisclosure,
     isSuperseded: report.isSuperseded,
   };
+  if (report.moderationDisclosure) {
+    dto.moderationDisclosure = report.moderationDisclosure;
+  }
+  return dto;
 }

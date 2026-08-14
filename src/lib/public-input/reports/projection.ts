@@ -46,7 +46,8 @@ export type PublicReportDto = {
   smallCellSuppressionNotice: string;
   suppressedCells: number;
   groupsOmitted: boolean;
-  moderationDisclosure: PublicReportModerationDisclosure;
+  /** Omitted when the immutable import carried no aggregate moderation summary. */
+  moderationDisclosure?: PublicReportModerationDisclosure;
   providerNotice: string;
   /** True when this published version has been superseded (history view only). */
   isSuperseded: boolean;
@@ -94,7 +95,7 @@ export function toPublicReportDto(input: {
     (g) => g.publishedStatus === "omitted",
   );
 
-  return {
+  const dto: PublicReportDto = {
     synthetic: report.synthetic,
     topicId: report.topicId,
     reportVersion: report.version,
@@ -115,16 +116,26 @@ export function toPublicReportDto(input: {
       "Complementary small-cell suppression applied at publication. Suppressed shares are not zeros and cannot be reconstructed by subtraction. Production threshold remains subject to privacy review (OQ27/OQ35).",
     suppressedCells,
     groupsOmitted,
-    moderationDisclosure: {
-      reviewedCount: reportImport.moderationReviewedCount,
-      acceptedCount: reportImport.moderationAcceptedCount,
-      rejectedCount: reportImport.moderationRejectedCount,
-      policyVersion: reportImport.moderationPolicyVersion,
-    },
     providerNotice:
       "Aggregate-only Public Input report. Not connected to a live Pol.is conversation. Pol.is / Public Input organizes preference and is not evidence, truth, representativeness, or an institutional decision.",
     isSuperseded: false,
   };
+
+  // Omit the key entirely when the import carried no aggregate moderation
+  // summary — never emit `moderationDisclosure: undefined` / "Reviewed 0".
+  if (
+    reportImport.moderationReviewedCount > 0 ||
+    reportImport.moderationPolicyVersion != null
+  ) {
+    dto.moderationDisclosure = {
+      reviewedCount: reportImport.moderationReviewedCount,
+      acceptedCount: reportImport.moderationAcceptedCount,
+      rejectedCount: reportImport.moderationRejectedCount,
+      policyVersion: reportImport.moderationPolicyVersion,
+    };
+  }
+
+  return dto;
 }
 
 /**
@@ -174,6 +185,7 @@ export type StaffReportDetailDto = {
     id: string;
     label: string;
     displayOrder: number;
+    participantCount: number;
     rawShare: number;
     publishedStatus: ReportGroupRecord["publishedStatus"];
     publishedShare: number | null;
@@ -243,6 +255,7 @@ export function toStaffReportDetailDto(input: {
         label: g.label,
         displayOrder: g.displayOrder,
         rawShare: g.rawShare,
+        participantCount: g.participantCount,
         publishedStatus: g.publishedStatus,
         publishedShare: g.publishedShare,
         synthetic: g.synthetic,

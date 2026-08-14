@@ -3,16 +3,14 @@ import { z } from "zod";
 import { findForbiddenPublicInputKeys } from "@/lib/public-input/reports/forbidden-keys";
 
 /**
- * Canonical aggregate-only import descriptor (ADR 0018).
+ * Canonical aggregate-only import descriptor (ADR 0018 + Phase 4.5A).
  *
- * This is the *only* accepted ingest shape for Phase 4.4. It intentionally
- * has no room for per-person rows, vote matrices, membership maps, provider
- * participant/account ids, `xid`, raw provider URLs, or secrets — those
- * fields simply do not exist in the schema, and `.strict()` at every object
- * level plus the recursive forbidden-key walker below both reject them if a
- * caller tries to smuggle them in anyway.
+ * Schema `@1.1` requires exact integer `participantCount` per opinion group
+ * (never inferred from rounded shares). Partition sum must equal
+ * `participationCount`. Duplicate normalized labels are rejected.
  */
-export const CANONICAL_IMPORT_SCHEMA_VERSION = "public-input-aggregate-import@1";
+export const CANONICAL_IMPORT_SCHEMA_VERSION =
+  "public-input-aggregate-import@1.1";
 
 export const MAX_OPINION_GROUPS = 20;
 export const MAX_FINDINGS_PER_KIND = 50;
@@ -23,8 +21,8 @@ const MAX_LIMITATIONS_TEXT_LENGTH = 1000;
 const MAX_METHOD_VERSION_LENGTH = 100;
 const MAX_PROVIDER_EXPORT_LABEL_LENGTH = 100;
 const MAX_PUBLIC_TITLE_LENGTH = 200;
+const MAX_MODERATION_POLICY_VERSION_LENGTH = 100;
 
-/** Enum-level source kinds the canonical schema will even parse — operational subset only. */
 export const CANONICAL_IMPORT_SOURCE_KINDS = [
   "fixture",
   "manual_aggregate",
@@ -36,18 +34,37 @@ function boundedNonBlankString(max: number) {
   return z.string().trim().min(1).max(max);
 }
 
-const shareSchema = z.number().finite().min(0).max(1);
+const safeNonnegativeInt = z.number().int().nonnegative().safe();
 
 const opinionGroupSchema = z
   .object({
     label: boundedNonBlankString(MAX_LABEL_LENGTH),
-    share: shareSchema,
+    participantCount: safeNonnegativeInt,
   })
   .strict();
 
 const findingTextSchema = boundedNonBlankString(MAX_FINDING_TEXT_LENGTH);
 
-const safeNonnegativeInt = z.number().int().nonnegative().safe();
+const aggregateModerationDisclosureSchema = z
+  .object({
+    reviewedCount: safeNonnegativeInt,
+    acceptedCount: safeNonnegativeInt,
+    rejectedCount: safeNonnegativeInt,
+    policyVersion: boundedNonBlankString(MAX_MODERATION_POLICY_VERSION_LENGTH)
+      .nullable()
+      .optional(),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.acceptedCount + value.rejectedCount > value.reviewedCount) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "acceptedCount + rejectedCount must be <= reviewedCount",
+        path: ["reviewedCount"],
+      });
+    }
+  });
 
 export const canonicalAggregateImportSchema = z
   .object({
@@ -77,6 +94,14 @@ export const canonicalAggregateImportSchema = z
     meaningfulDisagreement: z
       .array(findingTextSchema)
       .max(MAX_FINDINGS_PER_KIND),
+    /**
+     * Optional immutable aggregate moderation summary carried in the import.
+     * When omitted/null, public projections omit moderation disclosure entirely
+     * (never invent “Reviewed 0”).
+     */
+    aggregateModerationDisclosure: aggregateModerationDisclosureSchema
+      .nullable()
+      .optional(),
   })
   .strict();
 
@@ -93,13 +118,36 @@ export type CanonicalImportValidationResult =
       issues: string[];
     };
 
-/**
- * Validate an arbitrary unknown payload against the canonical import schema.
- * Runs the recursive forbidden-key walker *before* zod parsing so a
- * malicious/careless payload that smuggles a forbidden key inside an object
- * zod would otherwise reject anyway (or, if the shapes ever loosen, might
- * not) is always caught with an explicit diagnostic.
- */
+/** Normalize labels for duplicate detection (NFC + trim + casefold). */
+export function normalizeOpinionGroupLabel(label: string): string {
+  return label.normalize("NFC").trim().toLocaleLowerCase("en-US");
+}
+
+function partitionAndLabelIssues(
+  value: CanonicalAggregateImport,
+): string[] {
+  const issues: string[] = [];
+  const seen = new Map<string, string>();
+  let sum = 0;
+  for (const group of value.opinionGroups) {
+    sum += group.participantCount;
+    const key = normalizeOpinionGroupLabel(group.label);
+    if (seen.has(key)) {
+      issues.push(
+        `opinionGroups: duplicate normalized label "${group.label}" (conflicts with "${seen.get(key)}")`,
+      );
+    } else {
+      seen.set(key, group.label);
+    }
+  }
+  if (sum !== value.participationCount) {
+    issues.push(
+      `opinionGroups: participantCount sum ${sum} must equal participationCount ${value.participationCount}`,
+    );
+  }
+  return issues;
+}
+
 export function validateCanonicalAggregateImport(
   raw: unknown,
 ): CanonicalImportValidationResult {
@@ -134,8 +182,6 @@ export function validateCanonicalAggregateImport(
     };
   }
 
-  // Belt-and-suspenders: the enum already excludes live provider kinds, but
-  // fail closed explicitly rather than trusting enum membership alone.
   if (
     !(CANONICAL_IMPORT_SOURCE_KINDS as readonly string[]).includes(
       parsed.data.sourceKind,
@@ -146,6 +192,16 @@ export function validateCanonicalAggregateImport(
       error: "Only fixture/manual_aggregate sources are accepted",
       code: "IMPORT_SOURCE_KIND_NOT_OPERATIONAL",
       issues: [],
+    };
+  }
+
+  const partitionIssues = partitionAndLabelIssues(parsed.data);
+  if (partitionIssues.length > 0) {
+    return {
+      ok: false,
+      error: "Import payload failed partition/label consistency checks",
+      code: "IMPORT_PAYLOAD_PARTITION_INVALID",
+      issues: partitionIssues,
     };
   }
 

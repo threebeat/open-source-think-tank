@@ -23,7 +23,7 @@ type Props = {
 const SAMPLE_PAYLOAD = {
   schemaVersion: CANONICAL_IMPORT_SCHEMA_VERSION,
   sourceKind: "manual_aggregate",
-  methodVersion: "public-input-aggregate@4.4.0",
+  methodVersion: "public-input-aggregate@4.5.0",
   publicTitle: "Aggregate Public Input report",
   participationCount: 240,
   commentCount: 42,
@@ -33,9 +33,9 @@ const SAMPLE_PAYLOAD = {
   representationLimitations:
     "Self-selected participants; not a census or probability sample.",
   opinionGroups: [
-    { label: "Group A", share: 0.62 },
-    { label: "Group B", share: 0.35 },
-    { label: "Group C", share: 0.03 },
+    { label: "Group A", participantCount: 149 },
+    { label: "Group B", participantCount: 87 },
+    { label: "Group C", participantCount: 4 },
   ],
   crossGroupAgreement: [
     "Publish decision criteria before any surcharge applies.",
@@ -309,13 +309,14 @@ export function ConsultationReportWorkspace({
 
           <div>
             <h3 className="font-heading text-lg text-foreground">
-              Group cells (staff raw shares)
+              Group cells (staff exact counts / raw shares)
             </h3>
             <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
               {detail.groups.map((group) => (
                 <li key={group.id} data-testid="staff-group-cell">
-                  {group.label}: raw {(group.rawShare * 100).toFixed(1)}% ·
-                  published {group.publishedStatus}
+                  {group.label}: n={group.participantCount} · raw{" "}
+                  {(group.rawShare * 100).toFixed(1)}% · published{" "}
+                  {group.publishedStatus}
                   {group.publishedShare != null
                     ? ` (${(group.publishedShare * 100).toFixed(1)}%)`
                     : ""}
@@ -350,7 +351,11 @@ export function ConsultationReportWorkspace({
                         onClick={() =>
                           void postReportAction(
                             `/api/workspace/reports/${detail.reportId}/findings/${finding.id}/decision`,
-                            { action: "include" },
+                            {
+                              action: "include",
+                              expectedConcurrencyVersion:
+                                detail.concurrencyVersion,
+                            },
                           )
                         }
                       >
@@ -365,6 +370,8 @@ export function ConsultationReportWorkspace({
                             `/api/workspace/reports/${detail.reportId}/findings/${finding.id}/decision`,
                             {
                               action: "withhold",
+                              expectedConcurrencyVersion:
+                                detail.concurrencyVersion,
                               publicRationale:
                                 findingRationale ||
                                 "Withheld pending institutional review rationale.",

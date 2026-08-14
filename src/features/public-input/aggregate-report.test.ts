@@ -37,10 +37,10 @@ describe("public input aggregate projection", () => {
       ...publicInputAggregateReports[0]!,
       participationCount: 100,
       opinionGroups: [
-        { label: "Group A", share: 0.5 },
-        { label: "Group B", share: 0.47 },
-        { label: "Group C", share: 0.03 }, // implied 3 < 5
-        { label: "Group Zero", share: 0 },
+        { label: "Group A", participantCount: 50 },
+        { label: "Group B", participantCount: 47 },
+        { label: "Group C", participantCount: 3 },
+        { label: "Group Zero", participantCount: 0 },
       ],
     };
     const { groups } = applyComplementarySuppressionToReport(tiny);
@@ -58,17 +58,14 @@ describe("public input aggregate projection", () => {
       ...publicInputAggregateReports[0]!,
       participationCount: 100,
       opinionGroups: [
-        { label: "Group A", share: 0.5 },
-        { label: "Group B", share: 0.47 },
-        { label: "Group C", share: 0.03 }, // implied 3 < 5 — lone suppression
-        { label: "Group Zero", share: 0 },
+        { label: "Group A", participantCount: 50 },
+        { label: "Group B", participantCount: 47 },
+        { label: "Group C", participantCount: 3 },
+        { label: "Group Zero", participantCount: 0 },
       ],
     };
     const { groups, suppressedCells } =
       applyComplementarySuppressionToReport(tiny);
-    // C is suppressed directly; without a second suppression, C would be
-    // reconstructible as `1 − (A + B + 0)`. B is the smallest positive
-    // remaining reported share, so it becomes the complementary victim.
     expect(suppressedCells).toBe(2);
     const suppressedLabels = groups
       .filter((group) => group.status === "suppressed")
@@ -106,9 +103,9 @@ describe("public input aggregate projection", () => {
       ...publicInputAggregateReports[0]!,
       participationCount: 1000,
       opinionGroups: [
-        { label: "Group A", share: 0.6 },
-        { label: "Group B", share: 0.396 },
-        { label: "Group C", share: 0.004 }, // implied 4 < 5 — the target cell
+        { label: "Group A", participantCount: 600 },
+        { label: "Group B", participantCount: 396 },
+        { label: "Group C", participantCount: 4 },
       ],
     };
     const { groups } = applyComplementarySuppressionToReport(scenario);
@@ -117,9 +114,6 @@ describe("public input aggregate projection", () => {
         group.status === "reported",
       )
       .reduce((sum, group) => sum + group.share, 0);
-    // If only C were suppressed, `1 − reportedSum` would equal C's share
-    // almost exactly. Complementary suppression must ensure this is no
-    // longer the case because at least two cells are withheld.
     const suppressedCount = groups.filter(
       (group) => group.status === "suppressed",
     ).length;
@@ -133,8 +127,8 @@ describe("public input aggregate projection", () => {
       participationCount: 3,
       smallCellSuppressionThreshold: 5,
       opinionGroups: [
-        { label: "Group A", share: 0.6 },
-        { label: "Group B", share: 0.4 },
+        { label: "Group A", participantCount: 2 },
+        { label: "Group B", participantCount: 1 },
       ],
     };
     const { groups, suppressedCells, groupsOmitted } =
@@ -148,18 +142,32 @@ describe("public input aggregate projection", () => {
     expect(dto.opinionGroups).toEqual([]);
   });
 
-  it("handles rounding at the suppression boundary without leaking exact implied counts", () => {
-    const boundary: PublicInputAggregateReport = {
+  it("uses exact participantCount — never rounds a fractional share across the threshold", () => {
+    const exactBelow: PublicInputAggregateReport = {
       ...publicInputAggregateReports[0]!,
       participationCount: 1000,
       opinionGroups: [
-        { label: "Group A", share: 0.9949 }, // implied 995 -> rounds to 995 (reported)
-        { label: "Group B", share: 0.0049 }, // implied 4.9 -> rounds to 5 (threshold, not < 5, reported)
-        { label: "Group C", share: 0.0002 }, // implied 0.2 -> rounds to 0 (genuine-zero-ish, stays reported)
+        { label: "Group A", participantCount: 996 },
+        { label: "Group B", participantCount: 4 },
       ],
     };
-    const { groups } = applyComplementarySuppressionToReport(boundary);
-    expect(groups.every((group) => group.status === "reported")).toBe(true);
+    const { groups } = applyComplementarySuppressionToReport(exactBelow);
+    expect(groups.find((g) => g.label === "Group B")?.status).toBe(
+      "suppressed",
+    );
+
+    const atThreshold: PublicInputAggregateReport = {
+      ...publicInputAggregateReports[0]!,
+      participationCount: 1000,
+      opinionGroups: [
+        { label: "Group A", participantCount: 995 },
+        { label: "Group B", participantCount: 5 },
+      ],
+    };
+    const atThresholdResult = applyComplementarySuppressionToReport(atThreshold);
+    expect(
+      atThresholdResult.groups.every((group) => group.status === "reported"),
+    ).toBe(true);
   });
 
   it("detects nested forbidden keys in sentinel objects", () => {
@@ -191,6 +199,13 @@ describe("public input aggregate projection", () => {
   it("loads the Cedar River public DTO with suppression-aware groups", () => {
     const dto = getPublicInputPublicDto("cedar-river-drought-surcharge");
     expect(dto?.synthetic).toBe(true);
+    expect(dto?.participationCount).toBe(1240);
+    expect(
+      publicInputAggregateReports[0]!.opinionGroups.reduce(
+        (sum, g) => sum + g.participantCount,
+        0,
+      ),
+    ).toBe(1240);
     expect(dto?.providerNotice).toMatch(/not a decision-maker/i);
     expect(dto?.opinionGroups.some((g) => g.status === "suppressed")).toBe(true);
     expect(dto?.cellPolicy.neverPublic).toContain("xid");

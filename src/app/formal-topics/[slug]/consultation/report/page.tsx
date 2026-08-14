@@ -5,6 +5,7 @@ import { connection } from "next/server";
 
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { MainContainer } from "@/components/layout/MainContainer";
+import { PublicReadUnavailable } from "@/components/topics/PublicReadUnavailable";
 import { PublicInputReportPanel } from "@/features/public-input/PublicInputReportPanel";
 import { loadPublicDemoCanonicalTopic } from "@/features/formal-topics/load-public-demo-topic";
 import { resolveAppMode } from "@/lib/env/app-mode";
@@ -70,7 +71,21 @@ export default async function FormalTopicConsultationReportPage({
     "@/features/formal-topics/load-gated-canonical-topic"
   );
   const loaded = await loadGatedCanonicalTopic(slug);
-  if (loaded.status !== "ok") {
+  if (loaded.status === "unavailable") {
+    return (
+      <MainContainer className="space-y-8">
+        <Breadcrumbs
+          items={[
+            { href: "/", label: "Home" },
+            { href: "/formal-topics", label: "Formal Topics" },
+            { label: "Report" },
+          ]}
+        />
+        <PublicReadUnavailable />
+      </MainContainer>
+    );
+  }
+  if (loaded.status === "not_found") {
     notFound();
   }
 
