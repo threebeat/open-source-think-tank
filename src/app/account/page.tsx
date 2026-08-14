@@ -46,9 +46,6 @@ export default async function AccountPage() {
   const { getGatedDb } = await import("@/lib/auth/runtime");
   const db = getGatedDb();
   const profile = await getAccountProfile(db, session.accountId);
-  if (!profile) {
-    redirect("/auth/sign-in");
-  }
 
   const memberships = await listMembershipsForAccount(db, session.accountId);
   const primary = memberships.find((row) => row.isPrimary) ?? memberships[0];
@@ -77,7 +74,7 @@ export default async function AccountPage() {
       />
       <PageHeader
         eyebrow="Signed in"
-        title={profile.displayName?.trim() || "Your account"}
+        title={profile?.displayName?.trim() || "Your account"}
         description="Community membership is organization service membership in this pre-alpha synthetic hall. It is not nonprofit or statutory membership."
       />
       <DisclosureNotice title="Assignment explanation" tone="neutral">
@@ -90,7 +87,9 @@ export default async function AccountPage() {
         </h2>
         <div className="rounded-md border border-border p-4">
           <p className="text-sm text-muted-foreground">Identifier</p>
-          <p className="font-medium break-all">{profile.identifier}</p>
+          <p className="font-medium break-all">
+            {profile?.identifier ?? "Signed in"}
+          </p>
         </div>
         <div className="rounded-md border border-border p-4">
           <p className="text-sm text-muted-foreground">Local organization</p>

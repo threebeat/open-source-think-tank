@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { accounts, profiles } from "@/db/schema";
 import type { FoundationDb } from "@/db/types";
 
+/** Account row plus optional display profile. Staff seeds may have no profile. */
 export async function getAccountProfile(db: FoundationDb, accountId: string) {
   const [row] = await db
     .select({
@@ -15,7 +16,7 @@ export async function getAccountProfile(db: FoundationDb, accountId: string) {
       locale: profiles.locale,
     })
     .from(accounts)
-    .innerJoin(profiles, eq(profiles.accountId, accounts.id))
+    .leftJoin(profiles, eq(profiles.accountId, accounts.id))
     .where(eq(accounts.id, accountId))
     .limit(1);
   return row ?? null;
