@@ -51,6 +51,10 @@ describe("account gate (V2-21)", () => {
     expect(authenticatedLegacyRedirect("/decisions/x")).toBe("/council");
     expect(authenticatedLegacyRedirect("/transparency")).toBe("/records");
     expect(authenticatedLegacyRedirect("/about")).toBe("/");
+    expect(authenticatedLegacyRedirect("/topics")).toBe("/agenda");
+    expect(authenticatedLegacyRedirect("/topics/ostt-synth-transit")).toBe(
+      "/agenda/topics/ostt-synth-transit",
+    );
     expect(authenticatedLegacyRedirect("/commons")).toBeNull();
   });
 

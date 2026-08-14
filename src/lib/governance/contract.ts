@@ -79,6 +79,7 @@ export type GovernanceContract = {
     public: boolean;
     publicAgenda: boolean;
     consultationReportVisible: boolean;
+    description?: string;
     terminal?: boolean;
     deadTopic?: boolean;
     newConsultationRequiredForSuccessor?: boolean;
@@ -96,6 +97,21 @@ export const TERMINAL_STATES: ReadonlySet<TopicGovernanceState> = new Set(
     .filter((state) => state.terminal)
     .map((state) => state.id),
 );
+
+export const PUBLIC_AGENDA_STATES: readonly TopicGovernanceState[] =
+  GOVERNANCE_CONTRACT.states
+    .filter((state) => state.publicAgenda)
+    .map((state) => state.id);
+
+export function isPublicAgendaState(
+  value: string,
+): value is TopicGovernanceState {
+  return PUBLIC_AGENDA_STATES.includes(value as TopicGovernanceState);
+}
+
+export function governanceStateMeta(state: TopicGovernanceState) {
+  return GOVERNANCE_CONTRACT.states.find((row) => row.id === state) ?? null;
+}
 
 export function isGovernanceState(
   value: string,

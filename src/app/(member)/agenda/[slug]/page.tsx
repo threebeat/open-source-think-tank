@@ -1,5 +1,8 @@
 import { redirect } from "next/navigation";
 
-export default function AgendaTopicRedirect() {
-  redirect("/agenda");
+type PageProps = { params: Promise<{ slug: string }> };
+
+export default async function AgendaSlugRedirect({ params }: PageProps) {
+  const { slug } = await params;
+  redirect(`/agenda/topics/${slug}`);
 }

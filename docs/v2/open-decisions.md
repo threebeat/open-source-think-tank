@@ -101,6 +101,18 @@ Phase 3 records these engineering postures for the gated pre-alpha Commons. They
 | Formal flag | Members cannot set `formal=true` or post in formal categories. Formal is a projection of category rules. |
 | Hosted Pol.is / Agenda / Chamber | Remain out of this phase. |
 
+## Phase 4 fail-closed postures (not settlements)
+
+Phase 4 records these engineering postures for the gated pre-alpha Public Agenda. They do **not** close V2-07 or V2-11–13.
+
+| ID | Phase 4 posture |
+| --- | --- |
+| V2-07 | Fixture close playback uses labeled synthetic metrics snapshots only. Non-synthetic config still cannot set `consultationThresholds`. There is no live outcome calculator. |
+| V2-11–V2-13 | `isHostedPolisEnabled()` remains false. Agenda UI never loads `https://pol.is/embed.js`. CSP omits pol.is. In-house agree/disagree/pass writes only to `member_statement_positions`. |
+| V2-14 | No live reporting-floor product. Member positions are not published as people lists, XIDs, or raw votes. |
+| Synthetic seed | `COMMONHALL_SYNTHETIC_SEED=off` omits synthetic Public Agenda catalog rows from member list/detail DTOs. |
+| Chamber | `queue_for_chamber` remains kernel-only from `community_accepted`. Phase 4 does not build Chamber UI. |
+
 ## Decision record template
 
 ```md

@@ -20,7 +20,7 @@ const STEPS = [
   {
     id: "consultation",
     title: "Consultation",
-    body: "Qualified topics receive structured consultation. This pre-alpha shows a fixture aggregate only. Hosted Pol.is is unavailable and is not loaded. Evidence quality never changes because of a consultation result.",
+    body: "Qualified topics receive structured consultation. This pre-alpha shows a fixture aggregate only. Hosted Pol.is is unavailable and is not loaded. Members of the hall may record in-house agree, disagree, or pass positions on synthetic statements. Evidence quality never changes because of a consultation result.",
   },
   {
     id: "chamber",

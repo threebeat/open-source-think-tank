@@ -23,7 +23,9 @@ export type MutationRateLimitFamily =
   /** Phase 4.4 — aggregate report import/review/publish + Public Input moderation actions. */
   | "consultation_reports"
   /** Phase 3 — member Commons posts (in-process only; V2-23). */
-  | "commons_post";
+  | "commons_post"
+  /** Phase 4 — in-house member statement positions (not Pol.is). */
+  | "member_position";
 
 export type MutationRateLimitPolicy = {
   accountLimit: number;
@@ -80,6 +82,11 @@ export const MUTATION_RATE_LIMIT_POLICY: Record<
   commons_post: {
     accountLimit: 8,
     originLimit: 24,
+    windowMs: 15 * 60 * 1000,
+  },
+  member_position: {
+    accountLimit: 30,
+    originLimit: 90,
     windowMs: 15 * 60 * 1000,
   },
 };

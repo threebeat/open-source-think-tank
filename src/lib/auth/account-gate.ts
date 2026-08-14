@@ -47,12 +47,18 @@ const LEGACY_TO_MEMBER: Array<{ prefix: string; dest: string }> = [
   { prefix: "/decisions", dest: "/council" },
   { prefix: "/transparency", dest: "/records" },
   { prefix: "/actions", dest: "/records" },
-  { prefix: "/topics", dest: "/agenda" },
   { prefix: "/process", dest: "/demo" },
   { prefix: "/about", dest: "/" },
 ];
 
 export function authenticatedLegacyRedirect(pathname: string): string | null {
+  if (pathname === "/topics") {
+    return "/agenda";
+  }
+  if (pathname.startsWith("/topics/")) {
+    const rest = pathname.slice("/topics/".length);
+    return rest ? `/agenda/topics/${rest}` : "/agenda";
+  }
   for (const rule of LEGACY_TO_MEMBER) {
     if (pathname === rule.prefix || pathname.startsWith(`${rule.prefix}/`)) {
       return rule.dest;

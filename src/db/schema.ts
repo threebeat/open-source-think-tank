@@ -2381,6 +2381,13 @@ export const topicGovernanceStateEnum = pgEnum("topic_governance_state", [
   "dishonorably_disqualified",
 ]);
 
+/** In-house member deliberation on synthetic statements — not Pol.is. */
+export const memberStatementPositionEnum = pgEnum("member_statement_position", [
+  "agree",
+  "disagree",
+  "pass",
+]);
+
 export const topicGovernanceActionEnum = pgEnum("topic_governance_action", [
   "submit_for_formal_review",
   "return_for_revision",
@@ -2650,6 +2657,31 @@ export const topicGovernanceRecords = pgTable(
       onDelete: "restrict",
     }),
     predecessorRecordId: text("predecessor_record_id"),
+    slug: text("slug"),
+    title: text("title"),
+    question: text("question"),
+    overview: text("overview"),
+    /** Labeled synthetic evidence copy when no legacy_topic_id link exists. */
+    syntheticEvidence: jsonb("synthetic_evidence").$type<{
+      labeledSynthetic: true;
+      items: Array<{
+        title: string;
+        summary: string;
+        qualityStatus: "accepted" | "limited" | "disputed" | "pending";
+        limitations: string;
+      }>;
+    }>(),
+    /** Fixture consultation statements for in-house agree/disagree/pass. */
+    syntheticStatements: jsonb("synthetic_statements").$type<
+      Array<{ publicId: string; text: string }>
+    >(),
+    /** Optional fixture Public Input conversation — never a live Pol.is mapping. */
+    fixtureConversationId: text("fixture_conversation_id").references(
+      () => publicInputConversations.id,
+      { onDelete: "restrict" },
+    ),
+    /** Local opaque current provider entity. Not an XID. Never public. */
+    currentProviderEntityId: text("current_provider_entity_id"),
     synthetic: boolean("synthetic").notNull().default(true),
     ...timestamps,
   },
@@ -2662,6 +2694,12 @@ export const topicGovernanceRecords = pgTable(
       table.organizationId,
       table.publicId,
     ),
+    uniqueIndex("topic_governance_records_org_slug_uidx")
+      .on(table.organizationId, table.slug)
+      .where(sql`${table.slug} IS NOT NULL`),
+    uniqueIndex("topic_governance_records_org_provider_entity_uidx")
+      .on(table.organizationId, table.currentProviderEntityId)
+      .where(sql`${table.currentProviderEntityId} IS NOT NULL`),
     foreignKey({
       name: "topic_governance_records_org_config_fk",
       columns: [table.organizationId, table.configVersionId],
@@ -2678,6 +2716,14 @@ export const topicGovernanceRecords = pgTable(
     check(
       "topic_governance_records_public_id_nonblank",
       sql`char_length(btrim(${table.publicId})) > 0`,
+    ),
+    check(
+      "topic_governance_records_slug_nonblank",
+      sql`${table.slug} IS NULL OR char_length(btrim(${table.slug})) > 0`,
+    ),
+    check(
+      "topic_governance_records_title_nonblank",
+      sql`${table.title} IS NULL OR char_length(btrim(${table.title})) > 0`,
     ),
   ],
 );
@@ -2927,6 +2973,56 @@ export const commonsDiscussionRevisions = pgTable(
   ],
 );
 
+/**
+ * Organization-scoped in-house member positions on synthetic consultation
+ * statements (Phase 4). Not Pol.is. No XID. No provider mapping.
+ */
+export const memberStatementPositions = pgTable(
+  "member_statement_positions",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "restrict" }),
+    topicGovernanceRecordId: text("topic_governance_record_id").notNull(),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    statementPublicId: text("statement_public_id").notNull(),
+    position: memberStatementPositionEnum("position").notNull(),
+    synthetic: boolean("synthetic").notNull().default(false),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("member_statement_positions_org_id_key").on(
+      table.organizationId,
+      table.id,
+    ),
+    uniqueIndex("member_statement_positions_org_record_account_statement_uidx").on(
+      table.organizationId,
+      table.topicGovernanceRecordId,
+      table.accountId,
+      table.statementPublicId,
+    ),
+    index("member_statement_positions_org_record_idx").on(
+      table.organizationId,
+      table.topicGovernanceRecordId,
+    ),
+    foreignKey({
+      name: "member_statement_positions_org_governance_fk",
+      columns: [table.organizationId, table.topicGovernanceRecordId],
+      foreignColumns: [
+        topicGovernanceRecords.organizationId,
+        topicGovernanceRecords.id,
+      ],
+    }).onDelete("restrict"),
+    check(
+      "member_statement_positions_statement_nonblank",
+      sql`char_length(btrim(${table.statementPublicId})) > 0`,
+    ),
+  ],
+);
+
 export const foundationTables = {
   persons,
   accounts,
@@ -2983,4 +3079,5 @@ export const foundationTables = {
   appointmentConflictsAndRecusals,
   commonsDiscussions,
   commonsDiscussionRevisions,
+  memberStatementPositions,
 };

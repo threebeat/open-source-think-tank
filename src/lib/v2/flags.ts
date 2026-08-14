@@ -43,7 +43,7 @@ export function isOpenEnrollmentEnabled(env: EnvMap = process.env): boolean {
 }
 
 /**
- * Synthetic Commons/Agenda catalog (Phase 3). Default on in gated pre-alpha;
+ * Synthetic Commons/Agenda catalog (Phase 3–4). Default on in gated pre-alpha;
  * always off in public-demo. When off, member list DTOs omit synthetic=true rows.
  * Does not delete rows; operator reset remains the pre-alpha wipe.
  */
@@ -54,13 +54,13 @@ export function isSyntheticSeedEnabled(env: EnvMap = process.env): boolean {
   return envFlag(env, "COMMONHALL_SYNTHETIC_SEED") !== "off";
 }
 
-/** Live Chamber product is Phase 4; appointments may persist. */
+/** Live Chamber product is Phase 5; appointments may persist. */
 export function isChamberLiveEnabled(env: EnvMap = process.env): boolean {
   void env;
   return false;
 }
 
-/** Live organization Council product is Phase 4. */
+/** Live organization Council product is Phase 5. */
 export function isCouncilLiveEnabled(env: EnvMap = process.env): boolean {
   void env;
   return false;

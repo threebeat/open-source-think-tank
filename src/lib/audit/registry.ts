@@ -1550,6 +1550,24 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
     },
   ),
 
+  "agenda.position.recorded": def(
+    "agenda.position.recorded",
+    "Member recorded an in-house consultation position",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          organizationPublicId: z.string(),
+          topicPublicId: z.string(),
+          statementPublicId: z.string(),
+          position: z.enum(["agree", "disagree", "pass"]),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+      publicProject: () =>
+        "A member recorded an in-house consultation position.",
+    },
+  ),
+
   // Phase 3.12 operator alpha reset (CLI-only; no public projector)
   "alpha.reset_executed": def(
     "alpha.reset_executed",

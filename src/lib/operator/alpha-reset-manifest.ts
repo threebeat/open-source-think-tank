@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
  * Mirror of docs/alpha-reset-classification.md — keep in sync.
  */
 
-export const RESET_MANIFEST_VERSION = "v2.3.0";
+export const RESET_MANIFEST_VERSION = "v2.4.0";
 
 /** Fixed transaction-scoped advisory-lock key for concurrent alpha resets. */
 export const ALPHA_RESET_ADVISORY_LOCK_KEY = 3_120_845_120_012;
@@ -29,7 +29,7 @@ export type AlphaResetTableEntry = {
 
 /**
  * Every pgTable in schema.ts — exactly one class each.
- * Count must remain 55 until schema grows (assertManifestComplete).
+ * Count must remain 56 until schema grows (assertManifestComplete).
  */
 export const ALPHA_RESET_TABLES: readonly AlphaResetTableEntry[] = [
   { table: "persons", class: "reset" },
@@ -97,10 +97,13 @@ export const ALPHA_RESET_TABLES: readonly AlphaResetTableEntry[] = [
   // Commonhall v2 Phase 3 Commons — synthetic/alpha discussion catalog.
   { table: "commons_discussion_revisions", class: "reset" },
   { table: "commons_discussions", class: "reset" },
+  // Commonhall v2 Phase 4 — in-house member positions (not Pol.is).
+  { table: "member_statement_positions", class: "reset" },
 ] as const;
 
 /** Children-first delete order for class=reset tables only (explicit list). */
 export const DELETE_ORDER: readonly string[] = [
+  "member_statement_positions",
   "commons_discussion_revisions",
   "commons_discussions",
   "appointment_conflicts_and_recusals",
@@ -325,6 +328,10 @@ export const COUNT_FAMILIES: readonly {
   {
     family: "commons",
     tables: ["commons_discussion_revisions", "commons_discussions"],
+  },
+  {
+    family: "agenda",
+    tables: ["member_statement_positions"],
   },
 ] as const;
 
