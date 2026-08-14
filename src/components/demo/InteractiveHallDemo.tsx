@@ -99,9 +99,9 @@ export function InteractiveHallDemo() {
   const [entered, setEntered] = useState(true);
   const moved = useRef(false);
 
-  const stage = STAGES[index];
+  const finished = index >= STAGES.length;
+  const stage = finished ? undefined : STAGES[index];
   const atStart = index === 0;
-  const finished = !stage;
   const currentId: StageId = stage?.id ?? "finish";
   const progress = finished ? 100 : ((index + 1) / (STAGES.length + 1)) * 100;
 
@@ -204,11 +204,11 @@ export function InteractiveHallDemo() {
           tabIndex={-1}
           className="mt-2 font-heading text-3xl tracking-tight text-foreground outline-none"
         >
-          {finished
+          {finished || !stage
             ? "You have walked the hall"
             : `${index + 1}. ${stage.title}`}
         </h2>
-        {!finished ? (
+        {!finished && stage ? (
           <p
             className="demo-pulse mt-4 max-w-2xl rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-base text-foreground"
           >

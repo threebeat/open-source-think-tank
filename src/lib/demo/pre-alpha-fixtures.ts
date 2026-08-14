@@ -99,7 +99,7 @@ export const DEMO_AGENDA_TOPICS: AgendaTopicListItemDto[] = [
     slug: "ostt-synth-evening-transit",
     title: "Synthetic qualified topic: evening transit reliability",
     question: "Which evening-route changes should the hall try first?",
-    state: "consultation_open",
+    state: "qualified_consultation",
     stateLabel: "Consultation open",
     synthetic: true,
     consultationReportVisible: false,
