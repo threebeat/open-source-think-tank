@@ -5,6 +5,13 @@ test.describe("home smoke", () => {
   test("shows Commonhall landing, demo CTA, and has no serious a11y violations", async ({
     page,
   }) => {
+    const polisHits: string[] = [];
+    page.on("request", (request) => {
+      if (/pol\.is/i.test(request.url())) {
+        polisHits.push(request.url());
+      }
+    });
+
     await page.goto("/");
 
     await expect(
@@ -27,5 +34,6 @@ test.describe("home smoke", () => {
     );
 
     expect(seriousOrWorse).toEqual([]);
+    expect(polisHits).toEqual([]);
   });
 });

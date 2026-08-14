@@ -6,18 +6,16 @@ test.describe("3.10 gated public interface", () => {
     await expect(page).toHaveURL(/\/auth\/sign-in/);
   });
 
-  test("authenticated legacy formal-topics redirect to Commons", async ({
+  test("authenticated legacy formal-topics redirect to Agenda", async ({
     page,
   }) => {
     const { signInWithCapturedEmail } = await import("./gated-helpers");
     await signInWithCapturedEmail(page, "staff-admin@ostt.synth.test");
     await page.goto("/formal-topics");
-    await expect(page).toHaveURL(/\/commons/);
-    await expect(page.getByRole("heading", { name: "Commons", exact: true })).toBeVisible();
+    await expect(page).toHaveURL(/\/agenda$/);
+    await expect(page.getByRole("heading", { name: "Agenda" })).toBeVisible();
     await expect(
-      page.getByText(
-        /Informal conversations may not have been reviewed by a moderator/,
-      ),
+      page.getByText(/hosted pol\.is is unavailable/i),
     ).toBeVisible();
     await expect(
       page.getByText(/opens in a later commonhall phase/i),

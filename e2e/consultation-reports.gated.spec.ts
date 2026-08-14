@@ -118,7 +118,7 @@ test.describe("consultation aggregate reports (gated 4.4)", () => {
 
     // Draft/import must not be served on the legacy public URL (V2-21).
     await page.goto(`/formal-topics/${slug}/consultation/report`);
-    await expect(page).toHaveURL(/\/commons/);
+    await expect(page).toHaveURL(new RegExp(`/agenda/topics/${slug}`));
     await expect(page.getByTestId("public-input-report-panel")).toHaveCount(0);
     await expect(page.getByText("E2E aggregate report")).toHaveCount(0);
 

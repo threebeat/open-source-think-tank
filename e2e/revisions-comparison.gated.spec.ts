@@ -72,22 +72,15 @@ test.describe("revisions and evidence comparison (gated)", () => {
     expect(serious, JSON.stringify(serious, null, 2)).toEqual([]);
   });
 
-  test("authenticated formal-topics evidence URLs map to Commons", async ({
+  test("authenticated formal-topics evidence URLs map to Agenda", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await signInWithCapturedEmail(page, "staff-admin@ostt.synth.test");
     await page.goto(`/formal-topics/${CEDAR_TOPIC_SLUG}?section=evidence`);
-    await expect(page).toHaveURL(/\/commons/);
-    await expect(page.getByRole("heading", { name: "Commons", exact: true })).toBeVisible();
-    await expect(
-      page.getByText(
-        /Informal conversations may not have been reviewed by a moderator/,
-      ),
-    ).toBeVisible();
-    await expect(
-      page.getByText(/opens in a later commonhall phase/i),
-    ).toHaveCount(0);
+    await expect(page).toHaveURL(
+      new RegExp(`/agenda/topics/${CEDAR_TOPIC_SLUG}`),
+    );
     await expect(
       page.getByText(
         "Synthetic prior summary before the recorded content revision.",
