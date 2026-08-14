@@ -26,14 +26,14 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("http://localhost:3000"),
   title: {
-    default: "Open-Source Think Tank (Demonstration)",
-    template: "%s · Open-Source Think Tank Demo",
+    default: "Commonhall (pre-alpha)",
+    template: "%s · Commonhall",
   },
   description:
-    "Phase 1 browser demonstration of a proposed open-source think tank using synthetic data only. Not accepting members and not a live membership platform.",
-  applicationName: "Open-Source Think Tank Demonstration",
+    "Commonhall v2 is a proposed computational-democracy digital town hall. This pre-alpha uses synthetic data. Not a live membership platform, government service, or nonprofit membership.",
+  applicationName: "Commonhall",
   appleWebApp: {
-    title: "OSTT Demo",
+    title: "Commonhall",
     capable: false,
   },
   formatDetection: {
@@ -48,7 +48,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#2f6f73",
+  themeColor: "#2c4a8c",
   colorScheme: "light",
 };
 

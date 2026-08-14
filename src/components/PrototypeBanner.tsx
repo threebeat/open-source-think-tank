@@ -4,7 +4,8 @@ export function PrototypeBanner() {
       role="status"
       className="border-b border-amber-foreground/20 bg-amber px-4 py-3 text-center text-sm text-amber-foreground"
     >
-      Demonstration — synthetic data only.
+      Pre-alpha Commonhall — synthetic data only. Not a government or nonprofit
+      membership.
     </div>
   );
 }

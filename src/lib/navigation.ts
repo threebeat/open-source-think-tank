@@ -3,22 +3,29 @@ export type NavItem = {
   label: string;
 };
 
-export const primaryNav: NavItem[] = [
-  { href: "/", label: "Home" },
-  { href: "/idea-commons", label: "Idea Commons" },
-  { href: "/formal-topics", label: "Formal Topics" },
-  { href: "/process", label: "Process" },
-  { href: "/join", label: "How Joining Works" },
-  { href: "/agenda", label: "Agenda" },
-  { href: "/transparency", label: "The Public Record" },
-  { href: "/about", label: "About" },
+export const publicNav: NavItem[] = [
   { href: "/demo", label: "Demo" },
+  { href: "/join", label: "Create account" },
+  { href: "/auth/sign-in", label: "Sign in" },
 ];
+
+export const memberNav: NavItem[] = [
+  { href: "/commons", label: "Commons" },
+  { href: "/agenda", label: "Agenda" },
+  { href: "/chamber", label: "Chamber" },
+  { href: "/council", label: "Council" },
+  { href: "/records", label: "Records" },
+  { href: "/account", label: "Account" },
+];
+
+export function navForSession(authenticated: boolean): NavItem[] {
+  return authenticated ? memberNav : publicNav;
+}
 
 export function titleForPath(pathname: string): string {
   if (pathname === "/") {
     return "Home";
   }
-  const match = primaryNav.find((item) => item.href === pathname);
-  return match?.label ?? "Demonstration";
+  const match = [...publicNav, ...memberNav].find((item) => item.href === pathname);
+  return match?.label ?? "Commonhall";
 }

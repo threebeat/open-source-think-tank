@@ -24,6 +24,12 @@ export const accountLifecycleEnum = pgEnum("account_lifecycle_state", [
   "anonymization-pending",
 ]);
 
+/** How the account was created. Existing rows default to invite. */
+export const accountEnrollmentKindEnum = pgEnum("account_enrollment_kind", [
+  "invite",
+  "open",
+]);
+
 export const platformRoleEnum = pgEnum("platform_role", [
   "participant",
   "reviewer",
@@ -132,6 +138,9 @@ export const accounts = pgTable(
       .references(() => persons.id, { onDelete: "restrict" }),
     contactChannel: text("contact_channel").notNull(),
     lifecycleState: accountLifecycleEnum("lifecycle_state").notNull(),
+    enrollmentKind: accountEnrollmentKindEnum("enrollment_kind")
+      .notNull()
+      .default("invite"),
     synthetic: boolean("synthetic").notNull().default(true),
     contactVerifiedAt: timestamp("contact_verified_at", { withTimezone: true }),
     activatedAt: timestamp("activated_at", { withTimezone: true }),
@@ -152,6 +161,33 @@ export const accounts = pgTable(
         OR (${table.lifecycleState} = 'closed' AND ${table.closedAt} IS NOT NULL)
         OR (${table.lifecycleState} = 'anonymization-pending' AND ${table.closedAt} IS NOT NULL)
       )`,
+    ),
+  ],
+);
+
+/**
+ * Password credentials for gated open enrollment (Phase 2).
+ * Never selected by public projections. Hash only — never plaintext.
+ */
+export const accountCredentials = pgTable(
+  "account_credentials",
+  {
+    accountId: text("account_id")
+      .primaryKey()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    passwordHash: text("password_hash").notNull(),
+    passwordScheme: text("password_scheme").notNull(),
+    rotatedAt: timestamp("rotated_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    check(
+      "account_credentials_scheme_scrypt",
+      sql`${table.passwordScheme} = 'scrypt_n32768'`,
+    ),
+    check(
+      "account_credentials_hash_nonblank",
+      sql`char_length(btrim(${table.passwordHash})) > 0`,
     ),
   ],
 );
@@ -2305,6 +2341,27 @@ export const appointmentConflictKindEnum = pgEnum("appointment_conflict_kind", [
   "recusal",
 ]);
 
+/** Formal/informal Commons categories — docs/v2/community-standards.md. */
+export const commonsDiscussionCategoryEnum = pgEnum(
+  "commons_discussion_category",
+  [
+    "moderator_communications",
+    "council_communications",
+    "qualified_topic_discussions",
+    "qualified_approach_discussions",
+    "community_actions",
+    "topic_proposals",
+    "approach_proposals",
+    "general_discussion",
+    "disqualified_topics",
+  ],
+);
+
+export const commonsDiscussionVisibilityEnum = pgEnum(
+  "commons_discussion_visibility",
+  ["listed", "hidden"],
+);
+
 export const topicGovernanceStateEnum = pgEnum("topic_governance_state", [
   "informal_draft",
   "formal_review_pending",
@@ -2724,9 +2781,156 @@ export const appointmentConflictsAndRecusals = pgTable(
   ],
 );
 
+/**
+ * Organization-scoped Commons discussions (Phase 3).
+ * `formal` is a projection of category rules — members cannot freely set it.
+ */
+export const commonsDiscussions = pgTable(
+  "commons_discussions",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "restrict" }),
+    publicId: text("public_id").notNull(),
+    category: commonsDiscussionCategoryEnum("category").notNull(),
+    formal: boolean("formal").notNull(),
+    visibility: commonsDiscussionVisibilityEnum("visibility")
+      .notNull()
+      .default("listed"),
+    authorAccountId: text("author_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    parentDiscussionId: text("parent_discussion_id"),
+    topicGovernanceRecordId: text("topic_governance_record_id"),
+    synthetic: boolean("synthetic").notNull().default(false),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("commons_discussions_org_id_key").on(
+      table.organizationId,
+      table.id,
+    ),
+    uniqueIndex("commons_discussions_org_public_id_uidx").on(
+      table.organizationId,
+      table.publicId,
+    ),
+    index("commons_discussions_org_category_idx").on(
+      table.organizationId,
+      table.category,
+      table.createdAt,
+    ),
+    foreignKey({
+      name: "commons_discussions_parent_fk",
+      columns: [table.organizationId, table.parentDiscussionId],
+      foreignColumns: [table.organizationId, table.id],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "commons_discussions_org_governance_fk",
+      columns: [table.organizationId, table.topicGovernanceRecordId],
+      foreignColumns: [
+        topicGovernanceRecords.organizationId,
+        topicGovernanceRecords.id,
+      ],
+    }).onDelete("restrict"),
+    check(
+      "commons_discussions_public_id_nonblank",
+      sql`char_length(btrim(${table.publicId})) > 0`,
+    ),
+    check(
+      "commons_discussions_title_nonblank",
+      sql`char_length(btrim(${table.title})) > 0`,
+    ),
+    check(
+      "commons_discussions_body_nonblank",
+      sql`char_length(btrim(${table.body})) > 0`,
+    ),
+    check(
+      "commons_discussions_formal_matches_category",
+      sql`(
+        (
+          ${table.formal} = true AND ${table.category} IN (
+            'moderator_communications',
+            'council_communications',
+            'qualified_topic_discussions',
+            'qualified_approach_discussions',
+            'community_actions'
+          )
+        ) OR (
+          ${table.formal} = false AND ${table.category} IN (
+            'topic_proposals',
+            'approach_proposals',
+            'general_discussion',
+            'disqualified_topics'
+          )
+        )
+      )`,
+    ),
+  ],
+);
+
+/**
+ * Append-only Commons discussion revisions. Discussion rows may be edited;
+ * revision snapshots are immutable in ordinary operations.
+ */
+export const commonsDiscussionRevisions = pgTable(
+  "commons_discussion_revisions",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id").notNull(),
+    discussionId: text("discussion_id").notNull(),
+    revisionNumber: integer("revision_number").notNull(),
+    editorAccountId: text("editor_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "restrict" }),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    category: commonsDiscussionCategoryEnum("category").notNull(),
+    synthetic: boolean("synthetic").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("commons_revisions_discussion_number_uidx").on(
+      table.organizationId,
+      table.discussionId,
+      table.revisionNumber,
+    ),
+    index("commons_revisions_discussion_idx").on(
+      table.organizationId,
+      table.discussionId,
+      table.createdAt,
+    ),
+    foreignKey({
+      name: "commons_discussion_revisions_org_discussion_fk",
+      columns: [table.organizationId, table.discussionId],
+      foreignColumns: [
+        commonsDiscussions.organizationId,
+        commonsDiscussions.id,
+      ],
+    }).onDelete("restrict"),
+    check(
+      "commons_discussion_revisions_title_nonblank",
+      sql`char_length(btrim(${table.title})) > 0`,
+    ),
+    check(
+      "commons_discussion_revisions_body_nonblank",
+      sql`char_length(btrim(${table.body})) > 0`,
+    ),
+    check(
+      "commons_discussion_revisions_number_positive",
+      sql`${table.revisionNumber} > 0`,
+    ),
+  ],
+);
+
 export const foundationTables = {
   persons,
   accounts,
+  accountCredentials,
   profiles,
   invitations,
   roleAssignments,
@@ -2777,4 +2981,6 @@ export const foundationTables = {
   topicGovernanceRecords,
   topicGovernanceEvents,
   appointmentConflictsAndRecusals,
+  commonsDiscussions,
+  commonsDiscussionRevisions,
 };

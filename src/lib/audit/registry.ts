@@ -91,6 +91,13 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
     "auth.challenge_email_failed",
     "Challenge email failed",
   ),
+  "auth.enrolled": def("auth.enrolled", "Open enrollment completed", {
+    requireActorAccount: true,
+  }),
+  "auth.password_sign_in_rejected": def(
+    "auth.password_sign_in_rejected",
+    "Password sign-in rejected",
+  ),
   "auth.test_synthetic_marker": def(
     "auth.test_synthetic_marker",
     "Test-only synthetic marker",
@@ -1500,6 +1507,46 @@ export const AUDIT_EVENT_REGISTRY: Record<string, AuditActionDefinition> = {
         .strict() as z.ZodType<Record<string, unknown>>,
       publicProject: (p) =>
         `A topic moved from ${String(p.fromState ?? "state")} to ${String(p.toState ?? "state")}.`,
+    },
+  ),
+
+  "organization.membership.correction_requested": def(
+    "organization.membership.correction_requested",
+    "Membership assignment correction requested",
+    { requireActorAccount: true, requireReason: true },
+  ),
+
+  "commons.discussion.created": def(
+    "commons.discussion.created",
+    "Commons discussion created",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          organizationPublicId: z.string(),
+          category: z.string(),
+          discussionPublicId: z.string(),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+      publicProject: (p) =>
+        `A Commons ${String(p.category ?? "discussion")} was posted.`,
+    },
+  ),
+
+  "commons.formal_review.submitted": def(
+    "commons.formal_review.submitted",
+    "Commons proposal submitted for formal review",
+    {
+      requireActorAccount: true,
+      payloadSchema: z
+        .object({
+          organizationPublicId: z.string(),
+          discussionPublicId: z.string(),
+          governanceAction: z.literal("submit_for_formal_review"),
+        })
+        .strict() as z.ZodType<Record<string, unknown>>,
+      publicProject: () =>
+        "A proposal was submitted for formal review.",
     },
   ),
 

@@ -9,6 +9,7 @@ import {
   verificationCases,
 } from "@/db/schema";
 import type { AuthAuditDb } from "@/lib/auth/audit-log";
+import { COMMUNITY_STANDARDS_DOCUMENT_ID } from "@/lib/auth/community-standards";
 import {
   activationCounselAllowsRealAccounts,
   blockingActivationCounselGates,
@@ -156,7 +157,13 @@ export async function evaluateActivationGates(
     : await publishedQuery;
 
   const timeline = await loadTimelineForAccount(db, accountId);
-  const missing = published.filter((doc) => {
+  const requiredPublished = published.filter((doc) => {
+    if (account.enrollmentKind === "open") {
+      return doc.id === COMMUNITY_STANDARDS_DOCUMENT_ID;
+    }
+    return doc.id !== COMMUNITY_STANDARDS_DOCUMENT_ID;
+  });
+  const missing = requiredPublished.filter((doc) => {
     const status = hasCurrentAssentForDocument(timeline, doc.id, doc.contentHash);
     return !status.current;
   });
@@ -165,7 +172,7 @@ export async function evaluateActivationGates(
   const hasL2 = L2_KINDS.every((kind) => approved.has(kind));
   const hasL3 = L3_KINDS.every((kind) => approved.has(kind));
   const hasEligibility = approved.has("eligibility");
-  const documentsComplete = published.length > 0 && missing.length === 0;
+  const documentsComplete = requiredPublished.length > 0 && missing.length === 0;
 
   const counselBlocksReal =
     !account.synthetic && !activationCounselAllowsRealAccounts();
@@ -180,7 +187,7 @@ export async function evaluateActivationGates(
     blockingReasons.push("Account must complete contact verification first.");
   } else {
     if (!documentsComplete) {
-      if (published.length === 0) {
+      if (requiredPublished.length === 0) {
         blockingReasons.push("No published assent documents are available yet.");
       } else {
         blockingReasons.push(
@@ -188,12 +195,13 @@ export async function evaluateActivationGates(
         );
       }
     }
-    if (!hasL3) {
+    const openEnrollment = account.enrollmentKind === "open";
+    if (!openEnrollment && !hasL3) {
       blockingReasons.push(
         `Verification required (approved): ${L3_KINDS.filter((k) => !approved.has(k)).join(", ")}.`,
       );
     }
-    if (!hasEligibility) {
+    if (!openEnrollment && !hasEligibility) {
       blockingReasons.push(
         "Eligibility assertion must be approved before activation (engineering gate; alpha-test counsel: no geographical eligibility requirements).",
       );
@@ -208,8 +216,7 @@ export async function evaluateActivationGates(
   const engineeringReady =
     account.lifecycleState === "pending_onboarding" &&
     documentsComplete &&
-    hasL3 &&
-    hasEligibility;
+    (account.enrollmentKind === "open" || (hasL3 && hasEligibility));
 
   const canActivate =
     engineeringReady && !counselBlocksReal && blockingReasons.length === 0;

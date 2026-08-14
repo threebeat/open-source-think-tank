@@ -33,28 +33,29 @@ test.describe("application shell", () => {
     await page.goto("/");
 
     await expect(
-      page.getByText("Demonstration — synthetic data only."),
+      page.getByText(
+        "Pre-alpha Commonhall — synthetic data only. Not a government or nonprofit membership.",
+      ),
     ).toBeVisible();
 
     await page.keyboard.press("Tab");
     await page.keyboard.press("Tab");
-    // Focus moves through banner/header controls into primary nav.
-    let reachedProcess = false;
+    let reachedDemo = false;
     for (let i = 0; i < 24; i += 1) {
       const activeName = await page.evaluate(() => {
         const el = document.activeElement;
         return el?.textContent?.trim() ?? "";
       });
-      if (activeName === "Process") {
-        reachedProcess = true;
+      if (activeName === "Demo") {
+        reachedDemo = true;
         break;
       }
       await page.keyboard.press("Tab");
     }
-    expect(reachedProcess).toBe(true);
+    expect(reachedDemo).toBe(true);
     await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(/\/process$/);
-    await expect(page.getByRole("heading", { name: "Process" })).toBeVisible();
+    await expect(page).toHaveURL(/\/demo$/);
+    await expect(page.getByRole("heading", { name: "Tour Commonhall" })).toBeVisible();
   });
 
   test("mobile menu scrolls within the viewport and routes without overflow", async ({
@@ -88,11 +89,9 @@ test.describe("application shell", () => {
         expect(["auto", "scroll", "overlay"]).toContain(overflowY.overflowY);
         expect(overflowY.maxHeight).not.toBe("none");
 
-        await mobileNav
-          .getByRole("link", { name: "The Public Record", exact: true })
-          .focus();
+        await mobileNav.getByRole("link", { name: "Demo", exact: true }).focus();
         await page.keyboard.press("Enter");
-        await expect(page).toHaveURL(/\/transparency$/);
+        await expect(page).toHaveURL(/\/demo$/);
         await assertNoHorizontalOverflow(page);
       } else {
         await expect(

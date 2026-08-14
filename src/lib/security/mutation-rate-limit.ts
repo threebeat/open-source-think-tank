@@ -21,7 +21,9 @@ export type MutationRateLimitFamily =
   /** Phase 4.3 — Public Input conversation lifecycle transitions / provider mapping / availability. Administrator-only. */
   | "consultation_lifecycle"
   /** Phase 4.4 — aggregate report import/review/publish + Public Input moderation actions. */
-  | "consultation_reports";
+  | "consultation_reports"
+  /** Phase 3 — member Commons posts (in-process only; V2-23). */
+  | "commons_post";
 
 export type MutationRateLimitPolicy = {
   accountLimit: number;
@@ -73,6 +75,11 @@ export const MUTATION_RATE_LIMIT_POLICY: Record<
   consultation_reports: {
     accountLimit: 30,
     originLimit: 90,
+    windowMs: 15 * 60 * 1000,
+  },
+  commons_post: {
+    accountLimit: 8,
+    originLimit: 24,
     windowMs: 15 * 60 * 1000,
   },
 };
