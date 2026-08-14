@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
  * Mirror of docs/alpha-reset-classification.md — keep in sync.
  */
 
-export const RESET_MANIFEST_VERSION = "4.4.1";
+export const RESET_MANIFEST_VERSION = "v2.1.0";
 
 /** Fixed transaction-scoped advisory-lock key for concurrent alpha resets. */
 export const ALPHA_RESET_ADVISORY_LOCK_KEY = 3_120_845_120_012;
@@ -29,7 +29,7 @@ export type AlphaResetTableEntry = {
 
 /**
  * Every pgTable in schema.ts — exactly one class each.
- * Count must remain 43 until schema grows (assertManifestComplete).
+ * Count must remain 52 until schema grows (assertManifestComplete).
  */
 export const ALPHA_RESET_TABLES: readonly AlphaResetTableEntry[] = [
   { table: "persons", class: "reset" },
@@ -83,10 +83,29 @@ export const ALPHA_RESET_TABLES: readonly AlphaResetTableEntry[] = [
   { table: "public_input_report_findings", class: "reset" },
   { table: "public_input_report_moderation_actions", class: "reset" },
   { table: "public_input_provider_moderation_records", class: "reset" },
+  // Commonhall v2 Phase 1 organization kernel — synthetic/alpha only.
+  { table: "appointment_conflicts_and_recusals", class: "reset" },
+  { table: "topic_governance_events", class: "reset" },
+  { table: "topic_governance_records", class: "reset" },
+  { table: "organization_appointments", class: "reset" },
+  { table: "organization_membership_events", class: "reset" },
+  { table: "organization_memberships", class: "reset" },
+  { table: "organization_config_versions", class: "reset" },
+  { table: "organization_service_areas", class: "reset" },
+  { table: "organizations", class: "reset" },
 ] as const;
 
 /** Children-first delete order for class=reset tables only (explicit list). */
 export const DELETE_ORDER: readonly string[] = [
+  "appointment_conflicts_and_recusals",
+  "topic_governance_events",
+  "topic_governance_records",
+  "organization_appointments",
+  "organization_membership_events",
+  "organization_memberships",
+  "organization_config_versions",
+  "organization_service_areas",
+  "organizations",
   "auth_challenges",
   "auth_sessions",
   "conversation_pseudonyms",
@@ -182,6 +201,14 @@ export const IMMUTABLE_DELETE_TRIGGERS: readonly {
     table: "public_input_report_groups",
     trigger: "public_input_report_groups_guard",
   },
+  {
+    table: "organization_membership_events",
+    trigger: "organization_membership_events_immutable",
+  },
+  {
+    table: "topic_governance_events",
+    trigger: "topic_governance_events_immutable",
+  },
 ] as const;
 
 /** Coarse count families for audit metadata (no PII / no row ids). */
@@ -268,6 +295,20 @@ export const COUNT_FAMILIES: readonly {
       "public_input_report_findings",
       "public_input_report_moderation_actions",
       "public_input_provider_moderation_records",
+    ],
+  },
+  {
+    family: "organizations",
+    tables: [
+      "appointment_conflicts_and_recusals",
+      "topic_governance_events",
+      "topic_governance_records",
+      "organization_appointments",
+      "organization_membership_events",
+      "organization_memberships",
+      "organization_config_versions",
+      "organization_service_areas",
+      "organizations",
     ],
   },
 ] as const;

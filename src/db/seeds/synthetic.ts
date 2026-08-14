@@ -33,6 +33,7 @@ import {
   L3_KINDS,
   seedApprovedAssertions,
 } from "@/lib/verification/seed-assurance";
+import { seedV2Organizations } from "@/db/seeds/v2-organizations";
 
 const CLOSED_TEST_CONVERSATION_SEEDS = [
   "alpha",
@@ -685,6 +686,8 @@ export async function seedSyntheticFoundation(db: FoundationDb) {
       decidedAt: new Date("2026-08-05T13:15:00.000Z"),
     },
   ]);
+
+  await seedV2Organizations(db);
 
   await appendAuthAudit(db, {
     actorRole: "ostt-synth-seeder",
