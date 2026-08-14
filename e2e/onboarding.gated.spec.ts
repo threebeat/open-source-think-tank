@@ -19,12 +19,12 @@ test.describe("gated onboarding flows (synthetic)", () => {
     ).toBeVisible({ timeout: 15_000 });
   });
 
-  test("uninvited visitor cannot begin enrollment from /join", async ({
+  test("uninvited visitor can open create-account from /join", async ({
     page,
   }) => {
     await page.goto("/join");
-    await expect(page.getByRole("heading", { name: /join with an invitation/i })).toBeVisible();
-    await expect(page.getByText(/self-registration is disabled/i)).toBeVisible();
+    await expect(page.getByRole("heading", { name: /create an account/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /create account/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /accept invitation/i })).toBeVisible();
   });
 

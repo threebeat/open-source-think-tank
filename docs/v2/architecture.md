@@ -161,10 +161,21 @@ Hosted Pol.is remains feature-flagged off until the vendor, privacy, CSP, deleti
 
 ## 7. Public and authenticated routes
 
-Target public routes (aliases may preserve old links during migration):
+Unauthenticated (pre-alpha V2-21):
 
 ```text
 /
+/demo
+/demo/...          (synthetic process tour only)
+/join              (create account in gated mode; explanation in public-demo)
+/auth/sign-in
+/auth/error
+/auth/accept       (staff/bootstrap invite only)
+```
+
+Authenticated member routes (account required; URL is never authorization):
+
+```text
 /commons
 /commons/discussions/[id]
 /agenda
@@ -174,14 +185,6 @@ Target public routes (aliases may preserve old links during migration):
 /council
 /council/topics/[slug]
 /records
-/organizations/[slug]
-/about
-```
-
-Authenticated regular-member routes:
-
-```text
-/join
 /account
 /account/profile
 /account/membership
@@ -191,7 +194,14 @@ Authenticated regular-member routes:
 /member/proposals
 ```
 
-Elevated organization portal (Phase 5, not open-enrollment Phase 2):
+Unauthenticated product, account, and legacy think-tank paths redirect (V2-21 pre-alpha, not production public-observer law):
+
+- public-demo → `/`
+- gated → `/auth/sign-in`
+
+Authenticated legacy paths map onto member placeholders or the demo: `/idea-commons` and `/formal-topics` → `/commons`; `/deliberation` → `/chamber`; `/decisions` → `/council`; `/transparency` and `/actions` → `/records`; `/topics` → `/agenda`; `/process` → `/demo`; `/about` → `/`. Remove remaining duplicates in Phase 6.
+
+Elevated organization portal (Phase 5 seed / later expansion):
 
 ```text
 /org/[organizationSlug]/moderation
@@ -201,7 +211,7 @@ Elevated organization portal (Phase 5, not open-enrollment Phase 2):
 /org/[organizationSlug]/settings
 ```
 
-The URL is never authorization. Every loader/action resolves the organization and calls an organization-scoped service.
+The URL is never authorization. Every loader/action resolves the organization and calls an organization-scoped service. Community membership does not open elevated portal routes.
 
 ## 8. Public projections and federation
 

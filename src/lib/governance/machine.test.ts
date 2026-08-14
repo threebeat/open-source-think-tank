@@ -5,6 +5,8 @@ import {
   GOVERNANCE_CONTRACT,
   GOVERNANCE_STATES,
   GOVERNANCE_TRANSITIONS,
+  PUBLIC_AGENDA_STATES,
+  isPublicAgendaState,
 } from "@/lib/governance/contract";
 import { evaluateTransition } from "@/lib/governance/machine";
 import type { GovernanceActor } from "@/lib/governance/contract";
@@ -82,6 +84,17 @@ describe("governance transition engine", () => {
       actor: "system_from_published_rule",
     });
     expect(disputed.ok).toBe(false);
+  });
+
+  it("marks consultation states as Public Agenda and not informal drafts", () => {
+    expect(PUBLIC_AGENDA_STATES).toContain("qualified_consultation");
+    expect(PUBLIC_AGENDA_STATES).toContain("community_accepted");
+    expect(PUBLIC_AGENDA_STATES).toContain("community_disputed");
+    expect(PUBLIC_AGENDA_STATES).toContain("consultation_inconclusive");
+    expect(PUBLIC_AGENDA_STATES).not.toContain("informal_draft");
+    expect(PUBLIC_AGENDA_STATES).not.toContain("formal_review_pending");
+    expect(isPublicAgendaState("qualified_consultation")).toBe(true);
+    expect(isPublicAgendaState("informal_draft")).toBe(false);
   });
 
   it("denies missing reason, criteria, metrics, verdict, and wrong actor", () => {

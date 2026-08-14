@@ -140,6 +140,24 @@ jobs:
           OSTT_REQUIRE_POSTGRES: "1"
           OSTT_PG_ADMIN_URL: postgres://ostt:ostt@127.0.0.1:54329/postgres
           OSTT_PG_ORG_TEST_URL: postgres://ostt:ostt@127.0.0.1:54329/ostt_org_isolation
+      - name: Open enrollment uniqueness proof
+        run: npm run test:pg:enrollment
+        env:
+          OSTT_REQUIRE_POSTGRES: "1"
+          OSTT_PG_ADMIN_URL: postgres://ostt:ostt@127.0.0.1:54329/postgres
+          OSTT_PG_ENROLL_TEST_URL: postgres://ostt:ostt@127.0.0.1:54329/ostt_enrollment_concurrency
+      - name: Commons isolation proof
+        run: npm run test:pg:commons
+        env:
+          OSTT_REQUIRE_POSTGRES: "1"
+          OSTT_PG_ADMIN_URL: postgres://ostt:ostt@127.0.0.1:54329/postgres
+          OSTT_PG_COMMONS_TEST_URL: postgres://ostt:ostt@127.0.0.1:54329/ostt_commons_isolation
+      - name: Agenda isolation proof
+        run: npm run test:pg:agenda
+        env:
+          OSTT_REQUIRE_POSTGRES: "1"
+          OSTT_PG_ADMIN_URL: postgres://ostt:ostt@127.0.0.1:54329/postgres
+          OSTT_PG_AGENDA_TEST_URL: postgres://ostt:ostt@127.0.0.1:54329/ostt_agenda_isolation
       - name: Alpha reset smoke
         run: npm run alpha:reset:smoke
       - name: Existing operational acceptance journey

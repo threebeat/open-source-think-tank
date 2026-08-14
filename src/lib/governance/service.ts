@@ -15,6 +15,8 @@ import {
   insertGovernanceEvent,
   insertGovernanceRecord,
   updateGovernanceRecordState,
+  type SyntheticEvidenceCopy,
+  type SyntheticStatement,
 } from "@/lib/governance/repository";
 import { getOrganization } from "@/lib/organizations/repository";
 import { requireOrganizationId } from "@/lib/organizations/ids";
@@ -78,9 +80,18 @@ export async function createGovernanceRecord(
     legacyTopicId?: string | null;
     predecessorRecordId?: string | null;
     copyLegacyTopicIdAsIdentity?: boolean;
+    copyProviderEntityAsIdentity?: boolean;
+    slug?: string | null;
+    title?: string | null;
+    question?: string | null;
+    overview?: string | null;
+    syntheticEvidence?: SyntheticEvidenceCopy | null;
+    syntheticStatements?: SyntheticStatement[] | null;
+    fixtureConversationId?: string | null;
+    currentProviderEntityId?: string | null;
     synthetic: boolean;
   },
-): Promise<AdapterResult<{ recordId: string }>> {
+): Promise<AdapterResult<{ recordId: string; currentProviderEntityId: string }>> {
   assertOrganizationMutationAllowed();
   const organizationId = requireOrganizationId(input.organizationId);
   if (input.copyLegacyTopicIdAsIdentity) {
@@ -89,6 +100,14 @@ export async function createGovernanceRecord(
       code: "GOVERNANCE_SUCCESSOR_REUSES_LEGACY_IDENTITY",
       error:
         "A successor topic must receive a new governance record id; legacy_topic_id is adapter-only",
+    };
+  }
+  if (input.copyProviderEntityAsIdentity) {
+    return {
+      ok: false,
+      code: "GOVERNANCE_SUCCESSOR_REUSES_PROVIDER_ENTITY",
+      error:
+        "A successor topic must receive a new current provider entity",
     };
   }
   if (input.predecessorRecordId && input.legacyTopicId) {
@@ -106,8 +125,25 @@ export async function createGovernanceRecord(
       };
     }
   }
+  if (input.predecessorRecordId && input.currentProviderEntityId) {
+    const predecessor = await getGovernanceRecord(
+      db,
+      organizationId,
+      input.predecessorRecordId,
+    );
+    if (predecessor?.currentProviderEntityId === input.currentProviderEntityId) {
+      return {
+        ok: false,
+        code: "GOVERNANCE_SUCCESSOR_REUSES_PROVIDER_ENTITY",
+        error:
+          "A successor must not reuse the predecessor's current provider entity",
+      };
+    }
+  }
 
   const recordId = newEntityId("govrec");
+  const currentProviderEntityId =
+    input.currentProviderEntityId ?? newEntityId("pvent");
   await insertGovernanceRecord(db, {
     id: recordId,
     organizationId,
@@ -117,9 +153,17 @@ export async function createGovernanceRecord(
     authorAccountId: input.authorAccountId ?? null,
     legacyTopicId: input.legacyTopicId ?? null,
     predecessorRecordId: input.predecessorRecordId ?? null,
+    slug: input.slug ?? null,
+    title: input.title ?? null,
+    question: input.question ?? null,
+    overview: input.overview ?? null,
+    syntheticEvidence: input.syntheticEvidence ?? null,
+    syntheticStatements: input.syntheticStatements ?? null,
+    fixtureConversationId: input.fixtureConversationId ?? null,
+    currentProviderEntityId,
     synthetic: input.synthetic,
   });
-  return { ok: true, value: { recordId } };
+  return { ok: true, value: { recordId, currentProviderEntityId } };
 }
 
 export async function transitionGovernanceRecord(

@@ -8,32 +8,23 @@ test.describe("responsive smoke", () => {
       await page.setViewportSize({ width, height: 720 });
       await page.goto("/");
       await expect(
-        page.getByRole("heading", { name: "Open-Source Think Tank" }),
+        page.getByRole("heading", { name: "Commonhall" }),
       ).toBeVisible();
       await expect(
-        page.getByText("Demonstration — synthetic data only."),
+        page.getByText(
+          "Pre-alpha Commonhall — synthetic data only. Not a government or nonprofit membership.",
+        ),
       ).toBeVisible();
 
       await page.goto("/demo");
       await expect(
-        page.getByRole("heading", { name: "Guided demo", exact: true }),
+        page.getByRole("heading", { name: "Tour Commonhall" }),
       ).toBeVisible();
       await expect(page.getByRole("button", { name: "Next" })).toBeVisible();
       await page.getByRole("button", { name: "Next" }).click();
       await expect(
-        page.getByRole("heading", { name: "1. Idea Commons discussion" }),
+        page.getByRole("heading", { name: "2. Qualification" }),
       ).toBeVisible();
     });
   }
-
-  test("decision roll call remains readable in phone landscape", async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: 740, height: 360 });
-    await page.goto("/decisions/cedar-river-drought-surcharge");
-    await expect(
-      page.getByRole("heading", { name: "Policy Council roll call" }),
-    ).toBeVisible();
-    await expect(page.getByText("Hugo Ren", { exact: true })).toBeVisible();
-  });
 });

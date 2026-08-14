@@ -268,6 +268,12 @@ async function deleteResetTables(db: FoundationDb): Promise<void> {
       `UPDATE ${quoteIdent("topic_governance_records")} SET predecessor_record_id = NULL`,
     ),
   );
+  // Break self-FK before deleting commons_discussions (Phase 3 lineage).
+  await db.execute(
+    sql.raw(
+      `UPDATE ${quoteIdent("commons_discussions")} SET parent_discussion_id = NULL`,
+    ),
+  );
 
   for (const table of DELETE_ORDER) {
     await db.execute(sql.raw(`DELETE FROM ${quoteIdent(table)}`));
