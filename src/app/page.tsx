@@ -46,6 +46,15 @@ export default function Home() {
             >
               Sign in
             </Link>
+            <Link
+              href="/about"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "lg" }),
+                "min-h-11 px-4",
+              )}
+            >
+              About
+            </Link>
           </>
         }
       />

@@ -5,6 +5,6 @@ test.describe("topics and evidence", () => {
     page,
   }) => {
     await page.goto("/topics");
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/auth\/sign-in/);
   });
 });

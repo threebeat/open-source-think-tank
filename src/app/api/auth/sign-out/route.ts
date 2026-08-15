@@ -4,7 +4,10 @@ import { resolveAppMode } from "@/lib/env/app-mode";
 
 export async function POST() {
   if (resolveAppMode() !== "gated") {
-    return NextResponse.json({ error: "Not Found" }, { status: 404 });
+    const { clearPreAlphaSessionCookie } = await import(
+      "@/lib/auth/pre-alpha-cookies"
+    );
+    return clearPreAlphaSessionCookie(NextResponse.json({ ok: true }));
   }
 
   const { auth, signOut } = await import("@/lib/auth/next-auth");

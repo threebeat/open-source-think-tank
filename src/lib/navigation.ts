@@ -5,6 +5,7 @@ export type NavItem = {
 
 export const publicNav: NavItem[] = [
   { href: "/demo", label: "Demo" },
+  { href: "/about", label: "About" },
   { href: "/join", label: "Create account" },
   { href: "/auth/sign-in", label: "Sign in" },
 ];
@@ -14,8 +15,7 @@ export const memberNav: NavItem[] = [
   { href: "/agenda", label: "Agenda" },
   { href: "/chamber", label: "Chamber" },
   { href: "/council", label: "Council" },
-  { href: "/records", label: "Records" },
-  { href: "/account", label: "Account" },
+  { href: "/about", label: "About" },
 ];
 
 export function navForSession(authenticated: boolean): NavItem[] {

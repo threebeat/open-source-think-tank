@@ -5,6 +5,6 @@ test.describe("simulated consultation", () => {
     page,
   }) => {
     await page.goto("/topics/cedar-river-drought-surcharge/consult");
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/auth\/sign-in/);
   });
 });

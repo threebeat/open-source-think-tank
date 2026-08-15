@@ -5,9 +5,17 @@ type RollCallTableProps = {
   caption: string;
   rows: RollCallRowDto[];
   timezone: string;
+  onSelectRow?: (memberPublicId: string) => void;
+  selectedMemberPublicId?: string | null;
 };
 
-export function RollCallTable({ caption, rows, timezone }: RollCallTableProps) {
+export function RollCallTable({
+  caption,
+  rows,
+  timezone,
+  onSelectRow,
+  selectedMemberPublicId,
+}: RollCallTableProps) {
   if (rows.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
@@ -37,9 +45,27 @@ export function RollCallTable({ caption, rows, timezone }: RollCallTableProps) {
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.memberPublicId} className="border-b border-border">
+            <tr
+              key={row.memberPublicId}
+              className={
+                selectedMemberPublicId === row.memberPublicId
+                  ? "border-b border-border bg-primary/10"
+                  : "border-b border-border"
+              }
+            >
               <th scope="row" className="py-2 pr-4 font-medium">
-                {row.displayName}
+                {onSelectRow ? (
+                  <button
+                    type="button"
+                    className="underline underline-offset-2"
+                    aria-pressed={selectedMemberPublicId === row.memberPublicId}
+                    onClick={() => onSelectRow(row.memberPublicId)}
+                  >
+                    {row.displayName}
+                  </button>
+                ) : (
+                  row.displayName
+                )}
               </th>
               <td className="py-2 pr-4">{row.position}</td>
               <td className="py-2">

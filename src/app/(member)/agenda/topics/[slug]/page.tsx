@@ -14,6 +14,8 @@ import { loadMemberCommonsContext } from "@/lib/commons/member-context";
 import { getAgendaTopic } from "@/lib/agenda/service";
 import { isAgendaTab, type AgendaTab } from "@/lib/agenda/types";
 import { formatPublicDateTime } from "@/lib/format/public-datetime";
+import { resolveAppMode } from "@/lib/env/app-mode";
+import { localAgendaTopic } from "@/lib/pre-alpha/member-views";
 
 export const dynamic = "force-dynamic";
 
@@ -37,21 +39,29 @@ export default async function AgendaTopicPage({ params, searchParams }: PageProp
   const query = await searchParams;
   const tab: AgendaTab = isAgendaTab(query.tab ?? "") ? query.tab as AgendaTab : "overview";
   const session = await requireMemberSession();
-  const { db, principal, organizationId } = await loadMemberCommonsContext(
-    session.accountId,
-  );
-  if (!organizationId) {
-    notFound();
+  let topic;
+  if (resolveAppMode() !== "gated") {
+    topic = localAgendaTopic(slug);
+    if (!topic) {
+      notFound();
+    }
+  } else {
+    const { db, principal, organizationId } = await loadMemberCommonsContext(
+      session.accountId,
+    );
+    if (!organizationId || !db) {
+      notFound();
+    }
+    const result = await getAgendaTopic(db, {
+      principal,
+      organizationId,
+      slugOrPublicId: slug,
+    });
+    if (!result.ok) {
+      notFound();
+    }
+    topic = result.value;
   }
-  const result = await getAgendaTopic(db, {
-    principal,
-    organizationId,
-    slugOrPublicId: slug,
-  });
-  if (!result.ok) {
-    notFound();
-  }
-  const topic = result.value;
 
   return (
     <MainContainer className="space-y-8">
@@ -98,6 +108,7 @@ export default async function AgendaTopicPage({ params, searchParams }: PageProp
             slug={topic.slug}
             statements={topic.statements}
             canRecord={topic.canRecordPosition}
+            persist={resolveAppMode() === "gated"}
           />
         </section>
       ) : null}

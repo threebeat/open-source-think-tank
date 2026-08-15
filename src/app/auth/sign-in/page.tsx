@@ -12,12 +12,23 @@ export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Sign in",
-  description: "Sign in to Commonhall with your local identifier and password.",
+  description: "Sign in to Commonhall with your identifier and password.",
 };
 
-export default function SignInPage() {
-  if (resolveAppMode() !== "gated") {
-    redirect("/");
+export default async function SignInPage() {
+  if (resolveAppMode() === "gated") {
+    const { requireGatedSession } = await import("@/lib/auth/guard");
+    const gated = await requireGatedSession();
+    if (gated.ok) {
+      redirect("/account");
+    }
+  } else {
+    const { readPreAlphaSessionFromStore } = await import(
+      "@/lib/auth/pre-alpha-local"
+    );
+    if (await readPreAlphaSessionFromStore()) {
+      redirect("/account");
+    }
   }
 
   return (
@@ -26,13 +37,13 @@ export default function SignInPage() {
         items={[{ href: "/", label: "Home" }, { label: "Sign in" }]}
       />
       <PageHeader
-        eyebrow="Gated pre-alpha"
+        eyebrow="Pre-alpha"
         title="Sign in"
-        description="Use the identifier and password from enrollment. Invite-created staff accounts may still complete a one-time link."
+        description="Use the identifier and password from when you created your account."
       />
       <DisclosureNotice title="Local identifier only" tone="caution">
-        No outbound email is sent from this form. Passwords are hashed at rest
-        and never placed in URLs.
+        No outbound email is sent from this form. Passwords are hashed and never
+        placed in URLs.
       </DisclosureNotice>
       <PasswordSignInForm />
       <p className="text-sm">
@@ -41,6 +52,7 @@ export default function SignInPage() {
           Create an account
         </Link>
         {" · "}
+        Have an invite?{" "}
         <Link className="underline" href="/auth/accept">
           Accept invitation
         </Link>

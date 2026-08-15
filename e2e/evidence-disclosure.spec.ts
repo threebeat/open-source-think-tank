@@ -7,6 +7,6 @@ test.describe("progressive evidence disclosure", () => {
     await page.goto(
       "/formal-topics/cedar-river-drought-surcharge?section=evidence",
     );
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/auth\/sign-in/);
   });
 });

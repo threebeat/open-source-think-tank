@@ -70,8 +70,8 @@ export function CreateAccountForm() {
         />
       </label>
       <p className="text-sm text-muted-foreground">
-        This identifier is stored on the gated service. No message is sent. There
-        is no email vendor in this phase.
+        This identifier is how you sign back in. No message is sent. There is no
+        email vendor in this phase.
       </p>
       <label className="block space-y-2 text-sm" htmlFor={`${formId}-password`}>
         <span>Password (at least 12 characters)</span>
@@ -99,7 +99,10 @@ export function CreateAccountForm() {
       </div>
       <fieldset className="space-y-3 rounded-md border border-border p-4">
         <legend className="px-1 text-sm font-medium">{COMMUNITY_STANDARDS_TITLE}</legend>
-        <p className="max-h-48 overflow-y-auto text-sm leading-6 text-muted-foreground">
+        <p
+          tabIndex={0}
+          className="max-h-48 overflow-y-auto text-sm leading-6 text-muted-foreground"
+        >
           {COMMUNITY_STANDARDS_BODY}
         </p>
         <label className="flex min-h-11 items-start gap-3 text-sm">

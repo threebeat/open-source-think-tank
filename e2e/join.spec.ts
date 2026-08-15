@@ -1,24 +1,16 @@
 import { expect, test } from "@playwright/test";
 
-test.describe("join preview", () => {
-  test("public-demo explains joining and cannot create an account", async ({
-    page,
-  }) => {
+test.describe("join", () => {
+  test("shows a working create-account form", async ({ page }) => {
     await page.goto("/join");
     await expect(
-      page.getByRole("heading", { name: "How joining works" }),
+      page.getByRole("heading", { name: "Create an account" }),
     ).toBeVisible();
+    await expect(page.getByLabel(/identifier/i)).toBeVisible();
+    await expect(page.getByLabel(/password/i)).toBeVisible();
     await expect(
-      page.getByText(/cannot create accounts or open a database/i),
-    ).toBeVisible();
-    await page.getByRole("button", { name: /Conduct assent/i }).click();
-    await expect(page.getByText("Not legally reviewed").first()).toBeVisible();
-    await page.getByRole("button", { name: /Stronger verification/i }).click();
-    await expect(
-      page.getByRole("button", { name: "Create account (disabled)" }),
-    ).toBeDisabled();
-    await expect(
-      page.getByText("This prototype does not collect information"),
-    ).toBeVisible();
+      page.getByRole("button", { name: /create account/i }),
+    ).toBeEnabled();
+    await expect(page.getByRole("link", { name: "Sign in" }).first()).toBeVisible();
   });
 });

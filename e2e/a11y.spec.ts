@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-const principalRoutes = ["/", "/demo", "/join"] as const;
+const principalRoutes = ["/", "/demo", "/join", "/about"] as const;
 
 test.describe("principal-route accessibility", () => {
   for (const route of principalRoutes) {

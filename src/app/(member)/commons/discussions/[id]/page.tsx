@@ -12,6 +12,8 @@ import { UNREVIEWED_CONTENT_DISCLAIMER } from "@/lib/commons/categories";
 import { loadMemberCommonsContext } from "@/lib/commons/member-context";
 import { getDiscussion } from "@/lib/commons/service";
 import { formatPublicDateTime } from "@/lib/format/public-datetime";
+import { resolveAppMode } from "@/lib/env/app-mode";
+import { localCommonsDiscussion } from "@/lib/pre-alpha/member-views";
 
 export const dynamic = "force-dynamic";
 
@@ -30,21 +32,32 @@ export async function generateMetadata({
 export default async function CommonsDiscussionPage({ params }: PageProps) {
   const { id } = await params;
   const session = await requireMemberSession();
-  const { db, principal, organizationId } = await loadMemberCommonsContext(
-    session.accountId,
-  );
-  if (!organizationId) {
-    notFound();
+  let discussion;
+  if (resolveAppMode() !== "gated") {
+    const { readPreAlphaAccountFromStore } = await import(
+      "@/lib/auth/pre-alpha-local"
+    );
+    discussion = localCommonsDiscussion(id, await readPreAlphaAccountFromStore());
+    if (!discussion) {
+      notFound();
+    }
+  } else {
+    const { db, principal, organizationId } = await loadMemberCommonsContext(
+      session.accountId,
+    );
+    if (!organizationId || !db) {
+      notFound();
+    }
+    const result = await getDiscussion(db, {
+      principal,
+      organizationId,
+      publicId: id,
+    });
+    if (!result.ok) {
+      notFound();
+    }
+    discussion = result.value;
   }
-  const result = await getDiscussion(db, {
-    principal,
-    organizationId,
-    publicId: id,
-  });
-  if (!result.ok) {
-    notFound();
-  }
-  const discussion = result.value;
 
   return (
     <MainContainer className="space-y-8">

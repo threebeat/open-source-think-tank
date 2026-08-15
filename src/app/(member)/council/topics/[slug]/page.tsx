@@ -12,6 +12,8 @@ import { PublicTime } from "@/components/topics/PublicTime";
 import { requireMemberSession } from "@/lib/auth/guard";
 import { loadMemberCommonsContext } from "@/lib/commons/member-context";
 import { getCouncilTopic } from "@/lib/bodies/service";
+import { resolveAppMode } from "@/lib/env/app-mode";
+import { localCouncilTopic } from "@/lib/pre-alpha/member-views";
 
 export const dynamic = "force-dynamic";
 
@@ -30,21 +32,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function CouncilTopicPage({ params }: PageProps) {
   const { slug } = await params;
   const session = await requireMemberSession();
-  const { db, principal, organizationId } = await loadMemberCommonsContext(
-    session.accountId,
-  );
-  if (!organizationId) {
-    notFound();
+  let topic;
+  if (resolveAppMode() !== "gated") {
+    topic = localCouncilTopic(slug);
+    if (!topic) {
+      notFound();
+    }
+  } else {
+    const { db, principal, organizationId } = await loadMemberCommonsContext(
+      session.accountId,
+    );
+    if (!organizationId || !db) {
+      notFound();
+    }
+    const result = await getCouncilTopic(db, {
+      principal,
+      organizationId,
+      slugOrPublicId: slug,
+    });
+    if (!result.ok) {
+      notFound();
+    }
+    topic = result.value;
   }
-  const result = await getCouncilTopic(db, {
-    principal,
-    organizationId,
-    slugOrPublicId: slug,
-  });
-  if (!result.ok) {
-    notFound();
-  }
-  const topic = result.value;
 
   return (
     <MainContainer className="space-y-8">

@@ -59,7 +59,7 @@ export default async function AccountProfilePage() {
           <dd className="font-medium">{profile.lifecycleState}</dd>
         </div>
       </dl>
-      <DisplayNameForm initial={profile.displayName} />
+      <DisplayNameForm initial={profile.displayName ?? ""} />
     </MainContainer>
   );
 }

@@ -200,6 +200,18 @@ export async function listDiscussionsForOrganization(
   return mapped;
 }
 
+export async function listDiscussionsForAuthor(
+  db: FoundationDb,
+  organizationId: string,
+  authorAccountId: string,
+): Promise<CommonsDiscussionRow[]> {
+  if (!authorAccountId.trim()) {
+    throw new Error("ACCOUNT_ID_REQUIRED");
+  }
+  const rows = await listDiscussionsForOrganization(db, organizationId);
+  return rows.filter((row) => row.authorAccountId === authorAccountId);
+}
+
 export async function insertDiscussion(
   db: FoundationDb,
   input: {

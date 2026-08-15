@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 import { CreateAccountForm } from "@/components/auth/CreateAccountForm";
-import { JoinWalkthrough } from "@/components/join/JoinWalkthrough";
 import { DisclosureNotice } from "@/components/DisclosureNotice";
 import { PageHeader } from "@/components/PageHeader";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
@@ -13,7 +13,7 @@ import { isOpenEnrollmentEnabled } from "@/lib/v2/flags";
 export const metadata: Metadata = {
   title: "Create an account",
   description:
-    "Gated Commonhall enrollment with a local identifier and password, or a public explanation that accounts are not created here.",
+    "Create a Commonhall account with an identifier and password, then open the halls.",
 };
 
 export const dynamic = "force-dynamic";
@@ -40,56 +40,48 @@ export default async function JoinPage() {
           />
           <p className="text-sm">
             Have an invite?{" "}
-            <a className="underline" href="/auth/accept">
+            <Link className="underline" href="/auth/accept">
               Accept invitation
-            </a>
+            </Link>
           </p>
         </MainContainer>
       );
     }
-
-    return (
-      <MainContainer className="space-y-8">
-        <Breadcrumbs items={[{ href: "/", label: "Home" }, { label: "Create account" }]} />
-        <PageHeader
-          eyebrow="Gated pre-alpha"
-          title="Create an account"
-          description="Use an email-shaped identifier stored locally and a password. No message is sent. You will be assigned to the synthetic primary organization with an explanation."
-        />
-        <DisclosureNotice title="Not statutory membership" tone="caution">
-          Creating an account grants organization community membership in a
-          synthetic hall. It does not grant Chamber, Council, moderator, or
-          organization-admin authority, and it is not nonprofit or statutory
-          membership.
-        </DisclosureNotice>
-        <CreateAccountForm />
-        <p className="text-sm text-muted-foreground">
-          Staff bootstrap still uses{" "}
-          <a className="underline" href="/auth/accept">
-            Accept invitation
-          </a>
-          .
-        </p>
-      </MainContainer>
+  } else {
+    const { readPreAlphaSessionFromStore } = await import(
+      "@/lib/auth/pre-alpha-local"
     );
+    if (await readPreAlphaSessionFromStore()) {
+      redirect("/account");
+    }
   }
 
   return (
     <MainContainer className="space-y-8">
-      <Breadcrumbs
-        items={[{ href: "/", label: "Home" }, { label: "How joining works" }]}
-      />
+      <Breadcrumbs items={[{ href: "/", label: "Home" }, { label: "Create account" }]} />
       <PageHeader
-        eyebrow="Public demonstration"
-        title="How joining works"
-        description="This public-demo deployment cannot create accounts or open a database. The gated service uses a local identifier and password — still with no outbound email."
+        eyebrow="Pre-alpha"
+        title="Create an account"
+        description="Use an email-shaped identifier and a password. After you create the account you can sign in and open Commons, Agenda, Chamber, and Council."
       />
-      <DisclosureNotice title="Accounts require the gated service" tone="caution">
-        Public-demo mode never constructs an auth or database client. You are
-        exploring a synthetic walkthrough, not creating an account or seeing
-        other live visitors.
+      <DisclosureNotice title="Not statutory membership" tone="caution">
+        Creating an account grants organization community membership in a
+        synthetic hall. It does not grant Chamber, Council, moderator, or
+        organization-admin authority, and it is not nonprofit or statutory
+        membership.
       </DisclosureNotice>
-      <JoinWalkthrough />
+      <CreateAccountForm />
+      <p className="text-sm text-muted-foreground">
+        Already have an account?{" "}
+        <Link className="underline" href="/auth/sign-in">
+          Sign in
+        </Link>
+        {" · "}
+        Have an invite?{" "}
+        <Link className="underline" href="/auth/accept">
+          Accept invitation
+        </Link>
+      </p>
     </MainContainer>
   );
 }
