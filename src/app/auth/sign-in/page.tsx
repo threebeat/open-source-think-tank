@@ -51,6 +51,11 @@ export default async function SignInPage() {
         <Link className="underline" href="/join">
           Create an account
         </Link>
+        {" · "}
+        Have an invite?{" "}
+        <Link className="underline" href="/auth/accept">
+          Accept invitation
+        </Link>
       </p>
     </MainContainer>
   );
