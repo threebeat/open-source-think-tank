@@ -70,8 +70,8 @@ export function CreateAccountForm() {
         />
       </label>
       <p className="text-sm text-muted-foreground">
-        This identifier is stored on the gated service. No message is sent. There
-        is no email vendor in this phase.
+        This identifier is how you sign back in. No message is sent. There is no
+        email vendor in this phase.
       </p>
       <label className="block space-y-2 text-sm" htmlFor={`${formId}-password`}>
         <span>Password (at least 12 characters)</span>

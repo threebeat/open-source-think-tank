@@ -10,6 +10,8 @@ import { requireMemberSession } from "@/lib/auth/guard";
 import { loadMemberCommonsContext } from "@/lib/commons/member-context";
 import { listAgenda } from "@/lib/agenda/service";
 import type { AgendaListDto } from "@/lib/agenda/types";
+import { resolveAppMode } from "@/lib/env/app-mode";
+import { localAgendaList } from "@/lib/pre-alpha/member-views";
 
 export const metadata: Metadata = {
   title: "Agenda",
@@ -29,13 +31,19 @@ function emptyList(): AgendaListDto {
 
 export default async function AgendaPage() {
   const session = await requireMemberSession();
-  const { db, principal, organizationId } = await loadMemberCommonsContext(
-    session.accountId,
-  );
-  const listed = organizationId
-    ? await listAgenda(db, { principal, organizationId })
-    : { ok: true as const, value: emptyList() };
-  const agenda = listed.ok ? listed.value : emptyList();
+  let agenda = emptyList();
+  if (resolveAppMode() !== "gated") {
+    agenda = localAgendaList();
+  } else {
+    const { db, principal, organizationId } = await loadMemberCommonsContext(
+      session.accountId,
+    );
+    const listed =
+      organizationId && db
+        ? await listAgenda(db, { principal, organizationId })
+        : { ok: true as const, value: emptyList() };
+    agenda = listed.ok ? listed.value : emptyList();
+  }
 
   return (
     <MainContainer className="space-y-8">

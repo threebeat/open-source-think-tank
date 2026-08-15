@@ -5,6 +5,6 @@ test.describe("canonical formal topic page", () => {
     page,
   }) => {
     await page.goto("/formal-topics/cedar-river-drought-surcharge");
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/auth\/sign-in/);
   });
 });

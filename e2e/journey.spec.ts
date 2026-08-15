@@ -21,15 +21,14 @@ const gatedProductPaths = [
 
 test.describe("unauthenticated product gate", () => {
   for (const path of gatedProductPaths) {
-    test(`${path} redirects to the Commonhall landing in public-demo`, async ({
-      page,
-    }) => {
+    test(`${path} redirects to sign-in in public-demo`, async ({ page }) => {
       await page.goto(path);
-      await expect(page).toHaveURL(/\/$/);
-      await expect(page.getByRole("heading", { name: "Commonhall" })).toBeVisible();
+      await expect(page).toHaveURL(/\/auth\/sign-in/);
+      await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
       await expect(
-        page.getByRole("link", { name: "Tour the demo" }).first(),
+        page.getByRole("link", { name: "Create an account" }).first(),
       ).toBeVisible();
     });
   }
 });
+

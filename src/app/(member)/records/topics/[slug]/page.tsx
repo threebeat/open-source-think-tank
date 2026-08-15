@@ -32,7 +32,7 @@ export default async function RecordsTopicPage({ params }: PageProps) {
   const { db, principal, organizationId } = await loadMemberCommonsContext(
     session.accountId,
   );
-  if (!organizationId) {
+  if (!organizationId || !db) {
     notFound();
   }
   const result = await getRecordsTopic(db, {

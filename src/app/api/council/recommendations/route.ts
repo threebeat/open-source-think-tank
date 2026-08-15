@@ -46,7 +46,7 @@ export async function POST(request: Request) {
   const { db, principal, organizationId } = await loadMemberCommonsContext(
     session.session.accountId,
   );
-  if (!organizationId) {
+  if (!organizationId || !db) {
     return NextResponse.json(
       {
         error: "Community membership is required.",

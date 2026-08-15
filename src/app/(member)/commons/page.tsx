@@ -17,6 +17,8 @@ import {
 } from "@/lib/commons/categories";
 import { loadMemberCommonsContext } from "@/lib/commons/member-context";
 import { listCommons } from "@/lib/commons/service";
+import { resolveAppMode } from "@/lib/env/app-mode";
+import { localCommonsList } from "@/lib/pre-alpha/member-views";
 
 export const metadata: Metadata = {
   title: "Commons",
@@ -51,13 +53,22 @@ function emptyList(): CommonsListDto {
 
 export default async function CommonsPage() {
   const session = await requireMemberSession();
-  const { db, principal, organizationId } = await loadMemberCommonsContext(
-    session.accountId,
-  );
-  const listed = organizationId
-    ? await listCommons(db, { principal, organizationId })
-    : { ok: true as const, value: emptyList() };
-  const commons = listed.ok ? listed.value : emptyList();
+  let commons = emptyList();
+  if (resolveAppMode() !== "gated") {
+    const { readPreAlphaAccountFromStore } = await import(
+      "@/lib/auth/pre-alpha-local"
+    );
+    commons = localCommonsList(await readPreAlphaAccountFromStore());
+  } else {
+    const { db, principal, organizationId } = await loadMemberCommonsContext(
+      session.accountId,
+    );
+    const listed =
+      organizationId && db
+        ? await listCommons(db, { principal, organizationId })
+        : { ok: true as const, value: emptyList() };
+    commons = listed.ok ? listed.value : emptyList();
+  }
 
   return (
     <MainContainer className="space-y-10">

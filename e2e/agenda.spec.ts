@@ -5,6 +5,6 @@ test.describe("agenda gate", () => {
     page,
   }) => {
     await page.goto("/agenda");
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/auth\/sign-in/);
   });
 });

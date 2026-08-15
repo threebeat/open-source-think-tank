@@ -5,6 +5,6 @@ test.describe("deliberation observer", () => {
     page,
   }) => {
     await page.goto("/deliberation/cedar-river-drought-surcharge");
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/auth\/sign-in/);
   });
 });

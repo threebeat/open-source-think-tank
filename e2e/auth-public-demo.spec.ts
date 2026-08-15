@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("auth isolation in public-demo", () => {
-  test("account page redirects home and auth APIs 404", async ({ page }) => {
+  test("account page redirects to sign-in; staff APIs stay 404", async ({ page }) => {
     await page.goto("/account");
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/auth\/sign-in/);
 
     const accept = await page.request.post("/api/auth/accept-invite", {
       data: {
@@ -65,18 +65,18 @@ test.describe("auth isolation in public-demo", () => {
         formOpenedAt: Date.now() - 2000,
       },
     });
-    expect(enroll.status()).toBe(404);
+    expect(enroll.status()).toBe(200);
     expect(JSON.stringify(await enroll.json()).toLowerCase()).not.toMatch(
       /password_hash|scrypt/,
     );
 
     const passwordSignIn = await page.request.post("/api/auth/password-sign-in", {
       data: {
-        identifier: "public@ostt.synth.test",
+        identifier: "missing@ostt.synth.test",
         password: "a-sufficiently-long-pass",
       },
     });
-    expect(passwordSignIn.status()).toBe(404);
+    expect(passwordSignIn.status()).toBe(401);
   });
 
   test("workspace topic and submission pages are not found in public-demo", async ({
@@ -96,17 +96,13 @@ test.describe("auth isolation in public-demo", () => {
     expect(moderationClaim?.status()).toBe(404);
   });
 
-  test("public join preview still cannot enroll", async ({ page }) => {
+  test("public join shows a working create-account form", async ({ page }) => {
     await page.goto("/join");
     await expect(
-      page.getByRole("heading", { name: "How joining works" }),
+      page.getByRole("heading", { name: "Create an account" }),
     ).toBeVisible();
     await expect(
-      page.getByText(/cannot create accounts or open a database/i),
-    ).toBeVisible();
-    await page.getByRole("button", { name: /Stronger verification/i }).click();
-    await expect(
-      page.getByRole("button", { name: "Create account (disabled)" }),
-    ).toBeDisabled();
+      page.getByRole("button", { name: /create account/i }),
+    ).toBeEnabled();
   });
 });

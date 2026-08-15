@@ -7,6 +7,6 @@ test.describe("public-demo Public Input report (4.4)", () => {
     await page.goto(
       "/formal-topics/cedar-river-drought-surcharge/consultation/report",
     );
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/auth\/sign-in/);
   });
 });

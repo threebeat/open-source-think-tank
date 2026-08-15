@@ -10,6 +10,8 @@ import { requireMemberSession } from "@/lib/auth/guard";
 import { listChamber } from "@/lib/bodies/service";
 import type { BodyListDto } from "@/lib/bodies/types";
 import { loadMemberCommonsContext } from "@/lib/commons/member-context";
+import { resolveAppMode } from "@/lib/env/app-mode";
+import { localChamberList } from "@/lib/pre-alpha/member-views";
 
 export const metadata: Metadata = {
   title: "Chamber",
@@ -30,13 +32,19 @@ function emptyList(): BodyListDto {
 
 export default async function ChamberPage() {
   const session = await requireMemberSession();
-  const { db, principal, organizationId } = await loadMemberCommonsContext(
-    session.accountId,
-  );
-  const listed = organizationId
-    ? await listChamber(db, { principal, organizationId })
-    : { ok: true as const, value: emptyList() };
-  const chamber = listed.ok ? listed.value : emptyList();
+  let chamber = emptyList();
+  if (resolveAppMode() !== "gated") {
+    chamber = localChamberList();
+  } else {
+    const { db, principal, organizationId } = await loadMemberCommonsContext(
+      session.accountId,
+    );
+    const listed =
+      organizationId && db
+        ? await listChamber(db, { principal, organizationId })
+        : { ok: true as const, value: emptyList() };
+    chamber = listed.ok ? listed.value : emptyList();
+  }
 
   return (
     <MainContainer className="space-y-8">

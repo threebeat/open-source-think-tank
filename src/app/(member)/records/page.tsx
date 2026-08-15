@@ -32,9 +32,10 @@ export default async function RecordsPage() {
   const { db, principal, organizationId } = await loadMemberCommonsContext(
     session.accountId,
   );
-  const listed = organizationId
-    ? await listRecords(db, { principal, organizationId })
-    : { ok: true as const, value: emptyList() };
+  const listed =
+    organizationId && db
+      ? await listRecords(db, { principal, organizationId })
+      : { ok: true as const, value: emptyList() };
   const records = listed.ok ? listed.value : emptyList();
 
   return (

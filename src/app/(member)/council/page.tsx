@@ -10,6 +10,8 @@ import { requireMemberSession } from "@/lib/auth/guard";
 import { listCouncil } from "@/lib/bodies/service";
 import type { BodyListDto } from "@/lib/bodies/types";
 import { loadMemberCommonsContext } from "@/lib/commons/member-context";
+import { resolveAppMode } from "@/lib/env/app-mode";
+import { localCouncilList } from "@/lib/pre-alpha/member-views";
 
 export const metadata: Metadata = {
   title: "Council",
@@ -30,13 +32,19 @@ function emptyList(): BodyListDto {
 
 export default async function CouncilPage() {
   const session = await requireMemberSession();
-  const { db, principal, organizationId } = await loadMemberCommonsContext(
-    session.accountId,
-  );
-  const listed = organizationId
-    ? await listCouncil(db, { principal, organizationId })
-    : { ok: true as const, value: emptyList() };
-  const council = listed.ok ? listed.value : emptyList();
+  let council = emptyList();
+  if (resolveAppMode() !== "gated") {
+    council = localCouncilList();
+  } else {
+    const { db, principal, organizationId } = await loadMemberCommonsContext(
+      session.accountId,
+    );
+    const listed =
+      organizationId && db
+        ? await listCouncil(db, { principal, organizationId })
+        : { ok: true as const, value: emptyList() };
+    council = listed.ok ? listed.value : emptyList();
+  }
 
   return (
     <MainContainer className="space-y-8">

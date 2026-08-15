@@ -5,6 +5,6 @@ test.describe("public-demo evidence comparison", () => {
     page,
   }) => {
     await page.goto("/formal-topics");
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/auth\/sign-in/);
   });
 });

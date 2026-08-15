@@ -32,6 +32,19 @@ export async function AppShell({ children }: AppShellProps) {
     } catch {
       authenticated = false;
     }
+  } else {
+    try {
+      const { readPreAlphaSessionFromStore } = await import(
+        "@/lib/auth/pre-alpha-local"
+      );
+      const local = await readPreAlphaSessionFromStore();
+      if (local) {
+        authenticated = true;
+        accountLabel = local.identifier.split("@")[0] || "Signed in";
+      }
+    } catch {
+      authenticated = false;
+    }
   }
 
   return (

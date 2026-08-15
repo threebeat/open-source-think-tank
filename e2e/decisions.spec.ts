@@ -5,6 +5,6 @@ test.describe("decision record and transparency", () => {
     page,
   }) => {
     await page.goto("/decisions/cedar-river-drought-surcharge");
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/auth\/sign-in/);
   });
 });
