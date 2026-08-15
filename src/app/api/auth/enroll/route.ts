@@ -13,7 +13,7 @@ function clientIp(request: Request): string | null {
 
 export async function POST(request: Request) {
   if (resolveAppMode() !== "gated") {
-    return NextResponse.json({ error: "Not Found" }, { status: 404 });
+    return enrollOnThisDevice(request);
   }
   if (!isOpenEnrollmentEnabled()) {
     return NextResponse.json(
@@ -75,4 +75,55 @@ export async function POST(request: Request) {
     assignmentExplanation: result.value.assignmentExplanation,
     communityStandardsVersion: result.value.communityStandardsVersion,
   });
+}
+
+async function enrollOnThisDevice(request: Request) {
+  let body: {
+    identifier?: string;
+    password?: string;
+    honeypot?: string;
+    formOpenedAt?: number;
+    communityStandardsAssent?: boolean;
+  };
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const {
+    enrollLocalAccount,
+    parseCookieHeader,
+    PRE_ALPHA_ACCOUNTS_COOKIE,
+    readLocalAccounts,
+  } = await import("@/lib/auth/pre-alpha-local");
+  const { attachPreAlphaCookies } = await import("@/lib/auth/pre-alpha-cookies");
+  const cookies = parseCookieHeader(request.headers.get("cookie"));
+  const result = await enrollLocalAccount(
+    readLocalAccounts(cookies[PRE_ALPHA_ACCOUNTS_COOKIE]),
+    {
+      identifier: body.identifier ?? "",
+      password: body.password ?? "",
+      honeypot: body.honeypot,
+      formOpenedAt: body.formOpenedAt,
+      communityStandardsAssent: Boolean(body.communityStandardsAssent),
+    },
+  );
+  if (!result.ok) {
+    const status = result.code === "ENROLLMENT_DUPLICATE" ? 409 : 400;
+    return NextResponse.json(
+      { error: result.error, code: result.code },
+      { status },
+    );
+  }
+
+  const response = NextResponse.json({
+    accountId: result.session.accountId,
+    lifecycleState: result.session.lifecycleState,
+    synthetic: true,
+    sessionId: result.session.sessionId,
+    assignmentExplanation: result.assignmentExplanation,
+    communityStandardsVersion: "v1-prealpha",
+  });
+  return attachPreAlphaCookies(response, result.accounts, result.session);
 }

@@ -52,7 +52,10 @@ export function hasAuthJsSessionCookie(cookieHeader: string | null): boolean {
   if (!cookieHeader) {
     return false;
   }
-  return /(?:^|;\s*)(?:__Secure-)?authjs\.session-token=/.test(cookieHeader);
+  if (/(?:^|;\s*)(?:__Secure-)?authjs\.session-token=/.test(cookieHeader)) {
+    return true;
+  }
+  return /(?:^|;\s*)ch_prealpha_session=/.test(cookieHeader);
 }
 
 export function unauthenticatedProductRedirect(
@@ -70,7 +73,7 @@ export function unauthenticatedProductRedirect(
     if (pathname.startsWith("/workspace") || pathname.startsWith("/staff")) {
       return null;
     }
-    return "/";
+    return "/auth/sign-in";
   }
   return "/auth/sign-in";
 }

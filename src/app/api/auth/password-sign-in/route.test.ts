@@ -24,7 +24,7 @@ describe("password sign-in API isolation", () => {
     }
   });
 
-  it("does not construct auth enrollment in public-demo", async () => {
+  it("rejects unknown identifiers in public-demo without leaking hashes", async () => {
     process.env.APP_MODE = "public-demo";
     delete process.env.DATABASE_URL;
     delete process.env.AUTH_SECRET;
@@ -38,7 +38,7 @@ describe("password sign-in API isolation", () => {
         }),
       }),
     );
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(401);
     const body = await response.json();
     expect(JSON.stringify(body).toLowerCase()).not.toMatch(/password_hash|scrypt/);
   });

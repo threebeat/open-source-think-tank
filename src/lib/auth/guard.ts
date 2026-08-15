@@ -51,7 +51,19 @@ export async function requireGatedSession(): Promise<GuardFailure> {
 
 export async function requireMemberSession(): Promise<AuthSession> {
   if (resolveAppMode() !== "gated") {
-    redirect("/");
+    const { readPreAlphaSessionFromStore } = await import(
+      "@/lib/auth/pre-alpha-local"
+    );
+    const local = await readPreAlphaSessionFromStore();
+    if (local) {
+      return {
+        accountId: local.accountId,
+        sessionId: local.sessionId,
+        lifecycleState: local.lifecycleState,
+        synthetic: true,
+      };
+    }
+    redirect("/auth/sign-in");
   }
   const gated = await requireGatedSession();
   if (gated.ok) {

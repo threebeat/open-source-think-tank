@@ -21,13 +21,13 @@ describe("account gate (V2-21)", () => {
     expect(isPublicUnauthenticatedPath("/idea-commons")).toBe(false);
   });
 
-  it("redirects unauthenticated product URLs to / in public-demo and sign-in in gated", () => {
+  it("redirects unauthenticated product URLs to sign-in", () => {
     expect(
       unauthenticatedProductRedirect("/commons", { APP_MODE: "public-demo" }),
-    ).toBe("/");
+    ).toBe("/auth/sign-in");
     expect(
       unauthenticatedProductRedirect("/idea-commons", { APP_MODE: "public-demo" }),
-    ).toBe("/");
+    ).toBe("/auth/sign-in");
     expect(
       unauthenticatedProductRedirect("/workspace/topics", {
         APP_MODE: "public-demo",
@@ -78,6 +78,7 @@ describe("account gate (V2-21)", () => {
   it("detects Auth.js session cookies without treating presence as authorization", () => {
     expect(hasAuthJsSessionCookie("authjs.session-token=abc")).toBe(true);
     expect(hasAuthJsSessionCookie("__Secure-authjs.session-token=abc")).toBe(true);
+    expect(hasAuthJsSessionCookie("ch_prealpha_session=abc")).toBe(true);
     expect(hasAuthJsSessionCookie("other=1")).toBe(false);
   });
 });

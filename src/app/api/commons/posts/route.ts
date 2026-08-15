@@ -12,7 +12,7 @@ function clientIp(request: Request): string | null {
 
 export async function POST(request: Request) {
   if (resolveAppMode() !== "gated") {
-    return NextResponse.json({ error: "Not Found" }, { status: 404 });
+    return createLocalPost(request);
   }
 
   const { requireGatedSession } = await import("@/lib/auth/guard");
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
   const { db, principal, organizationId } = await loadMemberCommonsContext(
     gated.session.accountId,
   );
-  if (!organizationId) {
+  if (!organizationId || !db) {
     return NextResponse.json(
       {
         error:
@@ -75,4 +75,58 @@ export async function POST(request: Request) {
     );
   }
   return NextResponse.json(result.value);
+}
+
+async function createLocalPost(request: Request) {
+  let body: { title?: string; body?: string; category?: string };
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const {
+    addLocalPost,
+    parseCookieHeader,
+    PRE_ALPHA_ACCOUNTS_COOKIE,
+    PRE_ALPHA_SESSION_COOKIE,
+    readLocalAccounts,
+    readLocalSession,
+  } = await import("@/lib/auth/pre-alpha-local");
+  const { isMemberCreateCategory } = await import("@/lib/commons/categories");
+  const { attachPreAlphaCookies } = await import("@/lib/auth/pre-alpha-cookies");
+  const cookies = parseCookieHeader(request.headers.get("cookie"));
+  const accounts = readLocalAccounts(cookies[PRE_ALPHA_ACCOUNTS_COOKIE]);
+  const session = readLocalSession(
+    cookies[PRE_ALPHA_SESSION_COOKIE],
+    cookies[PRE_ALPHA_ACCOUNTS_COOKIE],
+  );
+  if (!session) {
+    return NextResponse.json(
+      { error: "Authentication required", code: "AUTH_REQUIRED" },
+      { status: 401 },
+    );
+  }
+  if (!isMemberCreateCategory(body.category ?? "")) {
+    return NextResponse.json(
+      { error: "That category is not open for member posts.", code: "COMMONS_CATEGORY_FORBIDDEN" },
+      { status: 403 },
+    );
+  }
+  const result = addLocalPost(accounts, session.accountId, {
+    title: body.title ?? "",
+    body: body.body ?? "",
+    category: body.category as "topic_proposals" | "approach_proposals" | "general_discussion",
+  });
+  if (!result.ok) {
+    return NextResponse.json(
+      { error: result.error, code: result.code },
+      { status: 400 },
+    );
+  }
+  const response = NextResponse.json({
+    publicId: result.post.publicId,
+    title: result.post.title,
+  });
+  return attachPreAlphaCookies(response, result.accounts, session);
 }

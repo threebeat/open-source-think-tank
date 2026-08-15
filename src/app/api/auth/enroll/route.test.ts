@@ -24,7 +24,7 @@ describe("enroll API isolation", () => {
     }
   });
 
-  it("does not construct enrollment in public-demo", async () => {
+  it("creates a browser account in public-demo without leaking the password hash", async () => {
     process.env.APP_MODE = "public-demo";
     delete process.env.DATABASE_URL;
     delete process.env.AUTH_SECRET;
@@ -40,10 +40,12 @@ describe("enroll API isolation", () => {
         }),
       }),
     );
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(200);
     const body = await response.json();
+    expect(body.accountId).toMatch(/^local-/);
     expect(JSON.stringify(body).toLowerCase()).not.toMatch(
       /password|scrypt|password_hash/,
     );
+    expect(response.headers.get("set-cookie") ?? "").toMatch(/ch_prealpha_session=/);
   });
 });
